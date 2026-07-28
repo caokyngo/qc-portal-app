@@ -518,7 +518,7 @@
         // === KHAI BÁO CẤU HÌNH & API ===
         const URL_REPORT_API = "https://script.google.com/a/macros/enotion.io/s/AKfycbzynUh65kMWVtwRdYdg8x35-6LViA_JwMPrWhEoMdDXFDP7tpcheilYrReQSIrQ6zAtIQ/exec";
         
-        // Thay link Webhook thực tế của bạn vào đây
+        // Link Webhook Discord
         const DISCORD_WEBHOOK_URL = "https://discord.com/api/webhooks/1522191984020684830/z2Y75Ncd-Ocn0PGWEWrD0_amVNnua5KGdUVxXuHIPSPyIvRv6TmPsDit2ag7gRaHrXID";
 
         const firebaseConfig = {
@@ -1634,6 +1634,7 @@
             renderPaginatedDeviceLogs();
         }
 
+        // ================= HÀM XỬ LÝ MƯỢN THIẾT BỊ =================
         function submitBorrowDevice() {
             if (!loggedInUser) {
                 showCustomAlert('Yêu cầu đăng nhập', 'Vui lòng đăng nhập tài khoản Google để mượn thiết bị!', true);
@@ -1675,11 +1676,11 @@
                     btn.innerHTML = origHtml;
                     showCustomAlert('Thành Công!', `Đã đăng ký mượn [${device}] cho tài khoản ${name}.`);
                     
-                    // BẮN NOTI DISCORD - ĐỊNH DẠNG MỚI
+                    // GỌI THÔNG BÁO DISCORD - ĐỊNH DẠNG MỚI ĐẸP
                     const embedBorrow = {
                         title: "🟦 THÔNG BÁO MƯỢN THIẾT BỊ",
                         description: `👤 **Người thực hiện** 📲 **Thiết bị**\n**${name}** \`${device}\`\n\n⏰ **Thời gian mượn**\n${exactTimeStr}\n\n📌 **Trạng thái**\n🟡 **Đang Mượn**`,
-                        color: 16753920, // Màu vàng cam viền trái
+                        color: 16753920, // Màu vàng/cam
                         timestamp: now.toISOString(),
                         footer: { text: "QA Internal Portal System" }
                     };
@@ -1696,6 +1697,7 @@
             }
         }
 
+        // ================= HÀM XỬ LÝ TRẢ THIẾT BỊ =================
         function submitReturnDevice(docId, deviceName, borrowerName) {
             if (!confirm(`Xác nhận trả thiết bị: [${deviceName}]?`)) return;
 
@@ -1713,11 +1715,11 @@
                 .then(() => {
                     showCustomAlert('Thành Công!', `Đã xác nhận trả thiết bị [${deviceName}].`);
                     
-                    // BẮN NOTI DISCORD - ĐỊNH DẠNG MỚI
+                    // GỌI THÔNG BÁO DISCORD - ĐỊNH DẠNG MỚI ĐẸP
                     const embedReturn = {
                         title: "✅ THÔNG BÁO TRẢ THIẾT BỊ",
                         description: `👤 **Người thực hiện** 📲 **Thiết bị**\n**${borrowerName}** \`${deviceName}\`\n\n⏰ **Thời gian trả**\n${exactTimeStr}\n\n📌 **Trạng thái**\n🟢 **Đã Trả**`,
-                        color: 3066993, // Màu xanh lá viền trái
+                        color: 3066993, // Màu xanh lá cây
                         timestamp: now.toISOString(),
                         footer: { text: "QA Internal Portal System" }
                     };
