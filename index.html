@@ -531,17 +531,12 @@
         };
 
         // ================= HÀM GỬI THÔNG BÁO DISCORD =================
-        function sendDiscordNotification(title, description, color = 3066993) {
+        function sendDiscordNotification(embed) {
             if (!DISCORD_WEBHOOK_URL) return;
 
             const payload = {
-                embeds: [{
-                    title: title,
-                    description: description,
-                    color: color,
-                    timestamp: new Date().toISOString(),
-                    footer: { text: "QC Portal Device Manager" }
-                }]
+                username: "Device Manager Bot",
+                embeds: [embed]
             };
 
             fetch(DISCORD_WEBHOOK_URL, {
@@ -872,7 +867,6 @@
 
                 const summary = getColumnValue(row, ['Summary', 'Tóm tắt', 'Title']);
                 const key = getColumnValue(row, ['Issue key', 'Issue Key', 'Key', 'Khóa sự cố']);
-                // Đã fix lỗi cú pháp ở đây (thêm dấu `)` ở cuối)
                 const priority = normalizePriority(getColumnValue(row, ['Priority', 'Độ ưu tiên']));
                 const assignee = getColumnValue(row, ['Assignee', 'Người được giao']) || 'Unassigned';
 
@@ -1647,7 +1641,6 @@
             }
 
             const name = loggedInUser.name;
-            // Lấy giá trị thiết bị từ data-value của Search Input
             const device = document.getElementById('deviceSearchInput').dataset.value || "";
 
             if (!device) {
@@ -1660,8 +1653,11 @@
             btn.disabled = true;
             btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin text-sm"></i> Đang ghi dữ liệu...`;
 
+            // Lấy thời gian chuẩn
             const now = new Date();
-            const timeStr = `${now.toLocaleTimeString('vi-VN', {hour: '2-digit', minute:'2-digit'})} ${now.toLocaleDateString('vi-VN')}`;
+            const pad = (n) => n.toString().padStart(2, '0');
+            const exactTimeStr = `${pad(now.getDate())}/${pad(now.getMonth()+1)}/${now.getFullYear()} ${pad(now.getHours())}:${pad(now.getMinutes())}:${pad(now.getSeconds())}`;
+            const timeStr = `${pad(now.getHours())}:${pad(now.getMinutes())} ${pad(now.getDate())}/${pad(now.getMonth()+1)}/${now.getFullYear()}`; // Lưu Firebase
 
             const newRecord = {
                 nguoiMuon: name,
@@ -1679,12 +1675,15 @@
                     btn.innerHTML = origHtml;
                     showCustomAlert('Thành Công!', `Đã đăng ký mượn [${device}] cho tài khoản ${name}.`);
                     
-                    // BẮN NOTI DISCORD
-                    sendDiscordNotification(
-                        "📱 THÔNG BÁO MƯỢN DEVICE MỚI",
-                        `**Người mượn:** ${name}\n**Thiết bị:** ${device}\n**Thời gian:** ${timeStr}`,
-                        3447003 // Xanh lam
-                    );
+                    // BẮN NOTI DISCORD - ĐỊNH DẠNG MỚI
+                    const embedBorrow = {
+                        title: "🟦 THÔNG BÁO MƯỢN THIẾT BỊ",
+                        description: `👤 **Người thực hiện** 📲 **Thiết bị**\n**${name}** \`${device}\`\n\n⏰ **Thời gian mượn**\n${exactTimeStr}\n\n📌 **Trạng thái**\n🟡 **Đang Mượn**`,
+                        color: 16753920, // Màu vàng cam viền trái
+                        timestamp: now.toISOString(),
+                        footer: { text: "QA Internal Portal System" }
+                    };
+                    sendDiscordNotification(embedBorrow);
 
                     loadDeviceData(false);
                 })
@@ -1700,8 +1699,11 @@
         function submitReturnDevice(docId, deviceName, borrowerName) {
             if (!confirm(`Xác nhận trả thiết bị: [${deviceName}]?`)) return;
 
+            // Lấy thời gian chuẩn
             const now = new Date();
-            const nowStr = `${now.toLocaleTimeString('vi-VN', {hour: '2-digit', minute:'2-digit'})} ${now.toLocaleDateString('vi-VN')}`;
+            const pad = (n) => n.toString().padStart(2, '0');
+            const exactTimeStr = `${pad(now.getDate())}/${pad(now.getMonth()+1)}/${now.getFullYear()} ${pad(now.getHours())}:${pad(now.getMinutes())}:${pad(now.getSeconds())}`;
+            const nowStr = `${pad(now.getHours())}:${pad(now.getMinutes())} ${pad(now.getDate())}/${pad(now.getMonth()+1)}/${now.getFullYear()}`; // Lưu Firebase
 
             if (db) {
                 db.collection("device_logs").doc(docId).update({
@@ -1711,12 +1713,15 @@
                 .then(() => {
                     showCustomAlert('Thành Công!', `Đã xác nhận trả thiết bị [${deviceName}].`);
                     
-                    // BẮN NOTI DISCORD
-                    sendDiscordNotification(
-                        "✅ THÔNG BÁO TRẢ DEVICE",
-                        `**Người trả:** ${borrowerName}\n**Thiết bị:** ${deviceName}\n**Thời gian trả:** ${nowStr}`,
-                        3066993 // Xanh lá cây
-                    );
+                    // BẮN NOTI DISCORD - ĐỊNH DẠNG MỚI
+                    const embedReturn = {
+                        title: "✅ THÔNG BÁO TRẢ THIẾT BỊ",
+                        description: `👤 **Người thực hiện** 📲 **Thiết bị**\n**${borrowerName}** \`${deviceName}\`\n\n⏰ **Thời gian trả**\n${exactTimeStr}\n\n📌 **Trạng thái**\n🟢 **Đã Trả**`,
+                        color: 3066993, // Màu xanh lá viền trái
+                        timestamp: now.toISOString(),
+                        footer: { text: "QA Internal Portal System" }
+                    };
+                    sendDiscordNotification(embedReturn);
 
                     loadDeviceData(false);
                 })
