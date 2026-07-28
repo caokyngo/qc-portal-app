@@ -1676,11 +1676,32 @@
                     btn.innerHTML = origHtml;
                     showCustomAlert('Thành Công!', `Đã đăng ký mượn [${device}] cho tài khoản ${name}.`);
                     
-                    // GỌI THÔNG BÁO DISCORD - ĐỊNH DẠNG MỚI ĐẸP
+                    // BẮN NOTI DISCORD - ĐỊNH DẠNG MỚI (DÙNG FIELDS ĐỂ CĂN CỘT)
                     const embedBorrow = {
                         title: "🟦 THÔNG BÁO MƯỢN THIẾT BỊ",
-                        description: `👤 **Người thực hiện** 📲 **Thiết bị**\n**${name}** \`${device}\`\n\n⏰ **Thời gian mượn**\n${exactTimeStr}\n\n📌 **Trạng thái**\n🟡 **Đang Mượn**`,
-                        color: 16753920, // Màu vàng/cam
+                        color: 16753920, // Màu vàng cam viền trái
+                        fields: [
+                            {
+                                name: "👤 Người thực hiện",
+                                value: `**${name}**`,
+                                inline: true
+                            },
+                            {
+                                name: "📲 Thiết bị",
+                                value: `\`${device}\``,
+                                inline: true
+                            },
+                            {
+                                name: "⏰ Thời gian mượn",
+                                value: exactTimeStr,
+                                inline: false
+                            },
+                            {
+                                name: "📌 Trạng thái",
+                                value: "🟡 **Đang Mượn**",
+                                inline: false
+                            }
+                        ],
                         timestamp: now.toISOString(),
                         footer: { text: "QA Internal Portal System" }
                     };
@@ -1715,11 +1736,32 @@
                 .then(() => {
                     showCustomAlert('Thành Công!', `Đã xác nhận trả thiết bị [${deviceName}].`);
                     
-                    // GỌI THÔNG BÁO DISCORD - ĐỊNH DẠNG MỚI ĐẸP
+                    // BẮN NOTI DISCORD - ĐỊNH DẠNG MỚI (DÙNG FIELDS ĐỂ CĂN CỘT)
                     const embedReturn = {
                         title: "✅ THÔNG BÁO TRẢ THIẾT BỊ",
-                        description: `👤 **Người thực hiện** 📲 **Thiết bị**\n**${borrowerName}** \`${deviceName}\`\n\n⏰ **Thời gian trả**\n${exactTimeStr}\n\n📌 **Trạng thái**\n🟢 **Đã Trả**`,
-                        color: 3066993, // Màu xanh lá cây
+                        color: 3066993, // Màu xanh lá viền trái
+                        fields: [
+                            {
+                                name: "👤 Người thực hiện",
+                                value: `**${borrowerName}**`,
+                                inline: true
+                            },
+                            {
+                                name: "📲 Thiết bị",
+                                value: `\`${deviceName}\``,
+                                inline: true
+                            },
+                            {
+                                name: "⏰ Thời gian trả",
+                                value: exactTimeStr,
+                                inline: false
+                            },
+                            {
+                                name: "📌 Trạng thái",
+                                value: "🟢 **Đã Trả**",
+                                inline: false
+                            }
+                        ],
                         timestamp: now.toISOString(),
                         footer: { text: "QA Internal Portal System" }
                     };
