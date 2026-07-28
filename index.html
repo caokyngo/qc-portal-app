@@ -515,10 +515,12 @@
     </div>
 
     <script>
-        // === KHAI BÁO LINK API BÁO CÁO DAILY ===
+        // === KHAI BÁO CẤU HÌNH & API ===
         const URL_REPORT_API = "https://script.google.com/a/macros/enotion.io/s/AKfycbzynUh65kMWVtwRdYdg8x35-6LViA_JwMPrWhEoMdDXFDP7tpcheilYrReQSIrQ6zAtIQ/exec";
+        
+        // Thay link Webhook thực tế của bạn vào đây
+        const DISCORD_WEBHOOK_URL = "https://discord.com/api/webhooks/1522191984020684830/z2Y75Ncd-Ocn0PGWEWrD0_amVNnua5KGdUVxXuHIPSPyIvRv6TmPsDit2ag7gRaHrXID";
 
-        // === CẤU HÌNH & KHỞI TẠO FIREBASE FIRESTORE ===
         const firebaseConfig = {
             apiKey: "AIzaSyBZ72fOBO-VPMDrXBS4E15TN5L7tfcL46s",
             authDomain: "device-manage-d4f5d.firebaseapp.com",
@@ -527,6 +529,27 @@
             messagingSenderId: "747189096859",
             appId: "1:747189096859:web:abcdef..."
         };
+
+        // ================= HÀM GỬI THÔNG BÁO DISCORD =================
+        function sendDiscordNotification(title, description, color = 3066993) {
+            if (!DISCORD_WEBHOOK_URL) return;
+
+            const payload = {
+                embeds: [{
+                    title: title,
+                    description: description,
+                    color: color,
+                    timestamp: new Date().toISOString(),
+                    footer: { text: "QC Portal Device Manager" }
+                }]
+            };
+
+            fetch(DISCORD_WEBHOOK_URL, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            }).catch(err => console.error("Lỗi gửi Discord:", err));
+        }
 
         let db = null;
         try {
@@ -849,6 +872,7 @@
 
                 const summary = getColumnValue(row, ['Summary', 'Tóm tắt', 'Title']);
                 const key = getColumnValue(row, ['Issue key', 'Issue Key', 'Key', 'Khóa sự cố']);
+                // Đã fix lỗi cú pháp ở đây (thêm dấu `)` ở cuối)
                 const priority = normalizePriority(getColumnValue(row, ['Priority', 'Độ ưu tiên']));
                 const assignee = getColumnValue(row, ['Assignee', 'Người được giao']) || 'Unassigned';
 
@@ -1654,6 +1678,14 @@
                     btn.disabled = false;
                     btn.innerHTML = origHtml;
                     showCustomAlert('Thành Công!', `Đã đăng ký mượn [${device}] cho tài khoản ${name}.`);
+                    
+                    // BẮN NOTI DISCORD
+                    sendDiscordNotification(
+                        "📱 THÔNG BÁO MƯỢN DEVICE MỚI",
+                        `**Người mượn:** ${name}\n**Thiết bị:** ${device}\n**Thời gian:** ${timeStr}`,
+                        3447003 // Xanh lam
+                    );
+
                     loadDeviceData(false);
                 })
                 .catch((err) => {
@@ -1678,6 +1710,14 @@
                 })
                 .then(() => {
                     showCustomAlert('Thành Công!', `Đã xác nhận trả thiết bị [${deviceName}].`);
+                    
+                    // BẮN NOTI DISCORD
+                    sendDiscordNotification(
+                        "✅ THÔNG BÁO TRẢ DEVICE",
+                        `**Người trả:** ${borrowerName}\n**Thiết bị:** ${deviceName}\n**Thời gian trả:** ${nowStr}`,
+                        3066993 // Xanh lá cây
+                    );
+
                     loadDeviceData(false);
                 })
                 .catch((err) => {
