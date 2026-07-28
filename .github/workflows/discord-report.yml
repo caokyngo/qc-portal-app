@@ -1,0 +1,22 @@
+name: Báo Cáo Device 18h30
+
+on:
+  schedule:
+    # Cấu hình Cron: Chạy vào lúc 11:30 UTC mỗi ngày (Tương đương 18:30 Giờ Việt Nam UTC+7)
+    - cron: '30 11 * * *'
+  workflow_dispatch: # Cho phép bấm chạy bằng tay để test
+
+jobs:
+  send-report:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Lấy source code
+        uses: actions/checkout@v4
+
+      - name: Cài đặt Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+
+      - name: Chạy Script Gửi Báo Cáo
+        run: node daily-report.js
