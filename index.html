@@ -111,7 +111,7 @@
                     <div id="userProfileBtn" class="hidden relative cursor-pointer flex items-center gap-2.5 px-3 py-1.5 bg-slate-100 hover:bg-slate-200 rounded-xl border border-slate-200 transition" onclick="document.getElementById('userDropdown').classList.toggle('hidden')">
                         <img id="userAvatar" src="" class="w-8 h-8 rounded-full border border-slate-300 bg-white object-cover" alt="Avatar">
                         <span id="userNameDisplay" class="text-slate-700 font-bold text-sm hidden sm:block"></span>
-                        <i class="fa-solid fa-caret-down text-slate-500 ml-1 text-xs"></i>
+                        <i class="fa-solid fa-caret-down text-slate-50 ml-1 text-xs"></i>
                         
                         <div id="userDropdown" class="hidden absolute right-0 top-full mt-2 w-48 bg-white rounded-xl shadow-xl border border-slate-200 overflow-hidden z-50">
                             <button onclick="handleLogout()" class="w-full flex items-center gap-3 px-4 py-3.5 text-left text-rose-600 hover:bg-rose-50 text-sm font-bold transition">
@@ -1676,10 +1676,10 @@
                     btn.innerHTML = origHtml;
                     showCustomAlert('Thành Công!', `Đã đăng ký mượn [${device}] cho tài khoản ${name}.`);
                     
-                    // BẮN NOTI DISCORD - ĐỊNH DẠNG MỚI (DÙNG FIELDS ĐỂ CĂN CỘT)
+                    // SỬ DỤNG FIELDS ĐỂ CĂN CỘT THẲNG TẮP
                     const embedBorrow = {
                         title: "🟦 THÔNG BÁO MƯỢN THIẾT BỊ",
-                        color: 16753920, // Màu vàng cam viền trái
+                        color: 16753920,
                         fields: [
                             {
                                 name: "👤 Người thực hiện",
@@ -1687,7 +1687,7 @@
                                 inline: true
                             },
                             {
-                                name: "📲 Thiết bị",
+                                name: "📱 Thiết bị",
                                 value: `\`${device}\``,
                                 inline: true
                             },
@@ -1736,10 +1736,10 @@
                 .then(() => {
                     showCustomAlert('Thành Công!', `Đã xác nhận trả thiết bị [${deviceName}].`);
                     
-                    // BẮN NOTI DISCORD - ĐỊNH DẠNG MỚI (DÙNG FIELDS ĐỂ CĂN CỘT)
+                    // SỬ DỤNG FIELDS ĐỂ CĂN CỘT THẲNG TẮP
                     const embedReturn = {
                         title: "✅ THÔNG BÁO TRẢ THIẾT BỊ",
-                        color: 3066993, // Màu xanh lá viền trái
+                        color: 3066993, 
                         fields: [
                             {
                                 name: "👤 Người thực hiện",
@@ -1747,7 +1747,7 @@
                                 inline: true
                             },
                             {
-                                name: "📲 Thiết bị",
+                                name: "📱 Thiết bị",
                                 value: `\`${deviceName}\``,
                                 inline: true
                             },
