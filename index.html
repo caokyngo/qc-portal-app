@@ -1158,13 +1158,24 @@
             const doneRaw = [], inProgressRaw = [], remainingRaw = [];
             allParsedItems.forEach(item => {
                 const valToUse = item.colE ? item.colE : item.colG;
-                if ((item.pctNum === 0 || ['0','0%','0.0%'].includes(item.colE)) && (item.lowerG.includes('done') || item.lowerG.includes('passed') || item.lowerG !== '')) {
+                const isZero = (item.pctNum === 0 || ['0','0%','0.0%'].includes(String(item.colE).trim()));
+                const isHundred = (item.pctNum === 100 || ['100%','1','100'].includes(String(item.colE).trim()));
+                const isInProgressStatus = ['doing', 'in progress', 'in-progress'].some(kw => item.lowerG.includes(kw));
+
+                if (isZero && isInProgressStatus) {
+                    // Mới thêm: 0% nhưng status đang là in progress -> Failed
+                    inProgressRaw.push({ name: item.name, val: "Failed", status: item.colG });
+                }
+                else if (isZero && (item.lowerG.includes('done') || item.lowerG.includes('passed') || item.lowerG !== '')) {
+                    // Logic gốc cho DONE
                     doneRaw.push({ name: item.name, val: "Passed", status: item.colG });
                 }
-                else if ((item.pctNum !== null && item.pctNum > 0 && item.pctNum < 100) || ['doing', 'in progress', 'in-progress'].some(kw => item.lowerG.includes(kw))) {
+                else if ((item.pctNum !== null && item.pctNum > 0 && item.pctNum < 100) || isInProgressStatus) {
+                    // Logic gốc cho IN PROGRESS
                     inProgressRaw.push({ name: item.name, val: formatPctDisplayFixed(valToUse), status: item.colG });
                 }
-                else if (item.pctNum === 100 || ['100%','1','100'].includes(item.colE)) {
+                else if (isHundred || ['100%','1','100'].includes(String(item.colE).trim())) {
+                    // Logic gốc cho REMAINING
                     remainingRaw.push({ name: item.name, val: formatPctDisplayFixed(valToUse), status: item.colG });
                 }
             });
@@ -1380,7 +1391,7 @@
 
             } catch (err) {
                 console.error('Lỗi khi copy:', err);
-                showCustomAlert('Có lỗi xảy ra', 'Không thể tự động copy, vui lòng kiểm tra lại quyền truy cập Clipboard.', true);
+                showCustomAlert('Có lỗi xảy ra', 'Không thể tự tự động copy, vui lòng kiểm tra lại quyền truy cập Clipboard.', true);
             } finally {
                 copyBtn.disabled = false;
                 copyBtn.innerHTML = originalBtnHtml;
