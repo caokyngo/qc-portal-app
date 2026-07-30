@@ -1340,7 +1340,8 @@
                 }
 
                 const specialTagsList = ['improvement', 'question'];
-                const tagDataMap = {}; const tagOrder = [];
+                const tagDataMap = {}; 
+                const tagOrder = [];
 
                 rawJiraData.forEach(row => {
                     const status = (getColumnValue(row, ['Status', 'Trạng thái']) || 'N/A').toString().trim();
@@ -1354,11 +1355,31 @@
                     const selectedTags = (tagMode === 'primary') ? [tags[0]] : tags;
 
                     selectedTags.forEach(tag => {
-                        if (!tagDataMap[tag]) { tagDataMap[tag] = { counts: { 'Highest': 0, 'High': 0, 'Medium': 0, 'Low': 0, 'Lowest': 0, 'Unassigned': 0 }, tickets: [] }; tagOrder.push(tag); }
+                        if (!tagDataMap[tag]) { 
+                            tagDataMap[tag] = { counts: { 'Highest': 0, 'High': 0, 'Medium': 0, 'Low': 0, 'Lowest': 0, 'Unassigned': 0 }, tickets: [] }; 
+                            tagOrder.push(tag); 
+                        }
                         tagDataMap[tag].counts[priority]++;
                         tagDataMap[tag].tickets.push({ ticketNumber: getTicketNumber(key), cleanSummary: cleanTicketSummary(summary) });
                     });
                 });
+
+                // ================= MỚI: LOGIC SẮP XẾP TAG ORDER =================
+                const predefinedOrder = [
+                    'logic', 'logic ui', 'ui', 'interruption', 'sound', 
+                    'promotion', 'compatibility', 'others', 'improvement', 'question'
+                ];
+
+                tagOrder.sort((a, b) => {
+                    const indexA = predefinedOrder.indexOf(a.toLowerCase());
+                    const indexB = predefinedOrder.indexOf(b.toLowerCase());
+
+                    if (indexA !== -1 && indexB !== -1) return indexA - indexB; // Cả hai đều có trong list chuẩn
+                    if (indexA !== -1) return -1; // Chỉ a có -> a xếp trước
+                    if (indexB !== -1) return 1;  // Chỉ b có -> b xếp trước
+                    return a.localeCompare(b);    // Nếu sinh ra tag lạ nào đó, xếp mặc định theo Alphabet ở dưới cùng
+                });
+                // =================================================================
 
                 if (tagOrder.length === 0 && !(progressReportObj && progressReportObj.text)) {
                     showCustomAlert('Cảnh báo', 'Không có dữ liệu ticket hoặc tiến độ nào thỏa mãn bộ lọc hiện tại!', true);
