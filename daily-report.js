@@ -5,7 +5,53 @@ const FIRESTORE_URL = `https://firestore.googleapis.com/v1/projects/${FIREBASE_P
 
 async function runDailyReport() {
     try {
-        console.log("Đang lấy dữ liệu từ Firebase...");
+        // =========================================================
+        // 1. KIỂM TRA NGÀY NGHỈ (CUỐI TUẦN & LỄ TẾT)
+        // =========================================================
+        // Lấy ngày hiện tại theo giờ VN (UTC+7)
+        const now = new Date();
+        const vnTime = new Date(now.getTime() + 7 * 60 * 60 * 1000);
+        
+        const dayOfWeek = vnTime.getUTCDay(); // 0: Chủ Nhật, 1: Thứ 2, ..., 6: Thứ 7
+        const pad = (n) => n.toString().padStart(2, '0');
+        const dayMonth = `${pad(vnTime.getUTCDate())}/${pad(vnTime.getUTCMonth() + 1)}`;
+        const fullDate = `${dayMonth}/${vnTime.getUTCFullYear()}`;
+
+        // Kiểm tra Thứ 7 (6) hoặc Chủ Nhật (0)
+        if (dayOfWeek === 0 || dayOfWeek === 6) {
+            console.log(`Hôm nay là Cuối tuần (${fullDate}), Bot nghỉ làm!`);
+            return; // Dừng toàn bộ hàm, không chạy đoạn lấy dữ liệu bên dưới nữa
+        }
+
+        // Danh sách các ngày Lễ Dương Lịch cố định hàng năm (DD/MM)
+        const fixedHolidays = [
+            "01/01", // Tết Dương Lịch
+            "30/04", // Giải phóng miền Nam
+            "01/05", // Quốc tế Lao động
+            "02/09"  // Quốc khánh
+        ];
+
+        // Danh sách các ngày Lễ Âm Lịch hoặc Nghỉ bù (Cập nhật tùy theo năm)
+        // Dưới đây là các ngày lễ dự kiến của năm 2026
+        const dynamicHolidays = [
+            // Nghỉ Tết Nguyên Đán 2026 (VD: Từ 28 tết đến mùng 5 tết)
+            "16/02/2026", "17/02/2026", "18/02/2026", "19/02/2026", "20/02/2026", "21/02/2026", "22/02/2026", 
+            // Giỗ tổ Hùng Vương 2026 (10/03 Âm lịch) + Nghỉ bù
+            "26/04/2026", "27/04/2026",
+            // Các ngày nghỉ bù Quốc khánh 2026 (nếu có)
+            "01/09/2026", "03/09/2026"
+        ];
+
+        // Kiểm tra nếu hôm nay nằm trong danh sách Lễ Tết
+        if (fixedHolidays.includes(dayMonth) || dynamicHolidays.includes(fullDate)) {
+            console.log(`Hôm nay (${fullDate}) là ngày Lễ/Tết, Bot nghỉ làm!`);
+            return; // Dừng toàn bộ hàm
+        }
+
+        // =========================================================
+        // 2. CHẠY BÁO CÁO NẾU LÀ NGÀY LÀM VIỆC BÌNH THƯỜNG
+        // =========================================================
+        console.log("Hôm nay là ngày làm việc bình thường. Đang lấy dữ liệu từ Firebase...");
         
         let allDocuments = [];
         let pageToken = "";
@@ -44,11 +90,7 @@ async function runDailyReport() {
             });
         }
 
-        // Xử lý ngày giờ hiển thị trên Title (Giờ VN = UTC+7)
-        const now = new Date();
-        const vnTime = new Date(now.getTime() + 7 * 60 * 60 * 1000);
-        const pad = (n) => n.toString().padStart(2, '0');
-        const dateString = `${pad(vnTime.getUTCDate())}/${pad(vnTime.getUTCMonth() + 1)}/${vnTime.getUTCFullYear()}`;
+        const dateString = fullDate; // Tái sử dụng chuỗi ngày tháng đã lấy ở trên
 
         let payload = {
             username: "Daily Device Reporter", // Tên Bot hiển thị
