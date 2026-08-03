@@ -1,22 +1,27 @@
-name: Báo Cáo Device 18h30
+name: Daily Device Report
 
 on:
   schedule:
-    # Cấu hình Cron: Chạy vào lúc 11:30 UTC mỗi ngày (Tương đương 18:30 Giờ Việt Nam UTC+7)
-    - cron: '30 11 * * *'
-  workflow_dispatch: # Cho phép bấm chạy bằng tay để test
+    # Chạy lúc 11:17 UTC (tương đương 18:17 giờ Việt Nam) mỗi ngày
+    # Việc dùng số lẻ "17" giúp né được hàng đợi tắc nghẽn ở phút thứ 00 và 30 của GitHub
+    - cron: '17 11 * * *'
+  
+  # Thêm dòng này để bạn có thể tự bấm nút "Run workflow" chạy bằng tay bất cứ lúc nào muốn test
+  workflow_dispatch: 
 
 jobs:
-  send-report:
+  run-report:
     runs-on: ubuntu-latest
+
     steps:
-      - name: Lấy source code
+      - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Cài đặt Node.js
+      - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '18'
+          node-version: '20'
 
-      - name: Chạy Script Gửi Báo Cáo
-        run: node daily-report.js
+      - name: Run Daily Report Script
+        # Sửa lại tên file 'runDailyReport.js' cho đúng với tên file script của bạn nếu cần
+        run: node runDailyReport.js
