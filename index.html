@@ -1302,7 +1302,7 @@
                 });
 
                 let statsString = statsArr.length > 0 ? ` (${statsArr.join(' - ')})` : '';
-                let buildStatusStr = `Build status: ${totalSelectedTickets} Tickets${statsString} /Total: ${totalFileTickets} Tickets`;
+                let buildStatusStr = `- Build status: ${totalSelectedTickets} Tickets${statsString} /Total: ${totalFileTickets} Tickets`;
 
                 let progressReportObj = null;
                 if (activeProgressTab === 'paste' && gsheetPaste) {
