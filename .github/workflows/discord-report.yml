@@ -24,4 +24,4 @@ jobs:
 
       - name: Run Daily Report Script
         # Sửa lại tên file 'runDailyReport.js' cho đúng với tên file script của bạn nếu cần
-        run: node runDailyReport.js
+        run: node daily-report.js
