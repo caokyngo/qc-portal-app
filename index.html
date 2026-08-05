@@ -1278,6 +1278,10 @@
 
                 let totalFileTickets = 0, totalSelectedTickets = 0;
                 let summaryCounts = { 'Highest': 0, 'High': 0, 'Medium': 0, 'Low': 0, 'Lowest': 0, 'Improvement': 0, 'Question': 0 };
+                
+                // MỚI: Biến đếm ticket cho status Deployed và In Testing
+                let countDeployed = 0;
+                let countInTesting = 0;
 
                 rawJiraData.forEach(row => {
                     const key = getColumnValue(row, ['Issue key', 'Issue Key', 'Key', 'Khóa sự cố']);
@@ -1288,6 +1292,12 @@
                     if (!selectedStatusSet.has(status)) return;
 
                     totalSelectedTickets++;
+                    
+                    // Logic đếm ticket Deployed & In Testing
+                    const sUpper = status.toUpperCase();
+                    if (sUpper.includes('DEPLOYED')) countDeployed++;
+                    else if (sUpper.includes('TESTING') || sUpper === 'IN TEST' || sUpper === 'IN-TEST') countInTesting++;
+
                     const priority = normalizePriority(getColumnValue(row, ['Priority', 'Độ ưu tiên']));
                     const tags = parseTagsFromSummary(getColumnValue(row, ['Summary', 'Tóm tắt', 'Title'])).map(t => t.toLowerCase());
 
@@ -1364,7 +1374,6 @@
                     });
                 });
 
-                // ================= MỚI: LOGIC SẮP XẾP TAG ORDER =================
                 const predefinedOrder = [
                     'logic', 'logic ui', 'ui', 'interruption', 'sound', 
                     'promotion', 'compatibility', 'others', 'improvement', 'question'
@@ -1374,12 +1383,11 @@
                     const indexA = predefinedOrder.indexOf(a.toLowerCase());
                     const indexB = predefinedOrder.indexOf(b.toLowerCase());
 
-                    if (indexA !== -1 && indexB !== -1) return indexA - indexB; // Cả hai đều có trong list chuẩn
-                    if (indexA !== -1) return -1; // Chỉ a có -> a xếp trước
-                    if (indexB !== -1) return 1;  // Chỉ b có -> b xếp trước
-                    return a.localeCompare(b);    // Nếu sinh ra tag lạ nào đó, xếp mặc định theo Alphabet ở dưới cùng
+                    if (indexA !== -1 && indexB !== -1) return indexA - indexB; 
+                    if (indexA !== -1) return -1; 
+                    if (indexB !== -1) return 1;  
+                    return a.localeCompare(b);    
                 });
-                // =================================================================
 
                 if (tagOrder.length === 0 && !(progressReportObj && progressReportObj.text)) {
                     showCustomAlert('Cảnh báo', 'Không có dữ liệu ticket hoặc tiến độ nào thỏa mãn bộ lọc hiện tại!', true);
@@ -1405,6 +1413,23 @@
 
                 reportLines.push(`----------------------------------`);
                 reportLines.push(`C. [NOTES]`);
+                
+                // ================= MỚI: Thêm thống kê Unverified Tickets =================
+                const totalUnverified = countDeployed + countInTesting;
+                if (totalUnverified > 0) {
+                    let cols = [];
+                    if (countDeployed > 0) cols.push("DEPLOYED");
+                    if (countInTesting > 0) cols.push("IN TESTING");
+                    
+                    const verb = totalUnverified > 1 ? "are" : "is";
+                    const ticketWord = totalUnverified > 1 ? "Tickets" : "Ticket";
+                    const colString = cols.join(" and ");
+                    const colWord = cols.length > 1 ? "columns" : "column";
+                    
+                    reportLines.push(`- There ${verb} ${totalUnverified} unverified ${ticketWord} in the ${colString} ${colWord}`);
+                }
+                // =========================================================================
+
                 reportLines.push(`- QC: ${qcMembers}`);
 
                 await navigator.clipboard.writeText(reportLines.join('\n'));
