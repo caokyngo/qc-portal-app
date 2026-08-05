@@ -1289,14 +1289,18 @@
                     totalFileTickets++;
 
                     const status = (getColumnValue(row, ['Status', 'Trạng thái']) || 'N/A').toString().trim();
+                    const sUpper = status.toUpperCase();
+                    
+                    // ================= MỚI SỬA Ở ĐÂY =================
+                    // Chuyển phần đếm này lên TRƯỚC bộ lọc để luôn quét toàn bộ file Excel
+                    if (sUpper.includes('DEPLOYED')) countDeployed++;
+                    else if (sUpper.includes('TESTING') || sUpper === 'IN TEST' || sUpper === 'IN-TEST') countInTesting++;
+                    // =================================================
+
+                    // Nếu status không được tick chọn trên UI -> Bỏ qua không đưa vào phần B (Tickets)
                     if (!selectedStatusSet.has(status)) return;
 
                     totalSelectedTickets++;
-                    
-                    // Logic đếm ticket Deployed & In Testing
-                    const sUpper = status.toUpperCase();
-                    if (sUpper.includes('DEPLOYED')) countDeployed++;
-                    else if (sUpper.includes('TESTING') || sUpper === 'IN TEST' || sUpper === 'IN-TEST') countInTesting++;
 
                     const priority = normalizePriority(getColumnValue(row, ['Priority', 'Độ ưu tiên']));
                     const tags = parseTagsFromSummary(getColumnValue(row, ['Summary', 'Tóm tắt', 'Title'])).map(t => t.toLowerCase());
