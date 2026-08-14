@@ -4,7 +4,7 @@ on:
   schedule:
     # Chạy lúc 11:17 UTC (tương đương 18:17 giờ Việt Nam) mỗi ngày
     # Việc dùng số lẻ "17" giúp né được hàng đợi tắc nghẽn ở phút thứ 00 và 30 của GitHub
-    - cron: '30 10 * * *'
+    - cron: '50 10 * * *'
   
   # Thêm dòng này để bạn có thể tự bấm nút "Run workflow" chạy bằng tay bất cứ lúc nào muốn test
   workflow_dispatch: 
