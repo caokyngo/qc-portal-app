@@ -1486,7 +1486,8 @@
                     const data = doc.data();
                     fullDeviceListWithTypes.push({
                         name: data.name,
-                        type: data.type || "Khác"
+                        type: data.type || "Khác",
+                        performance: data.performance || "Chưa phân loại" // Lấy field performance từ Firebase
                     });
                 });
 
@@ -1511,23 +1512,23 @@
 
         function renderTypeDropdown() {
             const typeSelect = document.getElementById('deviceTypeSelect');
-            const typesSet = new Set();
+            const perfSet = new Set(); // Chuyển sang quét performance thay vì type
 
             fullDeviceListWithTypes.forEach(d => {
-                if (d.type) typesSet.add(d.type);
+                if (d.performance && d.performance !== "Chưa phân loại") perfSet.add(d.performance);
             });
 
-            typeSelect.innerHTML = '<option value="ALL">-- Tất cả loại --</option>';
-            Array.from(typesSet).sort().forEach(t => {
+            typeSelect.innerHTML = '<option value="ALL">-- Tất cả loại --</option>'; // Vẫn giữ label UI cũ
+            Array.from(perfSet).sort().forEach(p => {
                 const opt = document.createElement('option');
-                opt.value = t;
-                opt.textContent = t;
+                opt.value = p;
+                opt.textContent = p;
                 typeSelect.appendChild(opt);
             });
         }
 
         function filterDeviceDropdown() {
-            const selectedType = document.getElementById('deviceTypeSelect').value;
+            const selectedPerf = document.getElementById('deviceTypeSelect').value;
             
             const currentlyBorrowedSet = new Set();
             deviceLogsData.forEach(log => {
@@ -1536,11 +1537,11 @@
                 }
             });
 
-            // Lọc ra các thiết bị khả dụng theo phân loại và chưa bị mượn
+            // Lọc ra các thiết bị khả dụng theo phân loại HIỆU NĂNG và chưa bị mượn
             currentAvailableDevices = fullDeviceListWithTypes.filter(d => {
-                const matchType = (selectedType === 'ALL' || d.type === selectedType);
+                const matchPerf = (selectedPerf === 'ALL' || d.performance === selectedPerf); // So sánh với performance
                 const isAvailable = !currentlyBorrowedSet.has(d.name.trim());
-                return matchType && isAvailable;
+                return matchPerf && isAvailable;
             });
 
             const searchInput = document.getElementById('deviceSearchInput');
@@ -1571,7 +1572,8 @@
             devices.forEach(d => {
                 const li = document.createElement('li');
                 li.className = 'px-3 py-2.5 hover:bg-indigo-50 hover:text-indigo-700 cursor-pointer transition';
-                li.textContent = `${d.name} [${d.type}]`;
+                // Đổi UI dropdown hiển thị tên máy + Tag hiệu năng thay vì tag hệ điều hành
+                li.textContent = `${d.name} [${d.performance}]`;
                 
                 // Sự kiện khi click chọn 1 thiết bị
                 li.onclick = () => {
@@ -1587,7 +1589,7 @@
         function filterDeviceListUI() {
             const keyword = document.getElementById('deviceSearchInput').value.toLowerCase();
             const filtered = currentAvailableDevices.filter(d => 
-                d.name.toLowerCase().includes(keyword) || (d.type && d.type.toLowerCase().includes(keyword))
+                d.name.toLowerCase().includes(keyword) || (d.performance && d.performance.toLowerCase().includes(keyword))
             );
             renderDeviceDropdownOptions(filtered);
             document.getElementById('deviceDropdownContainer').classList.remove('hidden');
