@@ -369,7 +369,7 @@
                             </div>
                         </div>
 
-                        <div class="grid grid-cols-1 md:grid-cols-4 gap-5">
+                        <div class="grid grid-cols-1 md:grid-cols-5 gap-4">
                             <!-- Ô Nhập Tên Người Mượn -->
                             <div>
                                 <label class="block text-xs font-bold text-slate-700 mb-1.5">Tên Người Mượn <span class="text-red-500">*</span></label>
@@ -382,6 +382,17 @@
                                 <label class="block text-xs font-bold text-slate-700 mb-1.5">Phân Loại Device</label>
                                 <select id="deviceTypeSelect" onchange="filterDeviceDropdown()" class="w-full bg-white border border-slate-300 text-slate-800 font-medium text-xs rounded-lg p-2.5 focus:ring-2 focus:ring-indigo-500 outline-none cursor-pointer">
                                     <option value="ALL">-- Tất cả loại --</option>
+                                </select>
+                            </div>
+
+                            <!-- Ô Chọn Hiệu Năng -->
+                            <div>
+                                <label class="block text-xs font-bold text-slate-700 mb-1.5">Hiệu Năng</label>
+                                <select id="devicePerformanceSelect" onchange="filterDeviceDropdown()" class="w-full bg-white border border-slate-300 text-slate-800 font-medium text-xs rounded-lg p-2.5 focus:ring-2 focus:ring-indigo-500 outline-none cursor-pointer">
+                                    <option value="ALL">-- Tất cả hiệu năng --</option>
+                                    <option value="Mạnh">Mạnh</option>
+                                    <option value="Trung">Trung bình</option>
+                                    <option value="Yếu">Yếu</option>
                                 </select>
                             </div>
 
@@ -572,6 +583,10 @@
         let isOnlyUnreturned = false;
         let currentDevicePage = 1;
         const ITEMS_PER_PAGE = 10;
+        
+        // Biến phục vụ Real-time
+        let isListenersInitialized = false;
+        let initialLoadCounter = 0;
 
         const priorityColors = {
             'Highest': '#DC2626', 'High': '#F97316', 'Medium': '#F59E0B',
@@ -731,7 +746,7 @@
                 }
             });
 
-            // Tải dữ liệu thiết bị từ Firebase Firestore khi trang vừa mở
+            // Khởi chạy listener lấy data thiết bị (Real-time)
             loadDeviceData(false);
         });
 
@@ -1279,7 +1294,6 @@
                 let totalFileTickets = 0, totalSelectedTickets = 0;
                 let summaryCounts = { 'Highest': 0, 'High': 0, 'Medium': 0, 'Low': 0, 'Lowest': 0, 'Improvement': 0, 'Question': 0 };
                 
-                // MỚI: Biến đếm ticket cho status Deployed và In Testing
                 let countDeployed = 0;
                 let countInTesting = 0;
 
@@ -1291,13 +1305,9 @@
                     const status = (getColumnValue(row, ['Status', 'Trạng thái']) || 'N/A').toString().trim();
                     const sUpper = status.toUpperCase();
                     
-                    // ================= MỚI SỬA Ở ĐÂY =================
-                    // Chuyển phần đếm này lên TRƯỚC bộ lọc để luôn quét toàn bộ file Excel
                     if (sUpper.includes('DEPLOYED')) countDeployed++;
                     else if (sUpper.includes('TESTING') || sUpper === 'IN TEST' || sUpper === 'IN-TEST') countInTesting++;
-                    // =================================================
 
-                    // Nếu status không được tick chọn trên UI -> Bỏ qua không đưa vào phần B (Tickets)
                     if (!selectedStatusSet.has(status)) return;
 
                     totalSelectedTickets++;
@@ -1418,7 +1428,6 @@
                 reportLines.push(`----------------------------------`);
                 reportLines.push(`C. [NOTES]`);
                 
-                // ================= MỚI: Thêm thống kê Unverified Tickets =================
                 const totalUnverified = countDeployed + countInTesting;
                 if (totalUnverified > 0) {
                     let cols = [];
@@ -1432,7 +1441,6 @@
                     
                     reportLines.push(`- There ${verb} ${totalUnverified} unverified ${ticketWord} in the ${colString} ${colWord}`);
                 }
-                // =========================================================================
 
                 reportLines.push(`- QC: ${qcMembers}`);
 
@@ -1448,77 +1456,74 @@
             }
         }
 
-        // ================= MƯỢN & TRẢ DEVICE TỪ FIREBASE =================
+        // ================= MƯỢN & TRẢ DEVICE TỪ FIREBASE (REAL-TIME) =================
         function loadDeviceData(isManualRefresh = false) {
-            if (isManualRefresh) {
-                document.getElementById('loadingModal').classList.remove('hidden');
-            }
-
             if (!db) {
                 console.error("Firestore chưa khởi tạo!");
                 document.getElementById('loadingModal').classList.add('hidden');
                 return;
             }
 
-            // 1. Tải Nhật Ký Mượn Trả từ collection 'device_logs'
-            db.collection("device_logs").orderBy("createdAt", "desc").get()
-            .then((querySnapshot) => {
-                deviceLogsData = [];
-                querySnapshot.forEach((doc) => {
-                    deviceLogsData.push({ id: doc.id, ...doc.data() });
-                });
-                
-                // 2. Tải Danh Sách Thiết Bị từ collection 'devices'
-                fetchDevicesFromFirestore(isManualRefresh);
-            })
-            .catch((err) => {
-                console.error("Lỗi Firestore:", err);
-                fetchDevicesFromFirestore(isManualRefresh);
-            });
-        }
+            if (isManualRefresh) {
+                // Hủy lấy data thủ công, vì đã có listener ngầm lo
+                showCustomAlert('Real-time Sync ⚡', 'Hệ thống đang tự động đồng bộ dữ liệu theo thời gian thực! Bạn không cần bấm làm mới thủ công nữa.');
+                return;
+            }
 
-        function fetchDevicesFromFirestore(isManualRefresh) {
-            if (!db) return;
+            // Đảm bảo chỉ khởi tạo Listener (cắm ống hút) ĐÚNG 1 LẦN duy nhất
+            if (isListenersInitialized) return;
 
-            db.collection("devices").get().then((querySnapshot) => {
+            document.getElementById('loadingModal').classList.remove('hidden');
+
+            // 1. Lắng nghe Devices (Cập nhật danh sách máy Real-time)
+            db.collection("devices").onSnapshot((querySnapshot) => {
                 fullDeviceListWithTypes = [];
                 querySnapshot.forEach((doc) => {
                     const data = doc.data();
                     fullDeviceListWithTypes.push({
                         name: data.name,
                         type: data.type || "Khác",
-                        performance: data.performance || "Chưa phân loại" // Lấy field performance từ Firebase
+                        performance: data.performance || "Chưa phân loại"
                     });
                 });
 
                 renderTypeDropdown();
                 filterDeviceDropdown();
                 
-                currentDevicePage = 1;
+                initialLoadCounter++;
+                if(initialLoadCounter >= 2) document.getElementById('loadingModal').classList.add('hidden');
+            }, (error) => {
+                console.error("Lỗi lắng nghe devices:", error);
+            });
+
+            // 2. Lắng nghe Logs (Cập nhật trạng thái mượn trả Real-time)
+            db.collection("device_logs").orderBy("createdAt", "desc").onSnapshot((querySnapshot) => {
+                deviceLogsData = [];
+                querySnapshot.forEach((doc) => {
+                    deviceLogsData.push({ id: doc.id, ...doc.data() });
+                });
+                
+                filterDeviceDropdown();
                 renderPaginatedDeviceLogs();
 
-                const modal = document.getElementById('loadingModal');
-                if (modal) modal.classList.add('hidden');
-
-                if (isManualRefresh) {
-                    showCustomAlert('Thành công', 'Đã cập nhật dữ liệu mới nhất từ Firebase!');
-                }
-            }).catch(err => {
-                console.error("Lỗi lấy danh sách thiết bị từ Firestore:", err);
-                const modal = document.getElementById('loadingModal');
-                if (modal) modal.classList.add('hidden');
+                initialLoadCounter++;
+                if(initialLoadCounter >= 2) document.getElementById('loadingModal').classList.add('hidden');
+            }, (error) => {
+                console.error("Lỗi lắng nghe logs:", error);
             });
+
+            isListenersInitialized = true;
         }
 
         function renderTypeDropdown() {
             const typeSelect = document.getElementById('deviceTypeSelect');
-            const perfSet = new Set(); // Chuyển sang quét performance thay vì type
+            const perfSet = new Set(); 
 
             fullDeviceListWithTypes.forEach(d => {
                 if (d.performance && d.performance !== "Chưa phân loại") perfSet.add(d.performance);
             });
 
-            typeSelect.innerHTML = '<option value="ALL">-- Tất cả loại --</option>'; // Vẫn giữ label UI cũ
+            typeSelect.innerHTML = '<option value="ALL">-- Tất cả loại --</option>'; 
             Array.from(perfSet).sort().forEach(p => {
                 const opt = document.createElement('option');
                 opt.value = p;
@@ -1537,9 +1542,8 @@
                 }
             });
 
-            // Lọc ra các thiết bị khả dụng theo phân loại HIỆU NĂNG và chưa bị mượn
             currentAvailableDevices = fullDeviceListWithTypes.filter(d => {
-                const matchPerf = (selectedPerf === 'ALL' || d.performance === selectedPerf); // So sánh với performance
+                const matchPerf = (selectedPerf === 'ALL' || d.performance === selectedPerf); 
                 const isAvailable = !currentlyBorrowedSet.has(d.name.trim());
                 return matchPerf && isAvailable;
             });
@@ -1553,7 +1557,6 @@
                 searchInput.disabled = true;
             }
             
-            // Reset lại ô input khi đổi phân loại Type
             searchInput.value = '';
             searchInput.dataset.value = '';
             
@@ -1572,14 +1575,12 @@
             devices.forEach(d => {
                 const li = document.createElement('li');
                 li.className = 'px-3 py-2.5 hover:bg-indigo-50 hover:text-indigo-700 cursor-pointer transition';
-                // Đổi UI dropdown hiển thị tên máy + Tag hiệu năng thay vì tag hệ điều hành
                 li.textContent = `${d.name} [${d.performance}]`;
                 
-                // Sự kiện khi click chọn 1 thiết bị
                 li.onclick = () => {
                     const input = document.getElementById('deviceSearchInput');
-                    input.value = d.name;            // Hiển thị tên
-                    input.dataset.value = d.name;    // Lưu giá trị thực vào dataset
+                    input.value = d.name;            
+                    input.dataset.value = d.name;    
                     closeDeviceDropdown();
                 };
                 ul.appendChild(li);
@@ -1598,7 +1599,7 @@
         function openDeviceDropdown() {
             if (document.getElementById('deviceSearchInput').disabled) return;
             document.getElementById('deviceDropdownContainer').classList.remove('hidden');
-            filterDeviceListUI(); // Hiển thị lại toàn bộ list nếu chưa gõ gì
+            filterDeviceListUI(); 
         }
 
         function closeDeviceDropdown() {
@@ -1660,7 +1661,6 @@
                 const isReturned = String(r.trangThai || '').toLowerCase().includes('đã trả');
                 const currentUserName = loggedInUser ? loggedInUser.name : '';
                 
-                // MỚI: Cho phép trả nếu là người mượn, HOẶC là người đã bấm mượn hộ
                 const isOwner = (currentUserName === r.nguoiMuon) || (currentUserName === r.nguoiThaoTac);
                 
                 let statusBadge = `<span class="bg-amber-100 text-amber-800 px-2.5 py-1 rounded-md text-[11px] font-bold shadow-sm">Đang Mượn</span>`;
@@ -1708,9 +1708,9 @@
                 return;
             }
 
-            const operatorName = loggedInUser.name; // Tên thật (Google)
-            let borrowerName = document.getElementById('borrowerNameInput').value.trim(); // Tên trên ô input
-            if (!borrowerName) borrowerName = operatorName; // Nếu để trống thì tự lấy tên thật
+            const operatorName = loggedInUser.name; 
+            let borrowerName = document.getElementById('borrowerNameInput').value.trim(); 
+            if (!borrowerName) borrowerName = operatorName; 
 
             const device = document.getElementById('deviceSearchInput').dataset.value || "";
 
@@ -1722,17 +1722,16 @@
             const btn = document.getElementById('btnSubmitBorrow');
             const origHtml = btn.innerHTML;
             btn.disabled = true;
-            btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin text-sm"></i> Đang ghi dữ liệu...`;
+            btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin text-sm"></i> Đang ghi...`;
 
-            // Lấy thời gian chuẩn
             const now = new Date();
             const pad = (n) => n.toString().padStart(2, '0');
             const exactTimeStr = `${pad(now.getDate())}/${pad(now.getMonth()+1)}/${now.getFullYear()} ${pad(now.getHours())}:${pad(now.getMinutes())}:${pad(now.getSeconds())}`;
             const timeStr = `${pad(now.getHours())}:${pad(now.getMinutes())} ${pad(now.getDate())}/${pad(now.getMonth()+1)}/${now.getFullYear()}`;
 
             const newRecord = {
-                nguoiMuon: borrowerName,     // Hiển thị ở cột người mượn
-                nguoiThaoTac: operatorName,  // Lưu ngầm để audit và cho phép trả máy
+                nguoiMuon: borrowerName,     
+                nguoiThaoTac: operatorName,  
                 thietBi: device,
                 thoiGian: timeStr,
                 trangThai: "Đang Mượn",
@@ -1747,7 +1746,6 @@
                     btn.innerHTML = origHtml;
                     showCustomAlert('Thành Công!', `Đã ghi nhận mượn [${device}] cho ${borrowerName}.`);
                     
-                    // Logic hiển thị Discord nếu mượn hộ
                     let displayBorrower = `**${borrowerName}**`;
                     if (borrowerName !== operatorName) {
                         displayBorrower += `\n*(Log hộ bởi: ${operatorName})*`;
@@ -1783,7 +1781,7 @@
                     };
                     sendDiscordNotification(embedBorrow);
 
-                    loadDeviceData(false);
+                    // ĐÃ XÓA loadDeviceData(false) Ở ĐÂY VÌ ON-SNAPSHOT TỰ LÀM VIỆC NÀY
                 })
                 .catch((err) => {
                     console.error("Lỗi Firestore:", err);
@@ -1798,11 +1796,10 @@
         function submitReturnDevice(docId, deviceName, borrowerName) {
             if (!confirm(`Xác nhận trả thiết bị: [${deviceName}]?`)) return;
 
-            // Lấy thời gian chuẩn
             const now = new Date();
             const pad = (n) => n.toString().padStart(2, '0');
             const exactTimeStr = `${pad(now.getDate())}/${pad(now.getMonth()+1)}/${now.getFullYear()} ${pad(now.getHours())}:${pad(now.getMinutes())}:${pad(now.getSeconds())}`;
-            const nowStr = `${pad(now.getHours())}:${pad(now.getMinutes())} ${pad(now.getDate())}/${pad(now.getMonth()+1)}/${now.getFullYear()}`; // Lưu Firebase
+            const nowStr = `${pad(now.getHours())}:${pad(now.getMinutes())} ${pad(now.getDate())}/${pad(now.getMonth()+1)}/${now.getFullYear()}`; 
 
             if (db) {
                 db.collection("device_logs").doc(docId).update({
@@ -1812,7 +1809,6 @@
                 .then(() => {
                     showCustomAlert('Thành Công!', `Đã xác nhận trả thiết bị [${deviceName}].`);
                     
-                    // SỬ DỤNG FIELDS ĐỂ CĂN CỘT THẲNG TẮP
                     const embedReturn = {
                         title: "✅ THÔNG BÁO TRẢ THIẾT BỊ",
                         color: 3066993, 
@@ -1843,7 +1839,7 @@
                     };
                     sendDiscordNotification(embedReturn);
 
-                    loadDeviceData(false);
+                    // ĐÃ XÓA loadDeviceData(false) Ở ĐÂY VÌ ON-SNAPSHOT TỰ LÀM VIỆC NÀY
                 })
                 .catch((err) => {
                     console.error("Lỗi cập nhật trả:", err);
@@ -1854,36 +1850,31 @@
 
         // ================= XUẤT FILE EXCEL NHẬT KÝ =================
         function exportDeviceLogsToExcel() {
-            // 1. Kiểm tra xem có dữ liệu không
             if (!deviceLogsData || deviceLogsData.length === 0) {
                 showCustomAlert("Cảnh báo", "Hiện chưa có dữ liệu nhật ký mượn trả để xuất file Excel!", true);
                 return;
             }
 
-            // 2. Chuyển đổi dữ liệu gốc sang định dạng hiển thị đẹp cho Excel
             let dataToExport = deviceLogsData;
             
-            // Nếu đang bật chế độ "Chỉ xem chưa trả", chỉ xuất những dòng chưa trả
             if (isOnlyUnreturned) {
                 dataToExport = deviceLogsData.filter(r => !String(r.trangThai || '').toLowerCase().includes('đã trả'));
             }
 
             const exportData = dataToExport.map((log, index) => {
-                // Nếu không có trường nguoiThaoTac (các record cũ), thì mặc định là nguoiMuon
                 const nguoiGhiNhan = log.nguoiThaoTac ? log.nguoiThaoTac : (log.nguoiMuon || '');
                 
                 return {
                     "STT": index + 1,
                     "Thời Gian Mượn": log.thoiGian || '',
                     "Người Mượn (Hiển thị)": log.nguoiMuon || '',
-                    "Tài Khoản Ghi Nhận (System Audit)": nguoiGhiNhan, // Cột ẩn trên UI, hiện trên Excel
+                    "Tài Khoản Ghi Nhận (System Audit)": nguoiGhiNhan, 
                     "Thiết Bị": log.thietBi || '',
                     "Trạng Thái": log.trangThai || '',
                     "Giờ Trả": log.gioTra || ''
                 };
             });
 
-            // 3. Sử dụng SheetJS để tạo file và tải về
             const ws = XLSX.utils.json_to_sheet(exportData);
             const wb = XLSX.utils.book_new();
             XLSX.utils.book_append_sheet(wb, ws, "NhatKyMuonTra");
