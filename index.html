@@ -369,7 +369,8 @@
                             </div>
                         </div>
 
-                        <div class="grid grid-cols-1 md:grid-cols-5 gap-4">
+                        <!-- Giao diện 4 CỘT GỐC (Bỏ cột Hiệu năng riêng) -->
+                        <div class="grid grid-cols-1 md:grid-cols-4 gap-5">
                             <!-- Ô Nhập Tên Người Mượn -->
                             <div>
                                 <label class="block text-xs font-bold text-slate-700 mb-1.5">Tên Người Mượn <span class="text-red-500">*</span></label>
@@ -377,22 +378,11 @@
                                 <p class="text-[10px] text-slate-500 mt-1 italic"><i class="fa-solid fa-pen mr-1"></i>Sửa thành tên của Dev nếu log hộ</p>
                             </div>
 
-                            <!-- Ô Chọn Phân Loại Device -->
+                            <!-- Ô Chọn Phân Loại Device (Logic mới: Load trường Performance) -->
                             <div>
                                 <label class="block text-xs font-bold text-slate-700 mb-1.5">Phân Loại Device</label>
                                 <select id="deviceTypeSelect" onchange="filterDeviceDropdown()" class="w-full bg-white border border-slate-300 text-slate-800 font-medium text-xs rounded-lg p-2.5 focus:ring-2 focus:ring-indigo-500 outline-none cursor-pointer">
                                     <option value="ALL">-- Tất cả loại --</option>
-                                </select>
-                            </div>
-
-                            <!-- Ô Chọn Hiệu Năng -->
-                            <div>
-                                <label class="block text-xs font-bold text-slate-700 mb-1.5">Hiệu Năng</label>
-                                <select id="devicePerformanceSelect" onchange="filterDeviceDropdown()" class="w-full bg-white border border-slate-300 text-slate-800 font-medium text-xs rounded-lg p-2.5 focus:ring-2 focus:ring-indigo-500 outline-none cursor-pointer">
-                                    <option value="ALL">-- Tất cả hiệu năng --</option>
-                                    <option value="Mạnh">Mạnh</option>
-                                    <option value="Trung">Trung bình</option>
-                                    <option value="Yếu">Yếu</option>
                                 </select>
                             </div>
 
@@ -424,8 +414,7 @@
                             </div>
 
                             <!-- Nút Bấm Mượn -->
-                            <div class="flex flex-col justify-start">
-                                <label class="block text-xs font-bold text-transparent mb-1.5 select-none pointer-events-none">Spacer</label>
+                            <div class="flex items-end">
                                 <button id="btnSubmitBorrow" disabled onclick="submitBorrowDevice()" class="w-full inline-flex items-center justify-center gap-2 px-5 py-2.5 bg-indigo-600 hover:bg-indigo-700 disabled:bg-indigo-400 text-white text-sm font-bold rounded-lg shadow-sm transition disabled:opacity-70 disabled:cursor-not-allowed">
                                     <i class="fa-solid fa-plus"></i> Xác Nhận Mượn
                                 </button>
@@ -1305,9 +1294,11 @@
                     const status = (getColumnValue(row, ['Status', 'Trạng thái']) || 'N/A').toString().trim();
                     const sUpper = status.toUpperCase();
                     
+                    // Quét toàn bộ file để đếm Deployed và In Testing (bất chấp bộ lọc trên UI)
                     if (sUpper.includes('DEPLOYED')) countDeployed++;
                     else if (sUpper.includes('TESTING') || sUpper === 'IN TEST' || sUpper === 'IN-TEST') countInTesting++;
 
+                    // Nếu status không được tick chọn trên UI -> Bỏ qua không đưa vào phần B (Tickets)
                     if (!selectedStatusSet.has(status)) return;
 
                     totalSelectedTickets++;
