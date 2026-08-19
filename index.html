@@ -369,28 +369,32 @@
                             </div>
                         </div>
 
-                        <!-- Giao diện 4 CỘT GỐC (Bỏ cột Hiệu năng riêng) -->
-                        <div class="grid grid-cols-1 md:grid-cols-4 gap-5">
+                        <!-- Giao diện 4 CỘT CĂN CHỈNH HOÀN HẢO -->
+                        <div class="grid grid-cols-1 md:grid-cols-4 gap-5 items-start">
                             <!-- Ô Nhập Tên Người Mượn -->
                             <div>
-                                <label class="block text-xs font-bold text-slate-700 mb-1.5">Tên Người Mượn <span class="text-red-500">*</span></label>
-                                <input type="text" id="borrowerNameInput" placeholder="VD: Tuan - Dev..." class="w-full bg-white border border-slate-300 text-slate-800 font-bold text-xs rounded-lg p-2.5 focus:ring-2 focus:ring-indigo-500 outline-none transition shadow-sm">
-                                <p class="text-[10px] text-slate-500 mt-1 italic"><i class="fa-solid fa-pen mr-1"></i>Sửa thành tên của Dev nếu log hộ</p>
+                                <div class="h-5 mb-1.5 flex items-center">
+                                    <label class="text-xs font-bold text-slate-700">Tên Người Mượn <span class="text-red-500">*</span></label>
+                                </div>
+                                <input type="text" id="borrowerNameInput" placeholder="VD: Tuan - Dev..." class="w-full h-[42px] bg-white border border-slate-300 text-slate-800 font-bold text-xs rounded-lg px-3 focus:ring-2 focus:ring-indigo-500 outline-none transition shadow-sm">
+                                <p class="text-[10px] text-slate-500 mt-1.5 italic"><i class="fa-solid fa-pen mr-1"></i>Sửa thành tên của Dev nếu log hộ</p>
                             </div>
 
-                            <!-- Ô Chọn Phân Loại Device (Logic mới: Load trường Performance) -->
+                            <!-- Ô Chọn Phân Loại Device -->
                             <div>
-                                <label class="block text-xs font-bold text-slate-700 mb-1.5">Phân Loại Device</label>
-                                <select id="deviceTypeSelect" onchange="filterDeviceDropdown()" class="w-full bg-white border border-slate-300 text-slate-800 font-medium text-xs rounded-lg p-2.5 focus:ring-2 focus:ring-indigo-500 outline-none cursor-pointer">
+                                <div class="h-5 mb-1.5 flex items-center">
+                                    <label class="text-xs font-bold text-slate-700">Phân Loại Device</label>
+                                </div>
+                                <select id="deviceTypeSelect" onchange="filterDeviceDropdown()" class="w-full h-[42px] bg-white border border-slate-300 text-slate-800 font-medium text-xs rounded-lg px-3 focus:ring-2 focus:ring-indigo-500 outline-none cursor-pointer">
                                     <option value="ALL">-- Tất cả loại --</option>
                                 </select>
                             </div>
 
                             <!-- Dropdown Danh Sách Device Mượn (Searchable) -->
                             <div class="relative w-full">
-                                <div class="flex justify-between items-center mb-1.5">
-                                    <label class="block text-xs font-bold text-slate-700">Thiết Bị Mượn <span class="text-red-500">*</span></label>
-                                    <button onclick="loadDeviceData(true)" class="text-[11px] font-bold text-indigo-600 hover:underline">
+                                <div class="h-5 mb-1.5 flex justify-between items-center">
+                                    <label class="text-xs font-bold text-slate-700">Thiết Bị Mượn <span class="text-red-500">*</span></label>
+                                    <button onclick="loadDeviceData(true)" class="text-[11px] font-bold text-indigo-600 hover:underline flex items-center">
                                         <i class="fa-solid fa-rotate mr-1"></i>Làm mới
                                     </button>
                                 </div>
@@ -401,8 +405,8 @@
                                            oninput="filterDeviceListUI()" 
                                            autocomplete="off"
                                            placeholder="-- Đang tải danh sách... --" 
-                                           class="w-full bg-white border border-slate-300 text-slate-800 font-medium text-xs rounded-lg p-2.5 pr-8 focus:ring-2 focus:ring-indigo-500 outline-none transition cursor-text shadow-sm">
-                                    <i class="fa-solid fa-chevron-down absolute right-3 top-3 text-slate-400 text-xs pointer-events-none"></i>
+                                           class="w-full h-[42px] bg-white border border-slate-300 text-slate-800 font-medium text-xs rounded-lg px-3 pr-8 focus:ring-2 focus:ring-indigo-500 outline-none transition cursor-text shadow-sm">
+                                    <i class="fa-solid fa-chevron-down absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 text-xs pointer-events-none"></i>
                                 </div>
 
                                 <!-- Vùng chứa danh sách thả xuống -->
@@ -414,8 +418,11 @@
                             </div>
 
                             <!-- Nút Bấm Mượn -->
-                            <div class="flex items-end">
-                                <button id="btnSubmitBorrow" disabled onclick="submitBorrowDevice()" class="w-full inline-flex items-center justify-center gap-2 px-5 py-2.5 bg-indigo-600 hover:bg-indigo-700 disabled:bg-indigo-400 text-white text-sm font-bold rounded-lg shadow-sm transition disabled:opacity-70 disabled:cursor-not-allowed">
+                            <div>
+                                <div class="h-5 mb-1.5 flex items-center">
+                                    <label class="text-xs font-bold text-transparent select-none pointer-events-none">Spacer</label>
+                                </div>
+                                <button id="btnSubmitBorrow" disabled onclick="submitBorrowDevice()" class="w-full h-[42px] inline-flex items-center justify-center gap-2 px-5 bg-indigo-600 hover:bg-indigo-700 disabled:bg-indigo-400 text-white text-xs font-bold rounded-lg shadow-sm transition disabled:opacity-70 disabled:cursor-not-allowed">
                                     <i class="fa-solid fa-plus"></i> Xác Nhận Mượn
                                 </button>
                             </div>
@@ -1294,11 +1301,9 @@
                     const status = (getColumnValue(row, ['Status', 'Trạng thái']) || 'N/A').toString().trim();
                     const sUpper = status.toUpperCase();
                     
-                    // Quét toàn bộ file để đếm Deployed và In Testing (bất chấp bộ lọc trên UI)
                     if (sUpper.includes('DEPLOYED')) countDeployed++;
                     else if (sUpper.includes('TESTING') || sUpper === 'IN TEST' || sUpper === 'IN-TEST') countInTesting++;
 
-                    // Nếu status không được tick chọn trên UI -> Bỏ qua không đưa vào phần B (Tickets)
                     if (!selectedStatusSet.has(status)) return;
 
                     totalSelectedTickets++;
@@ -1456,17 +1461,14 @@
             }
 
             if (isManualRefresh) {
-                // Hủy lấy data thủ công, vì đã có listener ngầm lo
                 showCustomAlert('Real-time Sync ⚡', 'Hệ thống đang tự động đồng bộ dữ liệu theo thời gian thực! Bạn không cần bấm làm mới thủ công nữa.');
                 return;
             }
 
-            // Đảm bảo chỉ khởi tạo Listener (cắm ống hút) ĐÚNG 1 LẦN duy nhất
             if (isListenersInitialized) return;
 
             document.getElementById('loadingModal').classList.remove('hidden');
 
-            // 1. Lắng nghe Devices (Cập nhật danh sách máy Real-time)
             db.collection("devices").onSnapshot((querySnapshot) => {
                 fullDeviceListWithTypes = [];
                 querySnapshot.forEach((doc) => {
@@ -1487,7 +1489,6 @@
                 console.error("Lỗi lắng nghe devices:", error);
             });
 
-            // 2. Lắng nghe Logs (Cập nhật trạng thái mượn trả Real-time)
             db.collection("device_logs").orderBy("createdAt", "desc").onSnapshot((querySnapshot) => {
                 deviceLogsData = [];
                 querySnapshot.forEach((doc) => {
@@ -1771,8 +1772,6 @@
                         footer: { text: "QA Internal Portal System" }
                     };
                     sendDiscordNotification(embedBorrow);
-
-                    // ĐÃ XÓA loadDeviceData(false) Ở ĐÂY VÌ ON-SNAPSHOT TỰ LÀM VIỆC NÀY
                 })
                 .catch((err) => {
                     console.error("Lỗi Firestore:", err);
@@ -1829,8 +1828,6 @@
                         footer: { text: "QA Internal Portal System" }
                     };
                     sendDiscordNotification(embedReturn);
-
-                    // ĐÃ XÓA loadDeviceData(false) Ở ĐÂY VÌ ON-SNAPSHOT TỰ LÀM VIỆC NÀY
                 })
                 .catch((err) => {
                     console.error("Lỗi cập nhật trả:", err);
@@ -1899,7 +1896,6 @@
         function saveGSheetPasteData() { localStorage.setItem('jira_gsheet_paste', document.getElementById('gsheetPasteInput').value); }
         function saveGSheetApiData() { localStorage.setItem('jira_sheet_name', document.getElementById('sheetNameInput').value.trim()); }
 
-        // CHUYỂN ĐỔI GIAO DIỆN NÚT DÁN TRỰC TIẾP / DÙNG API APP SCRIPT
         function switchProgressTab(tab) {
             activeProgressTab = tab;
             const pasteBtn = document.getElementById('tabPasteBtn');
