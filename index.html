@@ -3,46 +3,20 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>QC Portal - Daily Report & Device Management</title>
-    <!-- Tailwind CSS CDN -->
+    <title>QC Portal - Báo Cáo Daily</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- SheetJS (đọc Excel / CSV / Xuất Excel) -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-    <!-- Chart.js (vẽ biểu đồ) -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <!-- FontAwesome Icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     
-    <!-- FIREBASE SDK (v9 Compat) -->
-    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
-
-    <!-- Cấu hình PWA -->
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#312e81">
-    <meta name="mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <meta name="apple-mobile-web-app-title" content="QA Portal">
-    <link rel="apple-touch-icon" href="https://cdn-icons-png.flaticon.com/512/3208/3208726.png">
-    
     <script src="https://accounts.google.com/gsi/client" async defer></script>
-    
-    <!-- Script Đăng ký Service Worker -->
-    <script>
-      if ('serviceWorker' in navigator) {
-        window.addEventListener('load', () => {
-          navigator.serviceWorker.register('./sw.js')
-            .then(reg => console.log('PWA Service Worker registered:', reg.scope))
-            .catch(err => console.log('PWA Service Worker registration failed:', err));
-        });
-      }
-    </script>
 </head>
 <body class="bg-slate-50 text-slate-800 font-sans h-screen w-full flex flex-col md:flex-row overflow-hidden">
 
-    <!-- ================= SIDEBAR MENU BÊN TRÁI ================= -->
+    <!-- ================= SIDEBAR MENU ================= -->
     <aside class="w-full md:w-64 bg-indigo-900 text-white flex flex-col flex-shrink-0 shadow-xl z-20 transition-all">
-        <!-- Logo -->
         <div class="h-auto md:h-[72px] flex items-center justify-between px-6 py-4 md:py-0 border-b border-indigo-800 bg-[#28256b]">
             <div class="flex items-center gap-3">
                 <i class="fa-solid fa-square-poll-vertical text-indigo-400 text-[28px]"></i>
@@ -53,19 +27,15 @@
             </div>
         </div>
         
-        <!-- Navigation Buttons -->
         <nav class="flex md:flex-col gap-2 p-4 overflow-x-auto md:overflow-y-auto flex-1 bg-indigo-800 md:bg-transparent custom-scrollbar">
-            <button id="navReportBtn" onclick="switchMainTab('report')" class="whitespace-nowrap flex items-center gap-3 px-4 py-3.5 text-sm font-bold rounded-xl transition bg-indigo-600 text-white shadow-md">
+            <a href="index.html" class="whitespace-nowrap flex items-center gap-3 px-4 py-3.5 text-sm font-bold rounded-xl transition bg-indigo-600 text-white shadow-md">
                 <i class="fa-solid fa-chart-line w-5 text-center text-lg"></i> 
                 <span>Báo Cáo Daily</span>
-            </button>
-            <button id="navDeviceBtn" onclick="switchMainTab('device')" class="whitespace-nowrap flex items-center gap-3 px-4 py-3.5 text-sm font-bold rounded-xl transition text-indigo-200 hover:bg-white/10 hover:text-white">
+            </a>
+            <a href="device_manage.html" class="whitespace-nowrap flex items-center gap-3 px-4 py-3.5 text-sm font-bold rounded-xl transition text-indigo-200 hover:bg-white/10 hover:text-white">
                 <i class="fa-solid fa-mobile-screen-button w-5 text-center text-lg"></i> 
                 <span>Mượn Device</span>
-            </button>
-            <!-- =============================== -->
-            <!-- MỚI THÊM: NÚT 3 - THÔNG TIN DEVICE -->
-            <!-- =============================== -->
+            </a>
             <a href="device_info.html" class="whitespace-nowrap flex items-center gap-3 px-4 py-3.5 text-sm font-bold rounded-xl transition text-indigo-200 hover:bg-white/10 hover:text-white mt-auto md:mt-4 border border-indigo-700 md:border-transparent">
                 <i class="fa-solid fa-circle-info w-5 text-center text-lg"></i> 
                 <span>Thông tin Device</span>
@@ -73,53 +43,31 @@
         </nav>
     </aside>
 
-    <!-- ================= MAIN CONTENT WRAPPER ================= -->
+    <!-- ================= MAIN CONTENT ================= -->
     <div class="flex-1 flex flex-col h-full overflow-hidden bg-slate-50 relative">
-        
-        <!-- HEADER -->
         <header class="bg-white text-slate-800 shadow-sm border-b border-slate-200 z-10 p-3 px-4 md:px-6 flex justify-between items-center min-h-[72px]">
-            <!-- Page Title -->
-            <div>
-                <h2 id="pageTitleDisplay" class="text-xl font-bold text-slate-800 hidden sm:block">Bảng Điều Khiển</h2>
-            </div>
-
-            <!-- Right Actions Area -->
+            <div><h2 class="text-xl font-bold text-slate-800 hidden sm:block">Báo Cáo Daily (Jira)</h2></div>
             <div class="flex items-center gap-4">
-                
-                <!-- Nút Đổi File -->
                 <div id="fileInfo" class="hidden flex items-center gap-3 bg-indigo-50 px-4 py-2 rounded-xl border border-indigo-100 text-xs shadow-sm">
-                    <div>
-                        <span class="text-indigo-400 font-medium">Đang xử lý:</span> <strong id="fileName" class="text-indigo-800 font-bold"></strong>
-                    </div>
-                    <button onclick="changeJiraFile()" class="px-2.5 py-1.5 bg-indigo-600 hover:bg-indigo-500 text-white text-[11px] font-bold rounded-lg transition flex items-center gap-1.5 shadow-sm" title="Tải file Jira khác">
+                    <div><span class="text-indigo-400 font-medium">Đang xử lý:</span> <strong id="fileName" class="text-indigo-800 font-bold"></strong></div>
+                    <button onclick="changeJiraFile()" class="px-2.5 py-1.5 bg-indigo-600 hover:bg-indigo-500 text-white text-[11px] font-bold rounded-lg transition flex items-center gap-1.5 shadow-sm">
                         <i class="fa-solid fa-arrows-rotate"></i> Đổi File
                     </button>
                 </div>
                 
-                <!-- Khu vực Auth (Google Login / User Profile) -->
                 <div id="authSection" class="relative flex items-center min-h-[40px]">
-                    <div id="g_id_onload"
-                         data-client_id="149310433677-uvpoilv41na98qdjlj58cpmfl8u9946e.apps.googleusercontent.com"
-                         data-callback="handleCredentialResponse"
-                         data-auto_prompt="false">
-                    </div>
-
-                    <!-- Trạng thái CHƯA đăng nhập -->
+                    <div id="g_id_onload" data-client_id="149310433677-uvpoilv41na98qdjlj58cpmfl8u9946e.apps.googleusercontent.com" data-callback="handleCredentialResponse" data-auto_prompt="false"></div>
                     <div id="loginOption" class="relative cursor-pointer flex items-center gap-2.5 px-3 py-1.5 bg-slate-100 hover:bg-slate-200 rounded-xl border border-slate-200 transition overflow-hidden">
                         <img src="https://cdn-icons-png.flaticon.com/512/149/149071.png" class="w-8 h-8 rounded-full border border-slate-300 bg-white object-cover" alt="Guest">
                         <span class="text-slate-700 font-bold text-sm hidden sm:block">Đăng nhập</span>
-                        
                         <div class="absolute inset-0 z-10 opacity-[0.01] flex items-center justify-center cursor-pointer">
                             <div class="g_id_signin" data-type="standard" data-size="large" data-theme="outline" data-text="sign_in_with" data-shape="rectangular" data-logo_alignment="left"></div>
                         </div>
                     </div>
-
-                    <!-- Trạng thái ĐÃ đăng nhập -->
                     <div id="userProfileBtn" class="hidden relative cursor-pointer flex items-center gap-2.5 px-3 py-1.5 bg-slate-100 hover:bg-slate-200 rounded-xl border border-slate-200 transition" onclick="document.getElementById('userDropdown').classList.toggle('hidden')">
                         <img id="userAvatar" src="" class="w-8 h-8 rounded-full border border-slate-300 bg-white object-cover" alt="Avatar">
                         <span id="userNameDisplay" class="text-slate-700 font-bold text-sm hidden sm:block"></span>
                         <i class="fa-solid fa-caret-down text-slate-500 ml-1 text-xs"></i>
-                        
                         <div id="userDropdown" class="hidden absolute right-0 top-full mt-2 w-48 bg-white rounded-xl shadow-xl border border-slate-200 overflow-hidden z-50">
                             <button onclick="handleLogout()" class="w-full flex items-center gap-3 px-4 py-3.5 text-left text-rose-600 hover:bg-rose-50 text-sm font-bold transition">
                                 <i class="fa-solid fa-arrow-right-from-bracket"></i> Đăng xuất
@@ -130,395 +78,220 @@
             </div>
         </header>
 
-        <!-- MAIN SCROLLABLE CONTENT -->
         <main class="flex-1 overflow-y-auto p-4 md:p-6 bg-slate-50">
             <div class="w-full mx-auto 2xl:max-w-[1600px] space-y-6">
-                
-                <!-- ================= TAB 1: BÁO CÁO DAILY (JIRA DASHBOARD) ================= -->
-                <div id="tabReportSection" class="space-y-6">
-                    <!-- Upload Box -->
-                    <section id="uploadSection" class="bg-white rounded-2xl shadow-sm border border-slate-200 p-8 w-full max-w-4xl mx-auto mt-4">
-                        <div id="dropZone" class="border-2 border-dashed border-indigo-300 hover:border-indigo-500 rounded-xl p-10 text-center bg-indigo-50/30 transition cursor-pointer">
-                            <input type="file" id="excelFileInput" accept=".xlsx, .xls, .csv" class="hidden">
-                            <div class="space-y-4">
-                                <div class="w-20 h-20 bg-indigo-100 text-indigo-600 rounded-full flex items-center justify-center mx-auto text-3xl shadow-inner">
-                                    <i class="fa-solid fa-file-excel"></i>
-                                </div>
-                                <div>
-                                    <p class="text-lg font-bold text-slate-700">Tải lên file Jira Excel (.xlsx, .xls) hoặc CSV</p>
-                                    <p class="text-sm text-slate-500 mt-2">Kéo thả file trực tiếp vào khu vực này hoặc bấm để chọn file từ máy tính của bạn</p>
-                                </div>
-                                <button type="button" onclick="document.getElementById('excelFileInput').click()" class="mt-4 inline-flex items-center gap-2 px-6 py-3 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl shadow-sm transition">
-                                    <i class="fa-solid fa-upload"></i> Chọn file từ máy
-                                </button>
+                <!-- Upload Box -->
+                <section id="uploadSection" class="bg-white rounded-2xl shadow-sm border border-slate-200 p-8 w-full max-w-4xl mx-auto mt-4">
+                    <div id="dropZone" class="border-2 border-dashed border-indigo-300 hover:border-indigo-500 rounded-xl p-10 text-center bg-indigo-50/30 transition cursor-pointer">
+                        <input type="file" id="excelFileInput" accept=".xlsx, .xls, .csv" class="hidden">
+                        <div class="space-y-4">
+                            <div class="w-20 h-20 bg-indigo-100 text-indigo-600 rounded-full flex items-center justify-center mx-auto text-3xl shadow-inner">
+                                <i class="fa-solid fa-file-excel"></i>
                             </div>
-                        </div>
-                    </section>
-
-                    <!-- Dynamic Dashboard Container -->
-                    <div id="reportDashboard" class="hidden space-y-6">
-                        <div id="mainDashboardView" class="space-y-6">
-                            <!-- Filter Panel -->
-                            <section class="bg-white rounded-xl shadow-sm border border-slate-200 p-5 space-y-4 w-full">
-                                <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-slate-100 pb-4">
-                                    <div class="flex items-center gap-2">
-                                        <i class="fa-solid fa-filter text-indigo-600 text-lg"></i>
-                                        <h2 class="text-base font-bold text-slate-800">Bộ lọc & Cấu hình Báo cáo</h2>
-                                    </div>
-
-                                    <div class="flex flex-wrap items-center gap-3">
-                                        <div class="flex items-center gap-2">
-                                            <label class="text-xs font-semibold text-slate-600">Chế độ nhóm Tag:</label>
-                                            <select id="tagModeSelect" onchange="processData()" class="bg-slate-100 border border-slate-300 text-slate-700 text-xs rounded-lg p-2 focus:ring-2 focus:ring-indigo-500 outline-none font-medium">
-                                                <option value="primary">Chỉ lấy Tag chính đầu tiên [Tag 1]</option>
-                                                <option value="all">Đếm tất cả Tag trong Ticket</option>
-                                            </select>
-                                        </div>
-
-                                        <button id="copyBtn" onclick="copyStandupSummary()" class="inline-flex items-center gap-2 px-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-lg transition shadow-sm">
-                                            <i class="fa-solid fa-copy text-sm"></i> Copy Báo Cáo Daily
-                                        </button>
-                                    </div>
-                                </div>
-                                
-                                <div class="bg-indigo-50/50 border border-indigo-100 rounded-lg p-3 flex flex-col sm:flex-row sm:items-center flex-wrap gap-4">
-                                    <div class="flex-1 flex items-center gap-2 min-w-[200px]">
-                                        <label class="text-xs font-bold text-indigo-900 flex items-center gap-1.5 whitespace-nowrap">
-                                            <i class="fa-solid fa-bullseye text-indigo-500"></i> Scope:
-                                        </label>
-                                        <input type="text" id="scopeOfTestingInput" oninput="saveScopeTesting()" placeholder="VD: Logic UI..." class="w-full bg-white border border-slate-300 text-slate-700 text-xs font-medium rounded-lg p-2 outline-none">
-                                    </div>
-                                    
-                                    <div class="flex items-center gap-2">
-                                        <label class="text-xs font-bold text-indigo-900 flex items-center gap-1.5 whitespace-nowrap">
-                                            <i class="fa-regular fa-calendar text-indigo-500"></i> Ngày:
-                                        </label>
-                                        <input type="date" id="reportDateInput" class="bg-white border border-slate-300 text-slate-700 text-xs font-medium rounded-lg p-2 outline-none">
-                                    </div>
-
-                                    <div class="flex-1 flex items-center gap-2 min-w-[200px]">
-                                        <label class="text-xs font-bold text-indigo-900 flex items-center gap-1.5 whitespace-nowrap">
-                                            <i class="fa-solid fa-users text-indigo-500"></i> QC:
-                                        </label>
-                                        <input type="text" id="qcMembersInput" oninput="saveQCMembers()" placeholder="VD: Kenz,..." class="w-full bg-white border border-slate-300 text-slate-700 text-xs font-medium rounded-lg p-2 outline-none">
-                                    </div>
-                                </div>
-
-                                <div class="bg-slate-50 border border-slate-200 rounded-lg p-4 space-y-3">
-                                    <div class="flex items-center justify-between">
-                                        <label class="text-xs font-bold text-slate-700 flex items-center gap-1.5">
-                                            <i class="fa-solid fa-table text-indigo-600"></i> Nguồn dữ liệu Tiến Độ Sheet:
-                                        </label>
-                                        <div class="text-xs space-x-2">
-                                            <button type="button" onclick="switchProgressTab('paste')" id="tabPasteBtn" class="px-3 py-1.5 rounded-md bg-indigo-600 text-white font-bold shadow-sm transition">Dán trực tiếp</button>
-                                            <button type="button" onclick="switchProgressTab('url')" id="tabUrlBtn" class="px-3 py-1.5 rounded-md bg-slate-200 text-slate-700 font-bold transition">Dùng API App Script</button>
-                                        </div>
-                                    </div>
-
-                                    <div id="progressPasteBox">
-                                        <textarea id="gsheetPasteInput" oninput="saveGSheetPasteData()" rows="3" placeholder="Ctrl+A -> Ctrl+C từ Google Sheet -> Dán vào đây..." class="w-full bg-white border border-slate-300 text-xs rounded-lg p-3 font-mono outline-none"></textarea>
-                                    </div>
-
-                                    <div id="progressUrlBox" class="hidden space-y-2">
-                                        <div class="flex items-center gap-3">
-                                            <label class="text-xs font-semibold text-slate-600">Tên Sheet cần đọc:</label>
-                                            <input type="text" id="sheetNameInput" oninput="saveGSheetApiData()" placeholder="VD: 9684" class="w-full max-w-[200px] bg-white border border-slate-300 text-xs font-medium rounded-lg p-2.5 outline-none">
-                                        </div>
-                                    </div>
-                                </div>
-
-                                <div>
-                                    <div class="flex justify-between items-center mb-2">
-                                        <label class="text-xs font-bold text-slate-700">Chọn Trạng thái (Status) cần hiển thị:</label>
-                                        <div class="space-x-2 text-xs">
-                                            <button onclick="toggleAllStatuses(true)" class="text-indigo-600 hover:underline font-bold">Chọn tất cả</button>
-                                            <span class="text-slate-300">|</span>
-                                            <button onclick="toggleAllStatuses(false)" class="text-slate-500 hover:underline font-bold">Bỏ chọn tất cả</button>
-                                        </div>
-                                    </div>
-                                    <div id="dynamicStatusContainer" class="flex flex-wrap gap-2 text-xs font-medium text-slate-700"></div>
-                                </div>
-                            </section>
-
-                            <!-- KPI Cards -->
-                            <section class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 w-full">
-                                <div class="bg-white p-5 rounded-xl shadow-sm border border-slate-200 flex items-center gap-4">
-                                    <div class="p-3 bg-indigo-100 text-indigo-600 rounded-lg text-xl">
-                                        <i class="fa-solid fa-list-check"></i>
-                                    </div>
-                                    <div>
-                                        <p class="text-[11px] uppercase tracking-wider font-bold text-slate-500">Ticket Được Chọn</p>
-                                        <p id="kpiTotal" class="text-2xl font-black text-slate-800">0</p>
-                                    </div>
-                                </div>
-                                <div class="bg-white p-5 rounded-xl shadow-sm border border-slate-200 flex items-center gap-4">
-                                    <div class="p-3 bg-purple-100 text-purple-600 rounded-lg text-xl">
-                                        <i class="fa-solid fa-tags"></i>
-                                    </div>
-                                    <div>
-                                        <p class="text-[11px] uppercase tracking-wider font-bold text-slate-500">Tổng Số Loại Tag</p>
-                                        <p id="kpiTags" class="text-2xl font-black text-slate-800">0</p>
-                                    </div>
-                                </div>
-                                <div class="bg-white p-5 rounded-xl shadow-sm border border-slate-200 flex items-center gap-4">
-                                    <div class="p-3 bg-red-100 text-red-600 rounded-lg text-xl">
-                                        <i class="fa-solid fa-triangle-exclamation"></i>
-                                    </div>
-                                    <div>
-                                        <p class="text-[11px] uppercase tracking-wider font-bold text-slate-500">Highest/High Priority</p>
-                                        <p id="kpiHighPriority" class="text-2xl font-black text-red-600">0</p>
-                                    </div>
-                                </div>
-                                <div class="bg-white p-5 rounded-xl shadow-sm border border-slate-200 flex items-center gap-4">
-                                    <div class="p-3 bg-emerald-100 text-emerald-600 rounded-lg text-xl">
-                                        <i class="fa-solid fa-file-circle-check"></i>
-                                    </div>
-                                    <div>
-                                        <p class="text-[11px] uppercase tracking-wider font-bold text-slate-500">Số Status Đang Lọc</p>
-                                        <p id="kpiActiveStatuses" class="text-2xl font-black text-emerald-600">0</p>
-                                    </div>
-                                </div>
-                            </section>
-
-                            <section class="grid grid-cols-1 lg:grid-cols-3 gap-6 w-full">
-                                <div class="lg:col-span-2 bg-white p-5 rounded-xl shadow-sm border border-slate-200 flex flex-col">
-                                    <h3 class="text-base font-bold text-slate-800 mb-2"><i class="fa-solid fa-chart-bar text-indigo-600 mr-2"></i>Biểu đồ Tag & Priority</h3>
-                                    <div class="relative flex-1 min-h-[360px]">
-                                        <canvas id="tagPriorityStackedChart"></canvas>
-                                    </div>
-                                </div>
-                                <div class="bg-white p-5 rounded-xl shadow-sm border border-slate-200 flex flex-col">
-                                    <h3 class="text-base font-bold text-slate-800 mb-2"><i class="fa-solid fa-chart-pie text-indigo-600 mr-2"></i>Tỷ lệ Priority</h3>
-                                    <div class="relative flex-1 min-h-[360px] flex items-center justify-center">
-                                        <canvas id="priorityDoughnutChart"></canvas>
-                                    </div>
-                                </div>
-                            </section>
-
-                            <section class="bg-white p-5 rounded-xl shadow-sm border border-slate-200 w-full">
-                                <h3 class="text-base font-bold text-slate-800 mb-4"><i class="fa-solid fa-cubes text-indigo-600 mr-2"></i>Thống kê Chi tiết theo Tag</h3>
-                                <div id="tagBreakdownContainer" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4"></div>
-                            </section>
-
-                            <section class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden w-full">
-                                <div class="p-5 border-b border-slate-200 flex flex-col sm:flex-row justify-between items-center gap-4">
-                                    <h3 class="text-base font-bold text-slate-800 flex items-center gap-2">
-                                        <i class="fa-solid fa-table text-indigo-600"></i>
-                                        Toàn bộ danh sách Ticket (Theo bộ lọc)
-                                    </h3>
-                                    <input type="text" id="searchInput" onkeyup="filterMainTable()" placeholder="Tìm kiếm Key, Summary..." class="w-full sm:w-64 bg-slate-100 border border-slate-300 text-slate-700 text-xs font-medium rounded-lg p-2.5 focus:ring-2 focus:ring-indigo-500 outline-none">
-                                </div>
-                                <div class="overflow-x-auto max-h-[500px]">
-                                    <table class="w-full text-xs text-left text-slate-600">
-                                        <thead class="text-slate-700 uppercase bg-slate-100 sticky top-0 border-b border-slate-200">
-                                            <tr>
-                                                <th class="px-4 py-3 font-bold">Issue Key</th>
-                                                <th class="px-4 py-3 font-bold">Loại Tag</th>
-                                                <th class="px-4 py-3 font-bold">Tóm tắt (Summary)</th>
-                                                <th class="px-4 py-3 font-bold">Priority</th>
-                                                <th class="px-4 py-3 font-bold">Trạng thái (Status)</th>
-                                                <th class="px-4 py-3 font-bold">Người xử lý</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody id="ticketTableBody" class="divide-y divide-slate-200"></tbody>
-                                    </table>
-                                </div>
-                            </section>
-                        </div>
-
-                        <!-- VIEW 2: DETAIL TICKET VIEW -->
-                        <div id="detailView" class="hidden space-y-6 w-full">
-                            <section class="bg-white rounded-xl shadow-sm border border-slate-200 p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                                <div class="flex items-center gap-4">
-                                    <button onclick="closeDetailView()" class="inline-flex items-center gap-2 px-4 py-2.5 bg-slate-100 hover:bg-indigo-50 text-indigo-700 text-xs font-bold rounded-lg border border-slate-300 hover:border-indigo-300 transition shadow-sm">
-                                        <i class="fa-solid fa-arrow-left"></i> Quay lại Dashboard
-                                    </button>
-                                    <div>
-                                        <span class="text-[10px] text-slate-500 font-bold uppercase tracking-wider">Trang Xem Chi Tiết</span>
-                                        <h2 id="detailViewTitle" class="text-lg font-bold text-slate-800">Chi tiết Ticket</h2>
-                                    </div>
-                                </div>
-                                <div class="flex items-center gap-3">
-                                    <div class="bg-indigo-50 border border-indigo-200 px-3 py-1.5 rounded-lg text-xs font-bold text-indigo-800">
-                                        Tổng số: <span id="detailCountBadge" class="text-indigo-600 text-sm">0</span> ticket
-                                    </div>
-                                </div>
-                            </section>
-                            <section class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
-                                <div class="overflow-x-auto min-h-[300px] max-h-[600px]">
-                                    <table class="w-full text-xs text-left text-slate-600">
-                                        <thead class="text-slate-700 uppercase bg-slate-100 sticky top-0 border-b border-slate-200">
-                                            <tr>
-                                                <th class="px-4 py-3 font-bold">Issue Key</th>
-                                                <th class="px-4 py-3 font-bold">Loại Tag</th>
-                                                <th class="px-4 py-3 font-bold">Tóm tắt (Summary)</th>
-                                                <th class="px-4 py-3 font-bold">Priority</th>
-                                                <th class="px-4 py-3 font-bold">Trạng thái (Status)</th>
-                                                <th class="px-4 py-3 font-bold">Người xử lý</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody id="detailTicketTableBody" class="divide-y divide-slate-200"></tbody>
-                                    </table>
-                                </div>
-                            </section>
+                            <div>
+                                <p class="text-lg font-bold text-slate-700">Tải lên file Jira Excel (.xlsx, .xls) hoặc CSV</p>
+                                <p class="text-sm text-slate-500 mt-2">Kéo thả file trực tiếp vào khu vực này hoặc bấm để chọn file từ máy tính của bạn</p>
+                            </div>
+                            <button type="button" onclick="document.getElementById('excelFileInput').click()" class="mt-4 inline-flex items-center gap-2 px-6 py-3 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl shadow-sm transition">
+                                <i class="fa-solid fa-upload"></i> Chọn file từ máy
+                            </button>
                         </div>
                     </div>
-                </div>
+                </section>
 
-                <!-- ================= TAB 2: MƯỢN DEVICE ================= -->
-                <div id="tabDeviceSection" class="hidden space-y-6">
-                    <!-- Form Mượn Device -->
-                    <section class="bg-white rounded-xl shadow-sm border border-slate-200 p-6 space-y-5 w-full">
-                        <div class="flex items-center justify-between border-b border-slate-100 pb-3">
-                            <div class="flex items-center gap-2">
-                                <i class="fa-solid fa-hand-holding-hand text-indigo-600 text-xl"></i>
-                                <h2 class="text-lg font-bold text-slate-800">Đăng Ký Mượn Thiết Bị</h2>
-                            </div>
-                        </div>
-
-                        <!-- Giao diện 4 CỘT CĂN CHỈNH HOÀN HẢO -->
-                        <div class="grid grid-cols-1 md:grid-cols-4 gap-5 items-start">
-                            <!-- Ô Nhập Tên Người Mượn -->
-                            <div>
-                                <div class="h-5 mb-1.5 flex items-center">
-                                    <label class="text-xs font-bold text-slate-700">Tên Người Mượn <span class="text-red-500">*</span></label>
+                <!-- Dynamic Dashboard Container -->
+                <div id="reportDashboard" class="hidden space-y-6">
+                    <div id="mainDashboardView" class="space-y-6">
+                        <section class="bg-white rounded-xl shadow-sm border border-slate-200 p-5 space-y-4 w-full">
+                            <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-slate-100 pb-4">
+                                <div class="flex items-center gap-2">
+                                    <i class="fa-solid fa-filter text-indigo-600 text-lg"></i>
+                                    <h2 class="text-base font-bold text-slate-800">Bộ lọc & Cấu hình Báo cáo</h2>
                                 </div>
-                                <input type="text" id="borrowerNameInput" placeholder="VD: Tuan - Dev..." class="w-full h-[42px] bg-white border border-slate-300 text-slate-800 font-bold text-xs rounded-lg px-3 focus:ring-2 focus:ring-indigo-500 outline-none transition shadow-sm">
-                                <p class="text-[10px] text-slate-500 mt-1.5 italic"><i class="fa-solid fa-pen mr-1"></i>Sửa thành tên của Dev nếu log hộ</p>
-                            </div>
-
-                            <!-- Ô Chọn Phân Loại Device -->
-                            <div>
-                                <div class="h-5 mb-1.5 flex items-center">
-                                    <label class="text-xs font-bold text-slate-700">Phân Loại Device</label>
-                                </div>
-                                <select id="deviceTypeSelect" onchange="filterDeviceDropdown()" class="w-full h-[42px] bg-white border border-slate-300 text-slate-800 font-medium text-xs rounded-lg px-3 focus:ring-2 focus:ring-indigo-500 outline-none cursor-pointer">
-                                    <option value="ALL">-- Tất cả loại --</option>
-                                </select>
-                            </div>
-
-                            <!-- Dropdown Danh Sách Device Mượn (Searchable) -->
-                            <div class="relative w-full">
-                                <div class="h-5 mb-1.5 flex justify-between items-center">
-                                    <label class="text-xs font-bold text-slate-700">Thiết Bị Mượn <span class="text-red-500">*</span></label>
-                                    <button onclick="loadDeviceData(true)" class="text-[11px] font-bold text-indigo-600 hover:underline flex items-center">
-                                        <i class="fa-solid fa-rotate mr-1"></i>Làm mới
+                                <div class="flex flex-wrap items-center gap-3">
+                                    <div class="flex items-center gap-2">
+                                        <label class="text-xs font-semibold text-slate-600">Chế độ nhóm Tag:</label>
+                                        <select id="tagModeSelect" onchange="processData()" class="bg-slate-100 border border-slate-300 text-slate-700 text-xs rounded-lg p-2 focus:ring-2 focus:ring-indigo-500 outline-none font-medium">
+                                            <option value="primary">Chỉ lấy Tag chính đầu tiên [Tag 1]</option>
+                                            <option value="all">Đếm tất cả Tag trong Ticket</option>
+                                        </select>
+                                    </div>
+                                    <button id="copyBtn" onclick="copyStandupSummary()" class="inline-flex items-center gap-2 px-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-lg transition shadow-sm">
+                                        <i class="fa-solid fa-copy text-sm"></i> Copy Báo Cáo Daily
                                     </button>
                                 </div>
-                                
-                                <div class="relative">
-                                    <input type="text" id="deviceSearchInput" 
-                                           onfocus="openDeviceDropdown()" 
-                                           oninput="filterDeviceListUI()" 
-                                           autocomplete="off"
-                                           placeholder="-- Đang tải danh sách... --" 
-                                           class="w-full h-[42px] bg-white border border-slate-300 text-slate-800 font-medium text-xs rounded-lg px-3 pr-8 focus:ring-2 focus:ring-indigo-500 outline-none transition cursor-text shadow-sm">
-                                    <i class="fa-solid fa-chevron-down absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 text-xs pointer-events-none"></i>
+                            </div>
+                            
+                            <div class="bg-indigo-50/50 border border-indigo-100 rounded-lg p-3 flex flex-col sm:flex-row sm:items-center flex-wrap gap-4">
+                                <div class="flex-1 flex items-center gap-2 min-w-[200px]">
+                                    <label class="text-xs font-bold text-indigo-900 flex items-center gap-1.5 whitespace-nowrap">
+                                        <i class="fa-solid fa-bullseye text-indigo-500"></i> Scope:
+                                    </label>
+                                    <input type="text" id="scopeOfTestingInput" oninput="saveScopeTesting()" placeholder="VD: Logic UI..." class="w-full bg-white border border-slate-300 text-slate-700 text-xs font-medium rounded-lg p-2 outline-none">
                                 </div>
-
-                                <!-- Vùng chứa danh sách thả xuống -->
-                                <div id="deviceDropdownContainer" class="hidden absolute z-50 w-full mt-1 bg-white border border-slate-200 rounded-lg shadow-xl max-h-48 overflow-y-auto custom-scrollbar">
-                                    <ul id="deviceListUl" class="text-xs font-medium text-slate-700 py-1 divide-y divide-slate-100">
-                                        <!-- Danh sách render bằng JS -->
-                                    </ul>
+                                <div class="flex items-center gap-2">
+                                    <label class="text-xs font-bold text-indigo-900 flex items-center gap-1.5 whitespace-nowrap">
+                                        <i class="fa-regular fa-calendar text-indigo-500"></i> Ngày:
+                                    </label>
+                                    <input type="date" id="reportDateInput" class="bg-white border border-slate-300 text-slate-700 text-xs font-medium rounded-lg p-2 outline-none">
+                                </div>
+                                <div class="flex-1 flex items-center gap-2 min-w-[200px]">
+                                    <label class="text-xs font-bold text-indigo-900 flex items-center gap-1.5 whitespace-nowrap">
+                                        <i class="fa-solid fa-users text-indigo-500"></i> QC:
+                                    </label>
+                                    <input type="text" id="qcMembersInput" oninput="saveQCMembers()" placeholder="VD: Kenz,..." class="w-full bg-white border border-slate-300 text-slate-700 text-xs font-medium rounded-lg p-2 outline-none">
                                 </div>
                             </div>
 
-                            <!-- Nút Bấm Mượn -->
+                            <div class="bg-slate-50 border border-slate-200 rounded-lg p-4 space-y-3">
+                                <div class="flex items-center justify-between">
+                                    <label class="text-xs font-bold text-slate-700 flex items-center gap-1.5">
+                                        <i class="fa-solid fa-table text-indigo-600"></i> Nguồn dữ liệu Tiến Độ Sheet:
+                                    </label>
+                                    <div class="text-xs space-x-2">
+                                        <button type="button" onclick="switchProgressTab('paste')" id="tabPasteBtn" class="px-3 py-1.5 rounded-md bg-indigo-600 text-white font-bold shadow-sm transition">Dán trực tiếp</button>
+                                        <button type="button" onclick="switchProgressTab('url')" id="tabUrlBtn" class="px-3 py-1.5 rounded-md bg-slate-200 text-slate-700 font-bold transition">Dùng API App Script</button>
+                                    </div>
+                                </div>
+                                <div id="progressPasteBox">
+                                    <textarea id="gsheetPasteInput" oninput="saveGSheetPasteData()" rows="3" placeholder="Ctrl+A -> Ctrl+C từ Google Sheet -> Dán vào đây..." class="w-full bg-white border border-slate-300 text-xs rounded-lg p-3 font-mono outline-none"></textarea>
+                                </div>
+                                <div id="progressUrlBox" class="hidden space-y-2">
+                                    <div class="flex items-center gap-3">
+                                        <label class="text-xs font-semibold text-slate-600">Tên Sheet cần đọc:</label>
+                                        <input type="text" id="sheetNameInput" oninput="saveGSheetApiData()" placeholder="VD: 9684" class="w-full max-w-[200px] bg-white border border-slate-300 text-xs font-medium rounded-lg p-2.5 outline-none">
+                                    </div>
+                                </div>
+                            </div>
+
                             <div>
-                                <div class="h-5 mb-1.5 flex items-center">
-                                    <label class="text-xs font-bold text-transparent select-none pointer-events-none">Spacer</label>
+                                <div class="flex justify-between items-center mb-2">
+                                    <label class="text-xs font-bold text-slate-700">Chọn Trạng thái (Status) cần hiển thị:</label>
+                                    <div class="space-x-2 text-xs">
+                                        <button onclick="toggleAllStatuses(true)" class="text-indigo-600 hover:underline font-bold">Chọn tất cả</button>
+                                        <span class="text-slate-300">|</span>
+                                        <button onclick="toggleAllStatuses(false)" class="text-slate-500 hover:underline font-bold">Bỏ chọn tất cả</button>
+                                    </div>
                                 </div>
-                                <button id="btnSubmitBorrow" disabled onclick="submitBorrowDevice()" class="w-full h-[42px] inline-flex items-center justify-center gap-2 px-5 bg-indigo-600 hover:bg-indigo-700 disabled:bg-indigo-400 text-white text-xs font-bold rounded-lg shadow-sm transition disabled:opacity-70 disabled:cursor-not-allowed">
-                                    <i class="fa-solid fa-plus"></i> Xác Nhận Mượn
-                                </button>
+                                <div id="dynamicStatusContainer" class="flex flex-wrap gap-2 text-xs font-medium text-slate-700"></div>
                             </div>
-                        </div>
-                    </section>
+                        </section>
 
-                    <!-- Lưới Danh Sách Thiết Bị Mượn Trong Ngày -->
-                    <section class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden w-full">
-                        <div class="p-4 md:p-5 border-b border-slate-200 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-slate-50/80">
-                            <div class="flex items-center gap-2">
-                                <i class="fa-solid fa-list-check text-indigo-600 text-lg"></i>
-                                <h3 class="text-base font-bold text-slate-800">Nhật Ký Mượn Trả Thiết Bị</h3>
-                                <span id="logCountBadge" class="text-xs bg-indigo-100 text-indigo-700 font-bold px-2.5 py-0.5 rounded-full ml-1">0 lượt</span>
+                        <!-- KPI Cards -->
+                        <section class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 w-full">
+                            <div class="bg-white p-5 rounded-xl shadow-sm border border-slate-200 flex items-center gap-4">
+                                <div class="p-3 bg-indigo-100 text-indigo-600 rounded-lg text-xl"><i class="fa-solid fa-list-check"></i></div>
+                                <div>
+                                    <p class="text-[11px] uppercase tracking-wider font-bold text-slate-500">Ticket Được Chọn</p>
+                                    <p id="kpiTotal" class="text-2xl font-black text-slate-800">0</p>
+                                </div>
                             </div>
-
-                            <!-- NÚT XUẤT EXCEL, NÚT REFRESH & NÚT LỌC CHƯA TRẢ -->
-                            <div class="flex flex-wrap items-center gap-2 w-full sm:w-auto">
-                                <button onclick="exportDeviceLogsToExcel()" class="flex-1 sm:flex-none inline-flex items-center justify-center gap-1.5 px-3 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-lg shadow-sm transition">
-                                    <i class="fa-solid fa-file-excel"></i> <span>Xuất Excel</span>
-                                </button>
-
-                                <button id="btnFilterUnreturned" onclick="toggleUnreturnedFilter()" class="flex-1 sm:flex-none inline-flex items-center justify-center gap-1.5 px-3 py-2 bg-white border border-slate-300 hover:border-amber-400 text-slate-700 text-xs font-bold rounded-lg shadow-sm transition">
-                                    <i class="fa-solid fa-filter text-amber-500"></i> <span id="filterUnreturnedText">Chỉ xem Chưa Trả</span>
-                                </button>
-
-                                <button onclick="loadDeviceData(true)" class="flex-1 sm:flex-none inline-flex items-center justify-center gap-1.5 px-3 py-2 bg-indigo-50 hover:bg-indigo-100 border border-indigo-200 text-indigo-700 text-xs font-bold rounded-lg transition shadow-sm" title="Làm mới dữ liệu nhật ký">
-                                    <i class="fa-solid fa-rotate"></i> Làm mới List
-                                </button>
+                            <div class="bg-white p-5 rounded-xl shadow-sm border border-slate-200 flex items-center gap-4">
+                                <div class="p-3 bg-purple-100 text-purple-600 rounded-lg text-xl"><i class="fa-solid fa-tags"></i></div>
+                                <div>
+                                    <p class="text-[11px] uppercase tracking-wider font-bold text-slate-500">Tổng Số Loại Tag</p>
+                                    <p id="kpiTags" class="text-2xl font-black text-slate-800">0</p>
+                                </div>
                             </div>
-                        </div>
-
-                        <div class="overflow-x-auto min-h-[400px]">
-                            <table class="w-full text-xs text-left text-slate-600">
-                                <thead class="text-slate-700 uppercase bg-slate-100 sticky top-0 border-b border-slate-200 font-bold">
-                                    <tr>
-                                        <th class="px-5 py-3.5">Thời Gian Mượn</th>
-                                        <th class="px-5 py-3.5">Tên Người Mượn</th>
-                                        <th class="px-5 py-3.5">Thiết Bị Mượn</th>
-                                        <th class="px-5 py-3.5">Trạng Thái</th>
-                                        <th class="px-5 py-3.5">Giờ Trả</th>
-                                        <th class="px-5 py-3.5 text-right">Thao Tác</th>
-                                    </tr>
-                                </thead>
-                                <tbody id="deviceLogTableBody" class="divide-y divide-slate-200 font-medium">
-                                    <tr>
-                                        <td colspan="6" class="text-center py-10 text-slate-400 font-medium text-sm">Đang tải dữ liệu mượn thiết bị...</td>
-                                    </tr>
-                                </tbody>
-                            </table>
-                        </div>
-
-                        <!-- Thanh Phân Trang (Pagination Bar) -->
-                        <div class="p-4 bg-slate-50 border-t border-slate-200 flex flex-col sm:flex-row justify-between items-center gap-4 text-xs">
-                            <div class="text-slate-500 font-medium">
-                                Hiển thị <span id="pageRangeText" class="font-bold text-slate-700">0 - 0</span> trên tổng số <span id="totalLogsText" class="font-bold text-slate-700">0</span> lượt
+                            <div class="bg-white p-5 rounded-xl shadow-sm border border-slate-200 flex items-center gap-4">
+                                <div class="p-3 bg-red-100 text-red-600 rounded-lg text-xl"><i class="fa-solid fa-triangle-exclamation"></i></div>
+                                <div>
+                                    <p class="text-[11px] uppercase tracking-wider font-bold text-slate-500">Highest/High</p>
+                                    <p id="kpiHighPriority" class="text-2xl font-black text-red-600">0</p>
+                                </div>
                             </div>
-                            <div class="flex items-center gap-2">
-                                <button id="btnPrevPage" onclick="changeDevicePage(-1)" class="px-3 py-1.5 bg-white border border-slate-300 rounded-lg font-bold text-slate-600 hover:bg-slate-100 disabled:opacity-40 disabled:cursor-not-allowed transition">
-                                    <i class="fa-solid fa-chevron-left mr-1"></i> Trang trước
-                                </button>
-                                <span class="font-bold text-indigo-700 bg-indigo-50 border border-indigo-200 px-3 py-1.5 rounded-lg">
-                                    Trang <span id="currentPageText">1</span> / <span id="totalPagesText">1</span>
-                                </span>
-                                <button id="btnNextPage" onclick="changeDevicePage(1)" class="px-3 py-1.5 bg-white border border-slate-300 rounded-lg font-bold text-slate-600 hover:bg-slate-100 disabled:opacity-40 disabled:cursor-not-allowed transition">
-                                    Trang sau <i class="fa-solid fa-chevron-right ml-1"></i>
-                                </button>
+                            <div class="bg-white p-5 rounded-xl shadow-sm border border-slate-200 flex items-center gap-4">
+                                <div class="p-3 bg-emerald-100 text-emerald-600 rounded-lg text-xl"><i class="fa-solid fa-file-circle-check"></i></div>
+                                <div>
+                                    <p class="text-[11px] uppercase tracking-wider font-bold text-slate-500">Số Status Đang Lọc</p>
+                                    <p id="kpiActiveStatuses" class="text-2xl font-black text-emerald-600">0</p>
+                                </div>
                             </div>
-                        </div>
-                    </section>
+                        </section>
+
+                        <section class="grid grid-cols-1 lg:grid-cols-3 gap-6 w-full">
+                            <div class="lg:col-span-2 bg-white p-5 rounded-xl shadow-sm border border-slate-200 flex flex-col">
+                                <h3 class="text-base font-bold text-slate-800 mb-2"><i class="fa-solid fa-chart-bar text-indigo-600 mr-2"></i>Biểu đồ Tag & Priority</h3>
+                                <div class="relative flex-1 min-h-[360px]"><canvas id="tagPriorityStackedChart"></canvas></div>
+                            </div>
+                            <div class="bg-white p-5 rounded-xl shadow-sm border border-slate-200 flex flex-col">
+                                <h3 class="text-base font-bold text-slate-800 mb-2"><i class="fa-solid fa-chart-pie text-indigo-600 mr-2"></i>Tỷ lệ Priority</h3>
+                                <div class="relative flex-1 min-h-[360px] flex items-center justify-center"><canvas id="priorityDoughnutChart"></canvas></div>
+                            </div>
+                        </section>
+
+                        <section class="bg-white p-5 rounded-xl shadow-sm border border-slate-200 w-full">
+                            <h3 class="text-base font-bold text-slate-800 mb-4"><i class="fa-solid fa-cubes text-indigo-600 mr-2"></i>Thống kê Chi tiết theo Tag</h3>
+                            <div id="tagBreakdownContainer" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4"></div>
+                        </section>
+
+                        <section class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden w-full">
+                            <div class="p-5 border-b border-slate-200 flex flex-col sm:flex-row justify-between items-center gap-4">
+                                <h3 class="text-base font-bold text-slate-800 flex items-center gap-2">
+                                    <i class="fa-solid fa-table text-indigo-600"></i> Toàn bộ danh sách Ticket
+                                </h3>
+                                <input type="text" id="searchInput" onkeyup="filterMainTable()" placeholder="Tìm kiếm Key, Summary..." class="w-full sm:w-64 bg-slate-100 border border-slate-300 text-slate-700 text-xs font-medium rounded-lg p-2.5 focus:ring-2 focus:ring-indigo-500 outline-none">
+                            </div>
+                            <div class="overflow-x-auto max-h-[500px]">
+                                <table class="w-full text-xs text-left text-slate-600">
+                                    <thead class="text-slate-700 uppercase bg-slate-100 sticky top-0 border-b border-slate-200">
+                                        <tr>
+                                            <th class="px-4 py-3 font-bold">Issue Key</th>
+                                            <th class="px-4 py-3 font-bold">Loại Tag</th>
+                                            <th class="px-4 py-3 font-bold">Tóm tắt (Summary)</th>
+                                            <th class="px-4 py-3 font-bold">Priority</th>
+                                            <th class="px-4 py-3 font-bold">Trạng thái (Status)</th>
+                                            <th class="px-4 py-3 font-bold">Người xử lý</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="ticketTableBody" class="divide-y divide-slate-200"></tbody>
+                                </table>
+                            </div>
+                        </section>
+                    </div>
+
+                    <!-- VIEW 2: DETAIL TICKET VIEW -->
+                    <div id="detailView" class="hidden space-y-6 w-full">
+                        <section class="bg-white rounded-xl shadow-sm border border-slate-200 p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                            <div class="flex items-center gap-4">
+                                <button onclick="closeDetailView()" class="inline-flex items-center gap-2 px-4 py-2.5 bg-slate-100 hover:bg-indigo-50 text-indigo-700 text-xs font-bold rounded-lg border border-slate-300 hover:border-indigo-300 transition shadow-sm">
+                                    <i class="fa-solid fa-arrow-left"></i> Quay lại Dashboard
+                                </button>
+                                <div>
+                                    <span class="text-[10px] text-slate-500 font-bold uppercase tracking-wider">Trang Xem Chi Tiết</span>
+                                    <h2 id="detailViewTitle" class="text-lg font-bold text-slate-800">Chi tiết Ticket</h2>
+                                </div>
+                            </div>
+                            <div class="flex items-center gap-3">
+                                <div class="bg-indigo-50 border border-indigo-200 px-3 py-1.5 rounded-lg text-xs font-bold text-indigo-800">
+                                    Tổng số: <span id="detailCountBadge" class="text-indigo-600 text-sm">0</span> ticket
+                                </div>
+                            </div>
+                        </section>
+                        <section class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+                            <div class="overflow-x-auto min-h-[300px] max-h-[600px]">
+                                <table class="w-full text-xs text-left text-slate-600">
+                                    <thead class="text-slate-700 uppercase bg-slate-100 sticky top-0 border-b border-slate-200">
+                                        <tr>
+                                            <th class="px-4 py-3 font-bold">Issue Key</th>
+                                            <th class="px-4 py-3 font-bold">Loại Tag</th>
+                                            <th class="px-4 py-3 font-bold">Tóm tắt (Summary)</th>
+                                            <th class="px-4 py-3 font-bold">Priority</th>
+                                            <th class="px-4 py-3 font-bold">Trạng thái (Status)</th>
+                                            <th class="px-4 py-3 font-bold">Người xử lý</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="detailTicketTableBody" class="divide-y divide-slate-200"></tbody>
+                                </table>
+                            </div>
+                        </section>
+                    </div>
                 </div>
-
             </div>
         </main>
     </div>
 
-    <!-- ================= MODAL LOADING POPUP ================= -->
-    <div id="loadingModal" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-sm">
-        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-xs overflow-hidden p-8 text-center space-y-4">
-            <div class="w-16 h-16 bg-indigo-100 text-indigo-600 rounded-full flex items-center justify-center mx-auto text-3xl shadow-inner">
-                <i class="fa-solid fa-spinner fa-spin"></i>
-            </div>
-            <div>
-                <h3 class="text-lg font-bold text-slate-800">Đang tải dữ liệu...</h3>
-                <p class="text-xs text-slate-500 font-medium mt-1">Đang đồng bộ dữ liệu với Firebase...</p>
-            </div>
-        </div>
-    </div>
-
-    <!-- Modal Custom Alert -->
+    <!-- Modal Alert -->
     <div id="customAlertModal" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-sm">
         <div class="bg-white rounded-2xl shadow-2xl w-full max-w-sm overflow-hidden p-8 text-center space-y-4">
             <div id="customAlertIcon" class="w-20 h-20 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center mx-auto text-4xl shadow-inner">
@@ -531,65 +304,13 @@
     </div>
 
     <script>
-        // === KHAI BÁO CẤU HÌNH & API ===
         const URL_REPORT_API = "https://script.google.com/a/macros/enotion.io/s/AKfycbzynUh65kMWVtwRdYdg8x35-6LViA_JwMPrWhEoMdDXFDP7tpcheilYrReQSIrQ6zAtIQ/exec";
-        
-        // Link Webhook Discord
-        const DISCORD_WEBHOOK_URL = "https://discord.com/api/webhooks/1522191984020684830/z2Y75Ncd-Ocn0PGWEWrD0_amVNnua5KGdUVxXuHIPSPyIvRv6TmPsDit2ag7gRaHrXID";
-
-        const firebaseConfig = {
-            apiKey: "AIzaSyBZ72fOBO-VPMDrXBS4E15TN5L7tfcL46s",
-            authDomain: "device-manage-d4f5d.firebaseapp.com",
-            projectId: "device-manage-d4f5d",
-            storageBucket: "device-manage-d4f5d.firebasestorage.app",
-            messagingSenderId: "747189096859",
-            appId: "1:747189096859:web:abcdef..."
-        };
-
-        // ================= HÀM GỬI THÔNG BÁO DISCORD =================
-        function sendDiscordNotification(embed) {
-            if (!DISCORD_WEBHOOK_URL) return;
-
-            const payload = {
-                username: "Device Manager Bot",
-                embeds: [embed]
-            };
-
-            fetch(DISCORD_WEBHOOK_URL, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(payload)
-            }).catch(err => console.error("Lỗi gửi Discord:", err));
-        }
-
-        let db = null;
-        try {
-            if (firebaseConfig.apiKey) {
-                firebase.initializeApp(firebaseConfig);
-                db = firebase.firestore();
-                console.log("⚡ Firebase Firestore kết nối thành công!");
-            }
-        } catch (e) {
-            console.error("Lỗi khởi tạo Firebase:", e);
-        }
 
         let rawJiraData = [];
         let availableStatuses = [];
         let tagPriorityChartInstance = null;
         let priorityDoughnutChartInstance = null;
         let activeProgressTab = 'paste';
-
-        // Các biến dữ liệu Tab Device
-        let fullDeviceListWithTypes = [];
-        let currentAvailableDevices = [];
-        let deviceLogsData = [];
-        let isOnlyUnreturned = false;
-        let currentDevicePage = 1;
-        const ITEMS_PER_PAGE = 10;
-        
-        // Biến phục vụ Real-time
-        let isListenersInitialized = false;
-        let initialLoadCounter = 0;
 
         const priorityColors = {
             'Highest': '#DC2626', 'High': '#F97316', 'Medium': '#F59E0B',
@@ -609,61 +330,29 @@
 
         function handleCredentialResponse(response) {
             const responsePayload = decodeJwtResponse(response.credential);
-            loggedInUser = {
-                name: responsePayload.name,
-                email: responsePayload.email,
-                picture: responsePayload.picture
-            };
+            loggedInUser = { name: responsePayload.name, email: responsePayload.email, picture: responsePayload.picture };
             localStorage.setItem('jira_google_user', JSON.stringify(loggedInUser));
             updateAuthUI();
         }
 
         function updateAuthUI() {
             const storedUser = localStorage.getItem('jira_google_user');
-            
             const loginOption = document.getElementById('loginOption');
             const userProfileBtn = document.getElementById('userProfileBtn');
-            const borrowerInput = document.getElementById('borrowerNameInput');
-            const btnSubmitBorrow = document.getElementById('btnSubmitBorrow');
             const userDropdown = document.getElementById('userDropdown');
             
             if (storedUser) {
                 loggedInUser = JSON.parse(storedUser);
-                
                 if(loginOption) loginOption.classList.add('hidden');
                 if(userProfileBtn) userProfileBtn.classList.remove('hidden');
-                
                 document.getElementById('userNameDisplay').innerText = loggedInUser.name;
                 document.getElementById('userAvatar').src = loggedInUser.picture;
-                
-                if(borrowerInput) {
-                    borrowerInput.value = loggedInUser.name;
-                }
-                
-                if(btnSubmitBorrow) {
-                    btnSubmitBorrow.disabled = false;
-                }
-
                 if(userDropdown) userDropdown.classList.add('hidden');
             } else {
                 loggedInUser = null;
-                
                 if(loginOption) loginOption.classList.remove('hidden');
                 if(userProfileBtn) userProfileBtn.classList.add('hidden');
-                
-                if(borrowerInput) {
-                    borrowerInput.value = '';
-                }
-                
-                if(btnSubmitBorrow) {
-                    btnSubmitBorrow.disabled = true;
-                }
-
                 if(userDropdown) userDropdown.classList.add('hidden');
-            }
-
-            if (deviceLogsData && deviceLogsData.length > 0) {
-                renderPaginatedDeviceLogs();
             }
         }
 
@@ -706,7 +395,6 @@
                 dateInput.value = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
             }
 
-            // Gắn sự kiện upload file Excel
             const dropZone = document.getElementById('dropZone');
             const excelFileInput = document.getElementById('excelFileInput');
 
@@ -724,7 +412,6 @@
                 });
             }
             
-            // Xử lý đóng Dropdown Đăng xuất khi click ra ngoài
             document.addEventListener('click', function(event) {
                 const userProfileBtn = document.getElementById('userProfileBtn');
                 const userDropdown = document.getElementById('userDropdown');
@@ -732,54 +419,8 @@
                     userDropdown.classList.add('hidden');
                 }
             });
-            
-            // Xử lý đóng Dropdown Thiết bị khi click ra ngoài
-            document.addEventListener('click', function(event) {
-                const searchInput = document.getElementById('deviceSearchInput');
-                const dropdownContainer = document.getElementById('deviceDropdownContainer');
-                
-                if (searchInput && dropdownContainer) {
-                    if (!searchInput.contains(event.target) && !dropdownContainer.contains(event.target)) {
-                        closeDeviceDropdown();
-                        // Tránh việc gõ nửa chừng rồi bấm ra ngoài. Tự trả về giá trị đã chọn chuẩn.
-                        if (searchInput.value !== searchInput.dataset.value) {
-                            searchInput.value = searchInput.dataset.value || '';
-                        }
-                    }
-                }
-            });
-
-            // Khởi chạy listener lấy data thiết bị (Real-time)
-            loadDeviceData(false);
         });
 
-        function switchMainTab(tab) {
-            const navReportBtn = document.getElementById('navReportBtn');
-            const navDeviceBtn = document.getElementById('navDeviceBtn');
-            const reportSec = document.getElementById('tabReportSection');
-            const deviceSec = document.getElementById('tabDeviceSection');
-            const pageTitleDisplay = document.getElementById('pageTitleDisplay');
-
-            const activeClass = "whitespace-nowrap flex items-center gap-3 px-4 py-3.5 text-sm font-bold rounded-xl transition bg-indigo-600 text-white shadow-md";
-            const inactiveClass = "whitespace-nowrap flex items-center gap-3 px-4 py-3.5 text-sm font-bold rounded-xl transition text-indigo-200 hover:bg-white/10 hover:text-white";
-
-            if (tab === 'report') {
-                reportSec.classList.remove('hidden');
-                deviceSec.classList.add('hidden');
-                navReportBtn.className = activeClass;
-                navDeviceBtn.className = inactiveClass;
-                pageTitleDisplay.innerText = "Báo Cáo Daily (Jira)";
-            } else {
-                deviceSec.classList.remove('hidden');
-                reportSec.classList.add('hidden');
-                navDeviceBtn.className = activeClass;
-                navReportBtn.className = inactiveClass;
-                pageTitleDisplay.innerText = "Mượn/Trả Thiết Bị";
-                loadDeviceData(false);
-            }
-        }
-
-        // --- XỬ LÝ ĐỔI FILE JIRA KHÁC ---
         function changeJiraFile() {
             document.getElementById('excelFileInput').value = '';
             document.getElementById('fileName').innerText = '';
@@ -789,7 +430,6 @@
             rawJiraData = [];
         }
 
-        // --- XỬ LÝ FILE EXCEL JIRA ---
         function handleFile(file) {
             document.getElementById('fileName').innerText = file.name;
             document.getElementById('fileInfo').classList.remove('hidden');
@@ -1060,7 +700,6 @@
             });
         }
 
-        // --- XỬ LÝ DỮ LIỆU TIẾN ĐỘ GOOGLE SHEET MATRIX ---
         function formatPctDisplayFixed(val) {
             let s = String(val || '').trim();
             if (s.includes('<<')) s = s.split('<<')[0].trim();
@@ -1181,19 +820,15 @@
                 const isInProgressStatus = ['doing', 'in progress', 'in-progress'].some(kw => item.lowerG.includes(kw));
 
                 if (isZero && isInProgressStatus) {
-                    // Mới thêm: 0% nhưng status đang là in progress -> Failed
                     inProgressRaw.push({ name: item.name, val: "Failed", status: item.colG });
                 }
                 else if (isZero && (item.lowerG.includes('done') || item.lowerG.includes('passed') || item.lowerG !== '')) {
-                    // Logic gốc cho DONE
                     doneRaw.push({ name: item.name, val: "Passed", status: item.colG });
                 }
                 else if ((item.pctNum !== null && item.pctNum > 0 && item.pctNum < 100) || isInProgressStatus) {
-                    // Logic gốc cho IN PROGRESS
                     inProgressRaw.push({ name: item.name, val: formatPctDisplayFixed(valToUse), status: item.colG });
                 }
                 else if (isHundred || ['100%','1','100'].includes(String(item.colE).trim())) {
-                    // Logic gốc cho REMAINING
                     remainingRaw.push({ name: item.name, val: formatPctDisplayFixed(valToUse), status: item.colG });
                 }
             });
@@ -1452,430 +1087,11 @@
 
             } catch (err) {
                 console.error('Lỗi khi copy:', err);
-                showCustomAlert('Có lỗi xảy ra', 'Không thể tự tự động copy, vui lòng kiểm tra lại quyền truy cập Clipboard.', true);
+                showCustomAlert('Có lỗi xảy ra', 'Không thể tự động copy, vui lòng kiểm tra lại quyền truy cập Clipboard.', true);
             } finally {
                 copyBtn.disabled = false;
                 copyBtn.innerHTML = originalBtnHtml;
             }
-        }
-
-        // ================= MƯỢN & TRẢ DEVICE TỪ FIREBASE (REAL-TIME) =================
-        function loadDeviceData(isManualRefresh = false) {
-            if (!db) {
-                console.error("Firestore chưa khởi tạo!");
-                document.getElementById('loadingModal').classList.add('hidden');
-                return;
-            }
-
-            if (isManualRefresh) {
-                showCustomAlert('Real-time Sync ⚡', 'Hệ thống đang tự động đồng bộ dữ liệu theo thời gian thực! Bạn không cần bấm làm mới thủ công nữa.');
-                return;
-            }
-
-            if (isListenersInitialized) return;
-
-            document.getElementById('loadingModal').classList.remove('hidden');
-
-            db.collection("devices").onSnapshot((querySnapshot) => {
-                fullDeviceListWithTypes = [];
-                querySnapshot.forEach((doc) => {
-                    const data = doc.data();
-                    fullDeviceListWithTypes.push({
-                        name: data.name,
-                        type: data.type || "Khác",
-                        performance: data.performance || "Chưa phân loại"
-                    });
-                });
-
-                renderTypeDropdown();
-                filterDeviceDropdown();
-                
-                initialLoadCounter++;
-                if(initialLoadCounter >= 2) document.getElementById('loadingModal').classList.add('hidden');
-            }, (error) => {
-                console.error("Lỗi lắng nghe devices:", error);
-            });
-
-            db.collection("device_logs").orderBy("createdAt", "desc").onSnapshot((querySnapshot) => {
-                deviceLogsData = [];
-                querySnapshot.forEach((doc) => {
-                    deviceLogsData.push({ id: doc.id, ...doc.data() });
-                });
-                
-                filterDeviceDropdown();
-                renderPaginatedDeviceLogs();
-
-                initialLoadCounter++;
-                if(initialLoadCounter >= 2) document.getElementById('loadingModal').classList.add('hidden');
-            }, (error) => {
-                console.error("Lỗi lắng nghe logs:", error);
-            });
-
-            isListenersInitialized = true;
-        }
-
-        function renderTypeDropdown() {
-            const typeSelect = document.getElementById('deviceTypeSelect');
-            const perfSet = new Set(); 
-
-            fullDeviceListWithTypes.forEach(d => {
-                if (d.performance && d.performance !== "Chưa phân loại") perfSet.add(d.performance);
-            });
-
-            typeSelect.innerHTML = '<option value="ALL">-- Tất cả loại --</option>'; 
-            Array.from(perfSet).sort().forEach(p => {
-                const opt = document.createElement('option');
-                opt.value = p;
-                opt.textContent = p;
-                typeSelect.appendChild(opt);
-            });
-        }
-
-        function filterDeviceDropdown() {
-            const selectedPerf = document.getElementById('deviceTypeSelect').value;
-            
-            const currentlyBorrowedSet = new Set();
-            deviceLogsData.forEach(log => {
-                if (!String(log.trangThai || '').toLowerCase().includes('đã trả')) {
-                    if (log.thietBi) currentlyBorrowedSet.add(log.thietBi.trim());
-                }
-            });
-
-            currentAvailableDevices = fullDeviceListWithTypes.filter(d => {
-                const matchPerf = (selectedPerf === 'ALL' || d.performance === selectedPerf); 
-                const isAvailable = !currentlyBorrowedSet.has(d.name.trim());
-                return matchPerf && isAvailable;
-            });
-
-            const searchInput = document.getElementById('deviceSearchInput');
-            if (currentAvailableDevices.length > 0) {
-                searchInput.placeholder = `-- Gõ tìm / Chọn (${currentAvailableDevices.length} máy) --`;
-                searchInput.disabled = false;
-            } else {
-                searchInput.placeholder = "-- Hết thiết bị khả dụng --";
-                searchInput.disabled = true;
-            }
-            
-            searchInput.value = '';
-            searchInput.dataset.value = '';
-            
-            renderDeviceDropdownOptions(currentAvailableDevices);
-        }
-
-        function renderDeviceDropdownOptions(devices) {
-            const ul = document.getElementById('deviceListUl');
-            ul.innerHTML = '';
-            
-            if (devices.length === 0) {
-                ul.innerHTML = '<li class="px-3 py-3 text-slate-400 text-center italic">Không tìm thấy thiết bị phù hợp</li>';
-                return;
-            }
-
-            devices.forEach(d => {
-                const li = document.createElement('li');
-                li.className = 'px-3 py-2.5 hover:bg-indigo-50 hover:text-indigo-700 cursor-pointer transition';
-                li.textContent = `${d.name} [${d.performance}]`;
-                
-                li.onclick = () => {
-                    const input = document.getElementById('deviceSearchInput');
-                    input.value = d.name;            
-                    input.dataset.value = d.name;    
-                    closeDeviceDropdown();
-                };
-                ul.appendChild(li);
-            });
-        }
-
-        function filterDeviceListUI() {
-            const keyword = document.getElementById('deviceSearchInput').value.toLowerCase();
-            const filtered = currentAvailableDevices.filter(d => 
-                d.name.toLowerCase().includes(keyword) || (d.performance && d.performance.toLowerCase().includes(keyword))
-            );
-            renderDeviceDropdownOptions(filtered);
-            document.getElementById('deviceDropdownContainer').classList.remove('hidden');
-        }
-
-        function openDeviceDropdown() {
-            if (document.getElementById('deviceSearchInput').disabled) return;
-            document.getElementById('deviceDropdownContainer').classList.remove('hidden');
-            filterDeviceListUI(); 
-        }
-
-        function closeDeviceDropdown() {
-            document.getElementById('deviceDropdownContainer').classList.add('hidden');
-        }
-
-        function toggleUnreturnedFilter() {
-            isOnlyUnreturned = !isOnlyUnreturned;
-            const btn = document.getElementById('btnFilterUnreturned');
-            const textSpan = document.getElementById('filterUnreturnedText');
-
-            if (isOnlyUnreturned) {
-                btn.className = "flex-1 sm:flex-none inline-flex items-center justify-center gap-1.5 px-3 py-2 bg-amber-500 border border-amber-600 text-white text-xs font-bold rounded-lg shadow-sm transition";
-                textSpan.innerText = "Đang Lọc: Chưa Trả";
-            } else {
-                btn.className = "flex-1 sm:flex-none inline-flex items-center justify-center gap-1.5 px-3 py-2 bg-white border border-slate-300 hover:border-amber-400 text-slate-700 text-xs font-bold rounded-lg shadow-sm transition";
-                textSpan.innerText = "Chỉ xem Chưa Trả";
-            }
-
-            currentDevicePage = 1;
-            renderPaginatedDeviceLogs();
-        }
-
-        function renderPaginatedDeviceLogs() {
-            const tbody = document.getElementById('deviceLogTableBody');
-            tbody.innerHTML = '';
-
-            let filteredLogs = deviceLogsData;
-            if (isOnlyUnreturned) {
-                filteredLogs = deviceLogsData.filter(r => !String(r.trangThai || '').toLowerCase().includes('đã trả'));
-            }
-
-            const totalLogs = filteredLogs.length;
-            document.getElementById('logCountBadge').innerText = `${totalLogs} lượt`;
-            document.getElementById('totalLogsText').innerText = totalLogs;
-
-            if (totalLogs === 0) {
-                tbody.innerHTML = '<tr><td colspan="6" class="text-center py-10 text-slate-400 font-medium text-sm">Không có nhật ký mượn thiết bị nào!</td></tr>';
-                document.getElementById('pageRangeText').innerText = '0 - 0';
-                document.getElementById('currentPageText').innerText = '1';
-                document.getElementById('totalPagesText').innerText = '1';
-                document.getElementById('btnPrevPage').disabled = true;
-                document.getElementById('btnNextPage').disabled = true;
-                return;
-            }
-
-            const totalPages = Math.ceil(totalLogs / ITEMS_PER_PAGE);
-            if (currentDevicePage > totalPages) currentDevicePage = totalPages;
-            if (currentDevicePage < 1) currentDevicePage = 1;
-
-            const startIndex = (currentDevicePage - 1) * ITEMS_PER_PAGE;
-            const endIndex = Math.min(startIndex + ITEMS_PER_PAGE, totalLogs);
-            const pageData = filteredLogs.slice(startIndex, endIndex);
-
-            pageData.forEach(r => {
-                const tr = document.createElement('tr');
-                tr.className = "hover:bg-slate-50/80 transition border-b border-slate-100";
-
-                const isReturned = String(r.trangThai || '').toLowerCase().includes('đã trả');
-                const currentUserName = loggedInUser ? loggedInUser.name : '';
-                
-                const isOwner = (currentUserName === r.nguoiMuon) || (currentUserName === r.nguoiThaoTac);
-                
-                let statusBadge = `<span class="bg-amber-100 text-amber-800 px-2.5 py-1 rounded-md text-[11px] font-bold shadow-sm">Đang Mượn</span>`;
-                let actionButton = '';
-
-                if (isReturned) {
-                    statusBadge = `<span class="bg-emerald-100 text-emerald-800 px-2.5 py-1 rounded-md text-[11px] font-bold shadow-sm">Đã Trả</span>`;
-                    actionButton = `<span class="text-slate-400 text-[11px] italic font-medium"><i class="fa-solid fa-check mr-1"></i>Hoàn tất</span>`;
-                } else {
-                    if (isOwner) {
-                        actionButton = `<button onclick="submitReturnDevice('${r.id}', '${r.thietBi.replace(/'/g, "\\'")}', '${r.nguoiMuon.replace(/'/g, "\\'")}')" class="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white text-[11px] font-bold rounded-md shadow-sm transition inline-flex items-center gap-1.5"><i class="fa-solid fa-rotate-left"></i> Trả Device</button>`;
-                    } else {
-                        actionButton = `<button disabled class="px-3 py-1.5 bg-slate-200 text-slate-400 text-[11px] font-bold rounded-md shadow-sm inline-flex items-center gap-1.5 cursor-not-allowed" title="Chỉ tài khoản mượn mới được phép trả thiết bị"><i class="fa-solid fa-lock"></i> Trả Device</button>`;
-                    }
-                }
-
-                tr.innerHTML = `
-                    <td class="px-5 py-3.5 font-mono text-indigo-600 font-bold whitespace-nowrap">${r.thoiGian || ''}</td>
-                    <td class="px-5 py-3.5 font-bold text-slate-800 whitespace-nowrap">${r.nguoiMuon || ''}</td>
-                    <td class="px-5 py-3.5 text-emerald-700 font-bold max-w-xs truncate" title="${r.thietBi}">${r.thietBi || ''}</td>
-                    <td class="px-5 py-3.5 whitespace-nowrap">${statusBadge}</td>
-                    <td class="px-5 py-3.5 text-slate-500 font-mono text-[11px] font-bold whitespace-nowrap">${r.gioTra || ''}</td>
-                    <td class="px-5 py-3.5 whitespace-nowrap text-right">${actionButton}</td>
-                `;
-                tbody.appendChild(tr);
-            });
-
-            document.getElementById('pageRangeText').innerText = `${startIndex + 1} - ${endIndex}`;
-            document.getElementById('currentPageText').innerText = currentDevicePage;
-            document.getElementById('totalPagesText').innerText = totalPages;
-
-            document.getElementById('btnPrevPage').disabled = (currentDevicePage === 1);
-            document.getElementById('btnNextPage').disabled = (currentDevicePage === totalPages);
-        }
-
-        function changeDevicePage(direction) {
-            currentDevicePage += direction;
-            renderPaginatedDeviceLogs();
-        }
-
-        // ================= HÀM XỬ LÝ MƯỢN THIẾT BỊ =================
-        function submitBorrowDevice() {
-            if (!loggedInUser) {
-                showCustomAlert('Yêu cầu đăng nhập', 'Vui lòng đăng nhập tài khoản Google để mượn thiết bị!', true);
-                return;
-            }
-
-            const operatorName = loggedInUser.name; 
-            let borrowerName = document.getElementById('borrowerNameInput').value.trim(); 
-            if (!borrowerName) borrowerName = operatorName; 
-
-            const device = document.getElementById('deviceSearchInput').dataset.value || "";
-
-            if (!device) {
-                showCustomAlert('Chưa chọn thiết bị', 'Vui lòng chọn 1 thiết bị từ danh sách!', true);
-                return;
-            }
-
-            const btn = document.getElementById('btnSubmitBorrow');
-            const origHtml = btn.innerHTML;
-            btn.disabled = true;
-            btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin text-sm"></i> Đang ghi...`;
-
-            const now = new Date();
-            const pad = (n) => n.toString().padStart(2, '0');
-            const exactTimeStr = `${pad(now.getDate())}/${pad(now.getMonth()+1)}/${now.getFullYear()} ${pad(now.getHours())}:${pad(now.getMinutes())}:${pad(now.getSeconds())}`;
-            const timeStr = `${pad(now.getHours())}:${pad(now.getMinutes())} ${pad(now.getDate())}/${pad(now.getMonth()+1)}/${now.getFullYear()}`;
-
-            const newRecord = {
-                nguoiMuon: borrowerName,     
-                nguoiThaoTac: operatorName,  
-                thietBi: device,
-                thoiGian: timeStr,
-                trangThai: "Đang Mượn",
-                gioTra: "",
-                createdAt: firebase.firestore.FieldValue.serverTimestamp()
-            };
-
-            if (db) {
-                db.collection("device_logs").add(newRecord)
-                .then(() => {
-                    btn.disabled = false;
-                    btn.innerHTML = origHtml;
-                    showCustomAlert('Thành Công!', `Đã ghi nhận mượn [${device}] cho ${borrowerName}.`);
-                    
-                    let displayBorrower = `**${borrowerName}**`;
-                    if (borrowerName !== operatorName) {
-                        displayBorrower += `\n*(Log hộ bởi: ${operatorName})*`;
-                    }
-
-                    const embedBorrow = {
-                        title: "🟦 THÔNG BÁO MƯỢN THIẾT BỊ",
-                        color: 16753920,
-                        fields: [
-                            {
-                                name: "👤 Người thực hiện",
-                                value: displayBorrower,
-                                inline: true
-                            },
-                            {
-                                name: "📱 Thiết bị",
-                                value: `\`${device}\``,
-                                inline: true
-                            },
-                            {
-                                name: "⏰ Thời gian mượn",
-                                value: exactTimeStr,
-                                inline: false
-                            },
-                            {
-                                name: "📌 Trạng thái",
-                                value: "🟡 **Đang Mượn**",
-                                inline: false
-                            }
-                        ],
-                        timestamp: now.toISOString(),
-                        footer: { text: "QA Internal Portal System" }
-                    };
-                    sendDiscordNotification(embedBorrow);
-                })
-                .catch((err) => {
-                    console.error("Lỗi Firestore:", err);
-                    btn.disabled = false;
-                    btn.innerHTML = origHtml;
-                    showCustomAlert("Lỗi Server", "Không thể lưu thông tin mượn!", true);
-                });
-            }
-        }
-
-        // ================= HÀM XỬ LÝ TRẢ THIẾT BỊ =================
-        function submitReturnDevice(docId, deviceName, borrowerName) {
-            if (!confirm(`Xác nhận trả thiết bị: [${deviceName}]?`)) return;
-
-            const now = new Date();
-            const pad = (n) => n.toString().padStart(2, '0');
-            const exactTimeStr = `${pad(now.getDate())}/${pad(now.getMonth()+1)}/${now.getFullYear()} ${pad(now.getHours())}:${pad(now.getMinutes())}:${pad(now.getSeconds())}`;
-            const nowStr = `${pad(now.getHours())}:${pad(now.getMinutes())} ${pad(now.getDate())}/${pad(now.getMonth()+1)}/${now.getFullYear()}`; 
-
-            if (db) {
-                db.collection("device_logs").doc(docId).update({
-                    trangThai: "Đã Trả",
-                    gioTra: nowStr
-                })
-                .then(() => {
-                    showCustomAlert('Thành Công!', `Đã xác nhận trả thiết bị [${deviceName}].`);
-                    
-                    const embedReturn = {
-                        title: "✅ THÔNG BÁO TRẢ THIẾT BỊ",
-                        color: 3066993, 
-                        fields: [
-                            {
-                                name: "👤 Người thực hiện",
-                                value: `**${borrowerName}**`,
-                                inline: true
-                            },
-                            {
-                                name: "📱 Thiết bị",
-                                value: `\`${deviceName}\``,
-                                inline: true
-                            },
-                            {
-                                name: "⏰ Thời gian trả",
-                                value: exactTimeStr,
-                                inline: false
-                            },
-                            {
-                                name: "📌 Trạng thái",
-                                value: "🟢 **Đã Trả**",
-                                inline: false
-                            }
-                        ],
-                        timestamp: now.toISOString(),
-                        footer: { text: "QA Internal Portal System" }
-                    };
-                    sendDiscordNotification(embedReturn);
-                })
-                .catch((err) => {
-                    console.error("Lỗi cập nhật trả:", err);
-                    showCustomAlert("Lỗi Server", "Không thể cập nhật trạng thái trả!", true);
-                });
-            }
-        }
-
-        // ================= XUẤT FILE EXCEL NHẬT KÝ =================
-        function exportDeviceLogsToExcel() {
-            if (!deviceLogsData || deviceLogsData.length === 0) {
-                showCustomAlert("Cảnh báo", "Hiện chưa có dữ liệu nhật ký mượn trả để xuất file Excel!", true);
-                return;
-            }
-
-            let dataToExport = deviceLogsData;
-            
-            if (isOnlyUnreturned) {
-                dataToExport = deviceLogsData.filter(r => !String(r.trangThai || '').toLowerCase().includes('đã trả'));
-            }
-
-            const exportData = dataToExport.map((log, index) => {
-                const nguoiGhiNhan = log.nguoiThaoTac ? log.nguoiThaoTac : (log.nguoiMuon || '');
-                
-                return {
-                    "STT": index + 1,
-                    "Thời Gian Mượn": log.thoiGian || '',
-                    "Người Mượn (Hiển thị)": log.nguoiMuon || '',
-                    "Tài Khoản Ghi Nhận (System Audit)": nguoiGhiNhan, 
-                    "Thiết Bị": log.thietBi || '',
-                    "Trạng Thái": log.trangThai || '',
-                    "Giờ Trả": log.gioTra || ''
-                };
-            });
-
-            const ws = XLSX.utils.json_to_sheet(exportData);
-            const wb = XLSX.utils.book_new();
-            XLSX.utils.book_append_sheet(wb, ws, "NhatKyMuonTra");
-            
-            const dateStr = new Date().toISOString().slice(0, 10);
-            XLSX.writeFile(wb, `NhatKy_MuonTra_Device_${dateStr}.xlsx`);
         }
 
         function showCustomAlert(title, message, isError = false) {
