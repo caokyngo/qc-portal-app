@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Thông Tin Thiết Bị - QC Portal</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- FIREBASE SDK -->
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+</head>
+<body class="bg-slate-50 text-slate-800 font-sans h-screen w-full flex flex-col overflow-hidden">
+
+    <!-- HEADER -->
+    <header class="bg-white shadow-sm border-b border-slate-200 p-4 md:px-8 flex justify-between items-center z-10 min-h-[72px]">
+        <div class="flex items-center gap-4">
+            <!-- Nút Quay lại -->
+            <a href="index.html" class="inline-flex items-center justify-center w-10 h-10 bg-slate-100 hover:bg-indigo-50 text-slate-600 hover:text-indigo-700 rounded-xl transition">
+                <i class="fa-solid fa-arrow-left text-lg"></i>
+            </a>
+            <div>
+                <h1 class="text-xl font-bold text-slate-800 leading-tight">Danh Sách Thiết Bị</h1>
+                <p class="text-slate-500 text-[11px] font-medium tracking-wide uppercase">Cấu hình & Hiệu năng</p>
+            </div>
+        </div>
+        
+        <div class="bg-indigo-50 text-indigo-700 border border-indigo-200 px-4 py-2 rounded-xl text-sm font-bold shadow-sm">
+            Tổng: <span id="totalDeviceBadge" class="text-indigo-600 text-base ml-1">0</span> máy
+        </div>
+    </header>
+
+    <!-- MAIN CONTENT -->
+    <main class="flex-1 overflow-y-auto p-4 md:p-8">
+        <div class="w-full mx-auto max-w-6xl space-y-6">
+            
+            <section class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+                <!-- Thanh công cụ -->
+                <div class="p-5 border-b border-slate-200 flex flex-col sm:flex-row justify-between items-center gap-4 bg-slate-50/80">
+                    <h3 class="text-base font-bold text-slate-800 flex items-center gap-2">
+                        <i class="fa-solid fa-mobile-screen text-indigo-600"></i>
+                        Thông tin chi tiết
+                    </h3>
+                    
+                    <div class="relative w-full sm:w-72">
+                        <i class="fa-solid fa-search absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-sm"></i>
+                        <input type="text" id="searchInput" oninput="searchDevices()" placeholder="Tìm tên máy, OS, hiệu năng..." class="w-full bg-white border border-slate-300 text-slate-700 font-medium text-xs rounded-xl py-2.5 pl-9 pr-4 focus:ring-2 focus:ring-indigo-500 outline-none shadow-sm transition">
+                    </div>
+                </div>
+
+                <!-- Bảng Dữ Liệu -->
+                <div class="overflow-x-auto min-h-[500px]">
+                    <table class="w-full text-sm text-left text-slate-600">
+                        <thead class="text-slate-700 uppercase bg-slate-100 sticky top-0 border-b border-slate-200 text-xs font-bold">
+                            <tr>
+                                <th class="px-5 py-4 w-16 text-center">STT</th>
+                                <th class="px-5 py-4">Tên Thiết Bị</th>
+                                <th class="px-5 py-4 w-32">Nền Tảng</th>
+                                <th class="px-5 py-4 w-40">Phiên Bản OS</th>
+                                <th class="px-5 py-4 w-32">Hiệu Năng</th>
+                            </tr>
+                        </thead>
+                        <tbody id="deviceTableBody" class="divide-y divide-slate-200 font-medium">
+                            <tr>
+                                <td colspan="5" class="text-center py-10 text-slate-400 italic">Đang tải dữ liệu từ Firebase...</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+
+        </div>
+    </main>
+
+    <script>
+        // === CẤU HÌNH FIREBASE ===
+        const firebaseConfig = {
+            apiKey: "AIzaSyBZ72fOBO-VPMDrXBS4E15TN5L7tfcL46s",
+            authDomain: "device-manage-d4f5d.firebaseapp.com",
+            projectId: "device-manage-d4f5d",
+            storageBucket: "device-manage-d4f5d.firebasestorage.app",
+            messagingSenderId: "747189096859",
+            appId: "1:747189096859:web:abcdef..."
+        };
+
+        let db = null;
+        try {
+            firebase.initializeApp(firebaseConfig);
+            db = firebase.firestore();
+            console.log("⚡ Firebase Firestore kết nối thành công!");
+        } catch (e) {
+            console.error("Lỗi khởi tạo Firebase:", e);
+        }
+
+        let allDevicesList = [];
+
+        // Lấy dữ liệu Real-time từ Firebase
+        if (db) {
+            db.collection("devices").orderBy("name").onSnapshot((snapshot) => {
+                allDevicesList = [];
+                snapshot.forEach((doc) => {
+                    allDevicesList.push({ id: doc.id, ...doc.data() });
+                });
+                renderTable(allDevicesList);
+            }, (error) => {
+                console.error("Lỗi lấy data:", error);
+            });
+        }
+
+        // Hàm render dữ liệu ra bảng
+        function renderTable(data) {
+            const tbody = document.getElementById("deviceTableBody");
+            document.getElementById("totalDeviceBadge").innerText = data.length;
+            tbody.innerHTML = '';
+
+            if (data.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="5" class="text-center py-10 text-slate-400 italic">Không tìm thấy thiết bị nào!</td></tr>';
+                return;
+            }
+
+            data.forEach((device, index) => {
+                const tr = document.createElement("tr");
+                tr.className = "hover:bg-indigo-50/40 transition border-b border-slate-100";
+
+                const name = device.name || "Chưa có tên";
+                const type = device.type || "Khác";
+                const osVersion = device.osVersion || "N/A";
+                const perf = device.performance || "Chưa rõ";
+
+                // CSS cho Hệ điều hành
+                let typeBadge = `<span class="bg-slate-100 text-slate-600 px-2.5 py-1 rounded text-xs font-bold border border-slate-200">${type}</span>`;
+                if (type.toLowerCase() === "ios") typeBadge = `<span class="bg-blue-50 text-blue-700 px-2.5 py-1 rounded text-xs font-bold border border-blue-200"><i class="fa-brands fa-apple mr-1"></i>${type}</span>`;
+                if (type.toLowerCase() === "android") typeBadge = `<span class="bg-emerald-50 text-emerald-700 px-2.5 py-1 rounded text-xs font-bold border border-emerald-200"><i class="fa-brands fa-android mr-1"></i>${type}</span>`;
+
+                // CSS cho Hiệu năng
+                let perfBadge = `<span class="text-slate-500 font-semibold">${perf}</span>`;
+                if (perf.toLowerCase() === "mạnh") perfBadge = `<span class="text-emerald-600 font-black"><i class="fa-solid fa-bolt mr-1"></i>Mạnh</span>`;
+                if (perf.toLowerCase().includes("trung")) perfBadge = `<span class="text-amber-500 font-black"><i class="fa-solid fa-battery-half mr-1"></i>Trung</span>`;
+                if (perf.toLowerCase() === "yếu") perfBadge = `<span class="text-rose-500 font-black"><i class="fa-solid fa-battery-quarter mr-1"></i>Yếu</span>`;
+
+                tr.innerHTML = `
+                    <td class="px-5 py-4 text-center font-mono text-slate-400">${index + 1}</td>
+                    <td class="px-5 py-4 font-bold text-indigo-900">${name}</td>
+                    <td class="px-5 py-4 whitespace-nowrap">${typeBadge}</td>
+                    <td class="px-5 py-4 font-mono text-slate-700 font-semibold text-xs">${osVersion}</td>
+                    <td class="px-5 py-4 whitespace-nowrap">${perfBadge}</td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        // Hàm tìm kiếm
+        function searchDevices() {
+            const keyword = document.getElementById("searchInput").value.toLowerCase();
+            const filtered = allDevicesList.filter(d => 
+                (d.name && d.name.toLowerCase().includes(keyword)) ||
+                (d.type && d.type.toLowerCase().includes(keyword)) ||
+                (d.osVersion && d.osVersion.toLowerCase().includes(keyword)) ||
+                (d.performance && d.performance.toLowerCase().includes(keyword))
+            );
+            renderTable(filtered);
+        }
+    </script>
+</body>
+</html>
