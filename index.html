@@ -7,6 +7,7 @@
     <meta http-equiv="Pragma" content="no-cache">
     <meta http-equiv="Expires" content="0">
     <title>QC Portal - Báo Cáo Daily</title>
+    
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
@@ -15,6 +16,29 @@
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#312e81">
     <script src="https://accounts.google.com/gsi/client" async defer></script>
+
+    <!-- Script Kiểm tra & Tự động Update bản mới (PWA) -->
+    <script>
+      if ('serviceWorker' in navigator) {
+        window.addEventListener('load', () => {
+          navigator.serviceWorker.register('./sw.js').then(reg => {
+            // Ép trình duyệt kiểm tra bản cập nhật
+            reg.update();
+            
+            // Nếu có bản mới -> Tự động kích hoạt và reload
+            reg.onupdatefound = () => {
+              const installingWorker = reg.installing;
+              installingWorker.onstatechange = () => {
+                if (installingWorker.state === 'installed' && navigator.serviceWorker.controller) {
+                  console.log('Có phiên bản code mới! Đang tự động tải lại...');
+                  window.location.reload();
+                }
+              };
+            };
+          }).catch(err => console.log('Lỗi Service Worker:', err));
+        });
+      }
+    </script>
 </head>
 <body class="bg-slate-50 text-slate-800 font-sans h-screen w-full flex flex-col md:flex-row overflow-hidden">
 
