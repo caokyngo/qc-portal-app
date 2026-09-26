@@ -7,16 +7,42 @@
     <meta http-equiv="Pragma" content="no-cache">
     <meta http-equiv="Expires" content="0">
     <title>QC Portal - Mượn Thiết Bị</title>
+    
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     
+    <!-- FIREBASE SDK -->
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
 
+    <!-- Cấu hình PWA -->
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#312e81">
     <script src="https://accounts.google.com/gsi/client" async defer></script>
+
+    <!-- Script Kiểm tra & Tự động Update bản mới (PWA) -->
+    <script>
+      if ('serviceWorker' in navigator) {
+        window.addEventListener('load', () => {
+          navigator.serviceWorker.register('./sw.js').then(reg => {
+            // Ép trình duyệt kiểm tra bản cập nhật
+            reg.update();
+            
+            // Nếu có bản mới -> Tự động kích hoạt và reload
+            reg.onupdatefound = () => {
+              const installingWorker = reg.installing;
+              installingWorker.onstatechange = () => {
+                if (installingWorker.state === 'installed' && navigator.serviceWorker.controller) {
+                  console.log('Có phiên bản code mới! Đang tự động tải lại...');
+                  window.location.reload();
+                }
+              };
+            };
+          }).catch(err => console.log('Lỗi Service Worker:', err));
+        });
+      }
+    </script>
 </head>
 <body class="bg-slate-50 text-slate-800 font-sans h-screen w-full flex flex-col md:flex-row overflow-hidden">
 
@@ -32,7 +58,7 @@
             </div>
         </div>
         
-    <nav class="flex md:flex-col gap-2 p-4 overflow-x-auto md:overflow-y-auto flex-1 bg-indigo-800 md:bg-transparent custom-scrollbar">
+        <nav class="flex md:flex-col gap-2 p-4 overflow-x-auto md:overflow-y-auto flex-1 bg-indigo-800 md:bg-transparent custom-scrollbar">
             <a href="index" class="whitespace-nowrap flex items-center gap-3 px-4 py-3.5 text-sm font-bold rounded-xl transition text-indigo-200 hover:bg-white/10 hover:text-white">
                 <i class="fa-solid fa-chart-line w-5 text-center text-lg"></i> 
                 <span>Báo Cáo Daily</span>
@@ -516,7 +542,7 @@
                 tbody.appendChild(tr);
             });
 
-            document.getElementById('pageRangeText').innerText = `${startIndex + 1} - ${endIndex}`;
+            document.getElementById('pageRangeText').innerText = `${startIndex + 1} -${endIndex}`;
             document.getElementById('currentPageText').innerText = currentDevicePage;
             document.getElementById('totalPagesText').innerText = totalPages;
             document.getElementById('btnPrevPage').disabled = (currentDevicePage === 1);
@@ -538,15 +564,15 @@
             btn.disabled = true; btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin text-sm"></i> Đang ghi...`;
 
             const now = new Date(); const pad = (n) => n.toString().padStart(2, '0');
-            const exactTimeStr = `${pad(now.getDate())}/${pad(now.getMonth()+1)}/${now.getFullYear()} ${pad(now.getHours())}:${pad(now.getMinutes())}:${pad(now.getSeconds())}`;
-            const timeStr = `${pad(now.getHours())}:${pad(now.getMinutes())} ${pad(now.getDate())}/${pad(now.getMonth()+1)}/${now.getFullYear()}`;
+            const exactTimeStr = `${pad(now.getDate())}/${pad(now.getMonth()+1)}/${now.getFullYear()}${pad(now.getHours())}:${pad(now.getMinutes())}:${pad(now.getSeconds())}`;
+            const timeStr = `${pad(now.getHours())}:${pad(now.getMinutes())}${pad(now.getDate())}/${pad(now.getMonth()+1)}/${now.getFullYear()}`;
 
             const newRecord = { nguoiMuon: borrowerName, nguoiThaoTac: operatorName, thietBi: device, thoiGian: timeStr, trangThai: "Đang Mượn", gioTra: "", createdAt: firebase.firestore.FieldValue.serverTimestamp() };
 
             if (db) {
                 db.collection("device_logs").add(newRecord).then(() => {
                     btn.disabled = false; btn.innerHTML = origHtml;
-                    showCustomAlert('Thành Công!', `Đã ghi nhận mượn [${device}] cho ${borrowerName}.`);
+                    showCustomAlert('Thành Công!', `Đã ghi nhận mượn [${device}] cho${borrowerName}.`);
                     let displayBorrower = `**${borrowerName}**`;
                     if (borrowerName !== operatorName) displayBorrower += `\n*(Log hộ bởi: ${operatorName})*`;
                     sendDiscordNotification({ title: "🟦 THÔNG BÁO MƯỢN THIẾT BỊ", color: 16753920, fields: [{ name: "👤 Người thực hiện", value: displayBorrower, inline: true }, { name: "📱 Thiết bị", value: `\`${device}\``, inline: true }, { name: "⏰ Thời gian mượn", value: exactTimeStr, inline: false }, { name: "📌 Trạng thái", value: "🟡 **Đang Mượn**", inline: false }], timestamp: now.toISOString(), footer: { text: "QA Internal Portal System" } });
@@ -560,8 +586,8 @@
         function submitReturnDevice(docId, deviceName, borrowerName) {
             if (!confirm(`Xác nhận trả thiết bị: [${deviceName}]?`)) return;
             const now = new Date(); const pad = (n) => n.toString().padStart(2, '0');
-            const exactTimeStr = `${pad(now.getDate())}/${pad(now.getMonth()+1)}/${now.getFullYear()} ${pad(now.getHours())}:${pad(now.getMinutes())}:${pad(now.getSeconds())}`;
-            const nowStr = `${pad(now.getHours())}:${pad(now.getMinutes())} ${pad(now.getDate())}/${pad(now.getMonth()+1)}/${now.getFullYear()}`; 
+            const exactTimeStr = `${pad(now.getDate())}/${pad(now.getMonth()+1)}/${now.getFullYear()}${pad(now.getHours())}:${pad(now.getMinutes())}:${pad(now.getSeconds())}`;
+            const nowStr = `${pad(now.getHours())}:${pad(now.getMinutes())}${pad(now.getDate())}/${pad(now.getMonth()+1)}/${now.getFullYear()}`; 
 
             if (db) {
                 db.collection("device_logs").doc(docId).update({ trangThai: "Đã Trả", gioTra: nowStr }).then(() => {
