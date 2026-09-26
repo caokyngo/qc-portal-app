@@ -37,7 +37,7 @@
       }
     </script>
 
-    <!-- CSS Dòng thông báo chạy liên tục + Màu cam loang vàng + Hiệu ứng Blink -->
+    <!-- CSS Dòng thông báo chạy liên tục chuẩn mượt -->
     <style>
         .travel-marquee {
             width: 100%;
@@ -50,7 +50,7 @@
         .travel-marquee-track {
             display: flex;
             width: max-content;
-            animation: travel-marquee-scroll 12s linear infinite;
+            animation: travel-marquee-scroll 18s linear infinite;
             will-change: transform;
         }
 
@@ -59,9 +59,9 @@
             flex: 0 0 auto;
             align-items: center;
             padding-right: 2.5rem;
+            gap: 2.5rem;
         }
 
-        /* Chữ màu cam loang vàng đậm + Hiệu ứng nhấp nháy (Blink) */
         .travel-marquee-message {
             display: inline-flex;
             align-items: center;
@@ -69,17 +69,15 @@
             white-space: nowrap;
             font-family: 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
             font-size: 16px;
-            font-weight: 800; /* Chữ đậm tương phản cao */
+            font-weight: 800;
             letter-spacing: 0.2px;
             line-height: 1.5;
             
-            /* Dải màu Gradient Cam - Vàng đậm */
             background: linear-gradient(90deg, #ea580c 0%, #d97706 50%, #ca8a04 100%);
             -webkit-background-clip: text;
             background-clip: text;
             color: transparent;
 
-            /* Animation Blink chớp nháy */
             animation: travel-blink 1.2s infinite ease-in-out;
         }
 
@@ -102,7 +100,6 @@
             to { transform: translateX(-50%); }
         }
 
-        /* Hiệu ứng Blink nhấp nháy tạo điểm nhấn */
         @keyframes travel-blink {
             0%, 100% {
                 opacity: 1;
@@ -164,14 +161,13 @@
     <div class="flex-1 flex flex-col h-full overflow-hidden bg-slate-50 relative">
         <!-- HEADER MỚI VỚI BỐ CỤC 3 PHẦN -->
         <header class="bg-white text-slate-800 shadow-sm border-b border-slate-200 z-10 p-3 px-4 md:px-6 flex justify-between items-center min-h-[72px]">
-            <!-- Phần bên trái: Tiêu đề -->
             <div class="flex-1 shrink-0">
                 <h2 class="text-xl font-bold text-slate-800 hidden sm:block">Báo Cáo Daily (Jira)</h2>
             </div>
             
             <!-- Phần ở giữa: Thông báo đếm ngược chạy liên tục -->
             <div class="hidden lg:flex flex-1 min-w-0 justify-center items-center">
-                <div class="w-full max-w-[440px] px-4 py-2 rounded-full bg-slate-50/90 border border-slate-200 shadow-sm cursor-default">
+                <div class="w-full max-w-[460px] px-4 py-2 rounded-full bg-slate-50/90 border border-slate-200 shadow-sm cursor-default">
                     <div class="travel-marquee">
                         <div class="travel-marquee-track">
                             <div class="travel-marquee-group">
@@ -179,11 +175,19 @@
                                     <i class="fa-solid fa-plane-departure" aria-hidden="true"></i>
                                     Chỉ còn <strong class="mondayCountText travel-marquee-count">...</strong> Thứ 2 nữa là đi Trùng Khánh nhoa cả nhà iu! 🇨🇳
                                 </span>
+                                <span class="travel-marquee-message soft-text">
+                                    <i class="fa-solid fa-plane-departure" aria-hidden="true"></i>
+                                    Săn Sale lẹ tay để còn kịp nhoa! 🇨🇳
+                                </span>
                             </div>
                             <div class="travel-marquee-group" aria-hidden="true">
                                 <span class="travel-marquee-message soft-text">
                                     <i class="fa-solid fa-plane-departure" aria-hidden="true"></i>
-                                   Săn Sale lẹ tay để còn kịp nhoa! 🇨🇳
+                                    Chỉ còn <strong class="mondayCountText travel-marquee-count">...</strong> Thứ 2 nữa là đi Trùng Khánh nhoa cả nhà iu! 🇨🇳
+                                </span>
+                                <span class="travel-marquee-message soft-text">
+                                    <i class="fa-solid fa-plane-departure" aria-hidden="true"></i>
+                                    Săn Sale lẹ tay để còn kịp nhoa! 🇨🇳
                                 </span>
                             </div>
                         </div>
