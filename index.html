@@ -22,10 +22,7 @@
       if ('serviceWorker' in navigator) {
         window.addEventListener('load', () => {
           navigator.serviceWorker.register('./sw.js').then(reg => {
-            // Ép trình duyệt kiểm tra bản cập nhật
             reg.update();
-            
-            // Nếu có bản mới -> Tự động kích hoạt và reload
             reg.onupdatefound = () => {
               const installingWorker = reg.installing;
               installingWorker.onstatechange = () => {
@@ -39,6 +36,40 @@
         });
       }
     </script>
+
+    <!-- CSS HIỆU ỨNG CHẠY CHỮ (MARQUEE) -->
+    <style>
+        .marquee-container {
+            width: 350px; /* Độ rộng của vùng chạy chữ */
+            overflow: hidden;
+            white-space: nowrap;
+            /* Tạo hiệu ứng mờ dần ở 2 đầu vùng cuộn */
+            mask-image: linear-gradient(to right, transparent, black 10%, black 90%, transparent);
+            -webkit-mask-image: linear-gradient(to right, transparent, black 10%, black 90%, transparent);
+        }
+        
+        .animate-marquee {
+            display: inline-block;
+            padding-left: 100%; /* Bắt đầu từ ngoài cùng bên phải */
+            animation: marquee 14s linear infinite; /* Tốc độ chạy chữ: 14 giây */
+        }
+        
+        /* Tạm dừng chạy khi di chuột vào */
+        .marquee-container:hover .animate-marquee {
+            animation-play-state: paused;
+        }
+
+        @keyframes marquee {
+            0% { transform: translate(0, 0); }
+            100% { transform: translate(-100%, 0); }
+        }
+
+        /* Phông chữ mềm mại, bo tròn hơn */
+        .soft-text {
+            font-family: 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            letter-spacing: 0.3px;
+        }
+    </style>
 </head>
 <body class="bg-slate-50 text-slate-800 font-sans h-screen w-full flex flex-col md:flex-row overflow-hidden">
 
@@ -79,14 +110,16 @@
                 <h2 class="text-xl font-bold text-slate-800 hidden sm:block">Báo Cáo Daily (Jira)</h2>
             </div>
             
-            <!-- Phần ở giữa: Text đếm ngược đi Trùng Khánh (Blink & Gradient) -->
+            <!-- Phần ở giữa: Text đếm ngược đi Trùng Khánh (Cuộn & Gradient) -->
             <div class="hidden lg:flex flex-1 justify-center items-center">
-                <div class="px-5 py-2 rounded-full bg-slate-50 border border-slate-100 shadow-sm animate-pulse">
-                    <span class="bg-gradient-to-r from-rose-500 via-fuchsia-500 to-indigo-500 bg-clip-text text-transparent font-black text-sm whitespace-nowrap flex items-center gap-2">
-                        <i class="fa-solid fa-plane-departure text-rose-500"></i>
-                        Chỉ còn <span id="mondayCountText" class="text-lg mx-0.5">...</span> Thứ 2 nữa là đi Trùng Khánh! 🇨🇳
-                        <i class="fa-solid fa-sparkles text-indigo-500"></i>
-                    </span>
+                <div class="px-2 py-1.5 rounded-full bg-slate-50/80 border border-slate-200 shadow-[inset_0_1px_3px_rgba(0,0,0,0.03)] cursor-default">
+                    <div class="marquee-container">
+                        <span class="animate-marquee soft-text font-bold text-[14.5px] bg-gradient-to-r from-rose-500 via-purple-500 to-indigo-500 bg-clip-text text-transparent">
+                            <i class="fa-solid fa-plane-departure text-rose-500 mr-1.5 align-baseline"></i>
+                            Chỉ còn <span id="mondayCountText" class="text-lg mx-0.5">...</span> Thứ 2 nữa là đi Trùng Khánh! 🇨🇳
+                            <i class="fa-solid fa-sparkles text-indigo-500 ml-1.5 align-baseline"></i>
+                        </span>
+                    </div>
                 </div>
             </div>
 
@@ -372,7 +405,6 @@
         const URL_REPORT_API = "https://script.google.com/a/macros/enotion.io/s/AKfycbzynUh65kMWVtwRdYdg8x35-6LViA_JwMPrWhEoMdDXFDP7tpcheilYrReQSIrQ6zAtIQ/exec";
 
         // ================= CẤU HÌNH NGÀY ĐI TRÙNG KHÁNH =================
-        // Bạn thay đổi ngày đi thực tế vào biến này theo định dạng YYYY-MM-DD
         const TARGET_TRIP_DATE = "2026-11-01"; 
 
         function calculateMondaysLeft() {
@@ -380,13 +412,12 @@
             let target = new Date(TARGET_TRIP_DATE);
             let mondaysCount = 0;
             
-            // Xóa giờ để đếm chính xác
             today.setHours(0,0,0,0);
             target.setHours(0,0,0,0);
 
             let current = new Date(today);
             while (current <= target) {
-                if (current.getDay() === 1) { // 1 là Thứ Hai
+                if (current.getDay() === 1) {
                     mondaysCount++;
                 }
                 current.setDate(current.getDate() + 1);
@@ -465,7 +496,7 @@
 
         document.addEventListener('DOMContentLoaded', () => {
             updateAuthUI();
-            calculateMondaysLeft(); // Gọi hàm đếm ngược ngay khi load trang
+            calculateMondaysLeft();
             
             const savedScope = localStorage.getItem('jira_scope_testing');
             if (savedScope && document.getElementById('scopeOfTestingInput')) document.getElementById('scopeOfTestingInput').value = savedScope;
@@ -796,7 +827,6 @@
 
             const tagMode = document.getElementById('tagModeSelect').value;
             
-            // BỎ QUA POPUP NẾU LÀ CHẾ ĐỘ "Chỉ lấy Tag chính đầu tiên"
             if (tagMode === 'primary') {
                 confirmAndCopyReport(true);
                 return;
@@ -1207,7 +1237,6 @@
                         if (index < tagOrder.length - 1) reportLines.push('-----');
                     });
                 } else {
-                    // TRƯỜNG HỢP XUẤT 0 TICKET
                     reportLines.push('B. [TICKETS]');
                     reportLines.push('- Không có ticket nào (0 Ticket).');
                 }
