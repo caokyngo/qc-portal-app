@@ -313,7 +313,7 @@
                 </div>
 
                 <div id="tagCheckboxContainer" class="flex flex-wrap gap-2 text-sm font-medium text-slate-700 max-h-[40vh] overflow-y-auto custom-scrollbar">
-                    <!-- Checkbox được gen bằng JS -->
+                    <!-- Checkbox hoặc Thông báo rỗng được gen bằng JS -->
                 </div>
             </div>
 
@@ -737,7 +737,6 @@
 
         // ================= HÀM XỬ LÝ CHỌN TAG CHO REPORT =================
         function openTagSelectionModal() {
-            // Kiểm tra xem đã có dữ liệu file Jira chưa
             if (rawJiraData.length === 0) {
                 showCustomAlert("Cảnh báo", "Vui lòng tải lên file Jira trước khi Copy Báo cáo!", true);
                 return;
@@ -747,13 +746,13 @@
             const tagMode = document.getElementById('tagModeSelect').value;
             const foundTags = new Set();
 
-            // Quét dữ liệu hiện tại để lấy các Tag có thật trong Ticket
             rawJiraData.forEach(row => {
                 const status = (getColumnValue(row, ['Status', 'Trạng thái']) || 'N/A').toString().trim();
-                if (!selectedStatusSet.has(status)) return; // Chỉ lấy tag của các status đang được filter
+                if (!selectedStatusSet.has(status)) return; 
                 
                 const summary = getColumnValue(row, ['Summary', 'Tóm tắt', 'Title']);
                 const tags = parseTagsFromSummary(summary);
+                
                 const selectedTags = (tagMode === 'primary') ? [tags[0]] : tags;
                 
                 selectedTags.forEach(t => {
@@ -761,27 +760,29 @@
                 });
             });
 
-            if (foundTags.size === 0) {
-                showCustomAlert("Thông báo", "Không tìm thấy Tag nào hợp lệ để tạo báo cáo trong dữ liệu hiện tại.", true);
-                return;
-            }
-
-            // Render giao diện Checkbox vào Modal
             const container = document.getElementById('tagCheckboxContainer');
             container.innerHTML = '';
-            
-            // Render thẻ "Không có Tag" riêng (nếu muốn) hoặc mặc định các tag đã tìm thấy
-            Array.from(foundTags).sort().forEach(tag => {
-                const label = document.createElement('label');
-                label.className = 'flex items-center gap-2 cursor-pointer bg-indigo-50/50 hover:bg-indigo-50 border border-indigo-100 px-3 py-2 rounded-lg transition';
-                label.innerHTML = `
-                    <input type="checkbox" class="tag-select-cb text-indigo-600 rounded" value="${tag}" checked>
-                    <span class="font-bold text-indigo-900">[${tag}]</span>
-                `;
-                container.appendChild(label);
-            });
 
-            // Mở Modal
+            if (foundTags.size === 0) {
+                // SỬA Ở ĐÂY: Hiển thị thông báo 0 ticket ngay trong modal thay vì return alert
+                container.innerHTML = `
+                    <div class="w-full text-center py-6 bg-slate-100 rounded-xl border border-slate-200">
+                        <i class="fa-solid fa-check-circle text-emerald-500 text-3xl mb-2"></i>
+                        <p class="text-sm font-bold text-slate-700">Tất cả ticket đều đã Closed!</p>
+                        <p class="text-xs text-slate-500 mt-1">Báo cáo sẽ được tạo với trạng thái 0 Ticket.</p>
+                    </div>`;
+            } else {
+                Array.from(foundTags).sort().forEach(tag => {
+                    const label = document.createElement('label');
+                    label.className = 'flex items-center gap-2 cursor-pointer bg-indigo-50/50 hover:bg-indigo-50 border border-indigo-100 px-3 py-2 rounded-lg transition';
+                    label.innerHTML = `
+                        <input type="checkbox" class="tag-select-cb text-indigo-600 rounded" value="${tag}" checked>
+                        <span class="font-bold text-indigo-900">[${tag}]</span>
+                    `;
+                    container.appendChild(label);
+                });
+            }
+
             document.getElementById('tagSelectionModal').classList.remove('hidden');
         }
 
@@ -1000,14 +1001,16 @@
             return parseProgressDataFromMatrix(rows);
         }
 
-        // Hàm chính để generate và copy report
         async function confirmAndCopyReport() {
-            // 1. Thu thập các Tag đã được người dùng tích chọn
+            const allTagCheckboxes = document.querySelectorAll('.tag-select-cb');
             const selectedTagCheckboxes = document.querySelectorAll('.tag-select-cb:checked');
-            if (selectedTagCheckboxes.length === 0) {
+            
+            // Nếu CÓ danh sách Tag để chọn nhưng người dùng BỎ CHỌN hết thì mới báo lỗi
+            if (allTagCheckboxes.length > 0 && selectedTagCheckboxes.length === 0) {
                 showCustomAlert("Cảnh báo", "Bạn chưa chọn Tag nào để tạo Báo Cáo!", true);
                 return;
             }
+            
             const allowedTags = Array.from(selectedTagCheckboxes).map(cb => cb.value);
 
             const copyBtn = document.getElementById('btnConfirmCopy');
@@ -1067,7 +1070,8 @@
                 });
 
                 let statsString = statsArr.length > 0 ? ` (${statsArr.join(' - ')})` : '';
-                let buildStatusStr = `- Build status: ${totalSelectedTickets} Tickets${statsString} /Total: ${totalFileTickets} Tickets`;
+                let ticketWord = totalSelectedTickets > 1 ? "Tickets" : "Ticket";
+                let buildStatusStr = `- Build status: ${totalSelectedTickets} ${ticketWord}${statsString} / Total: ${totalFileTickets} Tickets`;
 
                 let progressReportObj = null;
                 if (activeProgressTab === 'paste' && gsheetPaste) {
@@ -1120,7 +1124,6 @@
                     const selectedTags = (tagMode === 'primary') ? [tags[0]] : tags;
 
                     selectedTags.forEach(tag => {
-                        // CHỈ XỬ LÝ NHỮNG TAG ĐƯỢC CHỌN TRONG MODAL
                         if (!allowedTags.includes(tag)) return;
 
                         if (!tagDataMap[tag]) { 
@@ -1163,9 +1166,9 @@
                         if (index < tagOrder.length - 1) reportLines.push('-----');
                     });
                 } else {
-                    // Xử lý trường hợp có chọn Tag nhưng các Ticket đó không khớp status
+                    // TRƯỜNG HỢP XUẤT 0 TICKET
                     reportLines.push('B. [TICKETS]');
-                    reportLines.push('- Không có ticket nào thuộc các Tag đã chọn.');
+                    reportLines.push('- Không có ticket nào (0 Ticket).');
                 }
 
                 reportLines.push(`----------------------------------`);
@@ -1188,7 +1191,7 @@
                 reportLines.push(`- QC: ${qcMembers}`);
 
                 await navigator.clipboard.writeText(reportLines.join('\n'));
-                closeTagModal(); // Đóng Modal khi copy thành công
+                closeTagModal();
                 showCustomAlert('Copy Thành Công!', 'Báo Cáo Daily đã được sao chép vào Clipboard.');
 
             } catch (err) {
