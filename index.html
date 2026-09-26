@@ -37,12 +37,14 @@
       }
     </script>
 
-    <!-- CSS dòng thông báo chạy liên tục, màu sắc dịu và dễ đọc -->
+    <!-- CSS Dòng thông báo chạy liên tục + Màu cam loang vàng + Hiệu ứng Blink -->
     <style>
         .travel-marquee {
             width: 100%;
-            max-width: 430px;
+            max-width: 440px;
             overflow: hidden;
+            mask-image: linear-gradient(to right, transparent, black 8%, black 92%, transparent);
+            -webkit-mask-image: linear-gradient(to right, transparent, black 8%, black 92%, transparent);
         }
 
         .travel-marquee-track {
@@ -59,32 +61,57 @@
             padding-right: 2.5rem;
         }
 
+        /* Chữ màu cam loang vàng đậm + Hiệu ứng nhấp nháy (Blink) */
         .travel-marquee-message {
             display: inline-flex;
             align-items: center;
-            gap: 0.5rem;
+            gap: 0.4rem;
             white-space: nowrap;
-            color: #334155;
             font-family: 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
-            font-size: 14px;
-            font-weight: 600;
-            letter-spacing: 0.1px;
+            font-size: 14.5px;
+            font-weight: 800; /* Chữ đậm tương phản cao */
+            letter-spacing: 0.2px;
             line-height: 1.5;
+            
+            /* Dải màu Gradient Cam - Vàng đậm */
+            background: linear-gradient(90deg, #ea580c 0%, #d97706 50%, #ca8a04 100%);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+
+            /* Animation Blink chớp nháy */
+            animation: travel-blink 1.2s infinite ease-in-out;
         }
 
         .travel-marquee-message i {
-            color: #475569;
-            font-size: 13px;
+            color: #ea580c;
+            font-size: 14px;
         }
 
         .travel-marquee-count {
-            color: #0f766e;
-            font-size: 15px;
-            font-weight: 700;
+            font-size: 17px;
+            font-weight: 900;
+            background: linear-gradient(90deg, #c2410c 0%, #ea580c 100%);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+            padding: 0 2px;
         }
 
         @keyframes travel-marquee-scroll {
             to { transform: translateX(-50%); }
+        }
+
+        /* Hiệu ứng Blink nhấp nháy tạo điểm nhấn */
+        @keyframes travel-blink {
+            0%, 100% {
+                opacity: 1;
+                filter: drop-shadow(0 0 1px rgba(234, 88, 12, 0.4));
+            }
+            50% {
+                opacity: 0.45;
+                filter: drop-shadow(0 0 5px rgba(234, 88, 12, 0.7));
+            }
         }
 
         @media (prefers-reduced-motion: reduce) {
@@ -144,7 +171,7 @@
             
             <!-- Phần ở giữa: Thông báo đếm ngược chạy liên tục -->
             <div class="hidden lg:flex flex-1 min-w-0 justify-center items-center">
-                <div class="w-full max-w-[430px] px-4 py-2 rounded-full bg-slate-50/90 border border-slate-200 shadow-sm cursor-default">
+                <div class="w-full max-w-[440px] px-4 py-2 rounded-full bg-slate-50/90 border border-slate-200 shadow-sm cursor-default">
                     <div class="travel-marquee">
                         <div class="travel-marquee-track">
                             <div class="travel-marquee-group">
@@ -464,7 +491,6 @@
                 current.setDate(current.getDate() + 1);
             }
             
-            // Cập nhật số ngày cho cả dòng chính và bản sao dùng để cuộn liên tục
             const txtElements = document.querySelectorAll('.mondayCountText');
             txtElements.forEach(el => {
                 el.innerText = mondaysCount;
@@ -540,7 +566,7 @@
 
         document.addEventListener('DOMContentLoaded', () => {
             updateAuthUI();
-            calculateMondaysLeft(); 
+            calculateMondaysLeft();
             
             const savedScope = localStorage.getItem('jira_scope_testing');
             if (savedScope && document.getElementById('scopeOfTestingInput')) document.getElementById('scopeOfTestingInput').value = savedScope;
@@ -1281,7 +1307,6 @@
                         if (index < tagOrder.length - 1) reportLines.push('-----');
                     });
                 } else {
-                    // TRƯỜNG HỢP XUẤT 0 TICKET
                     reportLines.push('B. [TICKETS]');
                     reportLines.push('- Không có ticket nào (0 Ticket).');
                 }
