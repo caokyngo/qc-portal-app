@@ -45,9 +45,26 @@
 
     <!-- ================= MAIN CONTENT ================= -->
     <div class="flex-1 flex flex-col h-full overflow-hidden bg-slate-50 relative">
+        <!-- HEADER MỚI VỚI BỐ CỤC 3 PHẦN -->
         <header class="bg-white text-slate-800 shadow-sm border-b border-slate-200 z-10 p-3 px-4 md:px-6 flex justify-between items-center min-h-[72px]">
-            <div><h2 class="text-xl font-bold text-slate-800 hidden sm:block">Báo Cáo Daily (Jira)</h2></div>
-            <div class="flex items-center gap-4">
+            <!-- Phần bên trái: Tiêu đề -->
+            <div class="flex-1 shrink-0">
+                <h2 class="text-xl font-bold text-slate-800 hidden sm:block">Báo Cáo Daily (Jira)</h2>
+            </div>
+            
+            <!-- Phần ở giữa: Text đếm ngược đi Trùng Khánh (Blink & Gradient) -->
+            <div class="hidden lg:flex flex-1 justify-center items-center">
+                <div class="px-5 py-2 rounded-full bg-slate-50 border border-slate-100 shadow-sm animate-pulse">
+                    <span class="bg-gradient-to-r from-rose-500 via-fuchsia-500 to-indigo-500 bg-clip-text text-transparent font-black text-sm whitespace-nowrap flex items-center gap-2">
+                        <i class="fa-solid fa-plane-departure text-rose-500"></i>
+                        Chỉ còn <span id="mondayCountText" class="text-lg mx-0.5">...</span> Thứ 2 nữa là đi Trùng Khánh! 🇨🇳
+                        <i class="fa-solid fa-sparkles text-indigo-500"></i>
+                    </span>
+                </div>
+            </div>
+
+            <!-- Phần bên phải: Đổi File & Auth User -->
+            <div class="flex-1 flex justify-end items-center gap-4">
                 <div id="fileInfo" class="hidden flex items-center gap-3 bg-indigo-50 px-4 py-2 rounded-xl border border-indigo-100 text-xs shadow-sm">
                     <div><span class="text-indigo-400 font-medium">Đang xử lý:</span> <strong id="fileName" class="text-indigo-800 font-bold"></strong></div>
                     <button onclick="changeJiraFile()" class="px-2.5 py-1.5 bg-indigo-600 hover:bg-indigo-500 text-white text-[11px] font-bold rounded-lg transition flex items-center gap-1.5 shadow-sm">
@@ -143,25 +160,11 @@
                                 </div>
                             </div>
 
-                            <div class="bg-slate-50 border border-slate-200 rounded-lg p-4 space-y-3">
-                                <div class="flex items-center justify-between">
-                                    <label class="text-xs font-bold text-slate-700 flex items-center gap-1.5">
-                                        <i class="fa-solid fa-table text-indigo-600"></i> Nguồn dữ liệu Tiến Độ Sheet:
-                                    </label>
-                                    <div class="text-xs space-x-2">
-                                        <button type="button" onclick="switchProgressTab('paste')" id="tabPasteBtn" class="px-3 py-1.5 rounded-md bg-indigo-600 text-white font-bold shadow-sm transition">Dán trực tiếp</button>
-                                        <button type="button" onclick="switchProgressTab('url')" id="tabUrlBtn" class="px-3 py-1.5 rounded-md bg-slate-200 text-slate-700 font-bold transition">Dùng API App Script</button>
-                                    </div>
-                                </div>
-                                <div id="progressPasteBox">
-                                    <textarea id="gsheetPasteInput" oninput="saveGSheetPasteData()" rows="3" placeholder="Ctrl+A -> Ctrl+C từ Google Sheet -> Dán vào đây..." class="w-full bg-white border border-slate-300 text-xs rounded-lg p-3 font-mono outline-none"></textarea>
-                                </div>
-                                <div id="progressUrlBox" class="hidden space-y-2">
-                                    <div class="flex items-center gap-3">
-                                        <label class="text-xs font-semibold text-slate-600">Tên Sheet cần đọc:</label>
-                                        <input type="text" id="sheetNameInput" oninput="saveGSheetApiData()" placeholder="VD: 9684" class="w-full max-w-[200px] bg-white border border-slate-300 text-xs font-medium rounded-lg p-2.5 outline-none">
-                                    </div>
-                                </div>
+                            <div class="bg-slate-50 border border-slate-200 rounded-lg p-4 flex flex-col sm:flex-row sm:items-center gap-4">
+                                <label class="text-xs font-bold text-slate-700 flex items-center gap-1.5 whitespace-nowrap">
+                                    <i class="fa-solid fa-table text-indigo-600"></i> Nguồn dữ liệu Tiến Độ Sheet (API):
+                                </label>
+                                <input type="text" id="sheetNameInput" oninput="saveGSheetApiData()" placeholder="VD: 9684" class="w-full sm:w-[200px] bg-white border border-slate-300 text-slate-700 text-xs font-medium rounded-lg p-2 outline-none">
                             </div>
 
                             <div>
@@ -319,7 +322,7 @@
 
             <div class="px-6 py-4 border-t border-slate-100 bg-slate-50 flex justify-end gap-3">
                 <button onclick="closeTagModal()" class="px-5 py-2.5 bg-white border border-slate-300 hover:bg-slate-100 text-slate-700 text-xs font-bold rounded-xl transition shadow-sm">Hủy</button>
-                <button id="btnConfirmCopy" onclick="confirmAndCopyReport()" class="px-5 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-xl transition shadow-sm flex items-center gap-2">
+                <button id="btnConfirmCopy" onclick="confirmAndCopyReport(false)" class="px-5 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-xl transition shadow-sm flex items-center gap-2">
                     <i class="fa-solid fa-copy"></i> Xác nhận & Copy
                 </button>
             </div>
@@ -341,11 +344,35 @@
     <script>
         const URL_REPORT_API = "https://script.google.com/a/macros/enotion.io/s/AKfycbzynUh65kMWVtwRdYdg8x35-6LViA_JwMPrWhEoMdDXFDP7tpcheilYrReQSIrQ6zAtIQ/exec";
 
+        // ================= CẤU HÌNH NGÀY ĐI TRÙNG KHÁNH =================
+        // Bạn thay đổi ngày đi thực tế vào biến này theo định dạng YYYY-MM-DD
+        const TARGET_TRIP_DATE = "2027-01-01"; 
+
+        function calculateMondaysLeft() {
+            let today = new Date();
+            let target = new Date(TARGET_TRIP_DATE);
+            let mondaysCount = 0;
+            
+            // Xóa giờ để đếm chính xác
+            today.setHours(0,0,0,0);
+            target.setHours(0,0,0,0);
+
+            let current = new Date(today);
+            while (current <= target) {
+                if (current.getDay() === 1) { // 1 là Thứ Hai
+                    mondaysCount++;
+                }
+                current.setDate(current.getDate() + 1);
+            }
+            
+            const txt = document.getElementById('mondayCountText');
+            if(txt) txt.innerText = mondaysCount;
+        }
+
         let rawJiraData = [];
         let availableStatuses = [];
         let tagPriorityChartInstance = null;
         let priorityDoughnutChartInstance = null;
-        let activeProgressTab = 'paste';
 
         const priorityColors = {
             'Highest': '#DC2626', 'High': '#F97316', 'Medium': '#F59E0B',
@@ -411,9 +438,7 @@
 
         document.addEventListener('DOMContentLoaded', () => {
             updateAuthUI();
-
-            const savedPaste = localStorage.getItem('jira_gsheet_paste');
-            if (savedPaste && document.getElementById('gsheetPasteInput')) document.getElementById('gsheetPasteInput').value = savedPaste;
+            calculateMondaysLeft(); // Gọi hàm đếm ngược ngay khi load trang
             
             const savedScope = localStorage.getItem('jira_scope_testing');
             if (savedScope && document.getElementById('scopeOfTestingInput')) document.getElementById('scopeOfTestingInput').value = savedScope;
@@ -742,8 +767,15 @@
                 return;
             }
 
-            const selectedStatusSet = getSelectedStatuses();
             const tagMode = document.getElementById('tagModeSelect').value;
+            
+            // BỎ QUA POPUP NẾU LÀ CHẾ ĐỘ "Chỉ lấy Tag chính đầu tiên"
+            if (tagMode === 'primary') {
+                confirmAndCopyReport(true);
+                return;
+            }
+
+            const selectedStatusSet = getSelectedStatuses();
             const foundTags = new Set();
 
             rawJiraData.forEach(row => {
@@ -764,7 +796,6 @@
             container.innerHTML = '';
 
             if (foundTags.size === 0) {
-                // SỬA Ở ĐÂY: Hiển thị thông báo 0 ticket ngay trong modal thay vì return alert
                 container.innerHTML = `
                     <div class="w-full text-center py-6 bg-slate-100 rounded-xl border border-slate-200">
                         <i class="fa-solid fa-check-circle text-emerald-500 text-3xl mb-2"></i>
@@ -795,15 +826,6 @@
         }
 
         // --- XỬ LÝ DỮ LIỆU TIẾN ĐỘ GOOGLE SHEET MATRIX ---
-        function formatPctDisplayFixed(val) {
-            let s = String(val || '').trim();
-            if (s.includes('<<')) s = s.split('<<')[0].trim();
-            if (!s) return "";
-            const num = parseFloat(s.replace('%', ''));
-            if (isNaN(num)) return s;
-            return (!s.includes('%') && Math.abs(num) > 0 && Math.abs(num) <= 1 ? num * 100 : num).toFixed(2).replace(/\.?0+$/, '') + '%';
-        }
-
         function parsePctNum(val) {
             let s = String(val || '').trim();
             if (s.includes('<<')) s = s.split('<<')[0].trim();
@@ -994,26 +1016,21 @@
             });
         }
 
-        function parsePastedGSheetData(pastedText) {
-            if (!pastedText || !pastedText.trim()) return null;
-            const lines = pastedText.trim().split('\n');
-            const rows = lines.map(line => line.split('\t'));
-            return parseProgressDataFromMatrix(rows);
-        }
-
-        async function confirmAndCopyReport() {
-            const allTagCheckboxes = document.querySelectorAll('.tag-select-cb');
-            const selectedTagCheckboxes = document.querySelectorAll('.tag-select-cb:checked');
+        async function confirmAndCopyReport(skipTagFilter = false) {
+            let allowedTags = [];
             
-            // Nếu CÓ danh sách Tag để chọn nhưng người dùng BỎ CHỌN hết thì mới báo lỗi
-            if (allTagCheckboxes.length > 0 && selectedTagCheckboxes.length === 0) {
-                showCustomAlert("Cảnh báo", "Bạn chưa chọn Tag nào để tạo Báo Cáo!", true);
-                return;
+            if (!skipTagFilter) {
+                const allTagCheckboxes = document.querySelectorAll('.tag-select-cb');
+                const selectedTagCheckboxes = document.querySelectorAll('.tag-select-cb:checked');
+                
+                if (allTagCheckboxes.length > 0 && selectedTagCheckboxes.length === 0) {
+                    showCustomAlert("Cảnh báo", "Bạn chưa chọn Tag nào để tạo Báo Cáo!", true);
+                    return;
+                }
+                allowedTags = Array.from(selectedTagCheckboxes).map(cb => cb.value);
             }
-            
-            const allowedTags = Array.from(selectedTagCheckboxes).map(cb => cb.value);
 
-            const copyBtn = document.getElementById('btnConfirmCopy');
+            const copyBtn = skipTagFilter ? document.getElementById('copyBtn') : document.getElementById('btnConfirmCopy');
             const originalBtnHtml = copyBtn.innerHTML;
             
             try {
@@ -1024,7 +1041,6 @@
                 const tagMode = document.getElementById('tagModeSelect').value;
                 const gasUrl = URL_REPORT_API;
                 const sheetName = document.getElementById('sheetNameInput') ? document.getElementById('sheetNameInput').value.trim() : '';
-                const gsheetPaste = document.getElementById('gsheetPasteInput').value.trim();
                 const scopeText = document.getElementById('scopeOfTestingInput') ? document.getElementById('scopeOfTestingInput').value.trim() || 'Chưa nhập' : 'Chưa nhập';
                 const qcMembers = document.getElementById('qcMembersInput') ? document.getElementById('qcMembersInput').value.trim() || 'Chưa nhập' : 'Chưa nhập';
                 
@@ -1074,9 +1090,7 @@
                 let buildStatusStr = `- Build status: ${totalSelectedTickets} ${ticketWord}${statsString} / Total: ${totalFileTickets} Tickets`;
 
                 let progressReportObj = null;
-                if (activeProgressTab === 'paste' && gsheetPaste) {
-                    progressReportObj = parsePastedGSheetData(gsheetPaste);
-                } else if (activeProgressTab === 'url' && gasUrl) {
+                if (gasUrl && sheetName) {
                     progressReportObj = await fetchGSheetProgressReport(gasUrl, sheetName);
                 }
 
@@ -1124,7 +1138,7 @@
                     const selectedTags = (tagMode === 'primary') ? [tags[0]] : tags;
 
                     selectedTags.forEach(tag => {
-                        if (!allowedTags.includes(tag)) return;
+                        if (!skipTagFilter && !allowedTags.includes(tag)) return;
 
                         if (!tagDataMap[tag]) { 
                             tagDataMap[tag] = { counts: { 'Highest': 0, 'High': 0, 'Medium': 0, 'Low': 0, 'Lowest': 0, 'Unassigned': 0 }, tickets: [] }; 
@@ -1181,17 +1195,17 @@
                     if (countInTesting > 0) cols.push("IN TESTING");
                     
                     const verb = totalUnverified > 1 ? "are" : "is";
-                    const ticketWord = totalUnverified > 1 ? "Tickets" : "Ticket";
+                    const ticketWord2 = totalUnverified > 1 ? "Tickets" : "Ticket";
                     const colString = cols.join(" and ");
                     const colWord = cols.length > 1 ? "columns" : "column";
                     
-                    reportLines.push(`- There ${verb} ${totalUnverified} unverified ${ticketWord} in the ${colString} ${colWord}`);
+                    reportLines.push(`- There ${verb} ${totalUnverified} unverified ${ticketWord2} in the ${colString} ${colWord}`);
                 }
 
                 reportLines.push(`- QC: ${qcMembers}`);
 
                 await navigator.clipboard.writeText(reportLines.join('\n'));
-                closeTagModal();
+                if (!skipTagFilter) closeTagModal();
                 showCustomAlert('Copy Thành Công!', 'Báo Cáo Daily đã được sao chép vào Clipboard.');
 
             } catch (err) {
@@ -1225,25 +1239,7 @@
 
         function saveScopeTesting() { localStorage.setItem('jira_scope_testing', document.getElementById('scopeOfTestingInput').value); }
         function saveQCMembers() { localStorage.setItem('jira_qc_members', document.getElementById('qcMembersInput').value); }
-        function saveGSheetPasteData() { localStorage.setItem('jira_gsheet_paste', document.getElementById('gsheetPasteInput').value); }
         function saveGSheetApiData() { localStorage.setItem('jira_sheet_name', document.getElementById('sheetNameInput').value.trim()); }
-
-        function switchProgressTab(tab) {
-            activeProgressTab = tab;
-            const pasteBtn = document.getElementById('tabPasteBtn');
-            const urlBtn = document.getElementById('tabUrlBtn');
-
-            if (tab === 'paste') {
-                pasteBtn.className = "px-3 py-1.5 rounded-md bg-indigo-600 text-white font-bold shadow-sm transition";
-                urlBtn.className = "px-3 py-1.5 rounded-md bg-slate-200 text-slate-700 font-bold transition";
-            } else {
-                urlBtn.className = "px-3 py-1.5 rounded-md bg-indigo-600 text-white font-bold shadow-sm transition";
-                pasteBtn.className = "px-3 py-1.5 rounded-md bg-slate-200 text-slate-700 font-bold transition";
-            }
-
-            document.getElementById('progressPasteBox').classList.toggle('hidden', tab !== 'paste');
-            document.getElementById('progressUrlBox').classList.toggle('hidden', tab === 'paste');
-        }
     </script>
 </body>
 </html>
