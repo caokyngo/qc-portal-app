@@ -26,10 +26,7 @@
       if ('serviceWorker' in navigator) {
         window.addEventListener('load', () => {
           navigator.serviceWorker.register('./sw.js').then(reg => {
-            // Ép trình duyệt kiểm tra bản cập nhật
             reg.update();
-            
-            // Nếu có bản mới -> Tự động kích hoạt và reload
             reg.onupdatefound = () => {
               const installingWorker = reg.installing;
               installingWorker.onstatechange = () => {
@@ -43,6 +40,96 @@
         });
       }
     </script>
+
+    <!-- CSS Dòng thông báo chạy liên tục + Màu cam loang vàng + Hiệu ứng Blink -->
+    <style>
+        .travel-marquee {
+            width: 100%;
+            max-width: 440px;
+            overflow: hidden;
+            mask-image: linear-gradient(to right, transparent, black 8%, black 92%, transparent);
+            -webkit-mask-image: linear-gradient(to right, transparent, black 8%, black 92%, transparent);
+        }
+
+        .travel-marquee-track {
+            display: flex;
+            width: max-content;
+            animation: travel-marquee-scroll 12s linear infinite;
+            will-change: transform;
+        }
+
+        .travel-marquee-group {
+            display: flex;
+            flex: 0 0 auto;
+            align-items: center;
+            padding-right: 2.5rem;
+        }
+
+        /* Chữ màu cam loang vàng đậm + Hiệu ứng nhấp nháy (Blink) */
+        .travel-marquee-message {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.4rem;
+            white-space: nowrap;
+            font-family: 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            font-size: 16px;
+            font-weight: 800;
+            letter-spacing: 0.2px;
+            line-height: 1.5;
+            
+            background: linear-gradient(90deg, #ea580c 0%, #d97706 50%, #ca8a04 100%);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+
+            animation: travel-blink 1.2s infinite ease-in-out;
+        }
+
+        .travel-marquee-message i {
+            color: #ea580c;
+            font-size: 15.5px;
+        }
+
+        .travel-marquee-count {
+            font-size: 17px;
+            font-weight: 900;
+            background: linear-gradient(90deg, #c2410c 0%, #ea580c 100%);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+            padding: 0 2px;
+        }
+
+        @keyframes travel-marquee-scroll {
+            to { transform: translateX(-50%); }
+        }
+
+        @keyframes travel-blink {
+            0%, 100% {
+                opacity: 1;
+                filter: drop-shadow(0 0 1px rgba(234, 88, 12, 0.4));
+            }
+            50% {
+                opacity: 0.45;
+                filter: drop-shadow(0 0 5px rgba(234, 88, 12, 0.7));
+            }
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+            .travel-marquee-track {
+                animation: none;
+                transform: none;
+            }
+
+            .travel-marquee-group[aria-hidden="true"] {
+                display: none;
+            }
+        }
+
+        .soft-text {
+            letter-spacing: 0.1px;
+        }
+    </style>
 </head>
 <body class="bg-slate-50 text-slate-800 font-sans h-screen w-full flex flex-col md:flex-row overflow-hidden">
 
@@ -76,9 +163,37 @@
 
     <!-- ================= MAIN CONTENT ================= -->
     <div class="flex-1 flex flex-col h-full overflow-hidden bg-slate-50 relative">
+        <!-- HEADER MỚI VỚI BỐ CỤC 3 PHẦN -->
         <header class="bg-white text-slate-800 shadow-sm border-b border-slate-200 z-10 p-3 px-4 md:px-6 flex justify-between items-center min-h-[72px]">
-            <div><h2 class="text-xl font-bold text-slate-800 hidden sm:block">Mượn/Trả Thiết Bị</h2></div>
-            <div class="flex items-center gap-4">
+            <!-- Phần bên trái: Tiêu đề -->
+            <div class="flex-1 shrink-0">
+                <h2 class="text-xl font-bold text-slate-800 hidden sm:block">Mượn/Trả Thiết Bị</h2>
+            </div>
+            
+            <!-- Phần ở giữa: Thông báo đếm ngược chạy liên tục -->
+            <div class="hidden lg:flex flex-1 min-w-0 justify-center items-center">
+                <div class="w-full max-w-[440px] px-4 py-2 rounded-full bg-slate-50/90 border border-slate-200 shadow-sm cursor-default">
+                    <div class="travel-marquee">
+                        <div class="travel-marquee-track">
+                            <div class="travel-marquee-group">
+                                <span class="travel-marquee-message soft-text">
+                                    <i class="fa-solid fa-plane-departure" aria-hidden="true"></i>
+                                    Chỉ còn <strong class="mondayCountText travel-marquee-count">...</strong> Thứ 2 nữa là đi Trùng Khánh nhoa cả nhà iu! 🇨🇳
+                                </span>
+                            </div>
+                            <div class="travel-marquee-group" aria-hidden="true">
+                                <span class="travel-marquee-message soft-text">
+                                    <i class="fa-solid fa-plane-departure" aria-hidden="true"></i>
+                                    Săn Sale lẹ tay để còn kịp nhoa! 🇨🇳
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Phần bên phải: Auth User -->
+            <div class="flex-1 flex justify-end items-center gap-4">
                 <div id="authSection" class="relative flex items-center min-h-[40px]">
                     <div id="g_id_onload" data-client_id="149310433677-uvpoilv41na98qdjlj58cpmfl8u9946e.apps.googleusercontent.com" data-callback="handleCredentialResponse" data-auto_prompt="false"></div>
                     <div id="loginOption" class="relative cursor-pointer flex items-center gap-2.5 px-3 py-1.5 bg-slate-100 hover:bg-slate-200 rounded-xl border border-slate-200 transition overflow-hidden">
@@ -262,6 +377,31 @@
             appId: "1:747189096859:web:abcdef..."
         };
 
+        // ================= CẤU HÌNH NGÀY ĐI TRÙNG KHÁNH =================
+        const TARGET_TRIP_DATE = "2026-11-01"; 
+
+        function calculateMondaysLeft() {
+            let today = new Date();
+            let target = new Date(TARGET_TRIP_DATE);
+            let mondaysCount = 0;
+            
+            today.setHours(0,0,0,0);
+            target.setHours(0,0,0,0);
+
+            let current = new Date(today);
+            while (current <= target) {
+                if (current.getDay() === 1) {
+                    mondaysCount++;
+                }
+                current.setDate(current.getDate() + 1);
+            }
+            
+            const txtElements = document.querySelectorAll('.mondayCountText');
+            txtElements.forEach(el => {
+                el.innerText = mondaysCount;
+            });
+        }
+
         function sendDiscordNotification(embed) {
             if (!DISCORD_WEBHOOK_URL) return;
             const payload = { username: "Device Manager Bot", embeds: [embed] };
@@ -341,6 +481,7 @@
 
         document.addEventListener('DOMContentLoaded', () => {
             updateAuthUI();
+            calculateMondaysLeft(); // Gọi đếm ngược ngày khi load trang
             
             document.addEventListener('click', function(event) {
                 const userProfileBtn = document.getElementById('userProfileBtn');
