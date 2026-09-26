@@ -41,11 +41,11 @@
       }
     </script>
 
-    <!-- CSS Dòng thông báo chạy liên tục + Màu cam loang vàng + Hiệu ứng Blink -->
+    <!-- CSS Dòng thông báo chạy liên tục chuẩn mượt -->
     <style>
         .travel-marquee {
             width: 100%;
-            max-width: 440px;
+            max-width: 460px;
             overflow: hidden;
             mask-image: linear-gradient(to right, transparent, black 8%, black 92%, transparent);
             -webkit-mask-image: linear-gradient(to right, transparent, black 8%, black 92%, transparent);
@@ -54,7 +54,7 @@
         .travel-marquee-track {
             display: flex;
             width: max-content;
-            animation: travel-marquee-scroll 12s linear infinite;
+            animation: travel-marquee-scroll 18s linear infinite;
             will-change: transform;
         }
 
@@ -63,9 +63,9 @@
             flex: 0 0 auto;
             align-items: center;
             padding-right: 2.5rem;
+            gap: 2.5rem;
         }
 
-        /* Chữ màu cam loang vàng đậm + Hiệu ứng nhấp nháy (Blink) */
         .travel-marquee-message {
             display: inline-flex;
             align-items: center;
@@ -172,7 +172,7 @@
             
             <!-- Phần ở giữa: Thông báo đếm ngược chạy liên tục -->
             <div class="hidden lg:flex flex-1 min-w-0 justify-center items-center">
-                <div class="w-full max-w-[440px] px-4 py-2 rounded-full bg-slate-50/90 border border-slate-200 shadow-sm cursor-default">
+                <div class="w-full max-w-[460px] px-4 py-2 rounded-full bg-slate-50/90 border border-slate-200 shadow-sm cursor-default">
                     <div class="travel-marquee">
                         <div class="travel-marquee-track">
                             <div class="travel-marquee-group">
@@ -180,8 +180,16 @@
                                     <i class="fa-solid fa-plane-departure" aria-hidden="true"></i>
                                     Chỉ còn <strong class="mondayCountText travel-marquee-count">...</strong> Thứ 2 nữa là đi Trùng Khánh nhoa cả nhà iu! 🇨🇳
                                 </span>
+                                <span class="travel-marquee-message soft-text">
+                                    <i class="fa-solid fa-plane-departure" aria-hidden="true"></i>
+                                    Săn Sale lẹ tay để còn kịp nhoa! 🇨🇳
+                                </span>
                             </div>
                             <div class="travel-marquee-group" aria-hidden="true">
+                                <span class="travel-marquee-message soft-text">
+                                    <i class="fa-solid fa-plane-departure" aria-hidden="true"></i>
+                                    Chỉ còn <strong class="mondayCountText travel-marquee-count">...</strong> Thứ 2 nữa là đi Trùng Khánh nhoa cả nhà iu! 🇨🇳
+                                </span>
                                 <span class="travel-marquee-message soft-text">
                                     <i class="fa-solid fa-plane-departure" aria-hidden="true"></i>
                                     Săn Sale lẹ tay để còn kịp nhoa! 🇨🇳
@@ -481,7 +489,7 @@
 
         document.addEventListener('DOMContentLoaded', () => {
             updateAuthUI();
-            calculateMondaysLeft(); // Gọi đếm ngược ngày khi load trang
+            calculateMondaysLeft();
             
             document.addEventListener('click', function(event) {
                 const userProfileBtn = document.getElementById('userProfileBtn');
