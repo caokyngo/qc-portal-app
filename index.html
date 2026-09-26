@@ -37,34 +37,67 @@
       }
     </script>
 
-    <!-- CSS HIỆU ỨNG CHẠY CHỮ (MARQUEE) -->
+    <!-- CSS HIỆU ỨNG 3D CUBE FLIP & BLINK -->
     <style>
-        .marquee-container {
-            width: 350px; /* Độ rộng của vùng chạy chữ */
-            overflow: hidden;
+        /* Khung chứa tạo góc nhìn 3D */
+        .cube-container {
+            perspective: 800px;
+            width: 335px; /* Độ rộng vừa đủ hiển thị toàn bộ chữ */
+            height: 28px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        /* Khối lập phương */
+        .cube {
+            width: 100%;
+            height: 100%;
+            position: relative;
+            transform-style: preserve-3d;
+            /* Xoay 360 độ trong 12 giây, dùng cubic-bezier để lật nhanh - dừng lâu */
+            animation: rotateCube 12s infinite cubic-bezier(0.7, 0, 0.3, 1);
+        }
+
+        /* 4 mặt của khối lập phương chứa chữ */
+        .cube-face {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 14.5px;
+            font-weight: 800; /* Font dày hơn để Glow đẹp */
+            backface-visibility: hidden;
             white-space: nowrap;
-            /* Tạo hiệu ứng mờ dần ở 2 đầu vùng cuộn */
-            mask-image: linear-gradient(to right, transparent, black 10%, black 90%, transparent);
-            -webkit-mask-image: linear-gradient(to right, transparent, black 10%, black 90%, transparent);
-        }
-        
-        .animate-marquee {
-            display: inline-block;
-            padding-left: 100%; /* Bắt đầu từ ngoài cùng bên phải */
-            animation: marquee 14s linear infinite; /* Tốc độ chạy chữ: 14 giây */
-        }
-        
-        /* Tạm dừng chạy khi di chuột vào */
-        .marquee-container:hover .animate-marquee {
-            animation-play-state: paused;
         }
 
-        @keyframes marquee {
-            0% { transform: translate(0, 0); }
-            100% { transform: translate(-100%, 0); }
+        /* Tính toán xoay 4 mặt (translateZ = 14px vì height = 28px) */
+        .face-1 { transform: rotateX(0deg) translateZ(14px); color: #ec4899; text-shadow: 0 0 10px rgba(236,72,153,0.5); } /* Màu Hồng Neon */
+        .face-2 { transform: rotateX(-90deg) translateZ(14px); color: #06b6d4; text-shadow: 0 0 10px rgba(6,182,212,0.5); } /* Màu Cyan Neon */
+        .face-3 { transform: rotateX(-180deg) translateZ(14px); color: #10b981; text-shadow: 0 0 10px rgba(16,185,129,0.5); } /* Màu Lục Neon */
+        .face-4 { transform: rotateX(-270deg) translateZ(14px); color: #8b5cf6; text-shadow: 0 0 10px rgba(139,92,246,0.5); } /* Màu Tím Neon */
+
+        /* Animation Lật từng mặt */
+        @keyframes rotateCube {
+            0%, 20%   { transform: rotateX(0deg); }     /* Dừng ở mặt 1 */
+            25%, 45%  { transform: rotateX(90deg); }    /* Dừng ở mặt 2 */
+            50%, 70%  { transform: rotateX(180deg); }   /* Dừng ở mặt 3 */
+            75%, 95%  { transform: rotateX(270deg); }   /* Dừng ở mặt 4 */
+            100%      { transform: rotateX(360deg); }   /* Về lại mặt 1 */
         }
 
-        /* Phông chữ mềm mại, bo tròn hơn */
+        /* Animation Chớp chớp (Blink Glow) */
+        @keyframes glow-blink {
+            0% { filter: brightness(1) drop-shadow(0 0 1px currentColor); }
+            100% { filter: brightness(1.3) drop-shadow(0 0 7px currentColor); }
+        }
+        .blink-text {
+            animation: glow-blink 0.8s infinite alternate ease-in-out;
+        }
+
+        /* Font mềm mại hơn */
         .soft-text {
             font-family: 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
             letter-spacing: 0.3px;
@@ -110,15 +143,33 @@
                 <h2 class="text-xl font-bold text-slate-800 hidden sm:block">Báo Cáo Daily (Jira)</h2>
             </div>
             
-            <!-- Phần ở giữa: Text đếm ngược đi Trùng Khánh (Cuộn & Gradient) -->
+            <!-- Phần ở giữa: Text đếm ngược lật khối 3D (3D Cube Flip) -->
             <div class="hidden lg:flex flex-1 justify-center items-center">
-                <div class="px-2 py-1.5 rounded-full bg-slate-50/80 border border-slate-200 shadow-[inset_0_1px_3px_rgba(0,0,0,0.03)] cursor-default">
-                    <div class="marquee-container">
-                        <span class="animate-marquee soft-text font-bold text-[14.5px] bg-gradient-to-r from-rose-500 via-purple-500 to-indigo-500 bg-clip-text text-transparent">
-                            <i class="fa-solid fa-plane-departure text-rose-500 mr-1.5 align-baseline"></i>
-                            Chỉ còn <span id="mondayCountText" class="text-lg mx-0.5">...</span> Thứ 2 nữa là đi Trùng Khánh! 🇨🇳
-                            <i class="fa-solid fa-sparkles text-indigo-500 ml-1.5 align-baseline"></i>
-                        </span>
+                <div class="px-5 py-1.5 rounded-full bg-slate-50/90 border border-slate-200 shadow-sm cursor-default">
+                    <div class="cube-container">
+                        <!-- Khối lập phương chứa 4 mặt -->
+                        <div class="cube soft-text blink-text">
+                            <!-- Mặt 1: Hồng Neon -->
+                            <div class="cube-face face-1">
+                                <i class="fa-solid fa-plane-departure mr-1.5 opacity-90"></i>
+                                Chỉ còn <span class="text-lg mx-0.5 mondayCountText">...</span> Thứ 2 nữa là đi Trùng Khánh! 🇨🇳
+                            </div>
+                            <!-- Mặt 2: Xanh Cyan -->
+                            <div class="cube-face face-2">
+                                <i class="fa-solid fa-plane-departure mr-1.5 opacity-90"></i>
+                                Chỉ còn <span class="text-lg mx-0.5 mondayCountText">...</span> Thứ 2 nữa là đi Trùng Khánh! 🇨🇳
+                            </div>
+                            <!-- Mặt 3: Xanh Lục -->
+                            <div class="cube-face face-3">
+                                <i class="fa-solid fa-plane-departure mr-1.5 opacity-90"></i>
+                                Chỉ còn <span class="text-lg mx-0.5 mondayCountText">...</span> Thứ 2 nữa là đi Trùng Khánh! 🇨🇳
+                            </div>
+                            <!-- Mặt 4: Tím Neon -->
+                            <div class="cube-face face-4">
+                                <i class="fa-solid fa-plane-departure mr-1.5 opacity-90"></i>
+                                Chỉ còn <span class="text-lg mx-0.5 mondayCountText">...</span> Thứ 2 nữa là đi Trùng Khánh! 🇨🇳
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -423,8 +474,11 @@
                 current.setDate(current.getDate() + 1);
             }
             
-            const txt = document.getElementById('mondayCountText');
-            if(txt) txt.innerText = mondaysCount;
+            // Xóa JS thao tác ID đơn lẻ, đổi thành QuerySelectorAll để fill vào 4 mặt của Cube 3D
+            const txtElements = document.querySelectorAll('.mondayCountText');
+            txtElements.forEach(el => {
+                el.innerText = mondaysCount;
+            });
         }
 
         let rawJiraData = [];
@@ -496,7 +550,7 @@
 
         document.addEventListener('DOMContentLoaded', () => {
             updateAuthUI();
-            calculateMondaysLeft();
+            calculateMondaysLeft(); 
             
             const savedScope = localStorage.getItem('jira_scope_testing');
             if (savedScope && document.getElementById('scopeOfTestingInput')) document.getElementById('scopeOfTestingInput').value = savedScope;
@@ -1237,6 +1291,7 @@
                         if (index < tagOrder.length - 1) reportLines.push('-----');
                     });
                 } else {
+                    // TRƯỜNG HỢP XUẤT 0 TICKET
                     reportLines.push('B. [TICKETS]');
                     reportLines.push('- Không có ticket nào (0 Ticket).');
                 }
