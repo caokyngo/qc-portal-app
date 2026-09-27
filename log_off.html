@@ -478,7 +478,7 @@
             }
         }
 
-       // ================= MODAL LỊCH SỬ CỦA TÔI (ĐÃ TỐI ƯU KHỚP DỮ LIỆU CŨ) =================
+       // ================= MODAL LỊCH SỬ CỦA TÔI (ĐỐI SOÁT THEO ID SỐ) =================
 function openHistoryModal() {
     if (!loggedInUser) { showCustomAlert("Lỗi", "Vui lòng đăng nhập để xem lịch sử!", true); return; }
     document.getElementById('historyModal').classList.remove('hidden');
@@ -486,30 +486,41 @@ function openHistoryModal() {
     const tbody = document.getElementById('historyTableBody');
     tbody.innerHTML = '<tr><td colspan="5" class="text-center py-8">Đang tải dữ liệu...</td></tr>';
 
-    // Lấy 150 bản ghi gần nhất để đối soát
+    // Tăng limit lên 300 để quét hết hơn 100 đơn cũ đã import
     db.collection("leave_requests")
       .orderBy("createdAt", "desc")
-      .limit(150)
+      .limit(300)
       .get().then(snapshot => {
           tbody.innerHTML = '';
           let count = 0;
 
-          // Chuẩn hóa tên user đang đăng nhập (VD: "927", "Kenz", "Ky") để so sánh
           const myEmail = loggedInUser.email.toLowerCase();
           const myName = loggedInUser.name.toLowerCase();
+          
+          // Trích xuất ID số từ tên Google của bạn (VD: "927 - Ky N. - QC" -> "927")
+          const myIdMatch = loggedInUser.name.match(/\d+/);
+          const myId = myIdMatch ? myIdMatch[0] : null;
 
           snapshot.forEach(doc => {
               const data = doc.data();
               const appEmail = (data.applicantEmail || "").toLowerCase();
               const appName = (data.applicantName || "").toLowerCase();
+              
+              // Trích xuất ID số từ bản ghi trong Database (VD: "927-Kenz" -> "927")
+              const appDataIdMatch = appName.match(/\d+/);
+              const appDataId = appDataIdMatch ? appDataIdMatch[0] : null;
 
-              // 1. Khớp chính xác Email Google
+              // 1. Khớp chính xác Email Google (đối với các đơn mới gửi sau này từ Form)
               const isMatchEmail = (appEmail === myEmail);
 
-              // 2. Khớp dữ liệu Import cũ (nếu Email là legacy_import và Tên/ID chứa trong tên Google)
-              const isMatchLegacy = (appEmail === "legacy_import@enotion.io") && 
-                                    (myName.includes(appName) || appName.includes(myName) || 
-                                     (appName.length > 2 && myName.includes(appName.split(' ')[0])));
+              // 2. Khớp ID số giữa tên Google và tên trong Chat cũ (VD: "927" === "927")
+              const isMatchId = (myId && appDataId && myId === appDataId);
+
+              // 3. Khớp theo chuỗi tên/nickname nếu không có ID
+              const isMatchName = myName.includes(appName) || appName.includes(myName);
+
+              // Điều kiện lọc bản ghi cũ
+              const isMatchLegacy = (appEmail === "legacy_import@enotion.io") && (isMatchId || isMatchName);
 
               if (isMatchEmail || isMatchLegacy) {
                   count++;
