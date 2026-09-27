@@ -44,39 +44,49 @@
 </head>
 <body class="bg-slate-50 text-slate-800 font-sans h-screen w-full flex flex-col md:flex-row overflow-hidden">
 
-    <!-- ================= SIDEBAR MENU ================= -->
-    <aside class="w-full md:w-64 bg-indigo-900 text-white flex flex-col flex-shrink-0 shadow-xl z-20 transition-all">
-        <div class="h-auto md:h-[72px] flex items-center justify-between px-6 py-4 md:py-0 border-b border-indigo-800 bg-[#28256b]">
-            <div class="flex items-center gap-3">
-                <i class="fa-solid fa-square-poll-vertical text-indigo-400 text-[28px]"></i>
-                <div>
-                    <h1 class="text-xl font-bold leading-tight">QC Portal</h1>
-                    <p class="text-indigo-300 text-[11px] font-medium tracking-wide">Report & Device Tool</p>
-                </div>
+    <!-- ================= SIDEBAR MENU (BACKGROUND TRÙNG KHÁNH & NÚT TRONG SUỐT) ================= -->
+<aside class="w-full md:w-64 text-white flex flex-col flex-shrink-0 shadow-2xl z-20 transition-all bg-cover bg-center bg-no-repeat relative"
+       style="background-image: linear-gradient(to bottom, rgba(15, 23, 42, 0.65), rgba(30, 27, 75, 0.75)), url('./trungkhanh.jpg');">
+    
+    <!-- Header Sidebar trong suốt mờ -->
+    <div class="h-auto md:h-[72px] flex items-center justify-between px-6 py-4 md:py-0 border-b border-white/10 bg-black/20 backdrop-blur-md">
+        <div class="flex items-center gap-3">
+            <i class="fa-solid fa-square-poll-vertical text-indigo-300 text-[28px]"></i>
+            <div>
+                <h1 class="text-xl font-bold leading-tight drop-shadow-md">QC Portal</h1>
+                <p class="text-indigo-200 text-[11px] font-medium tracking-wide">Report & Device Tool</p>
             </div>
         </div>
-        <nav class="flex md:flex-col gap-2 p-4 overflow-x-auto md:overflow-y-auto flex-1 bg-indigo-800 md:bg-transparent custom-scrollbar">
-    <a href="index" class="whitespace-nowrap flex items-center gap-3 px-4 py-3.5 text-sm font-bold rounded-xl transition text-indigo-200 hover:bg-white/10 hover:text-white">
-        <i class="fa-solid fa-chart-line w-5 text-center text-lg"></i> 
-        <span>Báo Cáo Daily</span>
-    </a>
-    <a href="device_manage" class="whitespace-nowrap flex items-center gap-3 px-4 py-3.5 text-sm font-bold rounded-xl transition text-indigo-200 hover:bg-white/10 hover:text-white">
-        <i class="fa-solid fa-mobile-screen-button w-5 text-center text-lg"></i> 
-        <span>Mượn Device</span>
-    </a>
-    <!-- CHỈ SÁNG NÚT THÔNG TIN DEVICE -->
-    <a href="device_info" class="whitespace-nowrap flex items-center gap-3 px-4 py-3.5 text-sm font-bold rounded-xl transition bg-indigo-600 text-white shadow-md">
-        <i class="fa-solid fa-circle-info w-5 text-center text-lg"></i> 
-        <span>Thông tin Device</span>
-    </a>
-    <!-- NÚT XIN OFF ĐƯỢC ĐỔI THÀNH TRẠNG THÁI ẨN/INACTIVE -->
-    <a href="log_off" class="whitespace-nowrap flex items-center gap-3 px-4 py-3.5 text-sm font-bold rounded-xl transition text-indigo-200 hover:bg-white/10 hover:text-white">
-        <i class="fa-solid fa-calendar-minus w-5 text-center text-lg"></i> 
-        <span>Xin OFF</span>
-    </a>
+    </div>
+
+    <!-- Danh sách Nút bấm trong suốt (Glassmorphism) -->
+    <nav class="flex md:flex-col gap-2.5 p-4 overflow-x-auto md:overflow-y-auto flex-1 bg-transparent custom-scrollbar">
+        
+        <!-- Nút 1: Báo Cáo Daily -->
+        <a href="index" class="whitespace-nowrap flex items-center gap-3 px-4 py-3.5 text-sm font-bold rounded-xl transition border border-white/15 bg-white/10 hover:bg-white/25 hover:border-white/40 text-white backdrop-blur-md shadow-sm">
+            <i class="fa-solid fa-chart-line w-5 text-center text-lg"></i> 
+            <span>Báo Cáo Daily</span>
+        </a>
+
+        <!-- Nút 2: Mượn Device -->
+        <a href="device_manage" class="whitespace-nowrap flex items-center gap-3 px-4 py-3.5 text-sm font-bold rounded-xl transition border border-white/15 bg-white/10 hover:bg-white/25 hover:border-white/40 text-white backdrop-blur-md shadow-sm">
+            <i class="fa-solid fa-mobile-screen-button w-5 text-center text-lg"></i> 
+            <span>Mượn Device</span>
+        </a>
+
+        <!-- Nút 3: Thông tin Device -->
+        <a href="device_info" class="bg-indigo-600/70 border-indigo-300/50 backdrop-blur-md text-white font-black shadow-lg">
+            <i class="fa-solid fa-circle-info w-5 text-center text-lg"></i> 
+            <span>Thông tin Device</span>
+        </a>
+
+        <!-- Nút 4: Xin OFF / WFH -->
+        <a href="log_off" class="whitespace-nowrap flex items-center gap-3 px-4 py-3.5 text-sm font-bold rounded-xl transition border border-white/15 bg-white/10 hover:bg-white/25 hover:border-white/40 text-white backdrop-blur-md shadow-sm">
+            <i class="fa-solid fa-calendar-minus w-5 text-center text-lg"></i> 
+            <span>Xin OFF / WFH</span>
+        </a>
     </nav>
-       
-    </aside>
+</aside>
 
     <!-- ================= MAIN CONTENT ================= -->
     <div class="flex-1 flex flex-col h-full overflow-hidden bg-slate-50 relative">
