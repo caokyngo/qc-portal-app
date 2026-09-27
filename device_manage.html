@@ -70,6 +70,8 @@
             font-family: 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
             font-size: 16px;
             font-weight: 800;
+            letter-spacing: 0.2px;
+            line-height: 1.5;
             background: linear-gradient(90deg, #ea580c 0%, #d97706 50%, #ca8a04 100%);
             -webkit-background-clip: text;
             background-clip: text;
@@ -92,11 +94,10 @@
 </head>
 <body class="bg-slate-50 text-slate-800 font-sans h-screen w-full flex flex-col md:flex-row overflow-hidden">
 
-    <!-- ================= SIDEBAR MENU (BACKGROUND TRÙNG KHÁNH & NÚT TRONG SUỐT) ================= -->
+    <!-- ================= SIDEBAR MENU (BACKGROUND TRÙNG KHÁNH) ================= -->
     <aside class="w-full md:w-64 text-white flex flex-col flex-shrink-0 shadow-2xl z-20 transition-all bg-cover bg-center bg-no-repeat relative"
            style="background-image: linear-gradient(to bottom, rgba(15, 23, 42, 0.65), rgba(30, 27, 75, 0.75)), url('./trungkhanh.jpg');">
         
-        <!-- Header Sidebar -->
         <div class="h-auto md:h-[72px] flex items-center justify-between px-6 py-4 md:py-0 border-b border-white/10 bg-black/20 backdrop-blur-md">
             <div class="flex items-center gap-3">
                 <i class="fa-solid fa-square-poll-vertical text-indigo-300 text-[28px]"></i>
@@ -111,12 +112,9 @@
             <a href="index" class="whitespace-nowrap flex items-center gap-3 px-4 py-3.5 text-sm font-bold rounded-xl transition border border-white/15 bg-white/10 hover:bg-white/25 hover:border-white/40 text-white backdrop-blur-md shadow-sm">
                 <i class="fa-solid fa-chart-line w-5 text-center text-lg"></i> <span>Báo Cáo Daily</span>
             </a>
-            
-            <!-- NÚT ACTIVE: MƯỢN DEVICE -->
             <a href="device_manage" class="whitespace-nowrap flex items-center gap-3 px-4 py-3.5 text-sm font-bold rounded-xl transition border border-indigo-300/50 bg-indigo-600/70 hover:bg-indigo-500/70 text-white backdrop-blur-md shadow-lg">
                 <i class="fa-solid fa-mobile-screen-button w-5 text-center text-lg"></i> <span>Mượn Device</span>
             </a>
-            
             <a href="device_info" class="whitespace-nowrap flex items-center gap-3 px-4 py-3.5 text-sm font-bold rounded-xl transition border border-white/15 bg-white/10 hover:bg-white/25 hover:border-white/40 text-white backdrop-blur-md shadow-sm">
                 <i class="fa-solid fa-circle-info w-5 text-center text-lg"></i> <span>Thông tin Device</span>
             </a>
@@ -188,7 +186,7 @@
             </div>
         </header>
 
-        <!-- BACKGROUND LỚP PHỦ MỜ (Fix lỗi trùng lặp thẻ style) -->
+        <!-- BACKGROUND TRÙNG KHÁNH MAIN -->
         <main class="flex-1 overflow-y-auto p-4 md:p-6 bg-cover bg-center bg-no-repeat bg-fixed relative" 
               style="background-image: linear-gradient(to bottom, rgba(248, 250, 252, 0.85), rgba(248, 250, 252, 0.95)), url('./bg-chongqing.jpg');">
             
@@ -262,13 +260,13 @@
                         
                         <!-- TOOLBAR BỘ LỌC THÔNG MINH -->
                         <div class="flex flex-col sm:flex-row justify-between items-center gap-3 bg-white p-3 rounded-xl border border-slate-200 shadow-sm w-full">
-                            <!-- 1. Ô tìm kiếm từ khóa -->
+                            <!-- Ô tìm kiếm từ khóa -->
                             <div class="relative w-full sm:w-96">
                                 <i class="fa-solid fa-magnifying-glass absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 text-xs"></i>
                                 <input type="text" id="logSearchInput" oninput="handleLogSearch()" placeholder="Tìm Tên, Thiết bị, Thời gian..." class="w-full pl-9 pr-4 py-2 bg-slate-50 border border-slate-300 text-slate-700 text-xs font-medium rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none transition">
                             </div>
 
-                            <!-- 2. Cụm nút thao tác -->
+                            <!-- Cụm nút thao tác -->
                             <div class="flex flex-wrap items-center gap-2 w-full sm:w-auto">
                                 <button onclick="exportDeviceLogsToExcel()" class="flex-1 sm:flex-none inline-flex items-center justify-center gap-1.5 px-3 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-lg shadow-sm transition">
                                     <i class="fa-solid fa-file-excel"></i> <span class="hidden sm:inline">Xuất Excel</span>
@@ -362,7 +360,6 @@
             appId: "1:747189096859:web:abcdef..."
         };
 
-        // ================= CẤU HÌNH NGÀY ĐI TRÙNG KHÁNH =================
         const TARGET_TRIP_DATE = "2026-11-01"; 
 
         function calculateMondaysLeft() {
@@ -375,16 +372,12 @@
 
             let current = new Date(today);
             while (current <= target) {
-                if (current.getDay() === 1) {
-                    mondaysCount++;
-                }
+                if (current.getDay() === 1) mondaysCount++;
                 current.setDate(current.getDate() + 1);
             }
 
             const txtElements = document.querySelectorAll('.mondayCountText');
-            txtElements.forEach(el => {
-                el.innerText = mondaysCount;
-            });
+            txtElements.forEach(el => { el.innerText = mondaysCount; });
         }
 
         function sendDiscordNotification(embed) {
@@ -407,12 +400,17 @@
         let currentAvailableDevices = [];
         let deviceLogsData = [];
         let isOnlyUnreturned = false;
-        let currentSearchKeyword = ""; // Lọc dữ liệu đa điều kiện
+        let currentSearchKeyword = "";
         let currentDevicePage = 1;
         const ITEMS_PER_PAGE = 10;
         let isListenersInitialized = false;
         let initialLoadCounter = 0;
         let loggedInUser = null;
+
+        function escapeSingleQuotes(str) {
+            if (!str) return '';
+            return String(str).replace(/'/g, "\\'");
+        }
 
         function decodeJwtResponse(token) {
             let base64Url = token.split('.')[1];
@@ -495,7 +493,7 @@
                 return;
             }
             if (isManualRefresh) {
-                showCustomAlert('Real-time Sync ⚡', 'Hệ thống đang tự động đồng bộ dữ liệu theo thời gian thực! Bạn không cần bấm làm mới thủ công nữa.');
+                showCustomAlert('Real-time Sync ⚡', 'Hệ thống đang tự động đồng bộ dữ liệu theo thời gian thực!');
                 return;
             }
             if (isListenersInitialized) return;
@@ -620,17 +618,15 @@
 
         function renderPaginatedDeviceLogs() {
             const tbody = document.getElementById('deviceLogTableBody');
+            if (!tbody) return;
             tbody.innerHTML = '';
             
-            // 1. Áp dụng các điều kiện lọc vào dữ liệu gốc
-            let filteredLogs = deviceLogsData;
+            let filteredLogs = deviceLogsData || [];
             
-            // Lọc theo nút "Chưa trả"
             if (isOnlyUnreturned) {
                 filteredLogs = filteredLogs.filter(r => !String(r.trangThai || '').toLowerCase().includes('đã trả'));
             }
             
-            // Lọc theo ô tìm kiếm Text
             if (currentSearchKeyword !== "") {
                 filteredLogs = filteredLogs.filter(r => {
                     const rowText = `${r.thoiGian \vert{}\vert{} ''}${r.nguoiMuon || ''} ${r.thietBi \vert{}\vert{} ''}${r.trangThai || ''}`.toLowerCase();
@@ -639,16 +635,16 @@
             }
 
             const totalLogs = filteredLogs.length;
-            document.getElementById('logCountBadge').innerText = `${totalLogs} lượt`;
-            document.getElementById('totalLogsText').innerText = totalLogs;
+            if (document.getElementById('logCountBadge')) document.getElementById('logCountBadge').innerText = `${totalLogs} lượt`;
+            if (document.getElementById('totalLogsText')) document.getElementById('totalLogsText').innerText = totalLogs;
 
             if (totalLogs === 0) {
                 tbody.innerHTML = '<tr><td colspan="6" class="text-center py-10 text-slate-400 font-medium text-sm">Không tìm thấy nhật ký phù hợp với bộ lọc!</td></tr>';
-                document.getElementById('pageRangeText').innerText = '0 - 0';
-                document.getElementById('currentPageText').innerText = '1';
-                document.getElementById('totalPagesText').innerText = '1';
-                document.getElementById('btnPrevPage').disabled = true;
-                document.getElementById('btnNextPage').disabled = true;
+                if (document.getElementById('pageRangeText')) document.getElementById('pageRangeText').innerText = '0 - 0';
+                if (document.getElementById('currentPageText')) document.getElementById('currentPageText').innerText = '1';
+                if (document.getElementById('totalPagesText')) document.getElementById('totalPagesText').innerText = '1';
+                if (document.getElementById('btnPrevPage')) document.getElementById('btnPrevPage').disabled = true;
+                if (document.getElementById('btnNextPage')) document.getElementById('btnNextPage').disabled = true;
                 return;
             }
 
@@ -675,7 +671,10 @@
                     actionButton = `<span class="text-slate-400 text-[11px] italic font-medium"><i class="fa-solid fa-check mr-1"></i>Hoàn tất</span>`;
                 } else {
                     if (isOwner) {
-                        actionButton = `<button onclick="submitReturnDevice('${r.id}', '${r.thietBi.replace(/'/g, "\\'")}', '${r.nguoiMuon.replace(/'/g, "\\'")}')" class="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white text-[11px] font-bold rounded-md shadow-sm transition inline-flex items-center gap-1.5"><i class="fa-solid fa-rotate-left"></i> Trả Device</button>`;
+                        const safeId = escapeSingleQuotes(r.id);
+                        const safeDevice = escapeSingleQuotes(r.thietBi);
+                        const safeBorrower = escapeSingleQuotes(r.nguoiMuon);
+                        actionButton = `<button onclick="submitReturnDevice('${safeId}', '${safeDevice}', '${safeBorrower}')" class="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white text-[11px] font-bold rounded-md shadow-sm transition inline-flex items-center gap-1.5"><i class="fa-solid fa-rotate-left"></i> Trả Device</button>`;
                     } else {
                         actionButton = `<button disabled class="px-3 py-1.5 bg-slate-200 text-slate-400 text-[11px] font-bold rounded-md shadow-sm inline-flex items-center gap-1.5 cursor-not-allowed" title="Chỉ tài khoản mượn mới được phép trả thiết bị"><i class="fa-solid fa-lock"></i> Trả Device</button>`;
                     }
@@ -683,7 +682,7 @@
                 tr.innerHTML = `
                     <td class="px-5 py-3.5 font-mono text-indigo-600 font-bold whitespace-nowrap">${r.thoiGian || ''}</td>
                     <td class="px-5 py-3.5 font-bold text-slate-800 whitespace-nowrap">${r.nguoiMuon || ''}</td>
-                    <td class="px-5 py-3.5 text-emerald-700 font-bold max-w-xs truncate" title="${r.thietBi}">${r.thietBi || ''}</td>
+                    <td class="px-5 py-3.5 text-emerald-700 font-bold max-w-xs truncate" title="${r.thietBi \vert{}\vert{} ''}">${r.thietBi || ''}</td>
                     <td class="px-5 py-3.5 whitespace-nowrap">${statusBadge}</td>
                     <td class="px-5 py-3.5 text-slate-500 font-mono text-[11px] font-bold whitespace-nowrap">${r.gioTra || ''}</td>
                     <td class="px-5 py-3.5 whitespace-nowrap text-right">${actionButton}</td>
@@ -691,11 +690,11 @@
                 tbody.appendChild(tr);
             });
 
-            document.getElementById('pageRangeText').innerText = `${startIndex + 1} -${endIndex}`;
-            document.getElementById('currentPageText').innerText = currentDevicePage;
-            document.getElementById('totalPagesText').innerText = totalPages;
-            document.getElementById('btnPrevPage').disabled = (currentDevicePage === 1);
-            document.getElementById('btnNextPage').disabled = (currentDevicePage === totalPages);
+            if (document.getElementById('pageRangeText')) document.getElementById('pageRangeText').innerText = `${startIndex + 1} -${endIndex}`;
+            if (document.getElementById('currentPageText')) document.getElementById('currentPageText').innerText = currentDevicePage;
+            if (document.getElementById('totalPagesText')) document.getElementById('totalPagesText').innerText = totalPages;
+            if (document.getElementById('btnPrevPage')) document.getElementById('btnPrevPage').disabled = (currentDevicePage === 1);
+            if (document.getElementById('btnNextPage')) document.getElementById('btnNextPage').disabled = (currentDevicePage === totalPages);
         }
 
         function changeDevicePage(direction) { currentDevicePage += direction; renderPaginatedDeviceLogs(); }
@@ -709,8 +708,9 @@
 
             if (!device) { showCustomAlert('Chưa chọn thiết bị', 'Vui lòng chọn 1 thiết bị từ danh sách!', true); return; }
 
-            const btn = document.getElementById('btnSubmitBorrow'); const origHtml = btn.innerHTML;
-            btn.disabled = true; btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin text-sm"></i> Đang ghi...`;
+            const btn = document.getElementById('btnSubmitBorrow'); 
+            const origHtml = btn ? btn.innerHTML : '';
+            if (btn) { btn.disabled = true; btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin text-sm"></i> Đang ghi...`; }
 
             const now = new Date(); const pad = (n) => n.toString().padStart(2, '0');
             const exactTimeStr = `${pad(now.getDate())}/${pad(now.getMonth()+1)}/${now.getFullYear()}${pad(now.getHours())}:${pad(now.getMinutes())}:${pad(now.getSeconds())}`;
@@ -720,13 +720,14 @@
 
             if (db) {
                 db.collection("device_logs").add(newRecord).then(() => {
-                    btn.disabled = false; btn.innerHTML = origHtml;
+                    if (btn) { btn.disabled = false; btn.innerHTML = origHtml; }
                     showCustomAlert('Thành Công!', `Đã ghi nhận mượn [${device}] cho${borrowerName}.`);
                     let displayBorrower = `**${borrowerName}**`;
                     if (borrowerName !== operatorName) displayBorrower += `\n*(Log hộ bởi: ${operatorName})*`;
                     sendDiscordNotification({ title: "🟦 THÔNG BÁO MƯỢN THIẾT BỊ", color: 16753920, fields: [{ name: "👤 Người thực hiện", value: displayBorrower, inline: true }, { name: "📱 Thiết bị", value: `\`${device}\``, inline: true }, { name: "⏰ Thời gian mượn", value: exactTimeStr, inline: false }, { name: "📌 Trạng thái", value: "🟡 **Đang Mượn**", inline: false }], timestamp: now.toISOString(), footer: { text: "QA Internal Portal System" } });
                 }).catch((err) => {
-                    console.error("Lỗi Firestore:", err); btn.disabled = false; btn.innerHTML = origHtml;
+                    console.error("Lỗi Firestore:", err); 
+                    if (btn) { btn.disabled = false; btn.innerHTML = origHtml; }
                     showCustomAlert("Lỗi Server", "Không thể lưu thông tin mượn!", true);
                 });
             }
@@ -751,7 +752,7 @@
         function exportDeviceLogsToExcel() {
             if (!deviceLogsData || deviceLogsData.length === 0) { showCustomAlert("Cảnh báo", "Hiện chưa có dữ liệu nhật ký mượn trả để xuất file Excel!", true); return; }
             let dataToExport = deviceLogsData;
-            if (isOnlyUnreturned) dataToExport = deviceLogsData.filter(r => !String(r.trangThai || '').toLowerCase().includes('đã trả'));
+            if (isOnlyUnreturned) dataToExport = dataToExport.filter(r => !String(r.trangThai || '').toLowerCase().includes('đã trả'));
             if (currentSearchKeyword !== "") {
                 dataToExport = dataToExport.filter(r => {
                     const rowText = `${r.thoiGian || ''} ${r.nguoiMuon || ''} ${r.thietBi || ''} ${r.trangThai || ''}`.toLowerCase();
