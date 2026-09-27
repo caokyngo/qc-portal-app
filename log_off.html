@@ -533,102 +533,123 @@
             }
         }
 
-        // ================= MODAL LỊCH SỬ CỦA TÔI (CÓ TỔNG KẾT NGÀY) =================
-        function openHistoryModal() {
-            if (!loggedInUser) { showCustomAlert("Lỗi", "Vui lòng đăng nhập để xem lịch sử!", true); return; }
-            document.getElementById('historyModal').classList.remove('hidden');
-            
-            const tbody = document.getElementById('historyTableBody');
-            tbody.innerHTML = '<tr><td colspan="5" class="text-center py-8">Đang tải dữ liệu...</td></tr>';
-            
-            document.getElementById('totalOffCount').innerText = '...';
-            document.getElementById('totalWfhCount').innerText = '...';
+       // Hàm phụ: Bóc tách chính xác số ngày từ Cột Loại (leaveType)
+function parseLeaveDays(typeStr) {
+    if (!typeStr) return 1;
+    let s = typeStr.toLowerCase().replace(',', '.');
 
-            db.collection("leave_requests")
-              .orderBy("createdAt", "desc")
-              .limit(500)
-              .get().then(snapshot => {
-                  tbody.innerHTML = '';
-                  let count = 0;
-                  let totalOff = 0;
-                  let totalWfh = 0;
+    // 1. Nếu chứa 0.5, 0.25, nửa ngày, sáng/chiều -> Trả về đúng 0.5 hoặc 0.25
+    if (s.includes('0.25')) return 0.25;
+    if (s.includes('0.5') || s.includes('sáng') || s.includes('chiều') || s.includes('half')) return 0.5;
 
-                  const myEmail = loggedInUser.email.toLowerCase();
-                  const myName = loggedInUser.name.toLowerCase();
-                  const myIdMatch = loggedInUser.name.match(/\d+/);
-                  const myId = myIdMatch ? myIdMatch[0] : null;
+    // 2. Loại bỏ các con số năm (2025, 2026) và dạng ngày tháng (25/05, 08-06) để không bị cộng nhầm
+    s = s.replace(/\b20\d{2}\b/g, ''); 
+    s = s.replace(/\d{1,2}[\/\.-]\d{1,2}/g, '');
 
-                  snapshot.forEach(doc => {
-                      const data = doc.data();
-                      const appEmail = (data.applicantEmail || "").toLowerCase();
-                      const appName = (data.applicantName || "").toLowerCase();
-                      const appDataIdMatch = appName.match(/\d+/);
-                      const appDataId = appDataIdMatch ? appDataIdMatch[0] : null;
+    // 3. Bóc tách số ngày cụ thể (VD: "off 2d", "5d", "1 ngày", "off 3")
+    const match = s.match(/(\d+(?:\.\d+)?)/);
+    if (match) {
+        const val = parseFloat(match[1]);
+        if (val > 0 && val < 60) return val; // Lọc các số hợp lệ < 60 ngày
+    }
 
-                      const isMatchEmail = (appEmail === myEmail);
-                      const isMatchId = (myId && appDataId && myId === appDataId);
-                      const isMatchName = myName.includes(appName) || appName.includes(myName);
-                      const isMatchLegacy = (appEmail === "legacy_import@enotion.io") && (isMatchId || isMatchName);
+    return 1; // Mặc định 1 ngày nếu không có số lẻ
+}
 
-                      if (isMatchEmail || isMatchLegacy) {
-                          count++;
+// ================= MODAL LỊCH SỬ CỦA TÔI (ĐÃ CỦNG CỐ CÁCH TÍNH TỔNG) =================
+function openHistoryModal() {
+    if (!loggedInUser) { showCustomAlert("Lỗi", "Vui lòng đăng nhập để xem lịch sử!", true); return; }
+    document.getElementById('historyModal').classList.remove('hidden');
+    
+    const tbody = document.getElementById('historyTableBody');
+    tbody.innerHTML = '<tr><td colspan="5" class="text-center py-8">Đang tải dữ liệu...</td></tr>';
+    
+    document.getElementById('totalOffCount').innerText = '...';
+    document.getElementById('totalWfhCount').innerText = '...';
 
-                          // TÍNH TỔNG SỐ NGÀY (Chỉ tính đơn chưa bị từ chối/hủy)
-                          if (data.status !== "Từ chối" && data.status !== "Đã hủy") {
-                              const typeStr = (data.leaveType || "").toLowerCase();
-                              const cleanTypeStr = typeStr.replace(/\d{1,2}\/\d{1,2}/g, '');
-                              const numMatch = cleanTypeStr.match(/(\d+(\.\d+)?)/);
-                              let days = numMatch ? parseFloat(numMatch[1]) : 1;
+    db.collection("leave_requests")
+      .orderBy("createdAt", "desc")
+      .limit(1000)
+      .get().then(snapshot => {
+          tbody.innerHTML = '';
+          let count = 0;
+          let totalOff = 0;
+          let totalWfh = 0;
 
-                              if (typeStr.includes("wfh")) {
-                                  totalWfh += days;
-                              } else {
-                                  totalOff += days;
-                              }
-                          }
+          const myEmail = loggedInUser.email.toLowerCase();
+          const myName = loggedInUser.name.toLowerCase();
+          const myIdMatch = loggedInUser.name.match(/\d+/);
+          const myId = myIdMatch ? myIdMatch[0] : null;
 
-                          const dateObj = data.createdAt ? data.createdAt.toDate() : new Date();
-                          const createdStr = `${dateObj.getDate()}/${dateObj.getMonth()+1}/${dateObj.getFullYear()}`;
-                          
-                          let statusHtml = `<span class="bg-amber-100 text-amber-700 px-2 py-1 rounded font-bold text-[10px]">Chờ duyệt</span>`;
+          snapshot.forEach(doc => {
+              const data = doc.data();
+              const appEmail = (data.applicantEmail || "").toLowerCase();
+              const appName = (data.applicantName || "").toLowerCase();
+              const appDataIdMatch = appName.match(/\d+/);
+              const appDataId = appDataIdMatch ? appDataIdMatch[0] : null;
 
-                          if (data.status === "Chờ duyệt") {
-                              const escapedReason = (data.reason || '').replace(/'/g, "\\'");
-                              statusHtml += `
-                                <div class="mt-1 flex gap-2 justify-center">
-                                    <button onclick="openEditModal('${doc.id}', '${data.leaveType}', '${data.leaveDate}', '${escapedReason}', '${data.threadKey}')" class="text-indigo-600 hover:underline font-bold text-[11px]">
-                                        <i class="fa-solid fa-pen-to-square"></i> Sửa
-                                    </button>
-                                    <button onclick="cancelLeaveRequest('${doc.id}', '${data.threadKey}', '${data.leaveDate}')" class="text-rose-600 hover:underline font-bold text-[11px]">
-                                        <i class="fa-solid fa-trash-can"></i> Hủy
-                                    </button>
-                                </div>`;
-                          } else if (data.status === "Đã duyệt") {
-                              statusHtml = `<span class="bg-emerald-100 text-emerald-700 px-2 py-1 rounded font-bold text-[10px]">Đã duyệt</span>`;
-                          } else if (data.status === "Từ chối") {
-                              statusHtml = `<span class="bg-rose-100 text-rose-700 px-2 py-1 rounded font-bold text-[10px]">Từ chối</span><div class="text-[10px] mt-1 text-rose-500">${data.replyReason || ''}</div>`;
-                          }
+              const isMatchEmail = (appEmail === myEmail);
+              const isMatchId = (myId && appDataId && myId === appDataId);
+              const isMatchName = myName.includes(appName) || appName.includes(myName);
+              const isMatchLegacy = (appEmail === "legacy_import@enotion.io") && (isMatchId || isMatchName);
 
-                          tbody.innerHTML += `
-                              <tr class="hover:bg-slate-50 border-b border-slate-100">
-                                  <td class="px-4 py-3 font-mono text-slate-500">${createdStr}</td>
-                                  <td class="px-4 py-3 font-semibold text-indigo-700">${data.leaveType}</td>
-                                  <td class="px-4 py-3 font-bold text-slate-800">${formatDateToDDMM(data.leaveDate)}</td>
-                                  <td class="px-4 py-3 truncate max-w-[180px]" title="${data.reason}">${data.reason}</td>
-                                  <td class="px-4 py-3 text-center">${statusHtml}</td>
-                              </tr>`;
+              if (isMatchEmail || isMatchLegacy) {
+                  count++;
+
+                  // TÍNH TỔNG: Chỉ tính dựa trên CỘT LOẠI (leaveType) và bỏ qua đơn Hủy/Từ chối
+                  if (data.status !== "Từ chối" && data.status !== "Đã hủy") {
+                      const typeStr = data.leaveType || "";
+                      const days = parseLeaveDays(typeStr);
+
+                      if (typeStr.toLowerCase().includes("wfh")) {
+                          totalWfh += days;
+                      } else {
+                          totalOff += days;
                       }
-                  });
-
-                  document.getElementById('totalOffCount').innerText = totalOff;
-                  document.getElementById('totalWfhCount').innerText = totalWfh;
-
-                  if (count === 0) {
-                      tbody.innerHTML = '<tr><td colspan="5" class="text-center py-8 text-slate-400">Chưa tìm thấy lịch sử nào phù hợp với tài khoản của bạn.</td></tr>';
                   }
-              });
-        }
 
+                  const dateObj = data.createdAt ? data.createdAt.toDate() : new Date();
+                  const createdStr = `${dateObj.getDate()}/${dateObj.getMonth()+1}/${dateObj.getFullYear()}`;
+                  
+                  let statusHtml = `<span class="bg-amber-100 text-amber-700 px-2 py-1 rounded font-bold text-[10px]">Chờ duyệt</span>`;
+
+                  if (data.status === "Chờ duyệt") {
+                      const escapedReason = (data.reason || '').replace(/'/g, "\\'");
+                      statusHtml += `
+                        <div class="mt-1 flex gap-2 justify-center">
+                            <button onclick="openEditModal('${doc.id}', '${data.leaveType}', '${data.leaveDate}', '${escapedReason}', '${data.threadKey}')" class="text-indigo-600 hover:underline font-bold text-[11px]">
+                                <i class="fa-solid fa-pen-to-square"></i> Sửa
+                            </button>
+                            <button onclick="cancelLeaveRequest('${doc.id}', '${data.threadKey}', '${data.leaveDate}')" class="text-rose-600 hover:underline font-bold text-[11px]">
+                                <i class="fa-solid fa-trash-can"></i> Hủy
+                            </button>
+                        </div>`;
+                  } else if (data.status === "Đã duyệt") {
+                      statusHtml = `<span class="bg-emerald-100 text-emerald-700 px-2 py-1 rounded font-bold text-[10px]">Đã duyệt</span>`;
+                  } else if (data.status === "Từ chối") {
+                      statusHtml = `<span class="bg-rose-100 text-rose-700 px-2 py-1 rounded font-bold text-[10px]">Từ chối</span><div class="text-[10px] mt-1 text-rose-500">${data.replyReason || ''}</div>`;
+                  }
+
+                  tbody.innerHTML += `
+                      <tr class="hover:bg-slate-50 border-b border-slate-100">
+                          <td class="px-4 py-3 font-mono text-slate-500">${createdStr}</td>
+                          <td class="px-4 py-3 font-semibold text-indigo-700">${data.leaveType}</td>
+                          <td class="px-4 py-3 font-bold text-slate-800">${formatDateToDDMM(data.leaveDate)}</td>
+                          <td class="px-4 py-3 truncate max-w-[180px]" title="${data.reason}">${data.reason}</td>
+                          <td class="px-4 py-3 text-center">${statusHtml}</td>
+                      </tr>`;
+              }
+          });
+
+          // Cập nhật kết quả tính chuẩn ra màn hình
+          document.getElementById('totalOffCount').innerText = totalOff;
+          document.getElementById('totalWfhCount').innerText = totalWfh;
+
+          if (count === 0) {
+              tbody.innerHTML = '<tr><td colspan="5" class="text-center py-8 text-slate-400">Chưa tìm thấy lịch sử nào phù hợp với tài khoản của bạn.</td></tr>';
+          }
+      });
+}
         // ================= XỬ LÝ SỬA VÀ HỦY ĐƠN =================
         function openEditModal(docId, leaveType, leaveDate, reason, threadKey) {
             document.getElementById('editDocId').value = docId;
