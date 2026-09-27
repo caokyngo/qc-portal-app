@@ -19,7 +19,7 @@
     
     <script src="https://accounts.google.com/gsi/client" async defer></script>
 
-    <!-- Script PWA -->
+    <!-- Script PWA Auto Update -->
     <script>
       if ('serviceWorker' in navigator) {
         window.addEventListener('load', () => {
@@ -62,7 +62,7 @@
                 <i class="fa-solid fa-circle-info w-5 text-center text-lg"></i> <span>Thông tin Device</span>
             </a>
             <a href="log_off" class="whitespace-nowrap flex items-center gap-3 px-4 py-3.5 text-sm font-bold rounded-xl transition bg-indigo-600 text-white shadow-md">
-                <i class="fa-solid fa-calendar-minus w-5 text-center text-lg"></i> <span>Xin OFF</span>
+                <i class="fa-solid fa-calendar-minus w-5 text-center text-lg"></i> <span>Xin Off / WFH</span>
             </a>
         </nav>
     </aside>
@@ -100,13 +100,13 @@
 
         <main class="flex-1 overflow-y-auto p-4 md:p-6 bg-slate-50 flex flex-col items-center pt-6 md:pt-10">
             
-            <!-- Toolbar: Nút Lịch sử & Nút Duyệt phép -->
+            <!-- Toolbar -->
             <div class="w-full max-w-2xl mb-4 flex justify-between items-end">
                 <button onclick="openHistoryModal()" class="px-4 py-2 bg-white hover:bg-slate-100 border border-slate-300 text-slate-700 text-sm font-bold rounded-lg shadow-sm transition flex items-center gap-2">
-                    <i class="fa-solid fa-clock-rotate-left"></i> Lịch Sử Của Tôi
+                    <i class="fa-solid fa-clock-rotate-left text-indigo-600"></i> Lịch Sử Của Tôi
                 </button>
                 
-                <!-- Nút này chỉ hiện khi User có tên Lan L. -->
+                <!-- Nút Duyệt Phép (Chỉ hiện cho Quản lý Lan, Ky) -->
                 <button id="btnManagerApprove" onclick="openApprovalModal()" class="hidden px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-bold rounded-lg shadow-sm transition flex items-center gap-2">
                     <i class="fa-solid fa-clipboard-check"></i> Duyệt Phép <span id="pendingCountBadge" class="bg-rose-500 text-white text-[10px] px-1.5 py-0.5 rounded-full ml-1 hidden">0</span>
                 </button>
@@ -187,13 +187,13 @@
                                 <input type="checkbox" value="@974 - Mochi - HROP" checked class="w-4 h-4 text-indigo-600 rounded">
                                 <span class="text-sm font-semibold text-slate-700 group-hover:text-indigo-600 transition">Mochi (HROP)</span>
                             </label>
+                              <label class="flex items-center gap-2 cursor-pointer group">
+                                <input type="checkbox" value="@996 - Pocky - HR" checked class="w-4 h-4 text-indigo-600 rounded">
+                                <span class="text-sm font-semibold text-slate-700 group-hover:text-indigo-600 transition">Pocky - HR</span>
+                            </label>
                             <label class="flex items-center gap-2 cursor-pointer group">
                                 <input type="checkbox" value="@1033 - Thanh V. - QC" checked class="w-4 h-4 text-indigo-600 rounded">
                                 <span class="text-sm font-semibold text-slate-700 group-hover:text-indigo-600 transition">Thanh V. (QC)</span>
-                            </label>
-                             <label class="flex items-center gap-2 cursor-pointer group">
-                                <input type="checkbox" value="@996 - Pocky - HR" checked class="w-4 h-4 text-indigo-600 rounded">
-                                <span class="text-sm font-semibold text-slate-700 group-hover:text-indigo-600 transition">Pocky - HR</span>
                             </label>
                         </div>
                         <input type="text" id="extraCc" placeholder="Cc người khác (VD: @123 - Name)..." class="mt-3 w-full h-9 bg-white border border-slate-300 text-slate-700 font-medium text-xs rounded-lg px-3 outline-none">
@@ -241,6 +241,52 @@
                         <tr><td colspan="5" class="text-center py-8 text-slate-400">Đang tải dữ liệu...</td></tr>
                     </tbody>
                 </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- ================= MODAL CHỈNH SỬA ĐƠN OFF ================= -->
+    <div id="editModal" class="hidden fixed inset-0 z-[80] flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4">
+        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden p-6 space-y-4">
+            <div class="flex justify-between items-center border-b border-slate-100 pb-3">
+                <h3 class="text-lg font-bold text-indigo-900 flex items-center gap-2">
+                    <i class="fa-solid fa-pen-to-square text-indigo-600"></i> Chỉnh Sửa Đơn Xin Off
+                </h3>
+                <button onclick="closeModal('editModal')" class="text-slate-400 hover:text-rose-500 transition">
+                    <i class="fa-solid fa-xmark text-xl"></i>
+                </button>
+            </div>
+            
+            <input type="hidden" id="editDocId">
+            <input type="hidden" id="editThreadKey">
+            
+            <div>
+                <label class="block text-xs font-bold text-slate-700 mb-1">Loại yêu cầu <span class="text-red-500">*</span></label>
+                <select id="editLeaveType" class="w-full h-10 bg-white border border-slate-300 text-slate-800 font-semibold text-xs rounded-xl px-3 outline-none cursor-pointer">
+                    <option value="off 1 ngày">Off 1 ngày</option>
+                    <option value="off 0.5d sáng nay">Off 0.5 ngày (Sáng)</option>
+                    <option value="off 0.5d chiều nay">Off 0.5 ngày (Chiều)</option>
+                    <option value="WFH 1 ngày">WFH 1 ngày</option>
+                    <option value="WFH 0.5d sáng nay">WFH 0.5 ngày (Sáng)</option>
+                    <option value="WFH 0.5d chiều nay">WFH 0.5 ngày (Chiều)</option>
+                </select>
+            </div>
+            
+            <div>
+                <label class="block text-xs font-bold text-slate-700 mb-1">Ngày nghỉ/WFH <span class="text-red-500">*</span></label>
+                <input type="date" id="editLeaveDate" class="w-full h-10 bg-white border border-slate-300 text-slate-800 font-semibold text-xs rounded-xl px-3 outline-none cursor-pointer">
+            </div>
+            
+            <div>
+                <label class="block text-xs font-bold text-slate-700 mb-1">Lý do <span class="text-red-500">*</span></label>
+                <input type="text" id="editReason" placeholder="Nhập lý do mới..." class="w-full h-10 bg-white border border-slate-300 text-slate-800 font-semibold text-xs rounded-xl px-3 outline-none">
+            </div>
+            
+            <div class="flex justify-end gap-2 pt-2 border-t border-slate-100">
+                <button onclick="closeModal('editModal')" class="px-4 py-2 bg-slate-100 text-slate-700 font-bold rounded-lg text-xs">Hủy</button>
+                <button onclick="submitEditLeaveRequest()" id="btnSaveEdit" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-lg text-xs shadow-sm transition">
+                    Lưu Cập Nhật
+                </button>
             </div>
         </div>
     </div>
@@ -304,13 +350,12 @@
 
     <script>
         // ================= CẤU HÌNH =================
-        // THAY BẰNG WEBHOOK URL GROUP CHAT CỦA BẠN (Ví dụ: https://chat.googleapis.com/v1/spaces/XXXX/messages?key=YYY&token=ZZZ)
-        const GOOGLE_CHAT_WEBHOOK_URL = "https://chat.googleapis.com/v1/spaces/AAQANDj2-vM/messages?key=AIzaSyDdI0hCZtE6vySjMm-WEfRq3CPzqKqqsHI&token=9SHNcBKnjS2oqVvpT7__Q0TCC-uZxdqgBqnjqbaKqzw"; 
+        const GOOGLE_CHAT_WEBHOOK_URL = "https://chat.googleapis.com/v1/spaces/XXXXXXX/messages?key=YYYYYY&token=ZZZZZZ"; 
         
-        // Nhận diện Quản lý (Chỉ hiện nút Duyệt khi tên gg chứa chữ này)
-        const MANAGER_KEYWORD = "53 - Lan L"; 
+        // Nhận diện Quản lý (Lan và Ky)
+        const MANAGER_KEYWORDS = ["53 - Lan L"];
 
-        // CẤU HÌNH FIREBASE
+        // FIREBASE CONFIG
         const firebaseConfig = {
             apiKey: "AIzaSyBZ72fOBO-VPMDrXBS4E15TN5L7tfcL46s",
             authDomain: "device-manage-d4f5d.firebaseapp.com",
@@ -355,8 +400,9 @@
                 const appNameInput = document.getElementById('applicantName');
                 if(!appNameInput.value) appNameInput.value = loggedInUser.name;
 
-                // Check hiển thị Nút Quản Lý
-                if (loggedInUser.name.toLowerCase().includes(MANAGER_KEYWORD.toLowerCase())) {
+                // Check hiển thị Nút Quản Lý (Lan, Ky)
+                const isManager = MANAGER_KEYWORDS.some(k => loggedInUser.name.toLowerCase().includes(k.toLowerCase()));
+                if (isManager) {
                     document.getElementById('btnManagerApprove').classList.remove('hidden');
                     listenForPendingApprovals();
                 } else {
@@ -393,7 +439,7 @@
             });
         });
 
-        // ================= LOGIC GỬI ĐƠN & PREVIEW =================
+        // ================= LOGIC FORM & PREVIEW =================
         function formatDateToDDMM(dateString) {
             if (!dateString) return "";
             const parts = dateString.split('-');
@@ -434,7 +480,6 @@
             const origHtml = btn.innerHTML;
             const messageToSend = generateMessageText();
             
-            // Tạo 1 threadKey duy nhất cho đơn này để sau này có thể reply
             const threadKey = "leave_" + Date.now();
             const webhookWithThread = `${GOOGLE_CHAT_WEBHOOK_URL}&messageReplyOption=REPLY_MESSAGE_FALLBACK_TO_NEW_THREAD&threadKey=${threadKey}`;
 
@@ -442,7 +487,6 @@
                 btn.disabled = true;
                 btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> Đang gửi...`;
 
-                // 1. Gửi lên Google Chat
                 const response = await fetch(webhookWithThread, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json; charset=UTF-8' },
@@ -451,19 +495,16 @@
 
                 if (!response.ok) throw new Error("Mã lỗi: " + response.status);
 
-                // 2. Lưu vào Firebase Database
-                const requestData = {
+                await db.collection("leave_requests").add({
                     applicantName: document.getElementById('applicantName').value.trim(),
                     applicantEmail: loggedInUser.email,
                     leaveType: document.getElementById('leaveType').value,
                     leaveDate: document.getElementById('leaveDate').value,
                     reason: document.getElementById('leaveReason').value.trim(),
-                    threadKey: threadKey, // Quan trọng: Phải lưu mã này để Quản lý reply đúng dòng chat
+                    threadKey: threadKey,
                     status: "Chờ duyệt",
                     createdAt: firebase.firestore.FieldValue.serverTimestamp()
-                };
-
-                await db.collection("leave_requests").add(requestData);
+                });
 
                 showCustomAlert("Thành công!", "Đã gửi đơn xin nghỉ vào nhóm Chat và lưu lịch sử.");
                 document.getElementById('leaveReason').value = ""; 
@@ -471,85 +512,173 @@
 
             } catch (error) {
                 console.error(error);
-                showCustomAlert("Lỗi Server", "Không thể gửi tin nhắn hoặc lưu data.", true);
+                showCustomAlert("Lỗi Server", "Không thể gửi tin nhắn hoặc lưu dữ liệu.", true);
             } finally {
                 btn.disabled = false;
                 btn.innerHTML = origHtml;
             }
         }
 
-       // ================= MODAL LỊCH SỬ CỦA TÔI (ĐỐI SOÁT THEO ID SỐ) =================
-function openHistoryModal() {
-    if (!loggedInUser) { showCustomAlert("Lỗi", "Vui lòng đăng nhập để xem lịch sử!", true); return; }
-    document.getElementById('historyModal').classList.remove('hidden');
-    
-    const tbody = document.getElementById('historyTableBody');
-    tbody.innerHTML = '<tr><td colspan="5" class="text-center py-8">Đang tải dữ liệu...</td></tr>';
+        // ================= MODAL LỊCH SỬ CỦA TÔI =================
+        function openHistoryModal() {
+            if (!loggedInUser) { showCustomAlert("Lỗi", "Vui lòng đăng nhập để xem lịch sử!", true); return; }
+            document.getElementById('historyModal').classList.remove('hidden');
+            
+            const tbody = document.getElementById('historyTableBody');
+            tbody.innerHTML = '<tr><td colspan="5" class="text-center py-8">Đang tải dữ liệu...</td></tr>';
 
-    // Tăng limit lên 300 để quét hết hơn 100 đơn cũ đã import
-    db.collection("leave_requests")
-      .orderBy("createdAt", "desc")
-      .limit(300)
-      .get().then(snapshot => {
-          tbody.innerHTML = '';
-          let count = 0;
+            db.collection("leave_requests")
+              .orderBy("createdAt", "desc")
+              .limit(300)
+              .get().then(snapshot => {
+                  tbody.innerHTML = '';
+                  let count = 0;
 
-          const myEmail = loggedInUser.email.toLowerCase();
-          const myName = loggedInUser.name.toLowerCase();
-          
-          // Trích xuất ID số từ tên Google của bạn (VD: "927 - Ky N. - QC" -> "927")
-          const myIdMatch = loggedInUser.name.match(/\d+/);
-          const myId = myIdMatch ? myIdMatch[0] : null;
+                  const myEmail = loggedInUser.email.toLowerCase();
+                  const myName = loggedInUser.name.toLowerCase();
+                  const myIdMatch = loggedInUser.name.match(/\d+/);
+                  const myId = myIdMatch ? myIdMatch[0] : null;
 
-          snapshot.forEach(doc => {
-              const data = doc.data();
-              const appEmail = (data.applicantEmail || "").toLowerCase();
-              const appName = (data.applicantName || "").toLowerCase();
-              
-              // Trích xuất ID số từ bản ghi trong Database (VD: "927-Kenz" -> "927")
-              const appDataIdMatch = appName.match(/\d+/);
-              const appDataId = appDataIdMatch ? appDataIdMatch[0] : null;
+                  snapshot.forEach(doc => {
+                      const data = doc.data();
+                      const appEmail = (data.applicantEmail || "").toLowerCase();
+                      const appName = (data.applicantName || "").toLowerCase();
+                      const appDataIdMatch = appName.match(/\d+/);
+                      const appDataId = appDataIdMatch ? appDataIdMatch[0] : null;
 
-              // 1. Khớp chính xác Email Google (đối với các đơn mới gửi sau này từ Form)
-              const isMatchEmail = (appEmail === myEmail);
+                      const isMatchEmail = (appEmail === myEmail);
+                      const isMatchId = (myId && appDataId && myId === appDataId);
+                      const isMatchName = myName.includes(appName) || appName.includes(myName);
+                      const isMatchLegacy = (appEmail === "legacy_import@enotion.io") && (isMatchId || isMatchName);
 
-              // 2. Khớp ID số giữa tên Google và tên trong Chat cũ (VD: "927" === "927")
-              const isMatchId = (myId && appDataId && myId === appDataId);
+                      if (isMatchEmail || isMatchLegacy) {
+                          count++;
+                          const dateObj = data.createdAt ? data.createdAt.toDate() : new Date();
+                          const createdStr = `${dateObj.getDate()}/${dateObj.getMonth()+1}/${dateObj.getFullYear()}`;
+                          
+                          let statusHtml = `<span class="bg-amber-100 text-amber-700 px-2 py-1 rounded font-bold text-[10px]">Chờ duyệt</span>`;
 
-              // 3. Khớp theo chuỗi tên/nickname nếu không có ID
-              const isMatchName = myName.includes(appName) || appName.includes(myName);
+                          if (data.status === "Chờ duyệt") {
+                              const escapedReason = (data.reason || '').replace(/'/g, "\\'");
+                              statusHtml += `
+                                <div class="mt-1 flex gap-2 justify-center">
+                                    <button onclick="openEditModal('${doc.id}', '${data.leaveType}', '${data.leaveDate}', '${escapedReason}', '${data.threadKey}')" class="text-indigo-600 hover:underline font-bold text-[11px]">
+                                        <i class="fa-solid fa-pen-to-square"></i> Sửa
+                                    </button>
+                                    <button onclick="cancelLeaveRequest('${doc.id}', '${data.threadKey}', '${data.leaveDate}')" class="text-rose-600 hover:underline font-bold text-[11px]">
+                                        <i class="fa-solid fa-trash-can"></i> Hủy
+                                    </button>
+                                </div>`;
+                          } else if (data.status === "Đã duyệt") {
+                              statusHtml = `<span class="bg-emerald-100 text-emerald-700 px-2 py-1 rounded font-bold text-[10px]">Đã duyệt</span>`;
+                          } else if (data.status === "Từ chối") {
+                              statusHtml = `<span class="bg-rose-100 text-rose-700 px-2 py-1 rounded font-bold text-[10px]">Từ chối</span><div class="text-[10px] mt-1 text-rose-500">${data.replyReason || ''}</div>`;
+                          }
 
-              // Điều kiện lọc bản ghi cũ
-              const isMatchLegacy = (appEmail === "legacy_import@enotion.io") && (isMatchId || isMatchName);
+                          tbody.innerHTML += `
+                              <tr class="hover:bg-slate-50 border-b border-slate-100">
+                                  <td class="px-4 py-3 font-mono text-slate-500">${createdStr}</td>
+                                  <td class="px-4 py-3 font-semibold text-indigo-700">${data.leaveType}</td>
+                                  <td class="px-4 py-3 font-bold text-slate-800">${formatDateToDDMM(data.leaveDate)}</td>
+                                  <td class="px-4 py-3 truncate max-w-[180px]" title="${data.reason}">${data.reason}</td>
+                                  <td class="px-4 py-3 text-center">${statusHtml}</td>
+                              </tr>`;
+                      }
+                  });
 
-              if (isMatchEmail || isMatchLegacy) {
-                  count++;
-                  const dateObj = data.createdAt ? data.createdAt.toDate() : new Date();
-                  const createdStr = `${dateObj.getDate()}/${dateObj.getMonth()+1}/${dateObj.getFullYear()}`;
-                  
-                  let statusHtml = `<span class="bg-amber-100 text-amber-700 px-2 py-1 rounded font-bold text-[10px]">Chờ duyệt</span>`;
-                  if (data.status === "Đã duyệt") statusHtml = `<span class="bg-emerald-100 text-emerald-700 px-2 py-1 rounded font-bold text-[10px]">Đã duyệt</span>`;
-                  if (data.status === "Từ chối") statusHtml = `<span class="bg-rose-100 text-rose-700 px-2 py-1 rounded font-bold text-[10px]">Từ chối</span><div class="text-[10px] mt-1 text-rose-500">${data.replyReason || ''}</div>`;
+                  if (count === 0) {
+                      tbody.innerHTML = '<tr><td colspan="5" class="text-center py-8 text-slate-400">Chưa tìm thấy lịch sử nào phù hợp với tài khoản của bạn.</td></tr>';
+                  }
+              });
+        }
 
-                  tbody.innerHTML += `
-                      <tr class="hover:bg-slate-50 border-b border-slate-100">
-                          <td class="px-4 py-3 font-mono text-slate-500">${createdStr}</td>
-                          <td class="px-4 py-3 font-semibold text-indigo-700">${data.leaveType}</td>
-                          <td class="px-4 py-3 font-bold text-slate-800">${formatDateToDDMM(data.leaveDate)}</td>
-                          <td class="px-4 py-3 truncate max-w-[180px]" title="${data.reason}">${data.reason}</td>
-                          <td class="px-4 py-3 text-center">${statusHtml}</td>
-                      </tr>`;
-              }
-          });
+        // ================= XỬ LÝ SỬA VÀ HỦY ĐƠN =================
+        function openEditModal(docId, leaveType, leaveDate, reason, threadKey) {
+            document.getElementById('editDocId').value = docId;
+            document.getElementById('editThreadKey').value = threadKey;
+            document.getElementById('editLeaveType').value = leaveType;
+            document.getElementById('editLeaveDate').value = leaveDate;
+            document.getElementById('editReason').value = reason;
+            
+            document.getElementById('editModal').classList.remove('hidden');
+        }
 
-          if (count === 0) {
-              tbody.innerHTML = '<tr><td colspan="5" class="text-center py-8 text-slate-400">Chưa tìm thấy lịch sử nào phù hợp với tài khoản của bạn.</td></tr>';
-          }
-      }).catch(err => {
-          console.error(err);
-          tbody.innerHTML = '<tr><td colspan="5" class="text-center py-8 text-rose-500 font-bold">Lỗi khi tải dữ liệu lịch sử!</td></tr>';
-      });
-}
+        async function submitEditLeaveRequest() {
+            const docId = document.getElementById('editDocId').value;
+            const threadKey = document.getElementById('editThreadKey').value;
+            const leaveType = document.getElementById('editLeaveType').value;
+            const leaveDate = document.getElementById('editLeaveDate').value;
+            const reason = document.getElementById('editReason').value.trim();
+
+            if (!reason) { alert("Vui lòng nhập lý do nghỉ!"); return; }
+
+            const btn = document.getElementById('btnSaveEdit');
+            const origText = btn.innerText;
+
+            try {
+                btn.disabled = true;
+                btn.innerText = "Đang lưu...";
+
+                await db.collection("leave_requests").doc(docId).update({
+                    leaveType: leaveType,
+                    leaveDate: leaveDate,
+                    reason: reason,
+                    updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+                });
+
+                if (threadKey && threadKey !== "imported_legacy" && !GOOGLE_CHAT_WEBHOOK_URL.includes("XXXXXXX")) {
+                    const formattedDate = formatDateToDDMM(leaveDate);
+                    const datePrefix = leaveType.toLowerCase().endsWith('ngày') ? '' : 'ngày ';
+                    const replyText = `✏️ [CẬP NHẬT ĐƠN OFF] Em xin phép cập nhật lại thông tin: ${leaveType} ${datePrefix}${formattedDate} - Lý do: ${reason}`;
+                    
+                    const webhookWithThread = `${GOOGLE_CHAT_WEBHOOK_URL}&messageReplyOption=REPLY_MESSAGE_FALLBACK_TO_NEW_THREAD&threadKey=${threadKey}`;
+                    
+                    await fetch(webhookWithThread, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ text: replyText })
+                    }).catch(err => console.log("Lỗi gửi reply cập nhật:", err));
+                }
+
+                closeModal('editModal');
+                showCustomAlert("Thành công", "Đã cập nhật đơn xin off và gửi thông báo vào Group Chat!");
+                openHistoryModal();
+
+            } catch (error) {
+                console.error("Lỗi cập nhật đơn:", error);
+                showCustomAlert("Lỗi", "Không thể cập nhật đơn. Vui lòng thử lại!", true);
+            } finally {
+                btn.disabled = false;
+                btn.innerText = origText;
+            }
+        }
+
+        async function cancelLeaveRequest(docId, threadKey, leaveDate) {
+            if (!confirm(`Bạn có chắc chắn muốn HỦY và XÓA đơn xin off ngày ${formatDateToDDMM(leaveDate)} khỏi hệ thống không?`)) return;
+
+            try {
+                if (threadKey && threadKey !== "imported_legacy" && !GOOGLE_CHAT_WEBHOOK_URL.includes("XXXXXXX")) {
+                    const replyText = `❌ [ĐÃ HỦY] Em xin phép HỦY đơn xin off ngày ${formatDateToDDMM(leaveDate)} này ạ.`;
+                    const webhookWithThread = `${GOOGLE_CHAT_WEBHOOK_URL}&messageReplyOption=REPLY_MESSAGE_FALLBACK_TO_NEW_THREAD&threadKey=${threadKey}`;
+                    
+                    await fetch(webhookWithThread, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ text: replyText })
+                    }).catch(err => console.log("Không thể gửi reply hủy:", err));
+                }
+
+                await db.collection("leave_requests").doc(docId).delete();
+
+                showCustomAlert("Đã hủy đơn", "Đơn đã được xóa vĩnh viễn khỏi hệ thống!");
+                openHistoryModal();
+
+            } catch (error) {
+                console.error("Lỗi khi xóa đơn:", error);
+                showCustomAlert("Lỗi", "Không thể xóa đơn. Vui lòng thử lại!", true);
+            }
+        }
+
         // ================= MODAL DUYỆT PHÉP (MANAGER) =================
         function listenForPendingApprovals() {
             if(!db) return;
@@ -593,10 +722,8 @@ function openHistoryModal() {
             });
         }
 
-        // --- Xử lý Duyệt ---
         async function approveRequest(docId, threadKey, applicantName) {
             try {
-                // 1. Reply Google Chat
                 const replyText = `Ok em.`;
                 const webhookWithThread = `${GOOGLE_CHAT_WEBHOOK_URL}&messageReplyOption=REPLY_MESSAGE_FALLBACK_TO_NEW_THREAD&threadKey=${threadKey}`;
                 await fetch(webhookWithThread, {
@@ -605,10 +732,8 @@ function openHistoryModal() {
                     body: JSON.stringify({ text: replyText })
                 });
 
-                // 2. Cập nhật Firebase
                 await db.collection("leave_requests").doc(docId).update({ status: "Đã duyệt" });
                 
-                // 3. Ẩn dòng đó đi
                 document.getElementById(`row_${docId}`).style.display = 'none';
                 showCustomAlert("Đã duyệt", `Đã reply đồng ý cho ${applicantName} trên Chat!`);
             } catch (e) {
@@ -616,7 +741,6 @@ function openHistoryModal() {
             }
         }
 
-        // --- Xử lý Từ chối ---
         function openRejectModal(docId, threadKey) {
             document.getElementById('currentRejectId').value = docId;
             document.getElementById('currentRejectThread').value = threadKey;
@@ -632,7 +756,6 @@ function openHistoryModal() {
             const threadKey = document.getElementById('currentRejectThread').value;
 
             try {
-                // 1. Reply Google Chat
                 const replyText = `Không duyệt. Lý do: ${reason}`;
                 const webhookWithThread = `${GOOGLE_CHAT_WEBHOOK_URL}&messageReplyOption=REPLY_MESSAGE_FALLBACK_TO_NEW_THREAD&threadKey=${threadKey}`;
                 await fetch(webhookWithThread, {
@@ -641,7 +764,6 @@ function openHistoryModal() {
                     body: JSON.stringify({ text: replyText })
                 });
 
-                // 2. Cập nhật Firebase
                 await db.collection("leave_requests").doc(docId).update({ status: "Từ chối", replyReason: reason });
                 
                 closeModal('rejectModal');
