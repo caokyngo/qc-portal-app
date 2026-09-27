@@ -187,7 +187,7 @@
                                 <input type="checkbox" value="@974 - Mochi - HROP" checked class="w-4 h-4 text-indigo-600 rounded">
                                 <span class="text-sm font-semibold text-slate-700 group-hover:text-indigo-600 transition">Mochi (HROP)</span>
                             </label>
-                              <label class="flex items-center gap-2 cursor-pointer group">
+                            <label class="flex items-center gap-2 cursor-pointer group">
                                 <input type="checkbox" value="@996 - Pocky - HR" checked class="w-4 h-4 text-indigo-600 rounded">
                                 <span class="text-sm font-semibold text-slate-700 group-hover:text-indigo-600 transition">Pocky - HR</span>
                             </label>
@@ -215,7 +215,7 @@
         </main>
     </div>
 
-    <!-- ================= MODAL LỊCH SỬ CỦA TÔI ================= -->
+    <!-- ================= MODAL LỊCH SỬ CỦA TÔI (CÓ TỔNG KẾT NGÀY) ================= -->
     <div id="historyModal" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4">
         <div class="bg-white rounded-2xl shadow-2xl w-full max-w-4xl overflow-hidden flex flex-col max-h-[80vh]">
             <div class="px-6 py-4 border-b border-slate-200 flex justify-between items-center bg-slate-50">
@@ -226,6 +226,20 @@
                     <i class="fa-solid fa-xmark text-xl"></i>
                 </button>
             </div>
+
+            <!-- THANH TỔNG SỐ NGÀY ĐÃ OFF & WFH -->
+            <div class="bg-indigo-50/60 border-b border-indigo-100 px-6 py-3.5 flex flex-wrap gap-6 items-center">
+                <div class="flex items-center gap-2">
+                    <span class="text-xs font-bold text-slate-600 uppercase tracking-wide">Tổng ngày OFF:</span>
+                    <span id="totalOffCount" class="text-base font-black text-indigo-700 bg-white px-2.5 py-0.5 rounded-lg border border-indigo-200 shadow-sm">0</span>
+                </div>
+                <div class="flex items-center gap-2">
+                    <span class="text-xs font-bold text-slate-600 uppercase tracking-wide">Tổng ngày WFH:</span>
+                    <span id="totalWfhCount" class="text-base font-black text-indigo-700 bg-white px-2.5 py-0.5 rounded-lg border border-indigo-200 shadow-sm">0</span>
+                </div>
+                <div class="text-[11px] text-slate-400 font-medium ml-auto">*(Không tính đơn bị Từ chối / Đã hủy)*</div>
+            </div>
+
             <div class="p-6 overflow-y-auto flex-1 bg-white">
                 <table class="w-full text-xs text-left text-slate-600">
                     <thead class="text-slate-700 uppercase bg-slate-100 border-b border-slate-200">
@@ -519,20 +533,25 @@
             }
         }
 
-        // ================= MODAL LỊCH SỬ CỦA TÔI =================
+        // ================= MODAL LỊCH SỬ CỦA TÔI (CÓ TỔNG KẾT NGÀY) =================
         function openHistoryModal() {
             if (!loggedInUser) { showCustomAlert("Lỗi", "Vui lòng đăng nhập để xem lịch sử!", true); return; }
             document.getElementById('historyModal').classList.remove('hidden');
             
             const tbody = document.getElementById('historyTableBody');
             tbody.innerHTML = '<tr><td colspan="5" class="text-center py-8">Đang tải dữ liệu...</td></tr>';
+            
+            document.getElementById('totalOffCount').innerText = '...';
+            document.getElementById('totalWfhCount').innerText = '...';
 
             db.collection("leave_requests")
               .orderBy("createdAt", "desc")
-              .limit(300)
+              .limit(500)
               .get().then(snapshot => {
                   tbody.innerHTML = '';
                   let count = 0;
+                  let totalOff = 0;
+                  let totalWfh = 0;
 
                   const myEmail = loggedInUser.email.toLowerCase();
                   const myName = loggedInUser.name.toLowerCase();
@@ -553,6 +572,21 @@
 
                       if (isMatchEmail || isMatchLegacy) {
                           count++;
+
+                          // TÍNH TỔNG SỐ NGÀY (Chỉ tính đơn chưa bị từ chối/hủy)
+                          if (data.status !== "Từ chối" && data.status !== "Đã hủy") {
+                              const typeStr = (data.leaveType || "").toLowerCase();
+                              const cleanTypeStr = typeStr.replace(/\d{1,2}\/\d{1,2}/g, '');
+                              const numMatch = cleanTypeStr.match(/(\d+(\.\d+)?)/);
+                              let days = numMatch ? parseFloat(numMatch[1]) : 1;
+
+                              if (typeStr.includes("wfh")) {
+                                  totalWfh += days;
+                              } else {
+                                  totalOff += days;
+                              }
+                          }
+
                           const dateObj = data.createdAt ? data.createdAt.toDate() : new Date();
                           const createdStr = `${dateObj.getDate()}/${dateObj.getMonth()+1}/${dateObj.getFullYear()}`;
                           
@@ -585,6 +619,9 @@
                               </tr>`;
                       }
                   });
+
+                  document.getElementById('totalOffCount').innerText = totalOff;
+                  document.getElementById('totalWfhCount').innerText = totalWfh;
 
                   if (count === 0) {
                       tbody.innerHTML = '<tr><td colspan="5" class="text-center py-8 text-slate-400">Chưa tìm thấy lịch sử nào phù hợp với tài khoản của bạn.</td></tr>';
