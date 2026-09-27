@@ -245,14 +245,14 @@
                     <div class="space-y-4">
                         <div>
                             <label class="block text-xs font-bold text-slate-700 mb-1.5"><i class="fa-solid fa-link text-indigo-500 mr-1"></i> Link Jira List / Project / Filter URL <span class="text-rose-500">*</span></label>
-                            <input type="url" id="jiraUrlInput" placeholder="VD: https://your-domain.atlassian.net/jira/software/c/projects/KTFMLMC/issues" class="w-full h-12 bg-slate-50 border border-slate-300 text-slate-800 text-sm font-medium rounded-xl px-4 focus:ring-2 focus:ring-indigo-500 focus:bg-white outline-none transition shadow-sm">
+                            <input type="url" id="jiraUrlInput" placeholder="VD: https://enotion.atlassian.net/jira/software/c/projects/KTFMLMC/issues" class="w-full h-12 bg-slate-50 border border-slate-300 text-slate-800 text-sm font-medium rounded-xl px-4 focus:ring-2 focus:ring-indigo-500 focus:bg-white outline-none transition shadow-sm">
                         </div>
 
                         <!-- Cấu hình Xác thực Jira API Token -->
                         <div class="border border-indigo-100 bg-indigo-50/40 rounded-xl p-4 space-y-3">
                             <div class="flex justify-between items-center cursor-pointer" onclick="document.getElementById('jiraAuthConfig').classList.toggle('hidden')">
                                 <span class="text-xs font-bold text-indigo-900 flex items-center gap-1.5">
-                                    <i class="fa-solid fa-key text-indigo-600"></i> Cấu hình tài khoản Jira API (Lưu tự động)
+                                    <i class="fa-solid fa-key text-indigo-600"></i> Cấu hình tài khoản Jira API (Đã cấu hình sẵn)
                                 </span>
                                 <i class="fa-solid fa-chevron-down text-indigo-400 text-xs"></i>
                             </div>
@@ -260,11 +260,11 @@
                             <div id="jiraAuthConfig" class="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2">
                                 <div>
                                     <label class="block text-[11px] font-semibold text-slate-600 mb-1">Email tài khoản Jira:</label>
-                                    <input type="email" id="jiraEmailInput" oninput="saveJiraCredentials()" placeholder="VD: user@enotion.io" class="w-full h-9 bg-white border border-slate-300 text-slate-700 text-xs rounded-lg px-3 outline-none">
+                                    <input type="email" id="jiraEmailInput" oninput="saveJiraCredentials()" placeholder="VD: ky.ngo@enotion.io" class="w-full h-9 bg-white border border-slate-300 text-slate-700 text-xs rounded-lg px-3 outline-none">
                                 </div>
                                 <div>
-                                    <label class="block text-[11px] font-semibold text-slate-600 mb-1">Jira API Token: <a href="https://id.atlassian.com/manage-profile/security/api-tokens" target="_blank" class="text-indigo-600 underline font-bold">(Tạo tại đây)</a></label>
-                                    <input type="password" id="jiraTokenInput" oninput="saveJiraCredentials()" placeholder="Nhập API Token..." class="w-full h-9 bg-white border border-slate-300 text-slate-700 text-xs rounded-lg px-3 outline-none">
+                                    <label class="block text-[11px] font-semibold text-slate-600 mb-1">Jira API Token:</label>
+                                    <input type="password" id="jiraTokenInput" oninput="saveJiraCredentials()" placeholder="API Token..." class="w-full h-9 bg-white border border-slate-300 text-slate-700 text-xs rounded-lg px-3 outline-none">
                                 </div>
                             </div>
                         </div>
@@ -499,6 +499,10 @@
     </div>
 
     <script>
+        // ================= CẤU HÌNH TỰ ĐỘNG JIRA PROXY & TOKEN =================
+        const JIRA_PROXY_API_URL = "https://script.google.com/a/macros/enotion.io/s/AKfycbyaOWgy-X1-4B1TOKJXAi9E4wrP5pMTZGW-R80m02lb5J7JYjLOS7WKoCYugfLy7a7v/exec";
+        const DEFAULT_JIRA_TOKEN = "ATATT3xFfGF0R_7KzjO3hXmMudetRKSnq2oyVg6tqRgZOnGDBEUfnuMFSE1jLlfJpBZ0KWPRrLiYwP-AZFpN-c1SlR4kcvNFDOM5h9KrOfsipBNoTWiarwzEsbXbbAKTHvLoZJkjoaUUIv_WmQ9zsMKYDt2LdNXs192b85D_qw4EAWd5zHMxpKk=FDD2A46D";
+        
         const URL_REPORT_API = "https://script.google.com/a/macros/enotion.io/s/AKfycbzynUh65kMWVtwRdYdg8x35-6LViA_JwMPrWhEoMdDXFDP7tpcheilYrReQSIrQ6zAtIQ/exec";
         const TARGET_TRIP_DATE = "2026-11-01"; 
 
@@ -543,6 +547,7 @@
             loggedInUser = { name: responsePayload.name, email: responsePayload.email, picture: responsePayload.picture };
             localStorage.setItem('jira_google_user', JSON.stringify(loggedInUser));
             updateAuthUI();
+            loadJiraCredentials();
         }
 
         function updateAuthUI() {
@@ -570,6 +575,7 @@
             google.accounts.id.disableAutoSelect();
             localStorage.removeItem('jira_google_user');
             updateAuthUI();
+            loadJiraCredentials();
             showCustomAlert('Đăng xuất', 'Bạn đã đăng xuất tài khoản Google thành công.');
         }
 
@@ -593,8 +599,12 @@
         }
 
         function loadJiraCredentials() {
-            const email = localStorage.getItem('jira_user_email') || '';
-            const token = localStorage.getItem('jira_user_token') || '';
+            const savedEmail = localStorage.getItem('jira_user_email');
+            const savedToken = localStorage.getItem('jira_user_token');
+
+            let email = savedEmail || (loggedInUser ? loggedInUser.email : 'ky.ngo@enotion.io');
+            let token = savedToken || DEFAULT_JIRA_TOKEN;
+
             if (document.getElementById('jiraEmailInput')) document.getElementById('jiraEmailInput').value = email;
             if (document.getElementById('jiraTokenInput')) document.getElementById('jiraTokenInput').value = token;
             
@@ -613,16 +623,16 @@
         function parseJiraUrl(urlStr) {
             try {
                 const url = new URL(urlStr);
-                const domain = url.origin; // VD: https://your-domain.atlassian.net
+                const domain = url.origin;
                 
                 let jql = "";
                 let projectName = "";
 
-                // Trường hợp 1: URL chứa JQL parameter
                 if (url.searchParams.has('jql')) {
                     jql = url.searchParams.get('jql');
+                    const projMatch = jql.match(/project\s*=\s*["']?([a-zA-Z0-9_]+)["']?/i);
+                    if (projMatch && projMatch[1]) projectName = projMatch[1];
                 } else {
-                    // Trường hợp 2: Link dạng /jira/software/c/projects/KTFMLMC/issues
                     const projectMatch = url.pathname.match(/\/projects\/([^\/]+)/i);
                     if (projectMatch && projectMatch[1]) {
                         projectName = projectMatch[1];
@@ -636,7 +646,7 @@
             }
         }
 
-        // Hàm gọi API lấy danh sách Issue trực tiếp từ Jira
+        // Hàm gọi API lấy danh sách Issue từ Jira qua Proxy Google Apps Script (Tránh CORS)
         async function fetchJiraDataFromUrl() {
             const rawUrl = document.getElementById('jiraUrlInput').value.trim();
             if (!rawUrl) {
@@ -650,36 +660,34 @@
                 return;
             }
 
-            const email = document.getElementById('jiraEmailInput').value.trim();
-            const token = document.getElementById('jiraTokenInput').value.trim();
+            let email = document.getElementById('jiraEmailInput').value.trim();
+            let token = document.getElementById('jiraTokenInput').value.trim();
+
+            if (!email) email = loggedInUser ? loggedInUser.email : 'ky.ngo@enotion.io';
+            if (!token) token = DEFAULT_JIRA_TOKEN;
 
             const btn = document.getElementById('btnFetchJira');
             const origBtnHtml = btn.innerHTML;
 
             try {
                 btn.disabled = true;
-                btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> Đang kết nối Jira API...`;
+                btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> Đang tải dữ liệu từ Jira...`;
 
-                // Lưu lại URL đã nhập
                 localStorage.setItem('jira_last_url', rawUrl);
+                saveJiraCredentials();
 
-                // Gọi REST API V3 Search của Jira
-                const apiUrl = `${parsed.domain}/rest/api/3/search?jql=${encodeURIComponent(parsed.jql || 'order by created DESC')}&maxResults=200&fields=summary,priority,status,assignee`;
+                // Gọi qua Proxy Google Apps Script để tránh lỗi CORS
+                const proxyFetchUrl = `${JIRA_PROXY_API_URL}?domain=${encodeURIComponent(parsed.domain)}&jql=${encodeURIComponent(parsed.jql)}&email=${encodeURIComponent(email)}&token=${encodeURIComponent(token)}`;
 
-                let headers = { "Accept": "application/json" };
-                if (email && token) {
-                    headers["Authorization"] = "Basic " + btoa(`${email}:${token}`);
-                }
-
-                const response = await fetch(apiUrl, { headers: headers });
-
-                if (response.status === 401) {
-                    throw new Error("Lỗi xác thực (401): Vui lòng điền Email & API Token Jira bên dưới để truy cập!");
-                } else if (!response.ok) {
-                    throw new Error(`Mã lỗi Jira API: ${response.status}`);
-                }
+                const response = await fetch(proxyFetchUrl);
+                if (!response.ok) throw new Error(`Mã lỗi Proxy Server: ${response.status}`);
 
                 const json = await response.json();
+
+                if (json.error) {
+                    throw new Error(json.error);
+                }
+
                 const issues = json.issues || [];
 
                 if (issues.length === 0) {
@@ -687,7 +695,7 @@
                     return;
                 }
 
-                // Chuyển đổi dữ liệu từ Jira API sang định dạng rawJiraData chuẩn
+                // Chuyển đổi dữ liệu Jira API sang định dạng hiển thị Báo Cáo
                 rawJiraData = issues.map(item => {
                     const fields = item.fields || {};
                     return {
@@ -699,8 +707,8 @@
                     };
                 });
 
-                // Cập nhật giao diện
-                document.getElementById('jiraProjectName').innerText = parsed.projectName || "Custom List";
+                // Cập nhật giao diện Dashboard
+                document.getElementById('jiraProjectName').innerText = parsed.projectName || "Jira Filter";
                 document.getElementById('fileInfo').classList.remove('hidden');
                 document.getElementById('jiraUrlSection').classList.add('hidden');
                 document.getElementById('reportDashboard').classList.remove('hidden');
@@ -712,7 +720,7 @@
 
             } catch (err) {
                 console.error("Lỗi Jira Fetch:", err);
-                showCustomAlert("Không thể tải dữ liệu", err.message || "Không thể kết nối Jira. Hãy kiểm tra lại Email và API Token!", true);
+                showCustomAlert("Lỗi tải dữ liệu Jira", err.message || "Không thể kết nối Jira!", true);
             } finally {
                 btn.disabled = false;
                 btn.innerHTML = origBtnHtml;
