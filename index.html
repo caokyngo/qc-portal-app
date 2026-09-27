@@ -3,7 +3,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
     <title>QC Portal - Báo Cáo Daily</title>
+    
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
@@ -11,11 +15,123 @@
     
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#312e81">
+    
+    <!-- KHẮC PHỤC LỖI GSI_LOGGER: Đưa hàm khởi tạo Google Auth lên đầu trang -->
+    <script>
+        let loggedInUser = null;
+
+        function decodeJwtResponse(token) {
+            let base64Url = token.split('.')[1];
+            let base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+            let jsonPayload = decodeURIComponent(atob(base64).split('').map(function(c) {
+                return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
+            }).join(''));
+            return JSON.parse(jsonPayload);
+        }
+
+        function handleCredentialResponse(response) {
+            const responsePayload = decodeJwtResponse(response.credential);
+            loggedInUser = { name: responsePayload.name, email: responsePayload.email, picture: responsePayload.picture };
+            localStorage.setItem('jira_google_user', JSON.stringify(loggedInUser));
+            if (typeof updateAuthUI === 'function') updateAuthUI();
+        }
+    </script>
     <script src="https://accounts.google.com/gsi/client" async defer></script>
+
+    <!-- Script Kiểm tra & Tự động Update bản mới (PWA) -->
+    <script>
+      if ('serviceWorker' in navigator) {
+        window.addEventListener('load', () => {
+          navigator.serviceWorker.register('./sw.js').then(reg => {
+            reg.update();
+            reg.onupdatefound = () => {
+              const installingWorker = reg.installing;
+              installingWorker.onstatechange = () => {
+                if (installingWorker.state === 'installed' && navigator.serviceWorker.controller) {
+                  console.log('Có phiên bản code mới! Đang tự động tải lại...');
+                  window.location.reload();
+                }
+              };
+            };
+          }).catch(err => console.log('Lỗi Service Worker:', err));
+        });
+      }
+    </script>
+
+    <!-- CSS Dòng thông báo chạy liên tục chuẩn mượt -->
+    <style>
+        .travel-marquee {
+            width: 100%;
+            max-width: 460px;
+            overflow: hidden;
+            mask-image: linear-gradient(to right, transparent, black 8%, black 92%, transparent);
+            -webkit-mask-image: linear-gradient(to right, transparent, black 8%, black 92%, transparent);
+        }
+
+        .travel-marquee-track {
+            display: flex;
+            width: max-content;
+            animation: travel-marquee-scroll 18s linear infinite;
+            will-change: transform;
+        }
+
+        .travel-marquee-group {
+            display: flex;
+            flex: 0 0 auto;
+            align-items: center;
+            padding-right: 2.5rem;
+            gap: 2.5rem;
+        }
+
+        .travel-marquee-message {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.4rem;
+            white-space: nowrap;
+            font-family: 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            font-size: 16px;
+            font-weight: 800;
+            letter-spacing: 0.2px;
+            line-height: 1.5;
+            background: linear-gradient(90deg, #ea580c 0%, #d97706 50%, #ca8a04 100%);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+            animation: travel-blink 1.2s infinite ease-in-out;
+        }
+
+        .travel-marquee-message i { color: #ea580c; font-size: 15.5px; }
+
+        .travel-marquee-count {
+            font-size: 17px;
+            font-weight: 900;
+            background: linear-gradient(90deg, #c2410c 0%, #ea580c 100%);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+            padding: 0 2px;
+        }
+
+        @keyframes travel-marquee-scroll {
+            to { transform: translateX(-50%); }
+        }
+
+        @keyframes travel-blink {
+            0%, 100% { opacity: 1; filter: drop-shadow(0 0 1px rgba(234, 88, 12, 0.4)); }
+            50% { opacity: 0.45; filter: drop-shadow(0 0 5px rgba(234, 88, 12, 0.7)); }
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+            .travel-marquee-track { animation: none; transform: none; }
+            .travel-marquee-group[aria-hidden="true"] { display: none; }
+        }
+
+        .soft-text { letter-spacing: 0.1px; }
+    </style>
 </head>
 <body class="bg-slate-50 text-slate-800 font-sans h-screen w-full flex flex-col md:flex-row overflow-hidden">
 
-   <!-- ================= SIDEBAR MENU (BACKGROUND TRÙNG KHÁNH) ================= -->
+    <!-- ================= SIDEBAR MENU (BACKGROUND TRÙNG KHÁNH) ================= -->
     <aside class="w-full md:w-64 text-white flex flex-col flex-shrink-0 shadow-2xl z-20 transition-all bg-cover bg-center bg-no-repeat relative"
            style="background-image: linear-gradient(to bottom, rgba(15, 23, 42, 0.65), rgba(30, 27, 75, 0.75)), url('./trungkhanh.jpg');">
         
@@ -35,17 +151,14 @@
                 <i class="fa-solid fa-chart-line w-5 text-center text-lg"></i> <span>Báo Cáo Daily</span>
             </a>
             
-            <!-- Nút 2: Mượn Device -->
             <a href="device_manage" class="whitespace-nowrap flex items-center gap-3 px-4 py-3.5 text-sm font-bold rounded-xl transition border border-white/15 bg-white/10 hover:bg-white/25 hover:border-white/40 text-white backdrop-blur-md shadow-sm">
                 <i class="fa-solid fa-mobile-screen-button w-5 text-center text-lg"></i> <span>Mượn Device</span>
             </a>
             
-            <!-- Nút 3: Thông tin Device -->
             <a href="device_info" class="whitespace-nowrap flex items-center gap-3 px-4 py-3.5 text-sm font-bold rounded-xl transition border border-white/15 bg-white/10 hover:bg-white/25 hover:border-white/40 text-white backdrop-blur-md shadow-sm">
                 <i class="fa-solid fa-circle-info w-5 text-center text-lg"></i> <span>Thông tin Device</span>
             </a>
             
-            <!-- Nút 4: Xin OFF / WFH -->
             <a href="log_off" class="whitespace-nowrap flex items-center gap-3 px-4 py-3.5 text-sm font-bold rounded-xl transition border border-white/15 bg-white/10 hover:bg-white/25 hover:border-white/40 text-white backdrop-blur-md shadow-sm">
                 <i class="fa-solid fa-calendar-minus w-5 text-center text-lg"></i> <span>Xin OFF / WFH</span>
             </a>
@@ -54,25 +167,41 @@
 
     <!-- ================= MAIN CONTENT ================= -->
     <div class="flex-1 flex flex-col h-full overflow-hidden bg-slate-50 relative">
-        <!-- HEADER MỚI VỚI BỐ CỤC 3 PHẦN -->
         <header class="bg-white text-slate-800 shadow-sm border-b border-slate-200 z-10 p-3 px-4 md:px-6 flex justify-between items-center min-h-[72px]">
-            <!-- Phần bên trái: Tiêu đề -->
             <div class="flex-1 shrink-0">
                 <h2 class="text-xl font-bold text-slate-800 hidden sm:block">Báo Cáo Daily (Jira)</h2>
             </div>
             
-            <!-- Phần ở giữa: Text đếm ngược đi Trùng Khánh (Blink & Gradient) -->
-            <div class="hidden lg:flex flex-1 justify-center items-center">
-                <div class="px-5 py-2 rounded-full bg-slate-50 border border-slate-100 shadow-sm animate-pulse">
-                    <span class="bg-gradient-to-r from-rose-500 via-fuchsia-500 to-indigo-500 bg-clip-text text-transparent font-black text-sm whitespace-nowrap flex items-center gap-2">
-                        <i class="fa-solid fa-plane-departure text-rose-500"></i>
-                        Chỉ còn <span id="mondayCountText" class="text-lg mx-0.5">...</span> Thứ 2 nữa là đi Trùng Khánh! 🇨🇳
-                        <i class="fa-solid fa-sparkles text-indigo-500"></i>
-                    </span>
+            <!-- Phần ở giữa: Thông báo đếm ngược chạy liên tục -->
+            <div class="hidden lg:flex flex-1 min-w-0 justify-center items-center">
+                <div class="w-full max-w-[460px] px-4 py-2 rounded-full bg-slate-50/90 border border-slate-200 shadow-sm cursor-default">
+                    <div class="travel-marquee">
+                        <div class="travel-marquee-track">
+                            <div class="travel-marquee-group">
+                                <span class="travel-marquee-message soft-text">
+                                    <i class="fa-solid fa-plane-departure" aria-hidden="true"></i>
+                                    Chỉ còn <strong class="mondayCountText travel-marquee-count">...</strong> Thứ 2 nữa là đi Trùng Khánh nhoa cả nhà iu! 🇨🇳
+                                </span>
+                                <span class="travel-marquee-message soft-text">
+                                    <i class="fa-solid fa-plane-departure" aria-hidden="true"></i>
+                                    Chạy task lẹ tay để còn kịp nhoa! 🇨🇳
+                                </span>
+                            </div>
+                            <div class="travel-marquee-group" aria-hidden="true">
+                                <span class="travel-marquee-message soft-text">
+                                    <i class="fa-solid fa-plane-departure" aria-hidden="true"></i>
+                                    Chỉ còn <strong class="mondayCountText travel-marquee-count">...</strong> Thứ 2 nữa là đi Trùng Khánh nhoa cả nhà iu! 🇨🇳
+                                </span>
+                                <span class="travel-marquee-message soft-text">
+                                    <i class="fa-solid fa-plane-departure" aria-hidden="true"></i>
+                                    Chạy task lẹ tay để còn kịp nhoa! 🇨🇳
+                                </span>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
 
-            <!-- Phần bên phải: Đổi File & Auth User -->
             <div class="flex-1 flex justify-end items-center gap-4">
                 <div id="fileInfo" class="hidden flex items-center gap-3 bg-indigo-50 px-4 py-2 rounded-xl border border-indigo-100 text-xs shadow-sm">
                     <div><span class="text-indigo-400 font-medium">Đang xử lý:</span> <strong id="fileName" class="text-indigo-800 font-bold"></strong></div>
@@ -324,9 +453,7 @@
                     <button onclick="toggleAllTags(false)" class="text-slate-500 hover:text-slate-700 transition">Bỏ chọn tất cả</button>
                 </div>
 
-                <div id="tagCheckboxContainer" class="flex flex-wrap gap-2 text-sm font-medium text-slate-700 max-h-[40vh] overflow-y-auto custom-scrollbar">
-                    <!-- Checkbox hoặc Thông báo rỗng được gen bằng JS -->
-                </div>
+                <div id="tagCheckboxContainer" class="flex flex-wrap gap-2 text-sm font-medium text-slate-700 max-h-[40vh] overflow-y-auto custom-scrollbar"></div>
             </div>
 
             <div class="px-6 py-4 border-t border-slate-100 bg-slate-50 flex justify-end gap-3">
@@ -354,28 +481,29 @@
         const URL_REPORT_API = "https://script.google.com/a/macros/enotion.io/s/AKfycbzynUh65kMWVtwRdYdg8x35-6LViA_JwMPrWhEoMdDXFDP7tpcheilYrReQSIrQ6zAtIQ/exec";
 
         // ================= CẤU HÌNH NGÀY ĐI TRÙNG KHÁNH =================
-        // Bạn thay đổi ngày đi thực tế vào biến này theo định dạng YYYY-MM-DD
-        const TARGET_TRIP_DATE = "2027-01-01"; 
+        const TARGET_TRIP_DATE = "2026-11-01"; 
 
         function calculateMondaysLeft() {
             let today = new Date();
             let target = new Date(TARGET_TRIP_DATE);
             let mondaysCount = 0;
             
-            // Xóa giờ để đếm chính xác
             today.setHours(0,0,0,0);
             target.setHours(0,0,0,0);
 
             let current = new Date(today);
             while (current <= target) {
-                if (current.getDay() === 1) { // 1 là Thứ Hai
+                if (current.getDay() === 1) {
                     mondaysCount++;
                 }
                 current.setDate(current.getDate() + 1);
             }
             
-            const txt = document.getElementById('mondayCountText');
-            if(txt) txt.innerText = mondaysCount;
+            // Fix QuerySelector target
+            const txtElements = document.querySelectorAll('.mondayCountText');
+            txtElements.forEach(el => {
+                el.innerText = mondaysCount;
+            });
         }
 
         let rawJiraData = [];
@@ -387,24 +515,6 @@
             'Highest': '#DC2626', 'High': '#F97316', 'Medium': '#F59E0B',
             'Low': '#3B82F6', 'Lowest': '#10B981', 'Unassigned': '#64748B'
         };
-
-        let loggedInUser = null;
-
-        function decodeJwtResponse(token) {
-            let base64Url = token.split('.')[1];
-            let base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
-            let jsonPayload = decodeURIComponent(atob(base64).split('').map(function(c) {
-                return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
-            }).join(''));
-            return JSON.parse(jsonPayload);
-        }
-
-        function handleCredentialResponse(response) {
-            const responsePayload = decodeJwtResponse(response.credential);
-            loggedInUser = { name: responsePayload.name, email: responsePayload.email, picture: responsePayload.picture };
-            localStorage.setItem('jira_google_user', JSON.stringify(loggedInUser));
-            updateAuthUI();
-        }
 
         function updateAuthUI() {
             const storedUser = localStorage.getItem('jira_google_user');
@@ -447,7 +557,7 @@
 
         document.addEventListener('DOMContentLoaded', () => {
             updateAuthUI();
-            calculateMondaysLeft(); // Gọi hàm đếm ngược ngay khi load trang
+            calculateMondaysLeft();
             
             const savedScope = localStorage.getItem('jira_scope_testing');
             if (savedScope && document.getElementById('scopeOfTestingInput')) document.getElementById('scopeOfTestingInput').value = savedScope;
@@ -778,7 +888,6 @@
 
             const tagMode = document.getElementById('tagModeSelect').value;
             
-            // BỎ QUA POPUP NẾU LÀ CHẾ ĐỘ "Chỉ lấy Tag chính đầu tiên"
             if (tagMode === 'primary') {
                 confirmAndCopyReport(true);
                 return;
@@ -832,6 +941,20 @@
 
         function toggleAllTags(checked) {
             document.querySelectorAll('.tag-select-cb').forEach(cb => cb.checked = checked);
+        }
+
+        // ================= HÀM XỬ LÝ FORMAT % =================
+        function formatPctDisplayFixed(val) {
+            if (val === null || val === undefined || val === '') return '0%';
+            let s = String(val).trim();
+            if (s.includes('<<')) s = s.split('<<')[0].trim();
+            if (s.endsWith('%')) return s;
+            let num = parseFloat(s);
+            if (!isNaN(num)) {
+                if (num > 0 && num <= 1) return Math.round(num * 100) + '%';
+                return Math.round(num) + '%';
+            }
+            return s;
         }
 
         // --- XỬ LÝ DỮ LIỆU TIẾN ĐỘ GOOGLE SHEET MATRIX ---
@@ -1189,7 +1312,6 @@
                         if (index < tagOrder.length - 1) reportLines.push('-----');
                     });
                 } else {
-                    // TRƯỜNG HỢP XUẤT 0 TICKET
                     reportLines.push('B. [TICKETS]');
                     reportLines.push('- Không có ticket nào (0 Ticket).');
                 }
