@@ -6,7 +6,7 @@
     <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
     <meta http-equiv="Pragma" content="no-cache">
     <meta http-equiv="Expires" content="0">
-    <title>QC Portal - Xin Off/WFH</title>
+    <title>QC Portal - Xin Off/WFH/Đi Trễ</title>
     
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
@@ -49,6 +49,7 @@
               const installingWorker = reg.installing;
               installingWorker.onstatechange = () => {
                 if (installingWorker.state === 'installed' && navigator.serviceWorker.controller) {
+                  console.log('Có phiên bản code mới! Đang tự động tải lại...');
                   window.location.reload();
                 }
               };
@@ -92,7 +93,7 @@
                 <i class="fa-solid fa-circle-info w-5 text-center text-lg"></i> <span>Thông tin Device</span>
             </a>
             
-            <!-- NÚT ACTIVE TRANG XIN OFF -->
+            <!-- NÚT ACTIVE TRANG NÀY -->
             <a href="log_off" class="whitespace-nowrap flex items-center gap-3 px-4 py-3.5 text-sm font-bold rounded-xl transition border border-indigo-300/50 bg-indigo-600/70 hover:bg-indigo-500/70 text-white backdrop-blur-md shadow-lg">
                 <i class="fa-solid fa-calendar-minus w-5 text-center text-lg"></i> <span>Xin OFF / WFH</span>
             </a>
@@ -107,10 +108,9 @@
                 <button onclick="toggleSidebar()" class="md:hidden text-slate-500 hover:text-indigo-600 focus:outline-none p-1 transition">
                     <i class="fa-solid fa-bars text-xl"></i>
                 </button>
-                <h2 class="text-xl font-bold text-slate-800 hidden sm:block">Đăng Ký Nghỉ Phép / WFH</h2>
-                <h2 class="text-lg font-bold text-slate-800 sm:hidden">Xin OFF / WFH</h2>
+                <h2 class="text-xl font-bold text-slate-800 hidden sm:block">Đăng Ký Nghỉ Phép / Đi Trễ</h2>
+                <h2 class="text-lg font-bold text-slate-800 sm:hidden">Xin OFF / Đi Trễ</h2>
             </div>
-
             <div class="flex-1 flex justify-end items-center gap-4">
                 <div id="authSection" class="relative flex items-center min-h-[40px]">
                     <div id="g_id_onload" data-client_id="149310433677-uvpoilv41na98qdjlj58cpmfl8u9946e.apps.googleusercontent.com" data-callback="handleCredentialResponse" data-auto_prompt="false"></div>
@@ -138,9 +138,9 @@
         <main class="flex-1 overflow-y-auto p-4 md:p-6 bg-cover bg-center bg-no-repeat bg-fixed relative" style="background-image: linear-gradient(to bottom, rgba(248, 250, 252, 0.85), rgba(248, 250, 252, 0.95)), url('./bg-chongqing.jpg');">
             
             <!-- Toolbar -->
-            <div class="w-full max-w-2xl mx-auto mb-4 flex justify-between items-end gap-3">
+            <div class="w-full max-w-2xl mx-auto mb-4 flex justify-between items-end">
                 <button onclick="openHistoryModal()" class="px-4 py-2 bg-white hover:bg-slate-100 border border-slate-300 text-slate-700 text-sm font-bold rounded-lg shadow-sm transition flex items-center gap-2">
-                    <i class="fa-solid fa-clock-rotate-left text-indigo-600"></i> <span class="hidden sm:inline">Lịch Sử Của Tôi</span><span class="sm:hidden">Lịch Sử</span>
+                    <i class="fa-solid fa-clock-rotate-left text-indigo-600"></i> Lịch Sử Của Tôi
                 </button>
                 
                 <button id="btnManagerApprove" onclick="openApprovalModal()" class="hidden px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-bold rounded-lg shadow-sm transition flex items-center gap-2">
@@ -149,14 +149,14 @@
             </div>
 
             <!-- Form Đăng Ký -->
-            <div class="w-full max-w-2xl mx-auto bg-white/90 backdrop-blur-md rounded-2xl shadow-sm border border-slate-200 p-5 sm:p-8 space-y-6">
+            <div class="w-full max-w-2xl mx-auto bg-white/90 backdrop-blur-md rounded-2xl shadow-sm border border-slate-200 p-6 sm:p-8 space-y-6">
                 <div class="flex items-center gap-3 border-b border-slate-100 pb-4">
-                    <div class="w-10 h-10 sm:w-12 sm:h-12 bg-indigo-100 text-indigo-600 rounded-xl flex items-center justify-center text-xl sm:text-2xl shadow-inner">
+                    <div class="w-12 h-12 bg-indigo-100 text-indigo-600 rounded-xl flex items-center justify-center text-2xl shadow-inner">
                         <i class="fa-solid fa-paper-plane"></i>
                     </div>
                     <div>
-                        <h2 class="text-lg sm:text-xl font-bold text-slate-800">Gửi Yêu Cầu Xin Off / WFH</h2>
-                        <p class="text-xs text-slate-500 font-medium mt-0.5 hidden sm:block">Hệ thống sẽ tự động gửi vào Group Chat QC House.</p>
+                        <h2 class="text-xl font-bold text-slate-800">Gửi Yêu Cầu Xin Off / WFH / Đi Trễ</h2>
+                        <p class="text-xs text-slate-500 font-medium mt-0.5">Hệ thống sẽ tự động gửi vào Group Chat QC House.</p>
                     </div>
                 </div>
 
@@ -166,7 +166,7 @@
                         <div>
                             <label class="block text-xs font-bold text-slate-700 mb-1.5">Gửi tới Quản lý <span class="text-red-500">*</span></label>
                             <div class="flex gap-2">
-                                <select id="managerSalutation" class="w-24 sm:w-28 h-11 bg-slate-50 border border-slate-300 text-slate-800 font-bold text-xs rounded-xl px-2 outline-none cursor-pointer">
+                                <select id="managerSalutation" class="w-28 h-11 bg-slate-50 border border-slate-300 text-slate-800 font-bold text-xs rounded-xl px-2.5 outline-none cursor-pointer">
                                     <option value="Dạ chị">Dạ chị</option>
                                     <option value="Dạ anh">Dạ anh</option>
                                     <option value="Dạ">Dạ</option>
@@ -178,7 +178,7 @@
                         <div>
                             <label class="block text-xs font-bold text-slate-700 mb-1.5">Tên của bạn <span class="text-red-500">*</span></label>
                             <div class="flex gap-2">
-                                <select id="userPronoun" class="w-20 sm:w-24 h-11 bg-white border border-slate-300 text-slate-800 font-bold text-xs rounded-xl px-2 outline-none cursor-pointer">
+                                <select id="userPronoun" class="w-24 h-11 bg-white border border-slate-300 text-slate-800 font-bold text-xs rounded-xl px-2.5 outline-none cursor-pointer">
                                     <option value="em">em</option>
                                     <option value="anh">anh</option>
                                     <option value="chị">chị</option>
@@ -194,20 +194,30 @@
                     <div class="grid grid-cols-1 sm:grid-cols-2 gap-5">
                         <div>
                             <label class="block text-xs font-bold text-slate-700 mb-1.5">Loại yêu cầu <span class="text-red-500">*</span></label>
-                            <select id="leaveType" required class="w-full h-11 bg-white border border-slate-300 text-slate-800 font-semibold text-sm rounded-xl px-3 outline-none cursor-pointer shadow-sm">
+                            <select id="leaveType" required class="w-full h-11 bg-white border border-slate-300 text-slate-800 font-semibold text-sm rounded-xl px-4 outline-none cursor-pointer shadow-sm">
                                 <option value="off 1 ngày">Off 1 ngày</option>
                                 <option value="off 0.5d sáng nay">Off 0.5 ngày (Sáng)</option>
                                 <option value="off 0.5d chiều nay">Off 0.5 ngày (Chiều)</option>
                                 <option value="WFH 1 ngày">WFH 1 ngày</option>
                                 <option value="WFH 0.5d sáng nay">WFH 0.5 ngày (Sáng)</option>
                                 <option value="WFH 0.5d chiều nay">WFH 0.5 ngày (Chiều)</option>
+                                <option value="Đi trễ" class="font-bold text-amber-600">Đi trễ (Có làm bù)</option>
                             </select>
                         </div>
                         <div>
-                            <label class="block text-xs font-bold text-slate-700 mb-1.5">Ngày nghỉ/WFH (Chọn nhiều ngày) <span class="text-red-500">*</span></label>
+                            <label class="block text-xs font-bold text-slate-700 mb-1.5">Ngày thực hiện (Có thể chọn nhiều ngày) <span class="text-red-500">*</span></label>
                             <div class="relative">
                                 <i class="fa-regular fa-calendar absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400"></i>
-                                <input type="text" id="leaveDate" required placeholder="Chọn một hoặc nhiều ngày..." class="w-full h-11 pl-10 bg-white border border-slate-300 text-slate-800 font-semibold text-sm rounded-xl pr-3 outline-none shadow-sm cursor-pointer">
+                                <input type="text" id="leaveDate" required placeholder="Chọn ngày..." class="w-full h-11 pl-10 bg-white border border-slate-300 text-slate-800 font-semibold text-sm rounded-xl pr-4 outline-none shadow-sm cursor-pointer">
+                            </div>
+                        </div>
+                        
+                        <!-- Ô Ngày Làm Bù (Sẽ hiện khi chọn Đi Trễ) -->
+                        <div id="makeupDateContainer" class="hidden col-span-1 sm:col-span-2 mt-[-10px] mb-2 p-3 bg-amber-50 border border-amber-200 rounded-xl">
+                            <label class="block text-xs font-bold text-amber-800 mb-1.5">Ngày làm bù (Dành cho việc đi trễ) <span class="text-red-500">*</span></label>
+                            <div class="relative">
+                                <i class="fa-regular fa-calendar-check absolute left-3.5 top-1/2 -translate-y-1/2 text-amber-500"></i>
+                                <input type="text" id="makeupDateInput" placeholder="Chọn ngày sẽ làm bù..." class="w-full h-10 pl-10 bg-white border border-amber-300 text-slate-800 font-semibold text-sm rounded-lg pr-3 outline-none shadow-sm cursor-pointer">
                             </div>
                         </div>
                     </div>
@@ -241,7 +251,7 @@
                     <!-- Preview -->
                     <div class="bg-indigo-50/50 border border-indigo-100 rounded-xl p-4 text-sm font-medium text-slate-600 italic">
                         <span class="font-bold text-indigo-800 not-italic block mb-1">📝 Preview tin nhắn:</span>
-                        <div id="messagePreview" class="text-slate-700 font-sans leading-relaxed"></div>
+                        <div id="messagePreview" class="text-slate-700 font-sans"></div>
                     </div>
 
                     <div class="pt-2">
@@ -255,10 +265,10 @@
     </div>
 
     <!-- ================= MODAL LỊCH SỬ CỦA TÔI ================= -->
-    <div id="historyModal" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-3 sm:p-4">
-        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-4xl overflow-hidden flex flex-col max-h-[85vh]">
-            <div class="px-4 sm:px-6 py-4 border-b border-slate-200 flex justify-between items-center bg-slate-50">
-                <h3 class="text-base sm:text-lg font-bold text-indigo-900 flex items-center gap-2">
+    <div id="historyModal" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4">
+        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-4xl overflow-hidden flex flex-col max-h-[80vh]">
+            <div class="px-6 py-4 border-b border-slate-200 flex justify-between items-center bg-slate-50">
+                <h3 class="text-lg font-bold text-indigo-900 flex items-center gap-2">
                     <i class="fa-solid fa-clock-rotate-left text-indigo-600"></i> Lịch Sử Xin Off/WFH
                 </h3>
                 <button onclick="closeModal('historyModal')" class="text-slate-400 hover:text-rose-500 transition">
@@ -267,7 +277,7 @@
             </div>
 
             <!-- THANH TỔNG SỐ NGÀY -->
-            <div class="bg-indigo-50/60 border-b border-indigo-100 px-4 sm:px-6 py-3.5 flex flex-col sm:flex-row sm:flex-wrap gap-3 sm:gap-6 sm:items-center">
+            <div class="bg-indigo-50/60 border-b border-indigo-100 px-6 py-3.5 flex flex-wrap gap-6 items-center">
                 <div class="flex items-center gap-2">
                     <span class="text-xs font-bold text-slate-600 uppercase tracking-wide">Tổng ngày OFF:</span>
                     <span id="totalOffCount" class="text-base font-black text-indigo-700 bg-white px-2.5 py-0.5 rounded-lg border border-indigo-200 shadow-sm">0</span>
@@ -276,36 +286,34 @@
                     <span class="text-xs font-bold text-slate-600 uppercase tracking-wide">Tổng ngày WFH:</span>
                     <span id="totalWfhCount" class="text-base font-black text-indigo-700 bg-white px-2.5 py-0.5 rounded-lg border border-indigo-200 shadow-sm">0</span>
                 </div>
-                <div class="text-[10px] text-slate-400 font-medium sm:ml-auto">*(Không tính đơn bị Từ chối / Đã hủy)*</div>
+                <div class="text-[11px] text-slate-400 font-medium ml-auto">*(Không tính đơn Đi trễ, Từ chối, Đã hủy)*</div>
             </div>
 
-            <div class="p-0 sm:p-6 overflow-y-auto flex-1 bg-white">
-                <div class="overflow-x-auto">
-                    <table class="w-full text-xs text-left text-slate-600 min-w-[600px]">
-                        <thead class="text-slate-700 uppercase bg-slate-100 border-b border-slate-200">
-                            <tr>
-                                <th class="px-4 py-3">Ngày gửi</th>
-                                <th class="px-4 py-3">Loại</th>
-                                <th class="px-4 py-3 max-w-[150px]">Ngày Off/WFH</th>
-                                <th class="px-4 py-3">Lý do</th>
-                                <th class="px-4 py-3 text-center">Trạng thái</th>
-                            </tr>
-                        </thead>
-                        <tbody id="historyTableBody" class="divide-y divide-slate-100">
-                            <tr><td colspan="5" class="text-center py-8 text-slate-400">Đang tải dữ liệu...</td></tr>
-                        </tbody>
-                    </table>
-                </div>
+            <div class="p-6 overflow-y-auto flex-1 bg-white">
+                <table class="w-full text-xs text-left text-slate-600">
+                    <thead class="text-slate-700 uppercase bg-slate-100 border-b border-slate-200">
+                        <tr>
+                            <th class="px-4 py-3">Ngày gửi</th>
+                            <th class="px-4 py-3">Loại</th>
+                            <th class="px-4 py-3 max-w-[150px]">Ngày Thực hiện</th>
+                            <th class="px-4 py-3">Lý do</th>
+                            <th class="px-4 py-3 text-center">Trạng thái</th>
+                        </tr>
+                    </thead>
+                    <tbody id="historyTableBody" class="divide-y divide-slate-100">
+                        <tr><td colspan="5" class="text-center py-8 text-slate-400">Đang tải dữ liệu...</td></tr>
+                    </tbody>
+                </table>
             </div>
         </div>
     </div>
 
-    <!-- ================= MODAL CHỈNH SỬA ĐƠN OFF ================= -->
+    <!-- ================= MODAL CHỈNH SỬA ĐƠN ================= -->
     <div id="editModal" class="hidden fixed inset-0 z-[80] flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4">
         <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden p-6 space-y-4">
             <div class="flex justify-between items-center border-b border-slate-100 pb-3">
                 <h3 class="text-lg font-bold text-indigo-900 flex items-center gap-2">
-                    <i class="fa-solid fa-pen-to-square text-indigo-600"></i> Chỉnh Sửa Đơn
+                    <i class="fa-solid fa-pen-to-square text-indigo-600"></i> Chỉnh Sửa Đơn Xin
                 </h3>
                 <button onclick="closeModal('editModal')" class="text-slate-400 hover:text-rose-500 transition">
                     <i class="fa-solid fa-xmark text-xl"></i>
@@ -324,14 +332,23 @@
                     <option value="WFH 1 ngày">WFH 1 ngày</option>
                     <option value="WFH 0.5d sáng nay">WFH 0.5 ngày (Sáng)</option>
                     <option value="WFH 0.5d chiều nay">WFH 0.5 ngày (Chiều)</option>
+                    <option value="Đi trễ" class="font-bold text-amber-600">Đi trễ (Có làm bù)</option>
                 </select>
             </div>
             
             <div>
-                <label class="block text-xs font-bold text-slate-700 mb-1">Ngày nghỉ/WFH <span class="text-red-500">*</span></label>
+                <label class="block text-xs font-bold text-slate-700 mb-1">Ngày thực hiện <span class="text-red-500">*</span></label>
                 <div class="relative">
                     <i class="fa-regular fa-calendar absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 text-xs"></i>
                     <input type="text" id="editLeaveDate" class="w-full h-10 pl-9 bg-white border border-slate-300 text-slate-800 font-semibold text-xs rounded-xl pr-3 outline-none cursor-pointer">
+                </div>
+            </div>
+
+            <div id="editMakeupDateContainer" class="hidden p-3 bg-amber-50 border border-amber-200 rounded-xl">
+                <label class="block text-xs font-bold text-amber-800 mb-1.5">Ngày làm bù <span class="text-red-500">*</span></label>
+                <div class="relative">
+                    <i class="fa-regular fa-calendar-check absolute left-3.5 top-1/2 -translate-y-1/2 text-amber-500 text-xs"></i>
+                    <input type="text" id="editMakeupDate" class="w-full h-9 pl-9 bg-white border border-amber-300 text-slate-800 font-semibold text-xs rounded-lg pr-3 outline-none cursor-pointer">
                 </div>
             </div>
             
@@ -352,31 +369,29 @@
     <!-- ================= MODAL DUYỆT PHÉP (MANAGER) ================= -->
     <div id="approvalModal" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4">
         <div class="bg-white rounded-2xl shadow-2xl w-full max-w-5xl overflow-hidden flex flex-col max-h-[85vh]">
-            <div class="px-4 sm:px-6 py-4 border-b border-slate-200 flex justify-between items-center bg-indigo-50">
-                <h3 class="text-base sm:text-lg font-bold text-indigo-900 flex items-center gap-2">
-                    <i class="fa-solid fa-clipboard-list text-indigo-600"></i> Danh Sách Cần Duyệt
+            <div class="px-6 py-4 border-b border-slate-200 flex justify-between items-center bg-indigo-50">
+                <h3 class="text-lg font-bold text-indigo-900 flex items-center gap-2">
+                    <i class="fa-solid fa-clipboard-list text-indigo-600"></i> Danh Sách Phép Cần Duyệt
                 </h3>
                 <button onclick="closeModal('approvalModal')" class="text-slate-400 hover:text-rose-500 transition">
                     <i class="fa-solid fa-xmark text-xl"></i>
                 </button>
             </div>
-            <div class="p-0 sm:p-6 overflow-y-auto flex-1 bg-white">
-                <div class="overflow-x-auto">
-                    <table class="w-full text-xs text-left text-slate-600 min-w-[700px]">
-                        <thead class="text-slate-700 uppercase bg-slate-100 border-b border-slate-200">
-                            <tr>
-                                <th class="px-4 py-3">Người Xin</th>
-                                <th class="px-4 py-3">Loại</th>
-                                <th class="px-4 py-3 max-w-[150px]">Ngày Off</th>
-                                <th class="px-4 py-3">Lý do</th>
-                                <th class="px-4 py-3 text-right">Thao Tác</th>
-                            </tr>
-                        </thead>
-                        <tbody id="approvalTableBody" class="divide-y divide-slate-100">
-                            <tr><td colspan="5" class="text-center py-8 text-slate-400">Không có đơn nào cần duyệt!</td></tr>
-                        </tbody>
-                    </table>
-                </div>
+            <div class="p-4 sm:p-6 overflow-y-auto flex-1 bg-white">
+                <table class="w-full text-xs text-left text-slate-600">
+                    <thead class="text-slate-700 uppercase bg-slate-100 border-b border-slate-200">
+                        <tr>
+                            <th class="px-4 py-3">Người Xin</th>
+                            <th class="px-4 py-3">Loại</th>
+                            <th class="px-4 py-3 max-w-[150px]">Ngày Thực hiện</th>
+                            <th class="px-4 py-3">Lý do</th>
+                            <th class="px-4 py-3 text-right">Thao Tác</th>
+                        </tr>
+                    </thead>
+                    <tbody id="approvalTableBody" class="divide-y divide-slate-100">
+                        <tr><td colspan="5" class="text-center py-8 text-slate-400">Không có đơn nào cần duyệt!</td></tr>
+                    </tbody>
+                </table>
             </div>
         </div>
     </div>
@@ -429,7 +444,9 @@
         } catch (e) { console.error("Lỗi Firebase:", e); }
 
         let flatpickrInstance = null;
+        let flatpickrMakeupInstance = null;
         let flatpickrEditInstance = null;
+        let flatpickrEditMakeupInstance = null;
 
         // JS ẨN/HIỆN SIDEBAR MOBILE
         function toggleSidebar() {
@@ -482,12 +499,19 @@
         document.addEventListener('DOMContentLoaded', () => {
             updateAuthUI();
 
-            // Khởi tạo Flatpickr cho phép chọn NHIỀU NGÀY
+            // Khởi tạo Flatpickr
             flatpickrInstance = flatpickr("#leaveDate", {
                 mode: "multiple",
                 dateFormat: "Y-m-d",
                 locale: "vn",
                 defaultDate: new Date(),
+                onChange: updatePreview
+            });
+
+            flatpickrMakeupInstance = flatpickr("#makeupDateInput", {
+                dateFormat: "Y-m-d",
+                locale: "vn",
+                defaultDate: "today",
                 onChange: updatePreview
             });
 
@@ -497,7 +521,32 @@
                 locale: "vn"
             });
 
-            const formElements = document.querySelectorAll('#logoffForm input:not(#leaveDate), #logoffForm select');
+            flatpickrEditMakeupInstance = flatpickr("#editMakeupDate", {
+                dateFormat: "Y-m-d",
+                locale: "vn"
+            });
+
+            // Logic Hiện/Ẩn ô làm bù dựa trên dropdown
+            document.getElementById('leaveType').addEventListener('change', function() {
+                const makeupContainer = document.getElementById('makeupDateContainer');
+                if (this.value === 'Đi trễ') {
+                    makeupContainer.classList.remove('hidden');
+                } else {
+                    makeupContainer.classList.add('hidden');
+                }
+                updatePreview();
+            });
+
+            document.getElementById('editLeaveType').addEventListener('change', function() {
+                const makeupContainer = document.getElementById('editMakeupDateContainer');
+                if (this.value === 'Đi trễ') {
+                    makeupContainer.classList.remove('hidden');
+                } else {
+                    makeupContainer.classList.add('hidden');
+                }
+            });
+
+            const formElements = document.querySelectorAll('#logoffForm input:not(#leaveDate):not(#makeupDateInput), #logoffForm select');
             formElements.forEach(el => el.addEventListener('input', updatePreview));
             formElements.forEach(el => el.addEventListener('change', updatePreview));
             updatePreview();
@@ -537,22 +586,24 @@
 
             const managerPrefix = managerSalutation ? `${managerSalutation} ` : "";
             
-            // XỬ LÝ WORDING THÔNG MINH
-            const numDates = leaveDateVal ? leaveDateVal.split(',').filter(d => d.trim() !== '').length : 1;
-            let displayType = leaveTypeRaw;
-            let datePrefix = "";
-
-            if (numDates > 1) {
-                // Xóa chữ "1 ngày" và "nay" nếu chọn nhiều ngày (VD: xin off các ngày 15/10, 16/10)
-                displayType = displayType.replace(/1 ngày/ig, '').replace(/nay/ig, '').trim();
-                datePrefix = "các ngày ";
+            if (leaveTypeRaw === 'Đi trễ') {
+                const makeupDateVal = document.getElementById('makeupDateInput').value;
+                const makeupFormatted = formatDateToDDMM(makeupDateVal);
+                return `${managerPrefix}${manager} , ${userPronoun} ${applicant} xin đi trễ sau 10h ngày ${leaveDateFormatted} - Lý do: ${reason}. Em sẽ làm bù vào ngày ${makeupFormatted} ạ.${ccString}`;
             } else {
-                // Xóa chữ "nay" -> (VD: xin off 0.5d sáng 27/09)
-                displayType = displayType.replace(/nay/ig, '').trim();
-                datePrefix = displayType.toLowerCase().includes('ngày') ? '' : 'ngày ';
-            }
+                const numDates = leaveDateVal ? leaveDateVal.split(',').filter(d => d.trim() !== '').length : 1;
+                let displayType = leaveTypeRaw;
+                let datePrefix = "";
 
-            return `${managerPrefix}${manager} , ${userPronoun} ${applicant} xin ${displayType} ${datePrefix}${leaveDateFormatted} - Lý do: ${reason}${ccString}`;
+                if (numDates > 1) {
+                    displayType = displayType.replace(/1 ngày/ig, '').replace(/nay/ig, '').trim();
+                    datePrefix = "các ngày ";
+                } else {
+                    displayType = displayType.replace(/nay/ig, '').trim();
+                    datePrefix = displayType.toLowerCase().includes('ngày') ? '' : 'ngày ';
+                }
+                return `${managerPrefix}${manager} , ${userPronoun} ${applicant} xin ${displayType} ${datePrefix}${leaveDateFormatted} - Lý do: ${reason}${ccString}`;
+            }
         }
 
         function updatePreview() {
@@ -565,7 +616,10 @@
             if (GOOGLE_CHAT_WEBHOOK_URL.includes("XXXXXXX")) { showCustomAlert("Lỗi", "Chưa cấu hình Webhook URL!", true); return; }
 
             const leaveDateVal = document.getElementById('leaveDate').value;
-            if (!leaveDateVal) { alert("Vui lòng chọn ngày nghỉ!"); return; }
+            const leaveTypeRaw = document.getElementById('leaveType').value;
+            const makeupDateVal = leaveTypeRaw === 'Đi trễ' ? document.getElementById('makeupDateInput').value : "";
+
+            if (!leaveDateVal) { alert("Vui lòng chọn ngày thực hiện!"); return; }
 
             const btn = document.getElementById('btnSubmitMessage');
             const origHtml = btn.innerHTML;
@@ -586,18 +640,22 @@
 
                 if (!response.ok) throw new Error("Mã lỗi: " + response.status);
 
+                // ĐƠN ĐI TRỄ KHÔNG CẦN DUYỆT -> Set trạng thái "Đã ghi nhận"
+                const statusVal = leaveTypeRaw === 'Đi trễ' ? "Đã ghi nhận" : "Chờ duyệt";
+
                 await db.collection("leave_requests").add({
                     applicantName: document.getElementById('applicantName').value.trim(),
                     applicantEmail: loggedInUser.email,
-                    leaveType: document.getElementById('leaveType').value,
+                    leaveType: leaveTypeRaw,
                     leaveDate: leaveDateVal,
+                    makeupDate: makeupDateVal,
                     reason: document.getElementById('leaveReason').value.trim(),
                     threadKey: threadKey,
-                    status: "Chờ duyệt",
+                    status: statusVal,
                     createdAt: firebase.firestore.FieldValue.serverTimestamp()
                 });
 
-                showCustomAlert("Thành công!", "Đã gửi đơn xin nghỉ vào nhóm Chat và lưu lịch sử.");
+                showCustomAlert("Thành công!", "Đã gửi yêu cầu vào nhóm Chat và lưu lịch sử.");
                 document.getElementById('leaveReason').value = ""; 
                 updatePreview();
 
@@ -614,7 +672,7 @@
         function parseLeaveDays(typeStr) {
             if (!typeStr) return 1;
             let s = typeStr.toLowerCase();
-            // CHỈ bắt keyword thay vì quét Regex toàn chuỗi để tránh bắt nhầm ngày tháng
+            
             if (s.includes('0.25')) return 0.25;
             if (s.includes('0.5') || s.includes('sáng') || s.includes('chiều') || s.includes('half')) return 0.5;
             if (s.includes('1.5')) return 1.5;
@@ -623,7 +681,7 @@
             if (s.includes('4 ngày') || s.includes('4 day')) return 4;
             if (s.includes('5 ngày') || s.includes('5 day')) return 5;
             
-            return 1; // Mặc định là 1 ngày
+            return 1;
         }
 
         // ================= MODAL LỊCH SỬ CỦA TÔI =================
@@ -666,32 +724,33 @@
                       if (isMatchEmail || isMatchLegacy) {
                           count++;
 
-                          // TÍNH TỔNG SỐ NGÀY THEO CÔNG THỨC MỚI (Số ngày chọn x Loại xin nghỉ)
+                          // KHÔNG TÍNH ĐƠN ĐI TRỄ VÀO TỔNG SỐ NGÀY
                           if (data.status !== "Từ chối" && data.status !== "Đã hủy") {
                               const typeStr = data.leaveType || "";
-                              const dateStr = data.leaveDate || "";
-                              const numDates = dateStr ? dateStr.split(',').filter(d => d.trim() !== '').length : 1;
-                              const daysPerDate = parseLeaveDays(typeStr);
-                              
-                              const totalDaysForThisRecord = numDates * daysPerDate;
+                              if (typeStr !== "Đi trễ") {
+                                  const dateStr = data.leaveDate || "";
+                                  const numDates = dateStr ? dateStr.split(',').filter(d => d.trim() !== '').length : 1;
+                                  const daysPerDate = parseLeaveDays(typeStr);
+                                  const totalDaysForThisRecord = numDates * daysPerDate;
 
-                              if (typeStr.toLowerCase().includes("wfh")) {
-                                  totalWfh += totalDaysForThisRecord;
-                              } else {
-                                  totalOff += totalDaysForThisRecord;
+                                  if (typeStr.toLowerCase().includes("wfh")) {
+                                      totalWfh += totalDaysForThisRecord;
+                                  } else {
+                                      totalOff += totalDaysForThisRecord;
+                                  }
                               }
                           }
 
                           const dateObj = data.createdAt ? data.createdAt.toDate() : new Date();
                           const createdStr = `${dateObj.getDate()}/${dateObj.getMonth()+1}/${dateObj.getFullYear()}`;
                           
-                          let statusHtml = `<span class="bg-amber-100 text-amber-700 px-2 py-1 rounded font-bold text-[10px]">Chờ duyệt</span>`;
+                          let statusHtml = `<span class="bg-slate-100 text-slate-500 px-2 py-1 rounded font-bold text-[10px]">Trạng thái lạ</span>`;
 
                           if (data.status === "Chờ duyệt") {
                               const escapedReason = (data.reason || '').replace(/'/g, "\\'");
-                              statusHtml += `
+                              statusHtml = `<span class="bg-amber-100 text-amber-700 px-2 py-1 rounded font-bold text-[10px]">Chờ duyệt</span>
                                 <div class="mt-1 flex gap-2 justify-center">
-                                    <button onclick="openEditModal('${doc.id}', '${data.leaveType}', '${data.leaveDate}', '${escapedReason}', '${data.threadKey}')" class="text-indigo-600 hover:underline font-bold text-[11px]">
+                                    <button onclick="openEditModal('${doc.id}', '${data.leaveType}', '${data.leaveDate}', '${escapedReason}', '${data.threadKey}', '${data.makeupDate || ''}')" class="text-indigo-600 hover:underline font-bold text-[11px]">
                                         <i class="fa-solid fa-pen-to-square"></i> Sửa
                                     </button>
                                     <button onclick="cancelLeaveRequest('${doc.id}', '${data.threadKey}', '${data.leaveDate}')" class="text-rose-600 hover:underline font-bold text-[11px]">
@@ -704,6 +763,23 @@
                               statusHtml = `<span class="bg-rose-100 text-rose-700 px-2 py-1 rounded font-bold text-[10px]">Từ chối</span><div class="text-[10px] mt-1 text-rose-500">${data.replyReason || ''}</div>`;
                           } else if (data.status === "Đã hủy") {
                               statusHtml = `<span class="bg-slate-100 text-slate-500 px-2 py-1 rounded font-bold text-[10px]">Đã hủy</span>`;
+                          } else if (data.status === "Đã ghi nhận") {
+                              // Trạng thái riêng cho "Đi trễ"
+                              const escapedReason = (data.reason || '').replace(/'/g, "\\'");
+                              statusHtml = `<span class="bg-blue-100 text-blue-700 px-2 py-1 rounded font-bold text-[10px]">Đã ghi nhận</span>
+                                <div class="mt-1 flex gap-2 justify-center">
+                                    <button onclick="openEditModal('${doc.id}', '${data.leaveType}', '${data.leaveDate}', '${escapedReason}', '${data.threadKey}', '${data.makeupDate || ''}')" class="text-indigo-600 hover:underline font-bold text-[11px]">
+                                        <i class="fa-solid fa-pen-to-square"></i> Sửa
+                                    </button>
+                                    <button onclick="cancelLeaveRequest('${doc.id}', '${data.threadKey}', '${data.leaveDate}')" class="text-rose-600 hover:underline font-bold text-[11px]">
+                                        <i class="fa-solid fa-trash-can"></i> Hủy
+                                    </button>
+                                </div>`;
+                          }
+
+                          let displayReason = data.reason || '';
+                          if (data.leaveType === "Đi trễ" && data.makeupDate) {
+                              displayReason += ` <br><span class="text-[10px] font-bold text-amber-600 bg-amber-50 px-1.5 py-0.5 rounded mt-1 inline-block">Làm bù: ${formatDateToDDMM(data.makeupDate)}</span>`;
                           }
 
                           tbody.innerHTML += `
@@ -711,30 +787,40 @@
                                   <td class="px-4 py-3 font-mono text-slate-500">${createdStr}</td>
                                   <td class="px-4 py-3 font-semibold text-indigo-700">${data.leaveType}</td>
                                   <td class="px-4 py-3 font-bold text-slate-800 break-words">${formatDateToDDMM(data.leaveDate)}</td>
-                                  <td class="px-4 py-3 truncate max-w-[180px]" title="${data.reason}">${data.reason}</td>
+                                  <td class="px-4 py-3 max-w-[200px] leading-relaxed">${displayReason}</td>
                                   <td class="px-4 py-3 text-center">${statusHtml}</td>
                               </tr>`;
                       }
                   });
 
-                  // Hiển thị kết quả (Loại bỏ số .0 nếu là số chẵn)
                   document.getElementById('totalOffCount').innerText = totalOff % 1 === 0 ? totalOff : totalOff.toFixed(1);
                   document.getElementById('totalWfhCount').innerText = totalWfh % 1 === 0 ? totalWfh : totalWfh.toFixed(1);
 
                   if (count === 0) {
-                      tbody.innerHTML = '<tr><td colspan="5" class="text-center py-8 text-slate-400">Chưa tìm thấy lịch sử nào phù hợp với tài khoản của bạn.</td></tr>';
+                      tbody.innerHTML = '<tr><td colspan="5" class="text-center py-8 text-slate-400">Chưa tìm thấy lịch sử nào phù hợp.</td></tr>';
                   }
               });
         }
 
         // ================= XỬ LÝ SỬA VÀ HỦY ĐƠN =================
-        function openEditModal(docId, leaveType, leaveDate, reason, threadKey) {
+        function openEditModal(docId, leaveType, leaveDate, reason, threadKey, makeupDate) {
             document.getElementById('editDocId').value = docId;
             document.getElementById('editThreadKey').value = threadKey;
             document.getElementById('editLeaveType').value = leaveType;
             
             if(flatpickrEditInstance && leaveDate) {
                 flatpickrEditInstance.setDate(leaveDate.split(',').map(d => d.trim()));
+            }
+
+            const makeupContainer = document.getElementById('editMakeupDateContainer');
+            if (leaveType === "Đi trễ") {
+                makeupContainer.classList.remove('hidden');
+                if(flatpickrEditMakeupInstance && makeupDate) {
+                    flatpickrEditMakeupInstance.setDate(makeupDate);
+                }
+            } else {
+                makeupContainer.classList.add('hidden');
+                if(flatpickrEditMakeupInstance) flatpickrEditMakeupInstance.clear();
             }
 
             document.getElementById('editReason').value = reason;
@@ -747,9 +833,10 @@
             const leaveTypeRaw = document.getElementById('editLeaveType').value;
             const leaveDate = document.getElementById('editLeaveDate').value;
             const reason = document.getElementById('editReason').value.trim();
+            const makeupDate = leaveTypeRaw === 'Đi trễ' ? document.getElementById('editMakeupDate').value : "";
 
-            if (!leaveDate) { alert("Vui lòng chọn ngày nghỉ!"); return; }
-            if (!reason) { alert("Vui lòng nhập lý do nghỉ!"); return; }
+            if (!leaveDate) { alert("Vui lòng chọn ngày thực hiện!"); return; }
+            if (!reason) { alert("Vui lòng nhập lý do!"); return; }
 
             const btn = document.getElementById('btnSaveEdit');
             const origText = btn.innerText;
@@ -758,30 +845,39 @@
                 btn.disabled = true;
                 btn.innerText = "Đang lưu...";
 
+                // Tự đổi trạng thái nếu đổi loại từ "Đi trễ" sang loại khác (hoặc ngược lại)
+                const newStatus = leaveTypeRaw === 'Đi trễ' ? "Đã ghi nhận" : "Chờ duyệt";
+
                 await db.collection("leave_requests").doc(docId).update({
                     leaveType: leaveTypeRaw,
                     leaveDate: leaveDate,
+                    makeupDate: makeupDate,
                     reason: reason,
+                    status: newStatus,
                     updatedAt: firebase.firestore.FieldValue.serverTimestamp()
                 });
 
                 if (threadKey && threadKey !== "imported_legacy" && !GOOGLE_CHAT_WEBHOOK_URL.includes("XXXXXXX")) {
                     const formattedDate = formatDateToDDMM(leaveDate);
-                    const numDates = leaveDate.split(',').filter(d => d.trim() !== '').length;
-                    
-                    let displayType = leaveTypeRaw;
-                    let datePrefix = "";
-                    if (numDates > 1) {
-                        displayType = displayType.replace(/1 ngày/ig, '').replace(/nay/ig, '').trim();
-                        datePrefix = "các ngày ";
+                    let replyText = "";
+
+                    if (leaveTypeRaw === 'Đi trễ') {
+                        replyText = `✏️ [CẬP NHẬT] Em xin phép cập nhật lại thông tin: Đi trễ sau 10h ngày ${formattedDate} - Lý do: ${reason}. Sẽ làm bù vào ngày ${formatDateToDDMM(makeupDate)}.`;
                     } else {
-                        displayType = displayType.replace(/nay/ig, '').trim();
-                        datePrefix = displayType.toLowerCase().includes('ngày') ? '' : 'ngày ';
+                        const numDates = leaveDate.split(',').filter(d => d.trim() !== '').length;
+                        let displayType = leaveTypeRaw;
+                        let datePrefix = "";
+                        if (numDates > 1) {
+                            displayType = displayType.replace(/1 ngày/ig, '').replace(/nay/ig, '').trim();
+                            datePrefix = "các ngày ";
+                        } else {
+                            displayType = displayType.replace(/nay/ig, '').trim();
+                            datePrefix = displayType.toLowerCase().includes('ngày') ? '' : 'ngày ';
+                        }
+                        replyText = `✏️ [CẬP NHẬT] Em xin phép cập nhật lại thông tin: ${displayType} ${datePrefix}${formattedDate} - Lý do: ${reason}`;
                     }
 
-                    const replyText = `✏️ [CẬP NHẬT ĐƠN] Em xin phép cập nhật lại thông tin: ${displayType} ${datePrefix}${formattedDate} - Lý do: ${reason}`;
                     const webhookWithThread = `${GOOGLE_CHAT_WEBHOOK_URL}&messageReplyOption=REPLY_MESSAGE_FALLBACK_TO_NEW_THREAD&threadKey=${threadKey}`;
-                    
                     await fetch(webhookWithThread, {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
@@ -790,7 +886,7 @@
                 }
 
                 closeModal('editModal');
-                showCustomAlert("Thành công", "Đã cập nhật đơn xin off và gửi thông báo vào Group Chat!");
+                showCustomAlert("Thành công", "Đã cập nhật đơn xin và báo lên Group Chat!");
                 openHistoryModal();
 
             } catch (error) {
@@ -803,11 +899,11 @@
         }
 
         async function cancelLeaveRequest(docId, threadKey, leaveDate) {
-            if (!confirm(`Bạn có chắc chắn muốn HỦY đơn xin off các ngày [${formatDateToDDMM(leaveDate)}] khỏi hệ thống không?`)) return;
+            if (!confirm(`Bạn có chắc chắn muốn HỦY yêu cầu các ngày [${formatDateToDDMM(leaveDate)}] khỏi hệ thống không?`)) return;
 
             try {
                 if (threadKey && threadKey !== "imported_legacy" && !GOOGLE_CHAT_WEBHOOK_URL.includes("XXXXXXX")) {
-                    const replyText = `❌ [ĐÃ HỦY] Em xin phép HỦY đơn xin off các ngày ${formatDateToDDMM(leaveDate)} này ạ.`;
+                    const replyText = `❌ [ĐÃ HỦY] Em xin phép HỦY đơn các ngày ${formatDateToDDMM(leaveDate)} này ạ.`;
                     const webhookWithThread = `${GOOGLE_CHAT_WEBHOOK_URL}&messageReplyOption=REPLY_MESSAGE_FALLBACK_TO_NEW_THREAD&threadKey=${threadKey}`;
                     
                     await fetch(webhookWithThread, {
@@ -831,6 +927,7 @@
         // ================= MODAL DUYỆT PHÉP (MANAGER) =================
         function listenForPendingApprovals() {
             if(!db) return;
+            // Chỉ query những đơn "Chờ duyệt", nên đơn "Đã ghi nhận" (Đi trễ) sẽ tự động KHÔNG hiển thị ở đây
             db.collection("leave_requests").where("status", "==", "Chờ duyệt").onSnapshot(snapshot => {
                 const count = snapshot.size;
                 const badge = document.getElementById('pendingCountBadge');
@@ -856,12 +953,14 @@
                 }
                 snapshot.forEach(doc => {
                     const data = doc.data();
+                    let displayReason = data.reason || '';
+                    
                     tbody.innerHTML += `
                         <tr class="hover:bg-slate-50 border-b border-slate-100" id="row_${doc.id}">
                             <td class="px-4 py-3 font-bold text-indigo-800">${data.applicantName}</td>
                             <td class="px-4 py-3 font-semibold text-slate-700">${data.leaveType}</td>
                             <td class="px-4 py-3 font-bold text-rose-600 break-words">${formatDateToDDMM(data.leaveDate)}</td>
-                            <td class="px-4 py-3 text-slate-600">${data.reason}</td>
+                            <td class="px-4 py-3 text-slate-600 max-w-[200px]">${displayReason}</td>
                             <td class="px-4 py-3 text-right whitespace-nowrap">
                                 <button onclick="approveRequest('${doc.id}', '${data.threadKey}', '${data.applicantName}')" class="px-3 py-1.5 bg-emerald-100 hover:bg-emerald-600 hover:text-white text-emerald-700 font-bold rounded transition mr-1">Duyệt</button>
                                 <button onclick="openRejectModal('${doc.id}', '${data.threadKey}')" class="px-3 py-1.5 bg-rose-100 hover:bg-rose-600 hover:text-white text-rose-700 font-bold rounded transition">Từ chối</button>
