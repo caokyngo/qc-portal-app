@@ -9,15 +9,37 @@
     <title>QC Portal - Báo Cáo Daily</title>
     
     <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#312e81">
+
+    <!-- KHẮC PHỤC LỖI GSI_LOGGER: Đưa hàm khởi tạo Google Auth lên đầu trang -->
+    <script>
+        let loggedInUser = null;
+
+        function decodeJwtResponse(token) {
+            let base64Url = token.split('.')[1];
+            let base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+            let jsonPayload = decodeURIComponent(atob(base64).split('').map(function(c) {
+                return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
+            }).join(''));
+            return JSON.parse(jsonPayload);
+        }
+
+        function handleCredentialResponse(response) {
+            const responsePayload = decodeJwtResponse(response.credential);
+            loggedInUser = { name: responsePayload.name, email: responsePayload.email, picture: responsePayload.picture };
+            localStorage.setItem('jira_google_user', JSON.stringify(loggedInUser));
+            if (typeof updateAuthUI === 'function') {
+                updateAuthUI();
+            }
+        }
+    </script>
     <script src="https://accounts.google.com/gsi/client" async defer></script>
 
-    <!-- Script Kiểm tra & Tự động Update bản mới (PWA) -->
+    <!-- Script PWA Auto Update -->
     <script>
       if ('serviceWorker' in navigator) {
         window.addEventListener('load', () => {
@@ -37,7 +59,7 @@
       }
     </script>
 
-    <!-- CSS Dòng thông báo chạy liên tục chuẩn mượt -->
+    <!-- CSS Dòng thông báo chạy liên tục -->
     <style>
         .travel-marquee {
             width: 100%;
@@ -46,14 +68,12 @@
             mask-image: linear-gradient(to right, transparent, black 8%, black 92%, transparent);
             -webkit-mask-image: linear-gradient(to right, transparent, black 8%, black 92%, transparent);
         }
-
         .travel-marquee-track {
             display: flex;
             width: max-content;
             animation: travel-marquee-scroll 18s linear infinite;
             will-change: transform;
         }
-
         .travel-marquee-group {
             display: flex;
             flex: 0 0 auto;
@@ -61,7 +81,6 @@
             padding-right: 2.5rem;
             gap: 2.5rem;
         }
-
         .travel-marquee-message {
             display: inline-flex;
             align-items: center;
@@ -70,66 +89,29 @@
             font-family: 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
             font-size: 16px;
             font-weight: 800;
-            letter-spacing: 0.2px;
-            line-height: 1.5;
-            
             background: linear-gradient(90deg, #ea580c 0%, #d97706 50%, #ca8a04 100%);
             -webkit-background-clip: text;
             background-clip: text;
             color: transparent;
-
             animation: travel-blink 1.2s infinite ease-in-out;
         }
-
-        .travel-marquee-message i {
-            color: #ea580c;
-            font-size: 15.5px;
-        }
-
+        .travel-marquee-message i { color: #ea580c; font-size: 15.5px; }
         .travel-marquee-count {
-            font-size: 17px;
-            font-weight: 900;
+            font-size: 17px; font-weight: 900;
             background: linear-gradient(90deg, #c2410c 0%, #ea580c 100%);
-            -webkit-background-clip: text;
-            background-clip: text;
-            color: transparent;
+            -webkit-background-clip: text; background-clip: text; color: transparent;
             padding: 0 2px;
         }
-
-        @keyframes travel-marquee-scroll {
-            to { transform: translateX(-50%); }
-        }
-
+        @keyframes travel-marquee-scroll { to { transform: translateX(-50%); } }
         @keyframes travel-blink {
-            0%, 100% {
-                opacity: 1;
-                filter: drop-shadow(0 0 1px rgba(234, 88, 12, 0.4));
-            }
-            50% {
-                opacity: 0.45;
-                filter: drop-shadow(0 0 5px rgba(234, 88, 12, 0.7));
-            }
-        }
-
-        @media (prefers-reduced-motion: reduce) {
-            .travel-marquee-track {
-                animation: none;
-                transform: none;
-            }
-
-            .travel-marquee-group[aria-hidden="true"] {
-                display: none;
-            }
-        }
-
-        .soft-text {
-            letter-spacing: 0.1px;
+            0%, 100% { opacity: 1; filter: drop-shadow(0 0 1px rgba(234, 88, 12, 0.4)); }
+            50% { opacity: 0.45; filter: drop-shadow(0 0 5px rgba(234, 88, 12, 0.7)); }
         }
     </style>
 </head>
 <body class="bg-slate-50 text-slate-800 font-sans h-screen w-full flex flex-col md:flex-row overflow-hidden">
 
-  <!-- ================= SIDEBAR MENU (BACKGROUND TRÙNG KHÁNH) ================= -->
+    <!-- ================= SIDEBAR MENU (BACKGROUND TRÙNG KHÁNH & NÚT TRONG SUỐT) ================= -->
     <aside class="w-full md:w-64 text-white flex flex-col flex-shrink-0 shadow-2xl z-20 transition-all bg-cover bg-center bg-no-repeat relative"
            style="background-image: linear-gradient(to bottom, rgba(15, 23, 42, 0.65), rgba(30, 27, 75, 0.75)), url('./trungkhanh.jpg');">
         
@@ -146,34 +128,37 @@
         <nav class="flex md:flex-col gap-2.5 p-4 overflow-x-auto md:overflow-y-auto flex-1 bg-transparent custom-scrollbar">
             <!-- Nút 1: Báo Cáo Daily (ACTIVE TRANG NÀY) -->
             <a href="index" class="whitespace-nowrap flex items-center gap-3 px-4 py-3.5 text-sm font-bold rounded-xl transition border border-indigo-300/50 bg-indigo-600/70 hover:bg-indigo-500/70 text-white backdrop-blur-md shadow-lg">
-                <i class="fa-solid fa-chart-line w-5 text-center text-lg"></i> <span>Báo Cáo Daily</span>
+                <i class="fa-solid fa-chart-line w-5 text-center text-lg"></i> 
+                <span>Báo Cáo Daily</span>
             </a>
             
             <!-- Nút 2: Mượn Device -->
             <a href="device_manage" class="whitespace-nowrap flex items-center gap-3 px-4 py-3.5 text-sm font-bold rounded-xl transition border border-white/15 bg-white/10 hover:bg-white/25 hover:border-white/40 text-white backdrop-blur-md shadow-sm">
-                <i class="fa-solid fa-mobile-screen-button w-5 text-center text-lg"></i> <span>Mượn Device</span>
+                <i class="fa-solid fa-mobile-screen-button w-5 text-center text-lg"></i> 
+                <span>Mượn Device</span>
             </a>
             
             <!-- Nút 3: Thông tin Device -->
             <a href="device_info" class="whitespace-nowrap flex items-center gap-3 px-4 py-3.5 text-sm font-bold rounded-xl transition border border-white/15 bg-white/10 hover:bg-white/25 hover:border-white/40 text-white backdrop-blur-md shadow-sm">
-                <i class="fa-solid fa-circle-info w-5 text-center text-lg"></i> <span>Thông tin Device</span>
+                <i class="fa-solid fa-circle-info w-5 text-center text-lg"></i> 
+                <span>Thông tin Device</span>
             </a>
             
             <!-- Nút 4: Xin OFF / WFH -->
             <a href="log_off" class="whitespace-nowrap flex items-center gap-3 px-4 py-3.5 text-sm font-bold rounded-xl transition border border-white/15 bg-white/10 hover:bg-white/25 hover:border-white/40 text-white backdrop-blur-md shadow-sm">
-                <i class="fa-solid fa-calendar-minus w-5 text-center text-lg"></i> <span>Xin OFF / WFH</span>
+                <i class="fa-solid fa-calendar-minus w-5 text-center text-lg"></i> 
+                <span>Xin OFF / WFH</span>
             </a>
         </nav>
     </aside>
+
     <!-- ================= MAIN CONTENT ================= -->
     <div class="flex-1 flex flex-col h-full overflow-hidden bg-slate-50 relative">
-        <!-- HEADER MỚI VỚI BỐ CỤC 3 PHẦN -->
         <header class="bg-white text-slate-800 shadow-sm border-b border-slate-200 z-10 p-3 px-4 md:px-6 flex justify-between items-center min-h-[72px]">
             <div class="flex-1 shrink-0">
-                <h2 class="text-xl font-bold text-slate-800 hidden sm:block">Báo Cáo Daily (Jira)</h2>
+                <h2 class="text-xl font-bold text-slate-800 hidden sm:block">Báo Cáo Daily (Jira Live API)</h2>
             </div>
             
-            <!-- Phần ở giữa: Thông báo đếm ngược chạy liên tục -->
             <div class="hidden lg:flex flex-1 min-w-0 justify-center items-center">
                 <div class="w-full max-w-[460px] px-4 py-2 rounded-full bg-slate-50/90 border border-slate-200 shadow-sm cursor-default">
                     <div class="travel-marquee">
@@ -203,12 +188,11 @@
                 </div>
             </div>
 
-            <!-- Phần bên phải: Đổi File & Auth User -->
             <div class="flex-1 flex justify-end items-center gap-4">
                 <div id="fileInfo" class="hidden flex items-center gap-3 bg-indigo-50 px-4 py-2 rounded-xl border border-indigo-100 text-xs shadow-sm">
-                    <div><span class="text-indigo-400 font-medium">Đang xử lý:</span> <strong id="fileName" class="text-indigo-800 font-bold"></strong></div>
-                    <button onclick="changeJiraFile()" class="px-2.5 py-1.5 bg-indigo-600 hover:bg-indigo-500 text-white text-[11px] font-bold rounded-lg transition flex items-center gap-1.5 shadow-sm">
-                        <i class="fa-solid fa-arrows-rotate"></i> Đổi File
+                    <div><span class="text-indigo-400 font-medium">Đang xem Jira Project:</span> <strong id="jiraProjectName" class="text-indigo-800 font-bold">---</strong></div>
+                    <button onclick="changeJiraProject()" class="px-2.5 py-1.5 bg-indigo-600 hover:bg-indigo-500 text-white text-[11px] font-bold rounded-lg transition flex items-center gap-1.5 shadow-sm">
+                        <i class="fa-solid fa-arrows-rotate"></i> Đổi Link Jira
                     </button>
                 </div>
                 
@@ -237,22 +221,47 @@
 
         <main class="flex-1 overflow-y-auto p-4 md:p-6 bg-slate-50">
             <div class="w-full mx-auto 2xl:max-w-[1600px] space-y-6">
-                <!-- Upload Box -->
-                <section id="uploadSection" class="bg-white rounded-2xl shadow-sm border border-slate-200 p-8 w-full max-w-4xl mx-auto mt-4">
-                    <div id="dropZone" class="border-2 border-dashed border-indigo-300 hover:border-indigo-500 rounded-xl p-10 text-center bg-indigo-50/30 transition cursor-pointer">
-                        <input type="file" id="excelFileInput" accept=".xlsx, .xls, .csv" class="hidden">
-                        <div class="space-y-4">
-                            <div class="w-20 h-20 bg-indigo-100 text-indigo-600 rounded-full flex items-center justify-center mx-auto text-3xl shadow-inner">
-                                <i class="fa-solid fa-file-excel"></i>
-                            </div>
-                            <div>
-                                <p class="text-lg font-bold text-slate-700">Tải lên file Jira Excel (.xlsx, .xls) hoặc CSV</p>
-                                <p class="text-sm text-slate-500 mt-2">Kéo thả file trực tiếp vào khu vực này hoặc bấm để chọn file từ máy tính của bạn</p>
-                            </div>
-                            <button type="button" onclick="document.getElementById('excelFileInput').click()" class="mt-4 inline-flex items-center gap-2 px-6 py-3 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl shadow-sm transition">
-                                <i class="fa-solid fa-upload"></i> Chọn file từ máy
-                            </button>
+                
+                <!-- KHUNG NHẬP LINK JIRA TRỰC TIẾP -->
+                <section id="jiraUrlSection" class="bg-white rounded-2xl shadow-sm border border-slate-200 p-8 w-full max-w-4xl mx-auto mt-4 space-y-6">
+                    <div class="text-center space-y-2">
+                        <div class="w-16 h-16 bg-indigo-100 text-indigo-600 rounded-2xl flex items-center justify-center mx-auto text-3xl shadow-inner">
+                            <i class="fa-brands fa-jira"></i>
                         </div>
+                        <h2 class="text-xl font-bold text-slate-800">Tải Dữ Liệu Báo Cáo Từ Jira</h2>
+                        <p class="text-xs text-slate-500 max-w-md mx-auto">Dán đường link dự án hoặc danh sách Filter trên Jira (dạng List view) để hệ thống tự động bóc tách dữ liệu.</p>
+                    </div>
+
+                    <div class="space-y-4">
+                        <div>
+                            <label class="block text-xs font-bold text-slate-700 mb-1.5"><i class="fa-solid fa-link text-indigo-500 mr-1"></i> Link Jira List / Project / Filter URL <span class="text-rose-500">*</span></label>
+                            <input type="url" id="jiraUrlInput" placeholder="VD: https://your-domain.atlassian.net/jira/software/c/projects/KTFMLMC/issues" class="w-full h-12 bg-slate-50 border border-slate-300 text-slate-800 text-sm font-medium rounded-xl px-4 focus:ring-2 focus:ring-indigo-500 focus:bg-white outline-none transition shadow-sm">
+                        </div>
+
+                        <!-- Cấu hình Xác thực Jira API Token -->
+                        <div class="border border-indigo-100 bg-indigo-50/40 rounded-xl p-4 space-y-3">
+                            <div class="flex justify-between items-center cursor-pointer" onclick="document.getElementById('jiraAuthConfig').classList.toggle('hidden')">
+                                <span class="text-xs font-bold text-indigo-900 flex items-center gap-1.5">
+                                    <i class="fa-solid fa-key text-indigo-600"></i> Cấu hình tài khoản Jira API (Lưu tự động)
+                                </span>
+                                <i class="fa-solid fa-chevron-down text-indigo-400 text-xs"></i>
+                            </div>
+                            
+                            <div id="jiraAuthConfig" class="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2">
+                                <div>
+                                    <label class="block text-[11px] font-semibold text-slate-600 mb-1">Email tài khoản Jira:</label>
+                                    <input type="email" id="jiraEmailInput" oninput="saveJiraCredentials()" placeholder="VD: user@enotion.io" class="w-full h-9 bg-white border border-slate-300 text-slate-700 text-xs rounded-lg px-3 outline-none">
+                                </div>
+                                <div>
+                                    <label class="block text-[11px] font-semibold text-slate-600 mb-1">Jira API Token: <a href="https://id.atlassian.com/manage-profile/security/api-tokens" target="_blank" class="text-indigo-600 underline font-bold">(Tạo tại đây)</a></label>
+                                    <input type="password" id="jiraTokenInput" oninput="saveJiraCredentials()" placeholder="Nhập API Token..." class="w-full h-9 bg-white border border-slate-300 text-slate-700 text-xs rounded-lg px-3 outline-none">
+                                </div>
+                            </div>
+                        </div>
+
+                        <button type="button" id="btnFetchJira" onclick="fetchJiraDataFromUrl()" class="w-full h-12 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl shadow-md transition flex items-center justify-center gap-2 text-sm">
+                            <i class="fa-solid fa-cloud-arrow-down"></i> Tải Dữ Liệu Báo Cáo Từ Jira
+                        </button>
                     </div>
                 </section>
 
@@ -447,7 +456,7 @@
             </div>
             
             <div class="p-6">
-                <p class="text-xs text-slate-500 mb-4 font-medium">Hệ thống đã quét được các loại Tag dưới đây từ dữ liệu Ticket hiện tại. Hãy bỏ tích những Tag bạn KHÔNG MUỐN hiển thị trong Báo Cáo Daily.</p>
+                <p class="text-xs text-slate-500 mb-4 font-medium">Hệ thống đã quét được các loại Tag dưới đây từ Jira. Hãy bỏ tích những Tag bạn KHÔNG MUỐN hiển thị trong Báo Cáo Daily.</p>
                 
                 <div class="flex gap-2 mb-4 text-xs font-bold border-b border-slate-100 pb-3">
                     <button onclick="toggleAllTags(true)" class="text-indigo-600 hover:text-indigo-800 transition">Chọn tất cả</button>
@@ -455,9 +464,7 @@
                     <button onclick="toggleAllTags(false)" class="text-slate-500 hover:text-slate-700 transition">Bỏ chọn tất cả</button>
                 </div>
 
-                <div id="tagCheckboxContainer" class="flex flex-wrap gap-2 text-sm font-medium text-slate-700 max-h-[40vh] overflow-y-auto custom-scrollbar">
-                    <!-- Checkbox hoặc Thông báo rỗng được gen bằng JS -->
-                </div>
+                <div id="tagCheckboxContainer" class="flex flex-wrap gap-2 text-sm font-medium text-slate-700 max-h-[40vh] overflow-y-auto custom-scrollbar"></div>
             </div>
 
             <div class="px-6 py-4 border-t border-slate-100 bg-slate-50 flex justify-end gap-3">
@@ -482,9 +489,10 @@
     </div>
 
     <script>
-        const URL_REPORT_API = "https://script.google.com/a/macros/enotion.io/s/AKfycbzynUh65kMWVtwRdYdg8x35-6LViA_JwMPrWhEoMdDXFDP7tpcheilYrReQSIrQ6zAtIQ/exec";
-
-        // ================= CẤU HÌNH NGÀY ĐI TRÙNG KHÁNH =================
+        const JIRA_PROXY_API_URL = "https://script.google.com/macros/s/AKfycbyaOWgy-X1-4B1TOKJXAi9E4wrP5pMTZGW-R80m02lb5J7JYjLOS7WKoCYugfLy7a7v/exec";
+        const DEFAULT_JIRA_TOKEN = "ATATT3xFfGF0R_7KzjO3hXmMudetRKSnq2oyVg6tqRgZOnGDBEUfnuMFSE1jLlfJpBZ0KWPRrLiYwP-AZFpN-c1SlR4kcvNFDOM5h9KrOfsipBNoTWiarwzEsbXbbAKTHvLoZJkjoaUUIv_WmQ9zsMKYDt2LdNXs192b85D_qw4EAWd5zHMxpKk=FDD2A46D";
+        const URL_REPORT_API = "https://script.google.com/macros/s/AKfycbzynUh65kMWVtwRdYdg8x35-6LViA_JwMPrWhEoMdDXFDP7tpcheilYrReQSIrQ6zAtIQ/exec";
+        
         const TARGET_TRIP_DATE = "2026-11-01"; 
 
         function calculateMondaysLeft() {
@@ -497,16 +505,11 @@
 
             let current = new Date(today);
             while (current <= target) {
-                if (current.getDay() === 1) {
-                    mondaysCount++;
-                }
+                if (current.getDay() === 1) mondaysCount++;
                 current.setDate(current.getDate() + 1);
             }
             
-            const txtElements = document.querySelectorAll('.mondayCountText');
-            txtElements.forEach(el => {
-                el.innerText = mondaysCount;
-            });
+            document.querySelectorAll('.mondayCountText').forEach(el => el.innerText = mondaysCount);
         }
 
         let rawJiraData = [];
@@ -518,24 +521,6 @@
             'Highest': '#DC2626', 'High': '#F97316', 'Medium': '#F59E0B',
             'Low': '#3B82F6', 'Lowest': '#10B981', 'Unassigned': '#64748B'
         };
-
-        let loggedInUser = null;
-
-        function decodeJwtResponse(token) {
-            let base64Url = token.split('.')[1];
-            let base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
-            let jsonPayload = decodeURIComponent(atob(base64).split('').map(function(c) {
-                return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
-            }).join(''));
-            return JSON.parse(jsonPayload);
-        }
-
-        function handleCredentialResponse(response) {
-            const responsePayload = decodeJwtResponse(response.credential);
-            loggedInUser = { name: responsePayload.name, email: responsePayload.email, picture: responsePayload.picture };
-            localStorage.setItem('jira_google_user', JSON.stringify(loggedInUser));
-            updateAuthUI();
-        }
 
         function updateAuthUI() {
             const storedUser = localStorage.getItem('jira_google_user');
@@ -576,9 +561,131 @@
             return summary.replace(/\[.*?\]/g, '').trim();
         }
 
+        function saveJiraCredentials() {
+            const email = document.getElementById('jiraEmailInput').value.trim();
+            const token = document.getElementById('jiraTokenInput').value.trim();
+            localStorage.setItem('jira_user_email', email);
+            localStorage.setItem('jira_user_token', token);
+        }
+
+        function loadJiraCredentials() {
+            const savedEmail = localStorage.getItem('jira_user_email');
+            const savedToken = localStorage.getItem('jira_user_token');
+            let email = savedEmail || (loggedInUser ? loggedInUser.email : 'ky.ngo@enotion.io');
+            let token = savedToken || DEFAULT_JIRA_TOKEN;
+
+            if (document.getElementById('jiraEmailInput')) document.getElementById('jiraEmailInput').value = email;
+            if (document.getElementById('jiraTokenInput')) document.getElementById('jiraTokenInput').value = token;
+            
+            const savedJiraUrl = localStorage.getItem('jira_last_url') || '';
+            if (savedJiraUrl && document.getElementById('jiraUrlInput')) document.getElementById('jiraUrlInput').value = savedJiraUrl;
+        }
+
+        function changeJiraProject() {
+            document.getElementById('fileInfo').classList.add('hidden');
+            document.getElementById('reportDashboard').classList.add('hidden');
+            document.getElementById('jiraUrlSection').classList.remove('hidden');
+            rawJiraData = [];
+        }
+
+        function parseJiraUrl(urlStr) {
+            try {
+                const url = new URL(urlStr);
+                const domain = url.origin;
+                let jql = "";
+                let projectName = "";
+
+                if (url.searchParams.has('jql')) {
+                    jql = url.searchParams.get('jql');
+                    const projMatch = jql.match(/project\s*=\s*["']?([a-zA-Z0-9_]+)["']?/i);
+                    if (projMatch && projMatch[1]) projectName = projMatch[1];
+                } else {
+                    const projectMatch = url.pathname.match(/\/projects\/([^\/]+)/i);
+                    if (projectMatch && projectMatch[1]) {
+                        projectName = projectMatch[1];
+                        jql = `project = "${projectName}" ORDER BY created DESC`;
+                    }
+                }
+                return { domain, jql, projectName: projectName || "Jira Filter" };
+            } catch (e) { return null; }
+        }
+
+        async function fetchJiraDataFromUrl() {
+            const rawUrl = document.getElementById('jiraUrlInput').value.trim();
+            if (!rawUrl) {
+                showCustomAlert("Cảnh báo", "Vui lòng dán đường link Jira của dự án!", true);
+                return;
+            }
+
+            const parsed = parseJiraUrl(rawUrl);
+            if (!parsed || !parsed.domain) {
+                showCustomAlert("Lỗi Link Jira", "Đường link Jira không đúng định dạng. Vui lòng kiểm tra lại!", true);
+                return;
+            }
+
+            let email = document.getElementById('jiraEmailInput').value.trim();
+            let token = document.getElementById('jiraTokenInput').value.trim();
+
+            if (!email) email = loggedInUser ? loggedInUser.email : 'ky.ngo@enotion.io';
+            if (!token) token = DEFAULT_JIRA_TOKEN;
+
+            const btn = document.getElementById('btnFetchJira');
+            const origBtnHtml = btn.innerHTML;
+
+            try {
+                btn.disabled = true;
+                btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> Đang tải dữ liệu từ Jira...`;
+
+                localStorage.setItem('jira_last_url', rawUrl);
+                saveJiraCredentials();
+
+                const proxyFetchUrl = `${JIRA_PROXY_API_URL}?domain=${encodeURIComponent(parsed.domain)}&jql=${encodeURIComponent(parsed.jql)}&email=${encodeURIComponent(email)}&token=${encodeURIComponent(token)}`;
+                const response = await fetch(proxyFetchUrl);
+                
+                if (!response.ok) throw new Error(`Mã lỗi Proxy Server: ${response.status}`);
+                const json = await response.json();
+
+                if (json.error) throw new Error(json.error);
+                const issues = json.issues || [];
+
+                if (issues.length === 0) {
+                    showCustomAlert("Thông báo", "Không tìm thấy ticket nào từ đường link Jira này!", true);
+                    return;
+                }
+
+                rawJiraData = issues.map(item => {
+                    const fields = item.fields || {};
+                    return {
+                        "Issue key": item.key || "",
+                        "Summary": fields.summary || "",
+                        "Priority": fields.priority ? fields.priority.name : "Unassigned",
+                        "Status": fields.status ? fields.status.name : "N/A",
+                        "Assignee": fields.assignee ? fields.assignee.displayName : "Unassigned"
+                    };
+                });
+
+                document.getElementById('jiraProjectName').innerText = parsed.projectName || "Jira Filter";
+                document.getElementById('fileInfo').classList.remove('hidden');
+                document.getElementById('jiraUrlSection').classList.add('hidden');
+                document.getElementById('reportDashboard').classList.remove('hidden');
+
+                buildDynamicStatusFilters();
+                processData();
+
+                showCustomAlert("Thành công!", `Đã tải thành công ${rawJiraData.length} ticket từ Jira!`);
+            } catch (err) {
+                console.error("Lỗi Jira Fetch:", err);
+                showCustomAlert("Lỗi tải dữ liệu Jira", err.message || "Không thể kết nối Jira!", true);
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = origBtnHtml;
+            }
+        }
+
         document.addEventListener('DOMContentLoaded', () => {
             updateAuthUI();
             calculateMondaysLeft();
+            loadJiraCredentials();
             
             const savedScope = localStorage.getItem('jira_scope_testing');
             if (savedScope && document.getElementById('scopeOfTestingInput')) document.getElementById('scopeOfTestingInput').value = savedScope;
@@ -595,23 +702,6 @@
                 dateInput.value = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
             }
 
-            const dropZone = document.getElementById('dropZone');
-            const excelFileInput = document.getElementById('excelFileInput');
-
-            if (dropZone && excelFileInput) {
-                dropZone.addEventListener('click', () => excelFileInput.click());
-                dropZone.addEventListener('dragover', (e) => { e.preventDefault(); dropZone.classList.add('border-indigo-600', 'bg-indigo-100/50'); });
-                dropZone.addEventListener('dragleave', () => { dropZone.classList.remove('border-indigo-600', 'bg-indigo-100/50'); });
-                dropZone.addEventListener('drop', (e) => {
-                    e.preventDefault(); dropZone.classList.remove('border-indigo-600', 'bg-indigo-100/50');
-                    if (e.dataTransfer.files.length > 0) handleFile(e.dataTransfer.files[0]);
-                });
-
-                excelFileInput.addEventListener('change', (e) => {
-                    if (e.target.files.length > 0) handleFile(e.target.files[0]);
-                });
-            }
-            
             document.addEventListener('click', function(event) {
                 const userProfileBtn = document.getElementById('userProfileBtn');
                 const userDropdown = document.getElementById('userDropdown');
@@ -620,39 +710,6 @@
                 }
             });
         });
-
-        function changeJiraFile() {
-            document.getElementById('excelFileInput').value = '';
-            document.getElementById('fileName').innerText = '';
-            document.getElementById('fileInfo').classList.add('hidden');
-            document.getElementById('reportDashboard').classList.add('hidden');
-            document.getElementById('uploadSection').classList.remove('hidden');
-            rawJiraData = [];
-        }
-
-        function handleFile(file) {
-            document.getElementById('fileName').innerText = file.name;
-            document.getElementById('fileInfo').classList.remove('hidden');
-            document.getElementById('uploadSection').classList.add('hidden');
-
-            const reader = new FileReader();
-            reader.onload = function (e) {
-                const data = new Uint8Array(e.target.result);
-                const workbook = XLSX.read(data, { type: 'array' });
-                const firstSheetName = workbook.SheetNames[0];
-                const worksheet = workbook.Sheets[firstSheetName];
-                rawJiraData = XLSX.utils.sheet_to_json(worksheet, { defval: "" });
-
-                if (rawJiraData.length > 0) {
-                    document.getElementById('reportDashboard').classList.remove('hidden');
-                    buildDynamicStatusFilters();
-                    processData();
-                } else {
-                    showCustomAlert('Lỗi File', 'File không chứa dữ liệu hợp lệ!', true);
-                }
-            };
-            reader.readAsArrayBuffer(file);
-        }
 
         function getColumnValue(row, possibleNames) {
             const keys = Object.keys(row);
@@ -900,7 +957,6 @@
             });
         }
 
-        // ================= HÀM XỬ LÝ CHỌN TAG CHO REPORT =================
         function openTagSelectionModal() {
             if (rawJiraData.length === 0) {
                 showCustomAlert("Cảnh báo", "Vui lòng tải lên file Jira trước khi Copy Báo cáo!", true);
@@ -908,11 +964,7 @@
             }
 
             const tagMode = document.getElementById('tagModeSelect').value;
-            
-            if (tagMode === 'primary') {
-                confirmAndCopyReport(true);
-                return;
-            }
+            if (tagMode === 'primary') { confirmAndCopyReport(true); return; }
 
             const selectedStatusSet = getSelectedStatuses();
             const foundTags = new Set();
@@ -923,12 +975,9 @@
                 
                 const summary = getColumnValue(row, ['Summary', 'Tóm tắt', 'Title']);
                 const tags = parseTagsFromSummary(summary);
-                
                 const selectedTags = (tagMode === 'primary') ? [tags[0]] : tags;
                 
-                selectedTags.forEach(t => {
-                    if (t && t !== 'Không có Tag') foundTags.add(t);
-                });
+                selectedTags.forEach(t => { if (t && t !== 'Không có Tag') foundTags.add(t); });
             });
 
             const container = document.getElementById('tagCheckboxContainer');
@@ -956,15 +1005,10 @@
             document.getElementById('tagSelectionModal').classList.remove('hidden');
         }
 
-        function closeTagModal() {
-            document.getElementById('tagSelectionModal').classList.add('hidden');
-        }
+        function closeTagModal() { document.getElementById('tagSelectionModal').classList.add('hidden'); }
 
-        function toggleAllTags(checked) {
-            document.querySelectorAll('.tag-select-cb').forEach(cb => cb.checked = checked);
-        }
+        function toggleAllTags(checked) { document.querySelectorAll('.tag-select-cb').forEach(cb => cb.checked = checked); }
 
-        // --- XỬ LÝ DỮ LIỆU TIẾN ĐỘ GOOGLE SHEET MATRIX ---
         function parsePctNum(val) {
             let s = String(val || '').trim();
             if (s.includes('<<')) s = s.split('<<')[0].trim();
@@ -980,6 +1024,20 @@
             if (s.includes('<<')) s = s.split('<<')[0].trim();
             const num = parseFloat(s);
             return !isNaN(num) ? num === 0 : (s === '0' || s === '0.0');
+        }
+
+        // HÀM MỚI: Khắc phục lỗi formatPctDisplayFixed is not defined
+        function formatPctDisplayFixed(val) {
+            if (val === null || val === undefined || val === '') return '0%';
+            let s = String(val).trim();
+            if (s.includes('<<')) s = s.split('<<')[0].trim();
+            if (s.endsWith('%')) return s;
+            let num = parseFloat(s);
+            if (!isNaN(num)) {
+                if (num > 0 && num <= 1) return Math.round(num * 100) + '%';
+                return Math.round(num) + '%';
+            }
+            return s;
         }
 
         function parseItemName(name) {
