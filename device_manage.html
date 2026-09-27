@@ -7,11 +7,11 @@
     <meta http-equiv="Pragma" content="no-cache">
     <meta http-equiv="Expires" content="0">
     <title>QC Portal - Mượn Thiết Bị</title>
-
+    
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-
+    
     <!-- FIREBASE SDK -->
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
@@ -21,7 +21,7 @@
     <meta name="theme-color" content="#312e81">
     <script src="https://accounts.google.com/gsi/client" async defer></script>
 
-    <!-- Script PWA Auto Update -->
+    <!-- Script Kiểm tra & Tự động Update bản mới (PWA) -->
     <script>
       if ('serviceWorker' in navigator) {
         window.addEventListener('load', () => {
@@ -31,6 +31,7 @@
               const installingWorker = reg.installing;
               installingWorker.onstatechange = () => {
                 if (installingWorker.state === 'installed' && navigator.serviceWorker.controller) {
+                  console.log('Có phiên bản code mới! Đang tự động tải lại...');
                   window.location.reload();
                 }
               };
@@ -40,7 +41,7 @@
       }
     </script>
 
-    <!-- CSS Dòng thông báo chạy liên tục -->
+    <!-- CSS Dòng thông báo chạy liên tục chuẩn mượt -->
     <style>
         .travel-marquee {
             width: 100%;
@@ -49,12 +50,14 @@
             mask-image: linear-gradient(to right, transparent, black 8%, black 92%, transparent);
             -webkit-mask-image: linear-gradient(to right, transparent, black 8%, black 92%, transparent);
         }
+
         .travel-marquee-track {
             display: flex;
             width: max-content;
             animation: travel-marquee-scroll 18s linear infinite;
             will-change: transform;
         }
+
         .travel-marquee-group {
             display: flex;
             flex: 0 0 auto;
@@ -62,6 +65,7 @@
             padding-right: 2.5rem;
             gap: 2.5rem;
         }
+
         .travel-marquee-message {
             display: inline-flex;
             align-items: center;
@@ -72,66 +76,105 @@
             font-weight: 800;
             letter-spacing: 0.2px;
             line-height: 1.5;
+            
             background: linear-gradient(90deg, #ea580c 0%, #d97706 50%, #ca8a04 100%);
             -webkit-background-clip: text;
             background-clip: text;
             color: transparent;
+
             animation: travel-blink 1.2s infinite ease-in-out;
         }
-        .travel-marquee-message i { color: #ea580c; font-size: 15.5px; }
+
+        .travel-marquee-message i {
+            color: #ea580c;
+            font-size: 15.5px;
+        }
+
         .travel-marquee-count {
-            font-size: 17px; font-weight: 900;
+            font-size: 17px;
+            font-weight: 900;
             background: linear-gradient(90deg, #c2410c 0%, #ea580c 100%);
-            -webkit-background-clip: text; background-clip: text; color: transparent;
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
             padding: 0 2px;
         }
-        @keyframes travel-marquee-scroll { to { transform: translateX(-50%); } }
+
+        @keyframes travel-marquee-scroll {
+            to { transform: translateX(-50%); }
+        }
+
         @keyframes travel-blink {
-            0%, 100% { opacity: 1; filter: drop-shadow(0 0 1px rgba(234, 88, 12, 0.4)); }
-            50% { opacity: 0.45; filter: drop-shadow(0 0 5px rgba(234, 88, 12, 0.7)); }
+            0%, 100% {
+                opacity: 1;
+                filter: drop-shadow(0 0 1px rgba(234, 88, 12, 0.4));
+            }
+            50% {
+                opacity: 0.45;
+                filter: drop-shadow(0 0 5px rgba(234, 88, 12, 0.7));
+            }
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+            .travel-marquee-track {
+                animation: none;
+                transform: none;
+            }
+
+            .travel-marquee-group[aria-hidden="true"] {
+                display: none;
+            }
+        }
+
+        .soft-text {
+            letter-spacing: 0.1px;
         }
     </style>
 </head>
 <body class="bg-slate-50 text-slate-800 font-sans h-screen w-full flex flex-col md:flex-row overflow-hidden">
 
-    <!-- ================= SIDEBAR MENU (BACKGROUND TRÙNG KHÁNH) ================= -->
-    <aside class="w-full md:w-64 text-white flex flex-col flex-shrink-0 shadow-2xl z-20 transition-all bg-cover bg-center bg-no-repeat relative"
-           style="background-image: linear-gradient(to bottom, rgba(15, 23, 42, 0.65), rgba(30, 27, 75, 0.75)), url('./trungkhanh.jpg');">
-        
-        <div class="h-auto md:h-[72px] flex items-center justify-between px-6 py-4 md:py-0 border-b border-white/10 bg-black/20 backdrop-blur-md">
+    <!-- ================= SIDEBAR MENU ================= -->
+    <aside class="w-full md:w-64 bg-indigo-900 text-white flex flex-col flex-shrink-0 shadow-xl z-20 transition-all">
+        <div class="h-auto md:h-[72px] flex items-center justify-between px-6 py-4 md:py-0 border-b border-indigo-800 bg-[#28256b]">
             <div class="flex items-center gap-3">
-                <i class="fa-solid fa-square-poll-vertical text-indigo-300 text-[28px]"></i>
+                <i class="fa-solid fa-square-poll-vertical text-indigo-400 text-[28px]"></i>
                 <div>
-                    <h1 class="text-xl font-bold leading-tight drop-shadow-md">QC Portal</h1>
-                    <p class="text-indigo-200 text-[11px] font-medium tracking-wide">Report & Device Tool</p>
+                    <h1 class="text-xl font-bold leading-tight">QC Portal</h1>
+                    <p class="text-indigo-300 text-[11px] font-medium tracking-wide">Report & Device Tool</p>
                 </div>
             </div>
         </div>
-
-        <nav class="flex md:flex-col gap-2.5 p-4 overflow-x-auto md:overflow-y-auto flex-1 bg-transparent custom-scrollbar">
-            <a href="index" class="whitespace-nowrap flex items-center gap-3 px-4 py-3.5 text-sm font-bold rounded-xl transition border border-white/15 bg-white/10 hover:bg-white/25 hover:border-white/40 text-white backdrop-blur-md shadow-sm">
-                <i class="fa-solid fa-chart-line w-5 text-center text-lg"></i> <span>Báo Cáo Daily</span>
+        
+        <nav class="flex md:flex-col gap-2 p-4 overflow-x-auto md:overflow-y-auto flex-1 bg-indigo-800 md:bg-transparent custom-scrollbar">
+            <a href="index" class="whitespace-nowrap flex items-center gap-3 px-4 py-3.5 text-sm font-bold rounded-xl transition text-indigo-200 hover:bg-white/10 hover:text-white">
+                <i class="fa-solid fa-chart-line w-5 text-center text-lg"></i> 
+                <span>Báo Cáo Daily</span>
             </a>
-            <a href="device_manage" class="whitespace-nowrap flex items-center gap-3 px-4 py-3.5 text-sm font-bold rounded-xl transition border border-indigo-300/50 bg-indigo-600/70 hover:bg-indigo-500/70 text-white backdrop-blur-md shadow-lg">
-                <i class="fa-solid fa-mobile-screen-button w-5 text-center text-lg"></i> <span>Mượn Device</span>
+            <a href="device_manage" class="whitespace-nowrap flex items-center gap-3 px-4 py-3.5 text-sm font-bold rounded-xl transition bg-indigo-600 text-white shadow-md">
+                <i class="fa-solid fa-mobile-screen-button w-5 text-center text-lg"></i> 
+                <span>Mượn Device</span>
             </a>
-            <a href="device_info" class="whitespace-nowrap flex items-center gap-3 px-4 py-3.5 text-sm font-bold rounded-xl transition border border-white/15 bg-white/10 hover:bg-white/25 hover:border-white/40 text-white backdrop-blur-md shadow-sm">
-                <i class="fa-solid fa-circle-info w-5 text-center text-lg"></i> <span>Thông tin Device</span>
+            <a href="device_info" class="whitespace-nowrap flex items-center gap-3 px-4 py-3.5 text-sm font-bold rounded-xl transition text-indigo-200 hover:bg-white/10 hover:text-white">
+                <i class="fa-solid fa-circle-info w-5 text-center text-lg"></i> 
+                <span>Thông tin Device</span>
             </a>
-            <a href="log_off" class="whitespace-nowrap flex items-center gap-3 px-4 py-3.5 text-sm font-bold rounded-xl transition border border-white/15 bg-white/10 hover:bg-white/25 hover:border-white/40 text-white backdrop-blur-md shadow-sm">
-                <i class="fa-solid fa-calendar-minus w-5 text-center text-lg"></i> <span>Xin OFF / WFH</span>
+            <a href="log_off" class="whitespace-nowrap flex items-center gap-3 px-4 py-3.5 text-sm font-bold rounded-xl transition text-indigo-200 hover:bg-white/10 hover:text-white">
+                <i class="fa-solid fa-calendar-minus w-5 text-center text-lg"></i> 
+                <span>Xin Off</span>
             </a>
         </nav>
     </aside>
 
     <!-- ================= MAIN CONTENT ================= -->
     <div class="flex-1 flex flex-col h-full overflow-hidden bg-slate-50 relative">
+        <!-- HEADER MỚI VỚI BỐ CỤC 3 PHẦN -->
         <header class="bg-white text-slate-800 shadow-sm border-b border-slate-200 z-10 p-3 px-4 md:px-6 flex justify-between items-center min-h-[72px]">
+            <!-- Phần bên trái: Tiêu đề -->
             <div class="flex-1 shrink-0">
                 <h2 class="text-xl font-bold text-slate-800 hidden sm:block">Mượn/Trả Thiết Bị</h2>
             </div>
-
-            <!-- Thông báo đếm ngược -->
+            
+            <!-- Phần ở giữa: Thông báo đếm ngược chạy liên tục -->
             <div class="hidden lg:flex flex-1 min-w-0 justify-center items-center">
                 <div class="w-full max-w-[460px] px-4 py-2 rounded-full bg-slate-50/90 border border-slate-200 shadow-sm cursor-default">
                     <div class="travel-marquee">
@@ -161,8 +204,8 @@
                 </div>
             </div>
 
+            <!-- Phần bên phải: Auth User -->
             <div class="flex-1 flex justify-end items-center gap-4">
-                <!-- Auth User -->
                 <div id="authSection" class="relative flex items-center min-h-[40px]">
                     <div id="g_id_onload" data-client_id="149310433677-uvpoilv41na98qdjlj58cpmfl8u9946e.apps.googleusercontent.com" data-callback="handleCredentialResponse" data-auto_prompt="false"></div>
                     <div id="loginOption" class="relative cursor-pointer flex items-center gap-2.5 px-3 py-1.5 bg-slate-100 hover:bg-slate-200 rounded-xl border border-slate-200 transition overflow-hidden">
@@ -186,13 +229,10 @@
             </div>
         </header>
 
-        <!-- BACKGROUND TRÙNG KHÁNH MAIN -->
-        <main class="flex-1 overflow-y-auto p-4 md:p-6 bg-cover bg-center bg-no-repeat bg-fixed relative" 
-              style="background-image: linear-gradient(to bottom, rgba(248, 250, 252, 0.85), rgba(248, 250, 252, 0.95)), url('./bg-chongqing.jpg');">
-            
+        <main class="flex-1 overflow-y-auto p-4 md:p-6 bg-slate-50">
             <div class="w-full mx-auto 2xl:max-w-[1600px] space-y-6">
                 <!-- Form Mượn Device -->
-                <section class="bg-white/90 backdrop-blur-md rounded-xl shadow-sm border border-slate-200 p-6 space-y-5 w-full">
+                <section class="bg-white rounded-xl shadow-sm border border-slate-200 p-6 space-y-5 w-full">
                     <div class="flex items-center justify-between border-b border-slate-100 pb-3">
                         <div class="flex items-center gap-2">
                             <i class="fa-solid fa-hand-holding-hand text-indigo-600 text-xl"></i>
@@ -250,39 +290,28 @@
                 </section>
 
                 <!-- Lưới Danh Sách Thiết Bị Mượn Trong Ngày -->
-                <section class="bg-white/90 backdrop-blur-md rounded-xl shadow-sm border border-slate-200 overflow-hidden w-full">
-                    <div class="p-4 md:p-5 border-b border-slate-200 flex flex-col justify-between gap-4 bg-slate-50/80">
+                <section class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden w-full">
+                    <div class="p-4 md:p-5 border-b border-slate-200 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-slate-50/80">
                         <div class="flex items-center gap-2">
                             <i class="fa-solid fa-list-check text-indigo-600 text-lg"></i>
                             <h3 class="text-base font-bold text-slate-800">Nhật Ký Mượn Trả Thiết Bị</h3>
                             <span id="logCountBadge" class="text-xs bg-indigo-100 text-indigo-700 font-bold px-2.5 py-0.5 rounded-full ml-1">0 lượt</span>
                         </div>
-                        
-                        <!-- TOOLBAR BỘ LỌC THÔNG MINH -->
-                        <div class="flex flex-col sm:flex-row justify-between items-center gap-3 bg-white p-3 rounded-xl border border-slate-200 shadow-sm w-full">
-                            <!-- Ô tìm kiếm từ khóa -->
-                            <div class="relative w-full sm:w-96">
-                                <i class="fa-solid fa-magnifying-glass absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 text-xs"></i>
-                                <input type="text" id="logSearchInput" oninput="handleLogSearch()" placeholder="Tìm Tên, Thiết bị, Thời gian..." class="w-full pl-9 pr-4 py-2 bg-slate-50 border border-slate-300 text-slate-700 text-xs font-medium rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none transition">
-                            </div>
-
-                            <!-- Cụm nút thao tác -->
-                            <div class="flex flex-wrap items-center gap-2 w-full sm:w-auto">
-                                <button onclick="exportDeviceLogsToExcel()" class="flex-1 sm:flex-none inline-flex items-center justify-center gap-1.5 px-3 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-lg shadow-sm transition">
-                                    <i class="fa-solid fa-file-excel"></i> <span class="hidden sm:inline">Xuất Excel</span>
-                                </button>
-                                <button id="btnFilterUnreturned" onclick="toggleUnreturnedFilter()" class="flex-1 sm:flex-none inline-flex items-center justify-center gap-1.5 px-3 py-2 bg-white border border-slate-300 hover:border-amber-400 text-slate-700 text-xs font-bold rounded-lg shadow-sm transition">
-                                    <i class="fa-solid fa-filter text-amber-500"></i> <span id="filterUnreturnedText">Chỉ xem Chưa Trả</span>
-                                </button>
-                                <button onclick="loadDeviceData(true)" class="flex-1 sm:flex-none inline-flex items-center justify-center gap-1.5 px-3 py-2 bg-indigo-50 hover:bg-indigo-100 border border-indigo-200 text-indigo-700 text-xs font-bold rounded-lg transition shadow-sm" title="Làm mới dữ liệu nhật ký">
-                                    <i class="fa-solid fa-rotate"></i> <span class="sm:hidden">Làm Mới</span>
-                                </button>
-                            </div>
+                        <div class="flex flex-wrap items-center gap-2 w-full sm:w-auto">
+                            <button onclick="exportDeviceLogsToExcel()" class="flex-1 sm:flex-none inline-flex items-center justify-center gap-1.5 px-3 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-lg shadow-sm transition">
+                                <i class="fa-solid fa-file-excel"></i> <span>Xuất Excel</span>
+                            </button>
+                            <button id="btnFilterUnreturned" onclick="toggleUnreturnedFilter()" class="flex-1 sm:flex-none inline-flex items-center justify-center gap-1.5 px-3 py-2 bg-white border border-slate-300 hover:border-amber-400 text-slate-700 text-xs font-bold rounded-lg shadow-sm transition">
+                                <i class="fa-solid fa-filter text-amber-500"></i> <span id="filterUnreturnedText">Chỉ xem Chưa Trả</span>
+                            </button>
+                            <button onclick="loadDeviceData(true)" class="flex-1 sm:flex-none inline-flex items-center justify-center gap-1.5 px-3 py-2 bg-indigo-50 hover:bg-indigo-100 border border-indigo-200 text-indigo-700 text-xs font-bold rounded-lg transition shadow-sm" title="Làm mới dữ liệu nhật ký">
+                                <i class="fa-solid fa-rotate"></i> Làm mới List
+                            </button>
                         </div>
                     </div>
 
                     <div class="overflow-x-auto min-h-[400px]">
-                        <table class="w-full text-xs text-left text-slate-600 bg-white">
+                        <table class="w-full text-xs text-left text-slate-600">
                             <thead class="text-slate-700 uppercase bg-slate-100 sticky top-0 border-b border-slate-200 font-bold">
                                 <tr>
                                     <th class="px-5 py-3.5">Thời Gian Mượn</th>
@@ -337,7 +366,7 @@
     </div>
 
     <!-- Modal Alert -->
-    <div id="customAlertModal" class="hidden fixed inset-0 z-[70] flex items-center justify-center bg-slate-900/60 backdrop-blur-sm">
+    <div id="customAlertModal" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-sm">
         <div class="bg-white rounded-2xl shadow-2xl w-full max-w-sm overflow-hidden p-8 text-center space-y-4">
             <div id="customAlertIcon" class="w-20 h-20 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center mx-auto text-4xl shadow-inner">
                 <i class="fa-solid fa-circle-check"></i>
@@ -360,24 +389,29 @@
             appId: "1:747189096859:web:abcdef..."
         };
 
+        // ================= CẤU HÌNH NGÀY ĐI TRÙNG KHÁNH =================
         const TARGET_TRIP_DATE = "2026-11-01"; 
 
         function calculateMondaysLeft() {
             let today = new Date();
             let target = new Date(TARGET_TRIP_DATE);
             let mondaysCount = 0;
-
+            
             today.setHours(0,0,0,0);
             target.setHours(0,0,0,0);
 
             let current = new Date(today);
             while (current <= target) {
-                if (current.getDay() === 1) mondaysCount++;
+                if (current.getDay() === 1) {
+                    mondaysCount++;
+                }
                 current.setDate(current.getDate() + 1);
             }
-
+            
             const txtElements = document.querySelectorAll('.mondayCountText');
-            txtElements.forEach(el => { el.innerText = mondaysCount; });
+            txtElements.forEach(el => {
+                el.innerText = mondaysCount;
+            });
         }
 
         function sendDiscordNotification(embed) {
@@ -400,17 +434,11 @@
         let currentAvailableDevices = [];
         let deviceLogsData = [];
         let isOnlyUnreturned = false;
-        let currentSearchKeyword = "";
         let currentDevicePage = 1;
         const ITEMS_PER_PAGE = 10;
         let isListenersInitialized = false;
         let initialLoadCounter = 0;
         let loggedInUser = null;
-
-        function escapeSingleQuotes(str) {
-            if (!str) return '';
-            return String(str).replace(/'/g, "\\'");
-        }
 
         function decodeJwtResponse(token) {
             let base64Url = token.split('.')[1];
@@ -435,7 +463,7 @@
             const borrowerInput = document.getElementById('borrowerNameInput');
             const btnSubmitBorrow = document.getElementById('btnSubmitBorrow');
             const userDropdown = document.getElementById('userDropdown');
-
+            
             if (storedUser) {
                 loggedInUser = JSON.parse(storedUser);
                 if(loginOption) loginOption.classList.add('hidden');
@@ -466,7 +494,7 @@
         document.addEventListener('DOMContentLoaded', () => {
             updateAuthUI();
             calculateMondaysLeft();
-
+            
             document.addEventListener('click', function(event) {
                 const userProfileBtn = document.getElementById('userProfileBtn');
                 const userDropdown = document.getElementById('userDropdown');
@@ -474,7 +502,7 @@
                     userDropdown.classList.add('hidden');
                 }
             });
-
+            
             document.addEventListener('click', function(event) {
                 const searchInput = document.getElementById('deviceSearchInput');
                 const dropdownContainer = document.getElementById('deviceDropdownContainer');
@@ -493,7 +521,7 @@
                 return;
             }
             if (isManualRefresh) {
-                showCustomAlert('Real-time Sync ⚡', 'Hệ thống đang tự động đồng bộ dữ liệu theo thời gian thực!');
+                showCustomAlert('Real-time Sync ⚡', 'Hệ thống đang tự động đồng bộ dữ liệu theo thời gian thực! Bạn không cần bấm làm mới thủ công nữa.');
                 return;
             }
             if (isListenersInitialized) return;
@@ -594,13 +622,6 @@
 
         function closeDeviceDropdown() { document.getElementById('deviceDropdownContainer').classList.add('hidden'); }
 
-        // ================= XỬ LÝ LỌC NHẬT KÝ ĐA ĐIỀU KIỆN =================
-        function handleLogSearch() {
-            currentSearchKeyword = document.getElementById('logSearchInput').value.toLowerCase().trim();
-            currentDevicePage = 1;
-            renderPaginatedDeviceLogs();
-        }
-
         function toggleUnreturnedFilter() {
             isOnlyUnreturned = !isOnlyUnreturned;
             const btn = document.getElementById('btnFilterUnreturned');
@@ -612,39 +633,26 @@
                 btn.className = "flex-1 sm:flex-none inline-flex items-center justify-center gap-1.5 px-3 py-2 bg-white border border-slate-300 hover:border-amber-400 text-slate-700 text-xs font-bold rounded-lg shadow-sm transition";
                 textSpan.innerText = "Chỉ xem Chưa Trả";
             }
-            currentDevicePage = 1; 
-            renderPaginatedDeviceLogs();
+            currentDevicePage = 1; renderPaginatedDeviceLogs();
         }
 
         function renderPaginatedDeviceLogs() {
             const tbody = document.getElementById('deviceLogTableBody');
-            if (!tbody) return;
             tbody.innerHTML = '';
+            let filteredLogs = deviceLogsData;
+            if (isOnlyUnreturned) filteredLogs = deviceLogsData.filter(r => !String(r.trangThai || '').toLowerCase().includes('đã trả'));
             
-            let filteredLogs = deviceLogsData || [];
-            
-            if (isOnlyUnreturned) {
-                filteredLogs = filteredLogs.filter(r => !String(r.trangThai || '').toLowerCase().includes('đã trả'));
-            }
-            
-            if (currentSearchKeyword !== "") {
-                filteredLogs = filteredLogs.filter(r => {
-                    const rowText = `${r.thoiGian \vert{}\vert{} ''}${r.nguoiMuon || ''} ${r.thietBi \vert{}\vert{} ''}${r.trangThai || ''}`.toLowerCase();
-                    return rowText.includes(currentSearchKeyword);
-                });
-            }
-
             const totalLogs = filteredLogs.length;
-            if (document.getElementById('logCountBadge')) document.getElementById('logCountBadge').innerText = `${totalLogs} lượt`;
-            if (document.getElementById('totalLogsText')) document.getElementById('totalLogsText').innerText = totalLogs;
+            document.getElementById('logCountBadge').innerText = `${totalLogs} lượt`;
+            document.getElementById('totalLogsText').innerText = totalLogs;
 
             if (totalLogs === 0) {
-                tbody.innerHTML = '<tr><td colspan="6" class="text-center py-10 text-slate-400 font-medium text-sm">Không tìm thấy nhật ký phù hợp với bộ lọc!</td></tr>';
-                if (document.getElementById('pageRangeText')) document.getElementById('pageRangeText').innerText = '0 - 0';
-                if (document.getElementById('currentPageText')) document.getElementById('currentPageText').innerText = '1';
-                if (document.getElementById('totalPagesText')) document.getElementById('totalPagesText').innerText = '1';
-                if (document.getElementById('btnPrevPage')) document.getElementById('btnPrevPage').disabled = true;
-                if (document.getElementById('btnNextPage')) document.getElementById('btnNextPage').disabled = true;
+                tbody.innerHTML = '<tr><td colspan="6" class="text-center py-10 text-slate-400 font-medium text-sm">Không có nhật ký mượn thiết bị nào!</td></tr>';
+                document.getElementById('pageRangeText').innerText = '0 - 0';
+                document.getElementById('currentPageText').innerText = '1';
+                document.getElementById('totalPagesText').innerText = '1';
+                document.getElementById('btnPrevPage').disabled = true;
+                document.getElementById('btnNextPage').disabled = true;
                 return;
             }
 
@@ -662,7 +670,7 @@
                 const isReturned = String(r.trangThai || '').toLowerCase().includes('đã trả');
                 const currentUserName = loggedInUser ? loggedInUser.name : '';
                 const isOwner = (currentUserName === r.nguoiMuon) || (currentUserName === r.nguoiThaoTac);
-
+                
                 let statusBadge = `<span class="bg-amber-100 text-amber-800 px-2.5 py-1 rounded-md text-[11px] font-bold shadow-sm">Đang Mượn</span>`;
                 let actionButton = '';
 
@@ -671,10 +679,7 @@
                     actionButton = `<span class="text-slate-400 text-[11px] italic font-medium"><i class="fa-solid fa-check mr-1"></i>Hoàn tất</span>`;
                 } else {
                     if (isOwner) {
-                        const safeId = escapeSingleQuotes(r.id);
-                        const safeDevice = escapeSingleQuotes(r.thietBi);
-                        const safeBorrower = escapeSingleQuotes(r.nguoiMuon);
-                        actionButton = `<button onclick="submitReturnDevice('${safeId}', '${safeDevice}', '${safeBorrower}')" class="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white text-[11px] font-bold rounded-md shadow-sm transition inline-flex items-center gap-1.5"><i class="fa-solid fa-rotate-left"></i> Trả Device</button>`;
+                        actionButton = `<button onclick="submitReturnDevice('${r.id}', '${r.thietBi.replace(/'/g, "\\'")}', '${r.nguoiMuon.replace(/'/g, "\\'")}')" class="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white text-[11px] font-bold rounded-md shadow-sm transition inline-flex items-center gap-1.5"><i class="fa-solid fa-rotate-left"></i> Trả Device</button>`;
                     } else {
                         actionButton = `<button disabled class="px-3 py-1.5 bg-slate-200 text-slate-400 text-[11px] font-bold rounded-md shadow-sm inline-flex items-center gap-1.5 cursor-not-allowed" title="Chỉ tài khoản mượn mới được phép trả thiết bị"><i class="fa-solid fa-lock"></i> Trả Device</button>`;
                     }
@@ -682,7 +687,7 @@
                 tr.innerHTML = `
                     <td class="px-5 py-3.5 font-mono text-indigo-600 font-bold whitespace-nowrap">${r.thoiGian || ''}</td>
                     <td class="px-5 py-3.5 font-bold text-slate-800 whitespace-nowrap">${r.nguoiMuon || ''}</td>
-                    <td class="px-5 py-3.5 text-emerald-700 font-bold max-w-xs truncate" title="${r.thietBi \vert{}\vert{} ''}">${r.thietBi || ''}</td>
+                    <td class="px-5 py-3.5 text-emerald-700 font-bold max-w-xs truncate" title="${r.thietBi}">${r.thietBi || ''}</td>
                     <td class="px-5 py-3.5 whitespace-nowrap">${statusBadge}</td>
                     <td class="px-5 py-3.5 text-slate-500 font-mono text-[11px] font-bold whitespace-nowrap">${r.gioTra || ''}</td>
                     <td class="px-5 py-3.5 whitespace-nowrap text-right">${actionButton}</td>
@@ -690,11 +695,11 @@
                 tbody.appendChild(tr);
             });
 
-            if (document.getElementById('pageRangeText')) document.getElementById('pageRangeText').innerText = `${startIndex + 1} -${endIndex}`;
-            if (document.getElementById('currentPageText')) document.getElementById('currentPageText').innerText = currentDevicePage;
-            if (document.getElementById('totalPagesText')) document.getElementById('totalPagesText').innerText = totalPages;
-            if (document.getElementById('btnPrevPage')) document.getElementById('btnPrevPage').disabled = (currentDevicePage === 1);
-            if (document.getElementById('btnNextPage')) document.getElementById('btnNextPage').disabled = (currentDevicePage === totalPages);
+            document.getElementById('pageRangeText').innerText = `${startIndex + 1} -${endIndex}`;
+            document.getElementById('currentPageText').innerText = currentDevicePage;
+            document.getElementById('totalPagesText').innerText = totalPages;
+            document.getElementById('btnPrevPage').disabled = (currentDevicePage === 1);
+            document.getElementById('btnNextPage').disabled = (currentDevicePage === totalPages);
         }
 
         function changeDevicePage(direction) { currentDevicePage += direction; renderPaginatedDeviceLogs(); }
@@ -708,9 +713,8 @@
 
             if (!device) { showCustomAlert('Chưa chọn thiết bị', 'Vui lòng chọn 1 thiết bị từ danh sách!', true); return; }
 
-            const btn = document.getElementById('btnSubmitBorrow'); 
-            const origHtml = btn ? btn.innerHTML : '';
-            if (btn) { btn.disabled = true; btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin text-sm"></i> Đang ghi...`; }
+            const btn = document.getElementById('btnSubmitBorrow'); const origHtml = btn.innerHTML;
+            btn.disabled = true; btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin text-sm"></i> Đang ghi...`;
 
             const now = new Date(); const pad = (n) => n.toString().padStart(2, '0');
             const exactTimeStr = `${pad(now.getDate())}/${pad(now.getMonth()+1)}/${now.getFullYear()}${pad(now.getHours())}:${pad(now.getMinutes())}:${pad(now.getSeconds())}`;
@@ -720,14 +724,13 @@
 
             if (db) {
                 db.collection("device_logs").add(newRecord).then(() => {
-                    if (btn) { btn.disabled = false; btn.innerHTML = origHtml; }
+                    btn.disabled = false; btn.innerHTML = origHtml;
                     showCustomAlert('Thành Công!', `Đã ghi nhận mượn [${device}] cho${borrowerName}.`);
                     let displayBorrower = `**${borrowerName}**`;
                     if (borrowerName !== operatorName) displayBorrower += `\n*(Log hộ bởi: ${operatorName})*`;
                     sendDiscordNotification({ title: "🟦 THÔNG BÁO MƯỢN THIẾT BỊ", color: 16753920, fields: [{ name: "👤 Người thực hiện", value: displayBorrower, inline: true }, { name: "📱 Thiết bị", value: `\`${device}\``, inline: true }, { name: "⏰ Thời gian mượn", value: exactTimeStr, inline: false }, { name: "📌 Trạng thái", value: "🟡 **Đang Mượn**", inline: false }], timestamp: now.toISOString(), footer: { text: "QA Internal Portal System" } });
                 }).catch((err) => {
-                    console.error("Lỗi Firestore:", err); 
-                    if (btn) { btn.disabled = false; btn.innerHTML = origHtml; }
+                    console.error("Lỗi Firestore:", err); btn.disabled = false; btn.innerHTML = origHtml;
                     showCustomAlert("Lỗi Server", "Không thể lưu thông tin mượn!", true);
                 });
             }
@@ -752,15 +755,7 @@
         function exportDeviceLogsToExcel() {
             if (!deviceLogsData || deviceLogsData.length === 0) { showCustomAlert("Cảnh báo", "Hiện chưa có dữ liệu nhật ký mượn trả để xuất file Excel!", true); return; }
             let dataToExport = deviceLogsData;
-            if (isOnlyUnreturned) dataToExport = dataToExport.filter(r => !String(r.trangThai || '').toLowerCase().includes('đã trả'));
-            if (currentSearchKeyword !== "") {
-                dataToExport = dataToExport.filter(r => {
-                    const rowText = `${r.thoiGian || ''} ${r.nguoiMuon || ''} ${r.thietBi || ''} ${r.trangThai || ''}`.toLowerCase();
-                    return rowText.includes(currentSearchKeyword);
-                });
-            }
-            if (dataToExport.length === 0) { showCustomAlert("Cảnh báo", "Không có dữ liệu thỏa điều kiện lọc để xuất!", true); return; }
-            
+            if (isOnlyUnreturned) dataToExport = deviceLogsData.filter(r => !String(r.trangThai || '').toLowerCase().includes('đã trả'));
             const exportData = dataToExport.map((log, index) => {
                 const nguoiGhiNhan = log.nguoiThaoTac ? log.nguoiThaoTac : (log.nguoiMuon || '');
                 return { "STT": index + 1, "Thời Gian Mượn": log.thoiGian || '', "Người Mượn (Hiển thị)": log.nguoiMuon || '', "Tài Khoản Ghi Nhận (System Audit)": nguoiGhiNhan, "Thiết Bị": log.thietBi || '', "Trạng Thái": log.trangThai || '', "Giờ Trả": log.gioTra || '' };
