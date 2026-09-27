@@ -6,17 +6,39 @@
     <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
     <meta http-equiv="Pragma" content="no-cache">
     <meta http-equiv="Expires" content="0">
-    <title>QC Portal - Quản Lý Device</title>
-    
+    <title>QC Portal - Mượn Thiết Bị</title>
+
     <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <link rel="manifest" href="manifest.json">
-    <meta name="theme-color" content="#312e81">
-    
+
     <!-- FIREBASE SDK -->
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+
+    <!-- Cấu hình PWA -->
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#312e81">
     <script src="https://accounts.google.com/gsi/client" async defer></script>
+
+    <!-- Script PWA Auto Update -->
+    <script>
+      if ('serviceWorker' in navigator) {
+        window.addEventListener('load', () => {
+          navigator.serviceWorker.register('./sw.js').then(reg => {
+            reg.update();
+            reg.onupdatefound = () => {
+              const installingWorker = reg.installing;
+              installingWorker.onstatechange = () => {
+                if (installingWorker.state === 'installed' && navigator.serviceWorker.controller) {
+                  window.location.reload();
+                }
+              };
+            };
+          }).catch(err => console.log('Lỗi Service Worker:', err));
+        });
+      }
+    </script>
 
     <!-- CSS Dòng thông báo chạy liên tục -->
     <style>
@@ -71,56 +93,46 @@
 <body class="bg-slate-50 text-slate-800 font-sans h-screen w-full flex flex-col md:flex-row overflow-hidden">
 
     <!-- ================= SIDEBAR MENU (BACKGROUND TRÙNG KHÁNH & NÚT TRONG SUỐT) ================= -->
-<aside class="w-full md:w-64 text-white flex flex-col flex-shrink-0 shadow-2xl z-20 transition-all bg-cover bg-center bg-no-repeat relative"
-       style="background-image: linear-gradient(to bottom, rgba(15, 23, 42, 0.65), rgba(30, 27, 75, 0.75)), url('./trungkhanh.jpg');">
-    
-    <!-- Header Sidebar trong suốt mờ -->
-    <div class="h-auto md:h-[72px] flex items-center justify-between px-6 py-4 md:py-0 border-b border-white/10 bg-black/20 backdrop-blur-md">
-        <div class="flex items-center gap-3">
-            <i class="fa-solid fa-square-poll-vertical text-indigo-300 text-[28px]"></i>
-            <div>
-                <h1 class="text-xl font-bold leading-tight drop-shadow-md">QC Portal</h1>
-                <p class="text-indigo-200 text-[11px] font-medium tracking-wide">Report & Device Tool</p>
+    <aside class="w-full md:w-64 text-white flex flex-col flex-shrink-0 shadow-2xl z-20 transition-all bg-cover bg-center bg-no-repeat relative"
+           style="background-image: linear-gradient(to bottom, rgba(15, 23, 42, 0.65), rgba(30, 27, 75, 0.75)), url('./trungkhanh.jpg');">
+        
+        <!-- Header Sidebar -->
+        <div class="h-auto md:h-[72px] flex items-center justify-between px-6 py-4 md:py-0 border-b border-white/10 bg-black/20 backdrop-blur-md">
+            <div class="flex items-center gap-3">
+                <i class="fa-solid fa-square-poll-vertical text-indigo-300 text-[28px]"></i>
+                <div>
+                    <h1 class="text-xl font-bold leading-tight drop-shadow-md">QC Portal</h1>
+                    <p class="text-indigo-200 text-[11px] font-medium tracking-wide">Report & Device Tool</p>
+                </div>
             </div>
         </div>
-    </div>
 
-    <!-- Danh sách Nút bấm trong suốt (Glassmorphism) -->
-    <nav class="flex md:flex-col gap-2.5 p-4 overflow-x-auto md:overflow-y-auto flex-1 bg-transparent custom-scrollbar">
-        
-        <!-- Nút 1: Báo Cáo Daily -->
-        <a href="index" class="bg-indigo-600/70 border-indigo-300/50 backdrop-blur-md text-white font-black shadow-lg">
-            <i class="fa-solid fa-chart-line w-5 text-center text-lg"></i> 
-            <span>Báo Cáo Daily</span>
-        </a>
-
-        <!-- Nút 2: Mượn Device -->
-        <a href="device_manage" class="whitespace-nowrap flex items-center gap-3 px-4 py-3.5 text-sm font-bold rounded-xl transition border border-white/15 bg-white/10 hover:bg-white/25 hover:border-white/40 text-white backdrop-blur-md shadow-sm">
-            <i class="fa-solid fa-mobile-screen-button w-5 text-center text-lg"></i> 
-            <span>Mượn Device</span>
-        </a>
-
-        <!-- Nút 3: Thông tin Device -->
-        <a href="device_info" class="whitespace-nowrap flex items-center gap-3 px-4 py-3.5 text-sm font-bold rounded-xl transition border border-white/15 bg-white/10 hover:bg-white/25 hover:border-white/40 text-white backdrop-blur-md shadow-sm">
-            <i class="fa-solid fa-circle-info w-5 text-center text-lg"></i> 
-            <span>Thông tin Device</span>
-        </a>
-
-        <!-- Nút 4: Xin OFF / WFH -->
-        <a href="log_off" class="whitespace-nowrap flex items-center gap-3 px-4 py-3.5 text-sm font-bold rounded-xl transition border border-white/15 bg-white/10 hover:bg-white/25 hover:border-white/40 text-white backdrop-blur-md shadow-sm">
-            <i class="fa-solid fa-calendar-minus w-5 text-center text-lg"></i> 
-            <span>Xin OFF / WFH</span>
-        </a>
-    </nav>
-</aside>
+        <nav class="flex md:flex-col gap-2.5 p-4 overflow-x-auto md:overflow-y-auto flex-1 bg-transparent custom-scrollbar">
+            <a href="index" class="whitespace-nowrap flex items-center gap-3 px-4 py-3.5 text-sm font-bold rounded-xl transition border border-white/15 bg-white/10 hover:bg-white/25 hover:border-white/40 text-white backdrop-blur-md shadow-sm">
+                <i class="fa-solid fa-chart-line w-5 text-center text-lg"></i> <span>Báo Cáo Daily</span>
+            </a>
+            
+            <!-- NÚT ACTIVE: MƯỢN DEVICE -->
+            <a href="device_manage" class="whitespace-nowrap flex items-center gap-3 px-4 py-3.5 text-sm font-bold rounded-xl transition border border-indigo-300/50 bg-indigo-600/70 hover:bg-indigo-500/70 text-white backdrop-blur-md shadow-lg">
+                <i class="fa-solid fa-mobile-screen-button w-5 text-center text-lg"></i> <span>Mượn Device</span>
+            </a>
+            
+            <a href="device_info" class="whitespace-nowrap flex items-center gap-3 px-4 py-3.5 text-sm font-bold rounded-xl transition border border-white/15 bg-white/10 hover:bg-white/25 hover:border-white/40 text-white backdrop-blur-md shadow-sm">
+                <i class="fa-solid fa-circle-info w-5 text-center text-lg"></i> <span>Thông tin Device</span>
+            </a>
+            <a href="log_off" class="whitespace-nowrap flex items-center gap-3 px-4 py-3.5 text-sm font-bold rounded-xl transition border border-white/15 bg-white/10 hover:bg-white/25 hover:border-white/40 text-white backdrop-blur-md shadow-sm">
+                <i class="fa-solid fa-calendar-minus w-5 text-center text-lg"></i> <span>Xin OFF / WFH</span>
+            </a>
+        </nav>
+    </aside>
 
     <!-- ================= MAIN CONTENT ================= -->
     <div class="flex-1 flex flex-col h-full overflow-hidden bg-slate-50 relative">
         <header class="bg-white text-slate-800 shadow-sm border-b border-slate-200 z-10 p-3 px-4 md:px-6 flex justify-between items-center min-h-[72px]">
             <div class="flex-1 shrink-0">
-                <h2 class="text-xl font-bold text-slate-800 hidden sm:block">Mượn / Trả Thiết Bị</h2>
+                <h2 class="text-xl font-bold text-slate-800 hidden sm:block">Mượn/Trả Thiết Bị</h2>
             </div>
-            
+
             <!-- Thông báo đếm ngược -->
             <div class="hidden lg:flex flex-1 min-w-0 justify-center items-center">
                 <div class="w-full max-w-[460px] px-4 py-2 rounded-full bg-slate-50/90 border border-slate-200 shadow-sm cursor-default">
@@ -128,12 +140,22 @@
                         <div class="travel-marquee-track">
                             <div class="travel-marquee-group">
                                 <span class="travel-marquee-message soft-text">
-                                    <i class="fa-solid fa-plane-departure"></i> Chỉ còn <strong class="mondayCountText travel-marquee-count">...</strong> Thứ 2 nữa là đi Trùng Khánh nhoa! 🇨🇳
+                                    <i class="fa-solid fa-plane-departure" aria-hidden="true"></i>
+                                    Chỉ còn <strong class="mondayCountText travel-marquee-count">...</strong> Thứ 2 nữa là đi Trùng Khánh nhoa cả nhà iu! 🇨🇳
+                                </span>
+                                <span class="travel-marquee-message soft-text">
+                                    <i class="fa-solid fa-plane-departure" aria-hidden="true"></i>
+                                    Chạy task lẹ tay để còn kịp nhoa! 🇨🇳
                                 </span>
                             </div>
                             <div class="travel-marquee-group" aria-hidden="true">
                                 <span class="travel-marquee-message soft-text">
-                                    <i class="fa-solid fa-plane-departure"></i> Chỉ còn <strong class="mondayCountText travel-marquee-count">...</strong> Thứ 2 nữa là đi Trùng Khánh nhoa! 🇨🇳
+                                    <i class="fa-solid fa-plane-departure" aria-hidden="true"></i>
+                                    Chỉ còn <strong class="mondayCountText travel-marquee-count">...</strong> Thứ 2 nữa là đi Trùng Khánh nhoa cả nhà iu! 🇨🇳
+                                </span>
+                                <span class="travel-marquee-message soft-text">
+                                    <i class="fa-solid fa-plane-departure" aria-hidden="true"></i>
+                                    Chạy task lẹ tay để còn kịp nhoa! 🇨🇳
                                 </span>
                             </div>
                         </div>
@@ -166,87 +188,154 @@
             </div>
         </header>
 
-        <!-- BACKGROUND TRÙNG KHÁNH CỰC CHILL VÀ LỚP PHỦ MỜ (OVERLAY) -->
+        <!-- BACKGROUND LỚP PHỦ MỜ (Fix lỗi trùng lặp thẻ style) -->
         <main class="flex-1 overflow-y-auto p-4 md:p-6 bg-cover bg-center bg-no-repeat bg-fixed relative" 
               style="background-image: linear-gradient(to bottom, rgba(248, 250, 252, 0.85), rgba(248, 250, 252, 0.95)), url('./bg-chongqing.jpg');">
             
-            <div class="w-full max-w-6xl mx-auto space-y-6">
-                <!-- Form Đăng ký Mượn thiết bị -->
-                <section class="bg-white/90 backdrop-blur-md rounded-2xl shadow-sm border border-slate-200 p-6 sm:p-8 relative">
-                    <h2 class="text-lg font-bold text-indigo-900 mb-4 flex items-center gap-2">
-                        <i class="fa-solid fa-mobile-screen-button text-indigo-600"></i> Đăng Ký Mượn Thiết Bị
-                    </h2>
-                    <form id="borrowForm" class="grid grid-cols-1 md:grid-cols-4 gap-4" onsubmit="event.preventDefault(); submitBorrow();">
-                        <div class="md:col-span-1">
-                            <label class="block text-xs font-bold text-slate-700 mb-1">Thiết bị <span class="text-red-500">*</span></label>
-                            <select id="deviceSelect" required class="w-full h-11 bg-slate-50 border border-slate-300 text-slate-800 text-xs font-semibold rounded-xl px-3 outline-none cursor-pointer">
-                                <option value="" disabled selected>-- Chọn máy --</option>
-                                <option value="iPhone 14 Pro Max (Test)">iPhone 14 Pro Max (Test)</option>
-                                <option value="Samsung S23 Ultra">Samsung S23 Ultra</option>
-                                <option value="iPad Pro 11 inch">iPad Pro 11 inch</option>
-                                <option value="Oppo Find X5">Oppo Find X5</option>
+            <div class="w-full mx-auto 2xl:max-w-[1600px] space-y-6">
+                <!-- Form Mượn Device -->
+                <section class="bg-white/90 backdrop-blur-md rounded-xl shadow-sm border border-slate-200 p-6 space-y-5 w-full">
+                    <div class="flex items-center justify-between border-b border-slate-100 pb-3">
+                        <div class="flex items-center gap-2">
+                            <i class="fa-solid fa-hand-holding-hand text-indigo-600 text-xl"></i>
+                            <h2 class="text-lg font-bold text-slate-800">Đăng Ký Mượn Thiết Bị</h2>
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-4 gap-5 items-start">
+                        <!-- Ô Nhập Tên Người Mượn -->
+                        <div>
+                            <div class="h-5 mb-1.5 flex items-center">
+                                <label class="text-xs font-bold text-slate-700">Tên Người Mượn <span class="text-red-500">*</span></label>
+                            </div>
+                            <input type="text" id="borrowerNameInput" placeholder="VD: Tuan - Dev..." class="w-full h-[42px] bg-white border border-slate-300 text-slate-800 font-bold text-xs rounded-lg px-3 focus:ring-2 focus:ring-indigo-500 outline-none transition shadow-sm">
+                            <p class="text-[10px] text-slate-500 mt-1.5 italic"><i class="fa-solid fa-pen mr-1"></i>Sửa thành tên của Dev nếu log hộ</p>
+                        </div>
+
+                        <!-- Ô Chọn Phân Loại Device -->
+                        <div>
+                            <div class="h-5 mb-1.5 flex items-center">
+                                <label class="text-xs font-bold text-slate-700">Phân Loại Device</label>
+                            </div>
+                            <select id="deviceTypeSelect" onchange="filterDeviceDropdown()" class="w-full h-[42px] bg-white border border-slate-300 text-slate-800 font-medium text-xs rounded-lg px-3 focus:ring-2 focus:ring-indigo-500 outline-none cursor-pointer">
+                                <option value="ALL">-- Tất cả loại --</option>
                             </select>
                         </div>
-                        <div class="md:col-span-2">
-                            <label class="block text-xs font-bold text-slate-700 mb-1">Mục đích / Dự án <span class="text-red-500">*</span></label>
-                            <input type="text" id="borrowReason" required placeholder="VD: Test dự án KTFMLMC..." class="w-full h-11 bg-slate-50 border border-slate-300 text-slate-800 text-xs font-semibold rounded-xl px-3 outline-none">
+
+                        <!-- Dropdown Danh Sách Device Mượn -->
+                        <div class="relative w-full">
+                            <div class="h-5 mb-1.5 flex justify-between items-center">
+                                <label class="text-xs font-bold text-slate-700">Thiết Bị Mượn <span class="text-red-500">*</span></label>
+                                <button onclick="loadDeviceData(true)" class="text-[11px] font-bold text-indigo-600 hover:underline flex items-center">
+                                    <i class="fa-solid fa-rotate mr-1"></i>Làm mới
+                                </button>
+                            </div>
+                            <div class="relative">
+                                <input type="text" id="deviceSearchInput" onfocus="openDeviceDropdown()" oninput="filterDeviceListUI()" autocomplete="off" placeholder="-- Đang tải danh sách... --" class="w-full h-[42px] bg-white border border-slate-300 text-slate-800 font-medium text-xs rounded-lg px-3 pr-8 focus:ring-2 focus:ring-indigo-500 outline-none transition cursor-text shadow-sm">
+                                <i class="fa-solid fa-chevron-down absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 text-xs pointer-events-none"></i>
+                            </div>
+                            <div id="deviceDropdownContainer" class="hidden absolute z-50 w-full mt-1 bg-white border border-slate-200 rounded-lg shadow-xl max-h-48 overflow-y-auto custom-scrollbar">
+                                <ul id="deviceListUl" class="text-xs font-medium text-slate-700 py-1 divide-y divide-slate-100"></ul>
+                            </div>
                         </div>
-                        <div class="md:col-span-1 flex items-end">
-                            <button type="submit" id="btnSubmitBorrow" class="w-full h-11 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl shadow-sm transition flex items-center justify-center gap-2 text-sm">
-                                <i class="fa-solid fa-plus"></i> Đăng Ký Mượn
+
+                        <!-- Nút Bấm Mượn -->
+                        <div>
+                            <div class="h-5 mb-1.5 flex items-center">
+                                <label class="text-xs font-bold text-transparent select-none pointer-events-none">Spacer</label>
+                            </div>
+                            <button id="btnSubmitBorrow" disabled onclick="submitBorrowDevice()" class="w-full h-[42px] inline-flex items-center justify-center gap-2 px-5 bg-indigo-600 hover:bg-indigo-700 disabled:bg-indigo-400 text-white text-xs font-bold rounded-lg shadow-sm transition disabled:opacity-70 disabled:cursor-not-allowed">
+                                <i class="fa-solid fa-plus"></i> Xác Nhận Mượn
                             </button>
                         </div>
-                    </form>
+                    </div>
                 </section>
 
-                <!-- ================= NHẬT KÝ MƯỢN TRẢ & TOOLBAR ================= -->
-                <section class="bg-white/90 backdrop-blur-md rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
-                    <div class="p-5 border-b border-slate-200 bg-slate-50/50">
-                        <h3 class="text-lg font-bold text-indigo-900 mb-4 flex items-center gap-2">
-                            <i class="fa-solid fa-clock-rotate-left text-indigo-600"></i> Nhật Ký Mượn Trả Thiết Bị
-                        </h3>
+                <!-- Lưới Danh Sách Thiết Bị Mượn Trong Ngày -->
+                <section class="bg-white/90 backdrop-blur-md rounded-xl shadow-sm border border-slate-200 overflow-hidden w-full">
+                    <div class="p-4 md:p-5 border-b border-slate-200 flex flex-col justify-between gap-4 bg-slate-50/80">
+                        <div class="flex items-center gap-2">
+                            <i class="fa-solid fa-list-check text-indigo-600 text-lg"></i>
+                            <h3 class="text-base font-bold text-slate-800">Nhật Ký Mượn Trả Thiết Bị</h3>
+                            <span id="logCountBadge" class="text-xs bg-indigo-100 text-indigo-700 font-bold px-2.5 py-0.5 rounded-full ml-1">0 lượt</span>
+                        </div>
                         
-                        <!-- TOOLBAR TÌM KIẾM ĐA ĐIỀU KIỆN -->
-                        <div class="flex flex-col sm:flex-row justify-between items-center gap-3 bg-white p-3 rounded-xl border border-slate-200 shadow-sm">
+                        <!-- TOOLBAR BỘ LỌC THÔNG MINH -->
+                        <div class="flex flex-col sm:flex-row justify-between items-center gap-3 bg-white p-3 rounded-xl border border-slate-200 shadow-sm w-full">
                             <!-- 1. Ô tìm kiếm từ khóa -->
                             <div class="relative w-full sm:w-96">
                                 <i class="fa-solid fa-magnifying-glass absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 text-xs"></i>
-                                <input type="text" id="logSearchInput" onkeyup="filterLoanLogs()" placeholder="Tìm theo Tên, Thiết bị, Lý do..." class="w-full pl-9 pr-4 py-2 bg-slate-50 border border-slate-300 text-slate-700 text-xs font-medium rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none transition">
+                                <input type="text" id="logSearchInput" oninput="handleLogSearch()" placeholder="Tìm Tên, Thiết bị, Thời gian..." class="w-full pl-9 pr-4 py-2 bg-slate-50 border border-slate-300 text-slate-700 text-xs font-medium rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none transition">
                             </div>
 
-                            <!-- 2. Nut Toggle: Chỉ xem thiết bị chưa trả -->
-                            <div class="flex items-center gap-3 w-full sm:w-auto justify-end">
-                                <label class="flex items-center gap-2 cursor-pointer bg-slate-50 px-3 py-2 rounded-lg border border-slate-300 hover:bg-slate-100 transition shadow-sm text-xs font-bold text-slate-700 select-none">
-                                    <input type="checkbox" id="unreturnedOnlyToggle" onchange="filterLoanLogs()" class="w-4 h-4 text-indigo-600 rounded border-slate-300 focus:ring-indigo-500 cursor-pointer">
-                                    <span class="flex items-center gap-1.5">
-                                        <i class="fa-solid fa-triangle-exclamation text-amber-500"></i> Chỉ xem Đang Mượn
-                                    </span>
-                                </label>
+                            <!-- 2. Cụm nút thao tác -->
+                            <div class="flex flex-wrap items-center gap-2 w-full sm:w-auto">
+                                <button onclick="exportDeviceLogsToExcel()" class="flex-1 sm:flex-none inline-flex items-center justify-center gap-1.5 px-3 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-lg shadow-sm transition">
+                                    <i class="fa-solid fa-file-excel"></i> <span class="hidden sm:inline">Xuất Excel</span>
+                                </button>
+                                <button id="btnFilterUnreturned" onclick="toggleUnreturnedFilter()" class="flex-1 sm:flex-none inline-flex items-center justify-center gap-1.5 px-3 py-2 bg-white border border-slate-300 hover:border-amber-400 text-slate-700 text-xs font-bold rounded-lg shadow-sm transition">
+                                    <i class="fa-solid fa-filter text-amber-500"></i> <span id="filterUnreturnedText">Chỉ xem Chưa Trả</span>
+                                </button>
+                                <button onclick="loadDeviceData(true)" class="flex-1 sm:flex-none inline-flex items-center justify-center gap-1.5 px-3 py-2 bg-indigo-50 hover:bg-indigo-100 border border-indigo-200 text-indigo-700 text-xs font-bold rounded-lg transition shadow-sm" title="Làm mới dữ liệu nhật ký">
+                                    <i class="fa-solid fa-rotate"></i> <span class="sm:hidden">Làm Mới</span>
+                                </button>
                             </div>
                         </div>
                     </div>
 
-                    <!-- Bảng dữ liệu -->
-                    <div class="overflow-x-auto min-h-[300px]">
-                        <table class="w-full text-xs text-left text-slate-600">
-                            <thead class="text-slate-700 uppercase bg-slate-100 border-b border-slate-200">
+                    <div class="overflow-x-auto min-h-[400px]">
+                        <table class="w-full text-xs text-left text-slate-600 bg-white">
+                            <thead class="text-slate-700 uppercase bg-slate-100 sticky top-0 border-b border-slate-200 font-bold">
                                 <tr>
-                                    <th class="px-4 py-3">Thiết bị</th>
-                                    <th class="px-4 py-3">Người mượn</th>
-                                    <th class="px-4 py-3">Mục đích</th>
-                                    <th class="px-4 py-3">Giờ Mượn</th>
-                                    <th class="px-4 py-3 text-center">Trạng thái</th>
-                                    <th class="px-4 py-3 text-right">Thao tác</th>
+                                    <th class="px-5 py-3.5">Thời Gian Mượn</th>
+                                    <th class="px-5 py-3.5">Tên Người Mượn</th>
+                                    <th class="px-5 py-3.5">Thiết Bị Mượn</th>
+                                    <th class="px-5 py-3.5">Trạng Thái</th>
+                                    <th class="px-5 py-3.5">Giờ Trả</th>
+                                    <th class="px-5 py-3.5 text-right">Thao Tác</th>
                                 </tr>
                             </thead>
-                            <tbody id="loanLogTableBody" class="divide-y divide-slate-100 bg-white">
-                                <tr><td colspan="6" class="text-center py-8 text-slate-400 font-medium">Đang tải dữ liệu...</td></tr>
+                            <tbody id="deviceLogTableBody" class="divide-y divide-slate-200 font-medium">
+                                <tr>
+                                    <td colspan="6" class="text-center py-10 text-slate-400 font-medium text-sm">Đang tải dữ liệu mượn thiết bị...</td>
+                                </tr>
                             </tbody>
                         </table>
+                    </div>
+
+                    <!-- Pagination -->
+                    <div class="p-4 bg-slate-50 border-t border-slate-200 flex flex-col sm:flex-row justify-between items-center gap-4 text-xs">
+                        <div class="text-slate-500 font-medium">
+                            Hiển thị <span id="pageRangeText" class="font-bold text-slate-700">0 - 0</span> trên tổng số <span id="totalLogsText" class="font-bold text-slate-700">0</span> lượt
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <button id="btnPrevPage" onclick="changeDevicePage(-1)" class="px-3 py-1.5 bg-white border border-slate-300 rounded-lg font-bold text-slate-600 hover:bg-slate-100 disabled:opacity-40 disabled:cursor-not-allowed transition">
+                                <i class="fa-solid fa-chevron-left mr-1"></i> Trang trước
+                            </button>
+                            <span class="font-bold text-indigo-700 bg-indigo-50 border border-indigo-200 px-3 py-1.5 rounded-lg">
+                                Trang <span id="currentPageText">1</span> / <span id="totalPagesText">1</span>
+                            </span>
+                            <button id="btnNextPage" onclick="changeDevicePage(1)" class="px-3 py-1.5 bg-white border border-slate-300 rounded-lg font-bold text-slate-600 hover:bg-slate-100 disabled:opacity-40 disabled:cursor-not-allowed transition">
+                                Trang sau <i class="fa-solid fa-chevron-right ml-1"></i>
+                            </button>
+                        </div>
                     </div>
                 </section>
             </div>
         </main>
+    </div>
+
+    <!-- Modal Loading -->
+    <div id="loadingModal" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-sm">
+        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-xs overflow-hidden p-8 text-center space-y-4">
+            <div class="w-16 h-16 bg-indigo-100 text-indigo-600 rounded-full flex items-center justify-center mx-auto text-3xl shadow-inner">
+                <i class="fa-solid fa-spinner fa-spin"></i>
+            </div>
+            <div>
+                <h3 class="text-lg font-bold text-slate-800">Đang tải dữ liệu...</h3>
+                <p class="text-xs text-slate-500 font-medium mt-1">Đang đồng bộ dữ liệu với Firebase...</p>
+            </div>
+        </div>
     </div>
 
     <!-- Modal Alert -->
@@ -256,23 +345,14 @@
                 <i class="fa-solid fa-circle-check"></i>
             </div>
             <h3 class="text-xl font-bold text-slate-800" id="customAlertTitle">Thành công!</h3>
-            <p class="text-sm text-slate-600 font-medium" id="customAlertMessage">Đã thực hiện thành công.</p>
-            <button onclick="closeModal('customAlertModal')" class="w-full px-4 py-3 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl shadow-sm mt-2 transition">OK</button>
+            <p class="text-sm text-slate-600 font-medium" id="customAlertMessage">Đã thực hiện xong thao tác.</p>
+            <button onclick="closeCustomAlert()" class="w-full px-4 py-3 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl shadow-sm transition mt-2">OK</button>
         </div>
     </div>
 
     <script>
-        // CẤU HÌNH NGÀY ĐI TRÙNG KHÁNH
-        const TARGET_TRIP_DATE = "2026-11-01"; 
-        function calculateMondaysLeft() {
-            let today = new Date(); let target = new Date(TARGET_TRIP_DATE); let mondaysCount = 0;
-            today.setHours(0,0,0,0); target.setHours(0,0,0,0);
-            let current = new Date(today);
-            while (current <= target) { if (current.getDay() === 1) mondaysCount++; current.setDate(current.getDate() + 1); }
-            document.querySelectorAll('.mondayCountText').forEach(el => el.innerText = mondaysCount);
-        }
+        const DISCORD_WEBHOOK_URL = "https://discord.com/api/webhooks/1522191984020684830/z2Y75Ncd-Ocn0PGWEWrD0_amVNnua5KGdUVxXuHIPSPyIvRv6TmPsDit2ag7gRaHrXID";
 
-        // FIREBASE CONFIG
         const firebaseConfig = {
             apiKey: "AIzaSyBZ72fOBO-VPMDrXBS4E15TN5L7tfcL46s",
             authDomain: "device-manage-d4f5d.firebaseapp.com",
@@ -281,198 +361,424 @@
             messagingSenderId: "747189096859",
             appId: "1:747189096859:web:abcdef..."
         };
-        let db = null;
-        try { firebase.initializeApp(firebaseConfig); db = firebase.firestore(); } catch (e) { console.error("Lỗi Firebase:", e); }
 
+        // ================= CẤU HÌNH NGÀY ĐI TRÙNG KHÁNH =================
+        const TARGET_TRIP_DATE = "2026-11-01"; 
+
+        function calculateMondaysLeft() {
+            let today = new Date();
+            let target = new Date(TARGET_TRIP_DATE);
+            let mondaysCount = 0;
+
+            today.setHours(0,0,0,0);
+            target.setHours(0,0,0,0);
+
+            let current = new Date(today);
+            while (current <= target) {
+                if (current.getDay() === 1) {
+                    mondaysCount++;
+                }
+                current.setDate(current.getDate() + 1);
+            }
+
+            const txtElements = document.querySelectorAll('.mondayCountText');
+            txtElements.forEach(el => {
+                el.innerText = mondaysCount;
+            });
+        }
+
+        function sendDiscordNotification(embed) {
+            if (!DISCORD_WEBHOOK_URL) return;
+            const payload = { username: "Device Manager Bot", embeds: [embed] };
+            fetch(DISCORD_WEBHOOK_URL, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            }).catch(err => console.error("Lỗi gửi Discord:", err));
+        }
+
+        let db = null;
+        try {
+            firebase.initializeApp(firebaseConfig);
+            db = firebase.firestore();
+        } catch (e) { console.error("Lỗi khởi tạo Firebase:", e); }
+
+        let fullDeviceListWithTypes = [];
+        let currentAvailableDevices = [];
+        let deviceLogsData = [];
+        let isOnlyUnreturned = false;
+        let currentSearchKeyword = ""; // Lọc dữ liệu đa điều kiện
+        let currentDevicePage = 1;
+        const ITEMS_PER_PAGE = 10;
+        let isListenersInitialized = false;
+        let initialLoadCounter = 0;
         let loggedInUser = null;
 
-        // AUTH GOOGLE
         function decodeJwtResponse(token) {
             let base64Url = token.split('.')[1];
             let base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
-            return JSON.parse(decodeURIComponent(atob(base64).split('').map(c => '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2)).join('')));
+            let jsonPayload = decodeURIComponent(atob(base64).split('').map(function(c) {
+                return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
+            }).join(''));
+            return JSON.parse(jsonPayload);
         }
 
         function handleCredentialResponse(response) {
-            const payload = decodeJwtResponse(response.credential);
-            loggedInUser = { name: payload.name, email: payload.email, picture: payload.picture };
+            const responsePayload = decodeJwtResponse(response.credential);
+            loggedInUser = { name: responsePayload.name, email: responsePayload.email, picture: responsePayload.picture };
             localStorage.setItem('jira_google_user', JSON.stringify(loggedInUser));
             updateAuthUI();
         }
 
         function updateAuthUI() {
             const storedUser = localStorage.getItem('jira_google_user');
+            const loginOption = document.getElementById('loginOption');
+            const userProfileBtn = document.getElementById('userProfileBtn');
+            const borrowerInput = document.getElementById('borrowerNameInput');
+            const btnSubmitBorrow = document.getElementById('btnSubmitBorrow');
+            const userDropdown = document.getElementById('userDropdown');
+
             if (storedUser) {
                 loggedInUser = JSON.parse(storedUser);
-                document.getElementById('loginOption').classList.add('hidden');
-                document.getElementById('userProfileBtn').classList.remove('hidden');
+                if(loginOption) loginOption.classList.add('hidden');
+                if(userProfileBtn) userProfileBtn.classList.remove('hidden');
                 document.getElementById('userNameDisplay').innerText = loggedInUser.name;
                 document.getElementById('userAvatar').src = loggedInUser.picture;
+                if(borrowerInput) borrowerInput.value = loggedInUser.name;
+                if(btnSubmitBorrow) btnSubmitBorrow.disabled = false;
+                if(userDropdown) userDropdown.classList.add('hidden');
             } else {
                 loggedInUser = null;
-                document.getElementById('loginOption').classList.remove('hidden');
-                document.getElementById('userProfileBtn').classList.add('hidden');
+                if(loginOption) loginOption.classList.remove('hidden');
+                if(userProfileBtn) userProfileBtn.classList.add('hidden');
+                if(borrowerInput) borrowerInput.value = '';
+                if(btnSubmitBorrow) btnSubmitBorrow.disabled = true;
+                if(userDropdown) userDropdown.classList.add('hidden');
             }
+            if (deviceLogsData && deviceLogsData.length > 0) renderPaginatedDeviceLogs();
         }
 
         function handleLogout() {
             google.accounts.id.disableAutoSelect();
             localStorage.removeItem('jira_google_user');
             updateAuthUI();
+            showCustomAlert('Đăng xuất', 'Bạn đã đăng xuất tài khoản Google thành công.');
         }
 
-        // INIT
         document.addEventListener('DOMContentLoaded', () => {
             updateAuthUI();
             calculateMondaysLeft();
-            loadLoanLogs();
+
+            document.addEventListener('click', function(event) {
+                const userProfileBtn = document.getElementById('userProfileBtn');
+                const userDropdown = document.getElementById('userDropdown');
+                if (userProfileBtn && userDropdown && !userProfileBtn.contains(event.target)) {
+                    userDropdown.classList.add('hidden');
+                }
+            });
+
+            document.addEventListener('click', function(event) {
+                const searchInput = document.getElementById('deviceSearchInput');
+                const dropdownContainer = document.getElementById('deviceDropdownContainer');
+                if (searchInput && dropdownContainer && !searchInput.contains(event.target) && !dropdownContainer.contains(event.target)) {
+                    closeDeviceDropdown();
+                    if (searchInput.value !== searchInput.dataset.value) searchInput.value = searchInput.dataset.value || '';
+                }
+            });
+
+            loadDeviceData(false);
         });
 
-        // TẢI LOGS TỪ FIREBASE
-        function loadLoanLogs() {
-            if(!db) return;
-            db.collection("device_logs").orderBy("borrowDate", "desc").onSnapshot(snapshot => {
-                const tbody = document.getElementById('loanLogTableBody');
-                tbody.innerHTML = '';
-                
-                if (snapshot.empty) {
-                    tbody.innerHTML = '<tr><td colspan="6" class="text-center py-8 text-slate-400 font-medium">Chưa có dữ liệu mượn trả.</td></tr>';
-                    return;
-                }
+        function loadDeviceData(isManualRefresh = false) {
+            if (!db) {
+                document.getElementById('loadingModal').classList.add('hidden');
+                return;
+            }
+            if (isManualRefresh) {
+                showCustomAlert('Real-time Sync ⚡', 'Hệ thống đang tự động đồng bộ dữ liệu theo thời gian thực! Bạn không cần bấm làm mới thủ công nữa.');
+                return;
+            }
+            if (isListenersInitialized) return;
 
-                snapshot.forEach(doc => {
+            document.getElementById('loadingModal').classList.remove('hidden');
+
+            db.collection("devices").onSnapshot((querySnapshot) => {
+                fullDeviceListWithTypes = [];
+                querySnapshot.forEach((doc) => {
                     const data = doc.data();
-                    const borrowDateStr = data.borrowDate ? data.borrowDate.toDate().toLocaleString('vi-VN') : '';
-                    const isUnreturned = data.status === "Đang mượn";
-                    
-                    let statusHtml = isUnreturned 
-                        ? `<span class="bg-amber-100 text-amber-700 px-2.5 py-1 rounded-full font-bold text-[10px]">Đang mượn</span>`
-                        : `<span class="bg-emerald-100 text-emerald-700 px-2.5 py-1 rounded-full font-bold text-[10px]">Đã trả</span>`;
-
-                    let actionHtml = '';
-                    if (isUnreturned && loggedInUser && (data.borrowerEmail === loggedInUser.email || loggedInUser.name.includes('Lan L'))) {
-                        actionHtml = `<button onclick="returnDevice('${doc.id}')" class="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white text-[11px] font-bold rounded-lg shadow-sm transition">Trả Máy</button>`;
-                    } else if (isUnreturned) {
-                        actionHtml = `<span class="text-[10px] text-slate-400 italic">Chưa trả</span>`;
-                    }
-
-                    tbody.innerHTML += `
-                        <tr class="hover:bg-indigo-50/30 transition border-b border-slate-100">
-                            <td class="px-4 py-3 font-bold text-indigo-700">${data.deviceName}</td>
-                            <td class="px-4 py-3 font-semibold text-slate-700">${data.borrowerName}</td>
-                            <td class="px-4 py-3 text-slate-600">${data.reason}</td>
-                            <td class="px-4 py-3 font-mono text-slate-500">${borrowDateStr}</td>
-                            <td class="px-4 py-3 text-center">${statusHtml}</td>
-                            <td class="px-4 py-3 text-right">${actionHtml}</td>
-                        </tr>`;
+                    fullDeviceListWithTypes.push({
+                        name: data.name, type: data.type || "Khác", performance: data.performance || "Chưa phân loại"
+                    });
                 });
-                
-                // Gọi lại hàm filter sau khi load xong data để áp dụng bộ lọc hiện tại
-                filterLoanLogs();
+                renderTypeDropdown();
+                filterDeviceDropdown();
+                initialLoadCounter++;
+                if(initialLoadCounter >= 2) document.getElementById('loadingModal').classList.add('hidden');
+            });
+
+            db.collection("device_logs").orderBy("createdAt", "desc").onSnapshot((querySnapshot) => {
+                deviceLogsData = [];
+                querySnapshot.forEach((doc) => { deviceLogsData.push({ id: doc.id, ...doc.data() }); });
+                filterDeviceDropdown();
+                renderPaginatedDeviceLogs();
+                initialLoadCounter++;
+                if(initialLoadCounter >= 2) document.getElementById('loadingModal').classList.add('hidden');
+            });
+            isListenersInitialized = true;
+        }
+
+        function renderTypeDropdown() {
+            const typeSelect = document.getElementById('deviceTypeSelect');
+            const perfSet = new Set(); 
+            fullDeviceListWithTypes.forEach(d => { if (d.performance && d.performance !== "Chưa phân loại") perfSet.add(d.performance); });
+            typeSelect.innerHTML = '<option value="ALL">-- Tất cả loại --</option>'; 
+            Array.from(perfSet).sort().forEach(p => {
+                const opt = document.createElement('option'); opt.value = p; opt.textContent = p; typeSelect.appendChild(opt);
             });
         }
 
-        // ================= HÀM LỌC ĐA ĐIỀU KIỆN =================
-        function filterLoanLogs() {
-            const keyword = document.getElementById('logSearchInput').value.toLowerCase().trim();
-            const isUnreturnedOnly = document.getElementById('unreturnedOnlyToggle').checked;
-            
-            const rows = document.querySelectorAll('#loanLogTableBody tr:not(#emptySearchRow)');
-            let matchedCount = 0;
-
-            rows.forEach(row => {
-                const text = row.innerText.toLowerCase();
-                
-                // 1. Khớp từ khóa
-                const matchesKeyword = (keyword === '') || text.includes(keyword);
-
-                // 2. Khớp Trạng thái "Chưa trả" (Đang mượn)
-                const isUnreturned = text.includes('đang mượn') || text.includes('chưa trả') || row.querySelector('.bg-amber-100');
-                const matchesStatus = !isUnreturnedOnly || isUnreturned;
-
-                // Hiển thị nếu khớp cả 2 điều kiện
-                if (matchesKeyword && matchesStatus) {
-                    row.style.display = '';
-                    matchedCount++;
-                } else {
-                    row.style.display = 'none';
+        function filterDeviceDropdown() {
+            const selectedPerf = document.getElementById('deviceTypeSelect').value;
+            const currentlyBorrowedSet = new Set();
+            deviceLogsData.forEach(log => {
+                if (!String(log.trangThai || '').toLowerCase().includes('đã trả')) {
+                    if (log.thietBi) currentlyBorrowedSet.add(log.thietBi.trim());
                 }
             });
+            currentAvailableDevices = fullDeviceListWithTypes.filter(d => {
+                const matchPerf = (selectedPerf === 'ALL' || d.performance === selectedPerf); 
+                const isAvailable = !currentlyBorrowedSet.has(d.name.trim());
+                return matchPerf && isAvailable;
+            });
+            const searchInput = document.getElementById('deviceSearchInput');
+            if (currentAvailableDevices.length > 0) {
+                searchInput.placeholder = `-- Gõ tìm / Chọn (${currentAvailableDevices.length} máy) --`;
+                searchInput.disabled = false;
+            } else {
+                searchInput.placeholder = "-- Hết thiết bị khả dụng --";
+                searchInput.disabled = true;
+            }
+            searchInput.value = ''; searchInput.dataset.value = '';
+            renderDeviceDropdownOptions(currentAvailableDevices);
+        }
 
-            // Xử lý dòng thông báo rỗng
-            let emptyRow = document.getElementById('emptySearchRow');
-            if (!emptyRow && rows.length > 0) {
-                const tbody = document.getElementById('loanLogTableBody');
-                emptyRow = document.createElement('tr');
-                emptyRow.id = 'emptySearchRow';
-                emptyRow.innerHTML = `<td colspan="6" class="text-center py-8 text-slate-400 font-medium">Không tìm thấy nhật ký phù hợp với bộ lọc!</td>`;
-                tbody.appendChild(emptyRow);
+        function renderDeviceDropdownOptions(devices) {
+            const ul = document.getElementById('deviceListUl');
+            ul.innerHTML = '';
+            if (devices.length === 0) {
+                ul.innerHTML = '<li class="px-3 py-3 text-slate-400 text-center italic">Không tìm thấy thiết bị phù hợp</li>'; return;
+            }
+            devices.forEach(d => {
+                const li = document.createElement('li');
+                li.className = 'px-3 py-2.5 hover:bg-indigo-50 hover:text-indigo-700 cursor-pointer transition';
+                li.textContent = `${d.name} [${d.performance}]`;
+                li.onclick = () => {
+                    const input = document.getElementById('deviceSearchInput');
+                    input.value = d.name; input.dataset.value = d.name; closeDeviceDropdown();
+                };
+                ul.appendChild(li);
+            });
+        }
+
+        function filterDeviceListUI() {
+            const keyword = document.getElementById('deviceSearchInput').value.toLowerCase();
+            const filtered = currentAvailableDevices.filter(d => 
+                d.name.toLowerCase().includes(keyword) || (d.performance && d.performance.toLowerCase().includes(keyword))
+            );
+            renderDeviceDropdownOptions(filtered);
+            document.getElementById('deviceDropdownContainer').classList.remove('hidden');
+        }
+
+        function openDeviceDropdown() {
+            if (document.getElementById('deviceSearchInput').disabled) return;
+            document.getElementById('deviceDropdownContainer').classList.remove('hidden'); filterDeviceListUI(); 
+        }
+
+        function closeDeviceDropdown() { document.getElementById('deviceDropdownContainer').classList.add('hidden'); }
+
+        // ================= XỬ LÝ LỌC NHẬT KÝ ĐA ĐIỀU KIỆN =================
+        function handleLogSearch() {
+            currentSearchKeyword = document.getElementById('logSearchInput').value.toLowerCase().trim();
+            currentDevicePage = 1;
+            renderPaginatedDeviceLogs();
+        }
+
+        function toggleUnreturnedFilter() {
+            isOnlyUnreturned = !isOnlyUnreturned;
+            const btn = document.getElementById('btnFilterUnreturned');
+            const textSpan = document.getElementById('filterUnreturnedText');
+            if (isOnlyUnreturned) {
+                btn.className = "flex-1 sm:flex-none inline-flex items-center justify-center gap-1.5 px-3 py-2 bg-amber-500 border border-amber-600 text-white text-xs font-bold rounded-lg shadow-sm transition";
+                textSpan.innerText = "Đang Lọc: Chưa Trả";
+            } else {
+                btn.className = "flex-1 sm:flex-none inline-flex items-center justify-center gap-1.5 px-3 py-2 bg-white border border-slate-300 hover:border-amber-400 text-slate-700 text-xs font-bold rounded-lg shadow-sm transition";
+                textSpan.innerText = "Chỉ xem Chưa Trả";
+            }
+            currentDevicePage = 1; 
+            renderPaginatedDeviceLogs();
+        }
+
+        function renderPaginatedDeviceLogs() {
+            const tbody = document.getElementById('deviceLogTableBody');
+            tbody.innerHTML = '';
+            
+            // 1. Áp dụng các điều kiện lọc vào dữ liệu gốc
+            let filteredLogs = deviceLogsData;
+            
+            // Lọc theo nút "Chưa trả"
+            if (isOnlyUnreturned) {
+                filteredLogs = filteredLogs.filter(r => !String(r.trangThai || '').toLowerCase().includes('đã trả'));
             }
             
-            if (emptyRow) {
-                emptyRow.style.display = (matchedCount === 0 && rows.length > 0) ? '' : 'none';
-            }
-        }
-
-        // ================= MƯỢN & TRẢ DEVICE =================
-        async function submitBorrow() {
-            if (!loggedInUser) { showCustomAlert("Lỗi", "Vui lòng đăng nhập Google để mượn máy!", true); return; }
-            const device = document.getElementById('deviceSelect').value;
-            const reason = document.getElementById('borrowReason').value;
-
-            if(!device) { alert("Vui lòng chọn thiết bị!"); return; }
-
-            const btn = document.getElementById('btnSubmitBorrow');
-            btn.disabled = true; btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> Đang xử lý...`;
-
-            try {
-                await db.collection("device_logs").add({
-                    deviceName: device,
-                    borrowerName: loggedInUser.name,
-                    borrowerEmail: loggedInUser.email,
-                    reason: reason,
-                    status: "Đang mượn",
-                    borrowDate: firebase.firestore.FieldValue.serverTimestamp()
+            // Lọc theo ô tìm kiếm Text
+            if (currentSearchKeyword !== "") {
+                filteredLogs = filteredLogs.filter(r => {
+                    const rowText = `${r.thoiGian \vert{}\vert{} ''}${r.nguoiMuon || ''} ${r.thietBi \vert{}\vert{} ''}${r.trangThai || ''}`.toLowerCase();
+                    return rowText.includes(currentSearchKeyword);
                 });
-                document.getElementById('deviceSelect').value = "";
-                document.getElementById('borrowReason').value = "";
-                showCustomAlert("Thành công", `Đã ghi nhận mượn ${device}!`);
-            } catch (e) {
-                console.error(e); showCustomAlert("Lỗi", "Không thể lưu dữ liệu", true);
-            } finally {
-                btn.disabled = false; btn.innerHTML = `<i class="fa-solid fa-plus"></i> Đăng Ký Mượn`;
             }
+
+            const totalLogs = filteredLogs.length;
+            document.getElementById('logCountBadge').innerText = `${totalLogs} lượt`;
+            document.getElementById('totalLogsText').innerText = totalLogs;
+
+            if (totalLogs === 0) {
+                tbody.innerHTML = '<tr><td colspan="6" class="text-center py-10 text-slate-400 font-medium text-sm">Không tìm thấy nhật ký phù hợp với bộ lọc!</td></tr>';
+                document.getElementById('pageRangeText').innerText = '0 - 0';
+                document.getElementById('currentPageText').innerText = '1';
+                document.getElementById('totalPagesText').innerText = '1';
+                document.getElementById('btnPrevPage').disabled = true;
+                document.getElementById('btnNextPage').disabled = true;
+                return;
+            }
+
+            const totalPages = Math.ceil(totalLogs / ITEMS_PER_PAGE);
+            if (currentDevicePage > totalPages) currentDevicePage = totalPages;
+            if (currentDevicePage < 1) currentDevicePage = 1;
+
+            const startIndex = (currentDevicePage - 1) * ITEMS_PER_PAGE;
+            const endIndex = Math.min(startIndex + ITEMS_PER_PAGE, totalLogs);
+            const pageData = filteredLogs.slice(startIndex, endIndex);
+
+            pageData.forEach(r => {
+                const tr = document.createElement('tr');
+                tr.className = "hover:bg-slate-50/80 transition border-b border-slate-100";
+                const isReturned = String(r.trangThai || '').toLowerCase().includes('đã trả');
+                const currentUserName = loggedInUser ? loggedInUser.name : '';
+                const isOwner = (currentUserName === r.nguoiMuon) || (currentUserName === r.nguoiThaoTac);
+
+                let statusBadge = `<span class="bg-amber-100 text-amber-800 px-2.5 py-1 rounded-md text-[11px] font-bold shadow-sm">Đang Mượn</span>`;
+                let actionButton = '';
+
+                if (isReturned) {
+                    statusBadge = `<span class="bg-emerald-100 text-emerald-800 px-2.5 py-1 rounded-md text-[11px] font-bold shadow-sm">Đã Trả</span>`;
+                    actionButton = `<span class="text-slate-400 text-[11px] italic font-medium"><i class="fa-solid fa-check mr-1"></i>Hoàn tất</span>`;
+                } else {
+                    if (isOwner) {
+                        actionButton = `<button onclick="submitReturnDevice('${r.id}', '${r.thietBi.replace(/'/g, "\\'")}', '${r.nguoiMuon.replace(/'/g, "\\'")}')" class="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white text-[11px] font-bold rounded-md shadow-sm transition inline-flex items-center gap-1.5"><i class="fa-solid fa-rotate-left"></i> Trả Device</button>`;
+                    } else {
+                        actionButton = `<button disabled class="px-3 py-1.5 bg-slate-200 text-slate-400 text-[11px] font-bold rounded-md shadow-sm inline-flex items-center gap-1.5 cursor-not-allowed" title="Chỉ tài khoản mượn mới được phép trả thiết bị"><i class="fa-solid fa-lock"></i> Trả Device</button>`;
+                    }
+                }
+                tr.innerHTML = `
+                    <td class="px-5 py-3.5 font-mono text-indigo-600 font-bold whitespace-nowrap">${r.thoiGian || ''}</td>
+                    <td class="px-5 py-3.5 font-bold text-slate-800 whitespace-nowrap">${r.nguoiMuon || ''}</td>
+                    <td class="px-5 py-3.5 text-emerald-700 font-bold max-w-xs truncate" title="${r.thietBi}">${r.thietBi || ''}</td>
+                    <td class="px-5 py-3.5 whitespace-nowrap">${statusBadge}</td>
+                    <td class="px-5 py-3.5 text-slate-500 font-mono text-[11px] font-bold whitespace-nowrap">${r.gioTra || ''}</td>
+                    <td class="px-5 py-3.5 whitespace-nowrap text-right">${actionButton}</td>
+                `;
+                tbody.appendChild(tr);
+            });
+
+            document.getElementById('pageRangeText').innerText = `${startIndex + 1} -${endIndex}`;
+            document.getElementById('currentPageText').innerText = currentDevicePage;
+            document.getElementById('totalPagesText').innerText = totalPages;
+            document.getElementById('btnPrevPage').disabled = (currentDevicePage === 1);
+            document.getElementById('btnNextPage').disabled = (currentDevicePage === totalPages);
         }
 
-        async function returnDevice(docId) {
-            if (!confirm("Xác nhận bạn đã trả lại thiết bị này?")) return;
-            try {
-                await db.collection("device_logs").doc(docId).update({
-                    status: "Đã trả",
-                    returnDate: firebase.firestore.FieldValue.serverTimestamp()
+        function changeDevicePage(direction) { currentDevicePage += direction; renderPaginatedDeviceLogs(); }
+
+        function submitBorrowDevice() {
+            if (!loggedInUser) { showCustomAlert('Yêu cầu đăng nhập', 'Vui lòng đăng nhập tài khoản Google để mượn thiết bị!', true); return; }
+            const operatorName = loggedInUser.name; 
+            let borrowerName = document.getElementById('borrowerNameInput').value.trim(); 
+            if (!borrowerName) borrowerName = operatorName; 
+            const device = document.getElementById('deviceSearchInput').dataset.value || "";
+
+            if (!device) { showCustomAlert('Chưa chọn thiết bị', 'Vui lòng chọn 1 thiết bị từ danh sách!', true); return; }
+
+            const btn = document.getElementById('btnSubmitBorrow'); const origHtml = btn.innerHTML;
+            btn.disabled = true; btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin text-sm"></i> Đang ghi...`;
+
+            const now = new Date(); const pad = (n) => n.toString().padStart(2, '0');
+            const exactTimeStr = `${pad(now.getDate())}/${pad(now.getMonth()+1)}/${now.getFullYear()}${pad(now.getHours())}:${pad(now.getMinutes())}:${pad(now.getSeconds())}`;
+            const timeStr = `${pad(now.getHours())}:${pad(now.getMinutes())}${pad(now.getDate())}/${pad(now.getMonth()+1)}/${now.getFullYear()}`;
+
+            const newRecord = { nguoiMuon: borrowerName, nguoiThaoTac: operatorName, thietBi: device, thoiGian: timeStr, trangThai: "Đang Mượn", gioTra: "", createdAt: firebase.firestore.FieldValue.serverTimestamp() };
+
+            if (db) {
+                db.collection("device_logs").add(newRecord).then(() => {
+                    btn.disabled = false; btn.innerHTML = origHtml;
+                    showCustomAlert('Thành Công!', `Đã ghi nhận mượn [${device}] cho${borrowerName}.`);
+                    let displayBorrower = `**${borrowerName}**`;
+                    if (borrowerName !== operatorName) displayBorrower += `\n*(Log hộ bởi: ${operatorName})*`;
+                    sendDiscordNotification({ title: "🟦 THÔNG BÁO MƯỢN THIẾT BỊ", color: 16753920, fields: [{ name: "👤 Người thực hiện", value: displayBorrower, inline: true }, { name: "📱 Thiết bị", value: `\`${device}\``, inline: true }, { name: "⏰ Thời gian mượn", value: exactTimeStr, inline: false }, { name: "📌 Trạng thái", value: "🟡 **Đang Mượn**", inline: false }], timestamp: now.toISOString(), footer: { text: "QA Internal Portal System" } });
+                }).catch((err) => {
+                    console.error("Lỗi Firestore:", err); btn.disabled = false; btn.innerHTML = origHtml;
+                    showCustomAlert("Lỗi Server", "Không thể lưu thông tin mượn!", true);
                 });
-                showCustomAlert("Cảm ơn!", "Đã ghi nhận trả thiết bị.");
-            } catch (e) {
-                console.error(e); showCustomAlert("Lỗi", "Không thể cập nhật trạng thái trả máy", true);
             }
         }
 
-        // UTILS
-        function closeModal(modalId) { document.getElementById(modalId).classList.add('hidden'); }
+        function submitReturnDevice(docId, deviceName, borrowerName) {
+            if (!confirm(`Xác nhận trả thiết bị: [${deviceName}]?`)) return;
+            const now = new Date(); const pad = (n) => n.toString().padStart(2, '0');
+            const exactTimeStr = `${pad(now.getDate())}/${pad(now.getMonth()+1)}/${now.getFullYear()}${pad(now.getHours())}:${pad(now.getMinutes())}:${pad(now.getSeconds())}`;
+            const nowStr = `${pad(now.getHours())}:${pad(now.getMinutes())}${pad(now.getDate())}/${pad(now.getMonth()+1)}/${now.getFullYear()}`; 
+
+            if (db) {
+                db.collection("device_logs").doc(docId).update({ trangThai: "Đã Trả", gioTra: nowStr }).then(() => {
+                    showCustomAlert('Thành Công!', `Đã xác nhận trả thiết bị [${deviceName}].`);
+                    sendDiscordNotification({ title: "✅ THÔNG BÁO TRẢ THIẾT BỊ", color: 3066993, fields: [{ name: "👤 Người thực hiện", value: `**${borrowerName}**`, inline: true }, { name: "📱 Thiết bị", value: `\`${deviceName}\``, inline: true }, { name: "⏰ Thời gian trả", value: exactTimeStr, inline: false }, { name: "📌 Trạng thái", value: "🟢 **Đã Trả**", inline: false }], timestamp: now.toISOString(), footer: { text: "QA Internal Portal System" } });
+                }).catch((err) => {
+                    console.error("Lỗi cập nhật trả:", err); showCustomAlert("Lỗi Server", "Không thể cập nhật trạng thái trả!", true);
+                });
+            }
+        }
+
+        function exportDeviceLogsToExcel() {
+            if (!deviceLogsData || deviceLogsData.length === 0) { showCustomAlert("Cảnh báo", "Hiện chưa có dữ liệu nhật ký mượn trả để xuất file Excel!", true); return; }
+            let dataToExport = deviceLogsData;
+            if (isOnlyUnreturned) dataToExport = deviceLogsData.filter(r => !String(r.trangThai || '').toLowerCase().includes('đã trả'));
+            if (currentSearchKeyword !== "") {
+                dataToExport = dataToExport.filter(r => {
+                    const rowText = `${r.thoiGian || ''} ${r.nguoiMuon || ''} ${r.thietBi || ''} ${r.trangThai || ''}`.toLowerCase();
+                    return rowText.includes(currentSearchKeyword);
+                });
+            }
+            if (dataToExport.length === 0) { showCustomAlert("Cảnh báo", "Không có dữ liệu thỏa điều kiện lọc để xuất!", true); return; }
+            
+            const exportData = dataToExport.map((log, index) => {
+                const nguoiGhiNhan = log.nguoiThaoTac ? log.nguoiThaoTac : (log.nguoiMuon || '');
+                return { "STT": index + 1, "Thời Gian Mượn": log.thoiGian || '', "Người Mượn (Hiển thị)": log.nguoiMuon || '', "Tài Khoản Ghi Nhận (System Audit)": nguoiGhiNhan, "Thiết Bị": log.thietBi || '', "Trạng Thái": log.trangThai || '', "Giờ Trả": log.gioTra || '' };
+            });
+            const ws = XLSX.utils.json_to_sheet(exportData); const wb = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(wb, ws, "NhatKyMuonTra");
+            const dateStr = new Date().toISOString().slice(0, 10);
+            XLSX.writeFile(wb, `NhatKy_MuonTra_Device_${dateStr}.xlsx`);
+        }
+
         function showCustomAlert(title, message, isError = false) {
-            const modal = document.getElementById('customAlertModal');
-            document.getElementById('customAlertTitle').innerText = title;
-            document.getElementById('customAlertMessage').innerText = message;
-            const icon = document.getElementById('customAlertIcon');
-            if (isError) {
-                icon.className = "w-20 h-20 bg-rose-100 text-rose-600 rounded-full flex items-center justify-center mx-auto text-4xl shadow-inner";
-                icon.innerHTML = '<i class="fa-solid fa-triangle-exclamation"></i>';
-            } else {
-                icon.className = "w-20 h-20 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center mx-auto text-4xl shadow-inner";
-                icon.innerHTML = '<i class="fa-solid fa-circle-check"></i>';
-            }
+            const modal = document.getElementById('customAlertModal'); document.getElementById('customAlertTitle').innerText = title; document.getElementById('customAlertMessage').innerText = message;
+            const iconContainer = document.getElementById('customAlertIcon');
+            if (isError) { iconContainer.className = "w-20 h-20 bg-rose-100 text-rose-600 rounded-full flex items-center justify-center mx-auto text-4xl shadow-inner"; iconContainer.innerHTML = '<i class="fa-solid fa-triangle-exclamation"></i>'; } 
+            else { iconContainer.className = "w-20 h-20 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center mx-auto text-4xl shadow-inner"; iconContainer.innerHTML = '<i class="fa-solid fa-circle-check"></i>'; }
             modal.classList.remove('hidden');
         }
+
+        function closeCustomAlert() { document.getElementById('customAlertModal').classList.add('hidden'); }
     </script>
 </body>
 </html>
