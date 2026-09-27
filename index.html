@@ -16,7 +16,6 @@
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#312e81">
     
-    <!-- KHẮC PHỤC LỖI GSI_LOGGER: Đưa hàm khởi tạo Google Auth lên đầu trang -->
     <script>
         let loggedInUser = null;
 
@@ -38,7 +37,6 @@
     </script>
     <script src="https://accounts.google.com/gsi/client" async defer></script>
 
-    <!-- Script Kiểm tra & Tự động Update bản mới (PWA) -->
     <script>
       if ('serviceWorker' in navigator) {
         window.addEventListener('load', () => {
@@ -53,89 +51,34 @@
                 }
               };
             };
-          }).catch(err => console.log('Lỗi Service Worker:', err));
+          });
         });
       }
     </script>
 
-    <!-- CSS Dòng thông báo chạy liên tục chuẩn mượt -->
     <style>
-        .travel-marquee {
-            width: 100%;
-            max-width: 460px;
-            overflow: hidden;
-            mask-image: linear-gradient(to right, transparent, black 8%, black 92%, transparent);
-            -webkit-mask-image: linear-gradient(to right, transparent, black 8%, black 92%, transparent);
-        }
-
-        .travel-marquee-track {
-            display: flex;
-            width: max-content;
-            animation: travel-marquee-scroll 18s linear infinite;
-            will-change: transform;
-        }
-
-        .travel-marquee-group {
-            display: flex;
-            flex: 0 0 auto;
-            align-items: center;
-            padding-right: 2.5rem;
-            gap: 2.5rem;
-        }
-
-        .travel-marquee-message {
-            display: inline-flex;
-            align-items: center;
-            gap: 0.4rem;
-            white-space: nowrap;
-            font-family: 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
-            font-size: 16px;
-            font-weight: 800;
-            letter-spacing: 0.2px;
-            line-height: 1.5;
-            background: linear-gradient(90deg, #ea580c 0%, #d97706 50%, #ca8a04 100%);
-            -webkit-background-clip: text;
-            background-clip: text;
-            color: transparent;
-            animation: travel-blink 1.2s infinite ease-in-out;
-        }
-
+        .travel-marquee { width: 100%; max-width: 460px; overflow: hidden; mask-image: linear-gradient(to right, transparent, black 8%, black 92%, transparent); -webkit-mask-image: linear-gradient(to right, transparent, black 8%, black 92%, transparent); }
+        .travel-marquee-track { display: flex; width: max-content; animation: travel-marquee-scroll 18s linear infinite; will-change: transform; }
+        .travel-marquee-group { display: flex; flex: 0 0 auto; align-items: center; padding-right: 2.5rem; gap: 2.5rem; }
+        .travel-marquee-message { display: inline-flex; align-items: center; gap: 0.4rem; white-space: nowrap; font-family: 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; font-size: 16px; font-weight: 800; letter-spacing: 0.2px; line-height: 1.5; background: linear-gradient(90deg, #ea580c 0%, #d97706 50%, #ca8a04 100%); -webkit-background-clip: text; background-clip: text; color: transparent; animation: travel-blink 1.2s infinite ease-in-out; }
         .travel-marquee-message i { color: #ea580c; font-size: 15.5px; }
-
-        .travel-marquee-count {
-            font-size: 17px;
-            font-weight: 900;
-            background: linear-gradient(90deg, #c2410c 0%, #ea580c 100%);
-            -webkit-background-clip: text;
-            background-clip: text;
-            color: transparent;
-            padding: 0 2px;
-        }
-
-        @keyframes travel-marquee-scroll {
-            to { transform: translateX(-50%); }
-        }
-
-        @keyframes travel-blink {
-            0%, 100% { opacity: 1; filter: drop-shadow(0 0 1px rgba(234, 88, 12, 0.4)); }
-            50% { opacity: 0.45; filter: drop-shadow(0 0 5px rgba(234, 88, 12, 0.7)); }
-        }
-
-        @media (prefers-reduced-motion: reduce) {
-            .travel-marquee-track { animation: none; transform: none; }
-            .travel-marquee-group[aria-hidden="true"] { display: none; }
-        }
-
+        .travel-marquee-count { font-size: 17px; font-weight: 900; background: linear-gradient(90deg, #c2410c 0%, #ea580c 100%); -webkit-background-clip: text; background-clip: text; color: transparent; padding: 0 2px; }
+        @keyframes travel-marquee-scroll { to { transform: translateX(-50%); } }
+        @keyframes travel-blink { 0%, 100% { opacity: 1; filter: drop-shadow(0 0 1px rgba(234, 88, 12, 0.4)); } 50% { opacity: 0.45; filter: drop-shadow(0 0 5px rgba(234, 88, 12, 0.7)); } }
+        @media (prefers-reduced-motion: reduce) { .travel-marquee-track { animation: none; transform: none; } .travel-marquee-group[aria-hidden="true"] { display: none; } }
         .soft-text { letter-spacing: 0.1px; }
     </style>
 </head>
-<body class="bg-slate-50 text-slate-800 font-sans h-screen w-full flex flex-col md:flex-row overflow-hidden">
+<body class="bg-slate-50 text-slate-800 font-sans h-screen w-full flex overflow-hidden">
 
-    <!-- ================= SIDEBAR MENU (BACKGROUND TRÙNG KHÁNH) ================= -->
-    <aside class="w-full md:w-64 text-white flex flex-col flex-shrink-0 shadow-2xl z-20 transition-all bg-cover bg-center bg-no-repeat relative"
+    <!-- OVERLAY ĐEN CHO MOBILE KHI MỞ MENU -->
+    <div id="sidebarOverlay" onclick="toggleSidebar()" class="fixed inset-0 bg-slate-900/60 z-40 hidden md:hidden backdrop-blur-sm transition-opacity opacity-0"></div>
+
+    <!-- ================= SIDEBAR MENU RESPONSIVE (BACKGROUND TRÙNG KHÁNH) ================= -->
+    <aside id="mainSidebar" class="fixed md:relative top-0 left-0 h-screen w-[260px] md:w-64 text-white flex flex-col flex-shrink-0 shadow-2xl z-50 transition-transform duration-300 -translate-x-full md:translate-x-0 bg-cover bg-center bg-no-repeat"
            style="background-image: linear-gradient(to bottom, rgba(15, 23, 42, 0.65), rgba(30, 27, 75, 0.75)), url('./trungkhanh.jpg');">
         
-        <div class="h-auto md:h-[72px] flex items-center justify-between px-6 py-4 md:py-0 border-b border-white/10 bg-black/20 backdrop-blur-md">
+        <div class="h-[72px] flex items-center justify-between px-6 border-b border-white/10 bg-black/20 backdrop-blur-md">
             <div class="flex items-center gap-3">
                 <i class="fa-solid fa-square-poll-vertical text-indigo-300 text-[28px]"></i>
                 <div>
@@ -143,10 +86,14 @@
                     <p class="text-indigo-200 text-[11px] font-medium tracking-wide">Report & Device Tool</p>
                 </div>
             </div>
+            <!-- Nút đóng Menu trên Mobile -->
+            <button onclick="toggleSidebar()" class="md:hidden text-white/70 hover:text-white focus:outline-none">
+                <i class="fa-solid fa-xmark text-2xl"></i>
+            </button>
         </div>
 
-        <nav class="flex md:flex-col gap-2.5 p-4 overflow-x-auto md:overflow-y-auto flex-1 bg-transparent custom-scrollbar">
-            <!-- Nút 1: Báo Cáo Daily (ACTIVE TRANG NÀY) -->
+        <nav class="flex flex-col gap-2.5 p-4 overflow-y-auto flex-1 bg-transparent custom-scrollbar">
+            <!-- NÚT ACTIVE: Báo Cáo Daily -->
             <a href="index" class="whitespace-nowrap flex items-center gap-3 px-4 py-3.5 text-sm font-bold rounded-xl transition border border-indigo-300/50 bg-indigo-600/70 hover:bg-indigo-500/70 text-white backdrop-blur-md shadow-lg">
                 <i class="fa-solid fa-chart-line w-5 text-center text-lg"></i> <span>Báo Cáo Daily</span>
             </a>
@@ -168,11 +115,15 @@
     <!-- ================= MAIN CONTENT ================= -->
     <div class="flex-1 flex flex-col h-full overflow-hidden bg-slate-50 relative">
         <header class="bg-white text-slate-800 shadow-sm border-b border-slate-200 z-10 p-3 px-4 md:px-6 flex justify-between items-center min-h-[72px]">
-            <div class="flex-1 shrink-0">
+            <div class="flex items-center gap-3 flex-1 shrink-0">
+                <!-- Nút Hamburger Mở Menu trên Mobile -->
+                <button onclick="toggleSidebar()" class="md:hidden text-slate-500 hover:text-indigo-600 focus:outline-none p-1 transition">
+                    <i class="fa-solid fa-bars text-xl"></i>
+                </button>
                 <h2 class="text-xl font-bold text-slate-800 hidden sm:block">Báo Cáo Daily (Jira)</h2>
+                <h2 class="text-lg font-bold text-slate-800 sm:hidden">Báo Cáo Daily</h2>
             </div>
             
-            <!-- Phần ở giữa: Thông báo đếm ngược chạy liên tục -->
             <div class="hidden lg:flex flex-1 min-w-0 justify-center items-center">
                 <div class="w-full max-w-[460px] px-4 py-2 rounded-full bg-slate-50/90 border border-slate-200 shadow-sm cursor-default">
                     <div class="travel-marquee">
@@ -257,48 +208,48 @@
                 <!-- Dynamic Dashboard Container -->
                 <div id="reportDashboard" class="hidden space-y-6">
                     <div id="mainDashboardView" class="space-y-6">
-                        <section class="bg-white rounded-xl shadow-sm border border-slate-200 p-5 space-y-4 w-full">
+                        <section class="bg-white rounded-xl shadow-sm border border-slate-200 p-4 sm:p-5 space-y-4 w-full">
                             <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-slate-100 pb-4">
                                 <div class="flex items-center gap-2">
                                     <i class="fa-solid fa-filter text-indigo-600 text-lg"></i>
                                     <h2 class="text-base font-bold text-slate-800">Bộ lọc & Cấu hình Báo cáo</h2>
                                 </div>
-                                <div class="flex flex-wrap items-center gap-3">
+                                <div class="flex flex-col sm:flex-row flex-wrap items-stretch sm:items-center gap-3">
                                     <div class="flex items-center gap-2">
-                                        <label class="text-xs font-semibold text-slate-600">Chế độ nhóm Tag:</label>
-                                        <select id="tagModeSelect" onchange="processData()" class="bg-slate-100 border border-slate-300 text-slate-700 text-xs rounded-lg p-2 focus:ring-2 focus:ring-indigo-500 outline-none font-medium">
+                                        <label class="text-xs font-semibold text-slate-600 whitespace-nowrap">Chế độ nhóm Tag:</label>
+                                        <select id="tagModeSelect" onchange="processData()" class="w-full sm:w-auto bg-slate-100 border border-slate-300 text-slate-700 text-xs rounded-lg p-2 focus:ring-2 focus:ring-indigo-500 outline-none font-medium">
                                             <option value="primary">Chỉ lấy Tag chính đầu tiên [Tag 1]</option>
                                             <option value="all">Đếm tất cả Tag trong Ticket</option>
                                         </select>
                                     </div>
-                                    <button id="copyBtn" onclick="openTagSelectionModal()" class="inline-flex items-center gap-2 px-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-lg transition shadow-sm">
+                                    <button id="copyBtn" onclick="openTagSelectionModal()" class="w-full sm:w-auto inline-flex justify-center items-center gap-2 px-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-lg transition shadow-sm">
                                         <i class="fa-solid fa-copy text-sm"></i> Copy Báo Cáo Daily
                                     </button>
                                 </div>
                             </div>
                             
-                            <div class="bg-indigo-50/50 border border-indigo-100 rounded-lg p-3 flex flex-col sm:flex-row sm:items-center flex-wrap gap-4">
-                                <div class="flex-1 flex items-center gap-2 min-w-[200px]">
-                                    <label class="text-xs font-bold text-indigo-900 flex items-center gap-1.5 whitespace-nowrap">
-                                        <i class="fa-solid fa-bullseye text-indigo-500"></i> Scope:
+                            <div class="bg-indigo-50/50 border border-indigo-100 rounded-lg p-3 grid grid-cols-1 sm:grid-cols-3 gap-4">
+                                <div>
+                                    <label class="block text-xs font-bold text-indigo-900 mb-1">
+                                        <i class="fa-solid fa-bullseye text-indigo-500 mr-1"></i> Scope:
                                     </label>
                                     <input type="text" id="scopeOfTestingInput" oninput="saveScopeTesting()" placeholder="VD: Logic UI..." class="w-full bg-white border border-slate-300 text-slate-700 text-xs font-medium rounded-lg p-2 outline-none">
                                 </div>
-                                <div class="flex items-center gap-2">
-                                    <label class="text-xs font-bold text-indigo-900 flex items-center gap-1.5 whitespace-nowrap">
-                                        <i class="fa-regular fa-calendar text-indigo-500"></i> Ngày:
+                                <div>
+                                    <label class="block text-xs font-bold text-indigo-900 mb-1">
+                                        <i class="fa-regular fa-calendar text-indigo-500 mr-1"></i> Ngày:
                                     </label>
-                                    <input type="date" id="reportDateInput" class="bg-white border border-slate-300 text-slate-700 text-xs font-medium rounded-lg p-2 outline-none">
+                                    <input type="date" id="reportDateInput" class="w-full bg-white border border-slate-300 text-slate-700 text-xs font-medium rounded-lg p-2 outline-none">
                                 </div>
-                                <div class="flex-1 flex items-center gap-2 min-w-[200px]">
-                                    <label class="text-xs font-bold text-indigo-900 flex items-center gap-1.5 whitespace-nowrap">
-                                        <i class="fa-solid fa-users text-indigo-500"></i> QC:
+                                <div>
+                                    <label class="block text-xs font-bold text-indigo-900 mb-1">
+                                        <i class="fa-solid fa-users text-indigo-500 mr-1"></i> QC:
                                     </label>
                                     <input type="text" id="qcMembersInput" oninput="saveQCMembers()" placeholder="VD: Kenz,..." class="w-full bg-white border border-slate-300 text-slate-700 text-xs font-medium rounded-lg p-2 outline-none">
                                 </div>
                             </div>
 
-                            <div class="bg-slate-50 border border-slate-200 rounded-lg p-4 flex flex-col sm:flex-row sm:items-center gap-4">
+                            <div class="bg-slate-50 border border-slate-200 rounded-lg p-3 sm:p-4 flex flex-col sm:flex-row sm:items-center gap-3">
                                 <label class="text-xs font-bold text-slate-700 flex items-center gap-1.5 whitespace-nowrap">
                                     <i class="fa-solid fa-table text-indigo-600"></i> Nguồn dữ liệu Tiến Độ Sheet (API):
                                 </label>
@@ -306,7 +257,7 @@
                             </div>
 
                             <div>
-                                <div class="flex justify-between items-center mb-2">
+                                <div class="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-2 mb-2">
                                     <label class="text-xs font-bold text-slate-700">Chọn Trạng thái (Status) cần hiển thị:</label>
                                     <div class="space-x-2 text-xs">
                                         <button onclick="toggleAllStatuses(true)" class="text-indigo-600 hover:underline font-bold">Chọn tất cả</button>
@@ -351,30 +302,30 @@
                         </section>
 
                         <section class="grid grid-cols-1 lg:grid-cols-3 gap-6 w-full">
-                            <div class="lg:col-span-2 bg-white p-5 rounded-xl shadow-sm border border-slate-200 flex flex-col">
+                            <div class="lg:col-span-2 bg-white p-4 sm:p-5 rounded-xl shadow-sm border border-slate-200 flex flex-col">
                                 <h3 class="text-base font-bold text-slate-800 mb-2"><i class="fa-solid fa-chart-bar text-indigo-600 mr-2"></i>Biểu đồ Tag & Priority</h3>
-                                <div class="relative flex-1 min-h-[360px]"><canvas id="tagPriorityStackedChart"></canvas></div>
+                                <div class="relative flex-1 min-h-[300px] sm:min-h-[360px] w-full"><canvas id="tagPriorityStackedChart"></canvas></div>
                             </div>
-                            <div class="bg-white p-5 rounded-xl shadow-sm border border-slate-200 flex flex-col">
+                            <div class="bg-white p-4 sm:p-5 rounded-xl shadow-sm border border-slate-200 flex flex-col">
                                 <h3 class="text-base font-bold text-slate-800 mb-2"><i class="fa-solid fa-chart-pie text-indigo-600 mr-2"></i>Tỷ lệ Priority</h3>
-                                <div class="relative flex-1 min-h-[360px] flex items-center justify-center"><canvas id="priorityDoughnutChart"></canvas></div>
+                                <div class="relative flex-1 min-h-[300px] sm:min-h-[360px] w-full flex items-center justify-center"><canvas id="priorityDoughnutChart"></canvas></div>
                             </div>
                         </section>
 
-                        <section class="bg-white p-5 rounded-xl shadow-sm border border-slate-200 w-full">
+                        <section class="bg-white p-4 sm:p-5 rounded-xl shadow-sm border border-slate-200 w-full">
                             <h3 class="text-base font-bold text-slate-800 mb-4"><i class="fa-solid fa-cubes text-indigo-600 mr-2"></i>Thống kê Chi tiết theo Tag</h3>
                             <div id="tagBreakdownContainer" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4"></div>
                         </section>
 
                         <section class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden w-full">
-                            <div class="p-5 border-b border-slate-200 flex flex-col sm:flex-row justify-between items-center gap-4">
+                            <div class="p-4 sm:p-5 border-b border-slate-200 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
                                 <h3 class="text-base font-bold text-slate-800 flex items-center gap-2">
-                                    <i class="fa-solid fa-table text-indigo-600"></i> Toàn bộ danh sách Ticket
+                                    <i class="fa-solid fa-table text-indigo-600"></i> Danh sách Ticket
                                 </h3>
                                 <input type="text" id="searchInput" onkeyup="filterMainTable()" placeholder="Tìm kiếm Key, Summary..." class="w-full sm:w-64 bg-slate-100 border border-slate-300 text-slate-700 text-xs font-medium rounded-lg p-2.5 focus:ring-2 focus:ring-indigo-500 outline-none">
                             </div>
                             <div class="overflow-x-auto max-h-[500px]">
-                                <table class="w-full text-xs text-left text-slate-600">
+                                <table class="w-full text-xs text-left text-slate-600 min-w-[800px]">
                                     <thead class="text-slate-700 uppercase bg-slate-100 sticky top-0 border-b border-slate-200">
                                         <tr>
                                             <th class="px-4 py-3 font-bold">Issue Key</th>
@@ -393,9 +344,9 @@
 
                     <!-- VIEW 2: DETAIL TICKET VIEW -->
                     <div id="detailView" class="hidden space-y-6 w-full">
-                        <section class="bg-white rounded-xl shadow-sm border border-slate-200 p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                            <div class="flex items-center gap-4">
-                                <button onclick="closeDetailView()" class="inline-flex items-center gap-2 px-4 py-2.5 bg-slate-100 hover:bg-indigo-50 text-indigo-700 text-xs font-bold rounded-lg border border-slate-300 hover:border-indigo-300 transition shadow-sm">
+                        <section class="bg-white rounded-xl shadow-sm border border-slate-200 p-4 sm:p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                            <div class="flex flex-col sm:flex-row items-start sm:items-center gap-4">
+                                <button onclick="closeDetailView()" class="w-full sm:w-auto inline-flex justify-center items-center gap-2 px-4 py-2.5 bg-slate-100 hover:bg-indigo-50 text-indigo-700 text-xs font-bold rounded-lg border border-slate-300 hover:border-indigo-300 transition shadow-sm">
                                     <i class="fa-solid fa-arrow-left"></i> Quay lại Dashboard
                                 </button>
                                 <div>
@@ -404,14 +355,14 @@
                                 </div>
                             </div>
                             <div class="flex items-center gap-3">
-                                <div class="bg-indigo-50 border border-indigo-200 px-3 py-1.5 rounded-lg text-xs font-bold text-indigo-800">
+                                <div class="bg-indigo-50 border border-indigo-200 px-3 py-1.5 rounded-lg text-xs font-bold text-indigo-800 w-full sm:w-auto text-center">
                                     Tổng số: <span id="detailCountBadge" class="text-indigo-600 text-sm">0</span> ticket
                                 </div>
                             </div>
                         </section>
                         <section class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
                             <div class="overflow-x-auto min-h-[300px] max-h-[600px]">
-                                <table class="w-full text-xs text-left text-slate-600">
+                                <table class="w-full text-xs text-left text-slate-600 min-w-[800px]">
                                     <thead class="text-slate-700 uppercase bg-slate-100 sticky top-0 border-b border-slate-200">
                                         <tr>
                                             <th class="px-4 py-3 font-bold">Issue Key</th>
@@ -433,10 +384,10 @@
     </div>
 
     <!-- ================= MODAL LỰA CHỌN TAG ================= -->
-    <div id="tagSelectionModal" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-sm px-4">
+    <div id="tagSelectionModal" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4">
         <div class="bg-white rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden flex flex-col transform transition-all">
-            <div class="px-6 py-4 border-b border-slate-200 flex justify-between items-center bg-slate-50">
-                <h3 class="text-lg font-bold text-indigo-900 flex items-center gap-2">
+            <div class="px-4 sm:px-6 py-4 border-b border-slate-200 flex justify-between items-center bg-slate-50">
+                <h3 class="text-base sm:text-lg font-bold text-indigo-900 flex items-center gap-2">
                     <i class="fa-solid fa-tags text-indigo-600"></i> Chọn Tag Cho Báo Cáo
                 </h3>
                 <button onclick="closeTagModal()" class="text-slate-400 hover:text-rose-500 transition outline-none">
@@ -444,7 +395,7 @@
                 </button>
             </div>
             
-            <div class="p-6">
+            <div class="p-4 sm:p-6">
                 <p class="text-xs text-slate-500 mb-4 font-medium">Hệ thống đã quét được các loại Tag dưới đây từ dữ liệu Ticket hiện tại. Hãy bỏ tích những Tag bạn KHÔNG MUỐN hiển thị trong Báo Cáo Daily.</p>
                 
                 <div class="flex gap-2 mb-4 text-xs font-bold border-b border-slate-100 pb-3">
@@ -453,12 +404,14 @@
                     <button onclick="toggleAllTags(false)" class="text-slate-500 hover:text-slate-700 transition">Bỏ chọn tất cả</button>
                 </div>
 
-                <div id="tagCheckboxContainer" class="flex flex-wrap gap-2 text-sm font-medium text-slate-700 max-h-[40vh] overflow-y-auto custom-scrollbar"></div>
+                <div id="tagCheckboxContainer" class="flex flex-wrap gap-2 text-sm font-medium text-slate-700 max-h-[40vh] overflow-y-auto custom-scrollbar">
+                    <!-- Checkbox hoặc Thông báo rỗng được gen bằng JS -->
+                </div>
             </div>
 
-            <div class="px-6 py-4 border-t border-slate-100 bg-slate-50 flex justify-end gap-3">
-                <button onclick="closeTagModal()" class="px-5 py-2.5 bg-white border border-slate-300 hover:bg-slate-100 text-slate-700 text-xs font-bold rounded-xl transition shadow-sm">Hủy</button>
-                <button id="btnConfirmCopy" onclick="confirmAndCopyReport(false)" class="px-5 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-xl transition shadow-sm flex items-center gap-2">
+            <div class="px-4 sm:px-6 py-4 border-t border-slate-100 bg-slate-50 flex flex-col sm:flex-row justify-end gap-3">
+                <button onclick="closeTagModal()" class="w-full sm:w-auto px-5 py-2.5 bg-white border border-slate-300 hover:bg-slate-100 text-slate-700 text-xs font-bold rounded-xl transition shadow-sm">Hủy</button>
+                <button id="btnConfirmCopy" onclick="confirmAndCopyReport(false)" class="w-full sm:w-auto px-5 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-xl transition shadow-sm flex justify-center items-center gap-2">
                     <i class="fa-solid fa-copy"></i> Xác nhận & Copy
                 </button>
             </div>
@@ -466,18 +419,33 @@
     </div>
 
     <!-- Modal Alert -->
-    <div id="customAlertModal" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-sm">
+    <div id="customAlertModal" class="hidden fixed inset-0 z-[70] flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4">
         <div class="bg-white rounded-2xl shadow-2xl w-full max-w-sm overflow-hidden p-8 text-center space-y-4">
             <div id="customAlertIcon" class="w-20 h-20 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center mx-auto text-4xl shadow-inner">
                 <i class="fa-solid fa-circle-check"></i>
             </div>
             <h3 class="text-xl font-bold text-slate-800" id="customAlertTitle">Thành công!</h3>
             <p class="text-sm text-slate-600 font-medium" id="customAlertMessage">Đã thực hiện xong thao tác.</p>
-            <button onclick="closeCustomAlert()" class="w-full px-4 py-3 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl shadow-sm transition mt-2">OK</button>
+            <button onclick="closeModal('customAlertModal')" class="w-full px-4 py-3 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl shadow-sm transition mt-2">OK</button>
         </div>
     </div>
 
     <script>
+        // JS ẨN/HIỆN SIDEBAR MOBILE
+        function toggleSidebar() {
+            const sidebar = document.getElementById('mainSidebar');
+            const overlay = document.getElementById('sidebarOverlay');
+            if (sidebar.classList.contains('-translate-x-full')) {
+                sidebar.classList.remove('-translate-x-full');
+                overlay.classList.remove('hidden');
+                setTimeout(() => overlay.classList.remove('opacity-0'), 10);
+            } else {
+                sidebar.classList.add('-translate-x-full');
+                overlay.classList.add('opacity-0');
+                setTimeout(() => overlay.classList.add('hidden'), 300);
+            }
+        }
+
         const URL_REPORT_API = "https://script.google.com/a/macros/enotion.io/s/AKfycbzynUh65kMWVtwRdYdg8x35-6LViA_JwMPrWhEoMdDXFDP7tpcheilYrReQSIrQ6zAtIQ/exec";
 
         // ================= CẤU HÌNH NGÀY ĐI TRÙNG KHÁNH =================
@@ -499,9 +467,7 @@
                 current.setDate(current.getDate() + 1);
             }
             
-            // Fix QuerySelector target
-            const txtElements = document.querySelectorAll('.mondayCountText');
-            txtElements.forEach(el => {
+            document.querySelectorAll('.mondayCountText').forEach(el => {
                 el.innerText = mondaysCount;
             });
         }
@@ -879,7 +845,6 @@
             });
         }
 
-        // ================= HÀM XỬ LÝ CHỌN TAG CHO REPORT =================
         function openTagSelectionModal() {
             if (rawJiraData.length === 0) {
                 showCustomAlert("Cảnh báo", "Vui lòng tải lên file Jira trước khi Copy Báo cáo!", true);
@@ -902,7 +867,6 @@
                 
                 const summary = getColumnValue(row, ['Summary', 'Tóm tắt', 'Title']);
                 const tags = parseTagsFromSummary(summary);
-                
                 const selectedTags = (tagMode === 'primary') ? [tags[0]] : tags;
                 
                 selectedTags.forEach(t => {
@@ -943,7 +907,7 @@
             document.querySelectorAll('.tag-select-cb').forEach(cb => cb.checked = checked);
         }
 
-        // ================= HÀM XỬ LÝ FORMAT % =================
+        // ================= HÀM XỬ LÝ FORMAT % (FIX LỖI) =================
         function formatPctDisplayFixed(val) {
             if (val === null || val === undefined || val === '') return '0%';
             let s = String(val).trim();
