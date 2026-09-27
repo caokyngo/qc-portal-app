@@ -11,7 +11,6 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     
-    <!-- Cấu hình PWA -->
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#312e81">
     
@@ -24,31 +23,30 @@
       if ('serviceWorker' in navigator) {
         window.addEventListener('load', () => {
           navigator.serviceWorker.register('./sw.js').then(reg => {
-            // Ép trình duyệt kiểm tra bản cập nhật
             reg.update();
-            
-            // Nếu có bản mới -> Tự động kích hoạt và reload
             reg.onupdatefound = () => {
               const installingWorker = reg.installing;
               installingWorker.onstatechange = () => {
                 if (installingWorker.state === 'installed' && navigator.serviceWorker.controller) {
-                  console.log('Có phiên bản code mới! Đang tự động tải lại...');
                   window.location.reload();
                 }
               };
             };
-          }).catch(err => console.log('Lỗi Service Worker:', err));
+          });
         });
       }
     </script>
 </head>
-<body class="bg-slate-50 text-slate-800 font-sans h-screen w-full flex flex-col md:flex-row overflow-hidden">
+<body class="bg-slate-50 text-slate-800 font-sans h-screen w-full flex overflow-hidden">
 
-   <!-- ================= SIDEBAR MENU (BACKGROUND TRÙNG KHÁNH) ================= -->
-    <aside class="w-full md:w-64 text-white flex flex-col flex-shrink-0 shadow-2xl z-20 transition-all bg-cover bg-center bg-no-repeat relative"
+    <!-- OVERLAY ĐEN CHO MOBILE KHI MỞ MENU -->
+    <div id="sidebarOverlay" onclick="toggleSidebar()" class="fixed inset-0 bg-slate-900/60 z-40 hidden md:hidden backdrop-blur-sm transition-opacity opacity-0"></div>
+
+    <!-- ================= SIDEBAR MENU RESPONSIVE (BACKGROUND TRÙNG KHÁNH) ================= -->
+    <aside id="mainSidebar" class="fixed md:relative top-0 left-0 h-screen w-[260px] md:w-64 text-white flex flex-col flex-shrink-0 shadow-2xl z-50 transition-transform duration-300 -translate-x-full md:translate-x-0 bg-cover bg-center bg-no-repeat"
            style="background-image: linear-gradient(to bottom, rgba(15, 23, 42, 0.65), rgba(30, 27, 75, 0.75)), url('./trungkhanh.jpg');">
         
-        <div class="h-auto md:h-[72px] flex items-center justify-between px-6 py-4 md:py-0 border-b border-white/10 bg-black/20 backdrop-blur-md">
+        <div class="h-[72px] flex items-center justify-between px-6 border-b border-white/10 bg-black/20 backdrop-blur-md">
             <div class="flex items-center gap-3">
                 <i class="fa-solid fa-square-poll-vertical text-indigo-300 text-[28px]"></i>
                 <div>
@@ -56,25 +54,26 @@
                     <p class="text-indigo-200 text-[11px] font-medium tracking-wide">Report & Device Tool</p>
                 </div>
             </div>
+            <!-- Nút đóng Menu trên Mobile -->
+            <button onclick="toggleSidebar()" class="md:hidden text-white/70 hover:text-white focus:outline-none">
+                <i class="fa-solid fa-xmark text-2xl"></i>
+            </button>
         </div>
 
-        <nav class="flex md:flex-col gap-2.5 p-4 overflow-x-auto md:overflow-y-auto flex-1 bg-transparent custom-scrollbar">
-            <!-- Nút 1: Báo Cáo Daily -->
+        <nav class="flex flex-col gap-2.5 p-4 overflow-y-auto flex-1 bg-transparent custom-scrollbar">
             <a href="index" class="whitespace-nowrap flex items-center gap-3 px-4 py-3.5 text-sm font-bold rounded-xl transition border border-white/15 bg-white/10 hover:bg-white/25 hover:border-white/40 text-white backdrop-blur-md shadow-sm">
                 <i class="fa-solid fa-chart-line w-5 text-center text-lg"></i> <span>Báo Cáo Daily</span>
             </a>
             
-            <!-- Nút 2: Mượn Device -->
             <a href="device_manage" class="whitespace-nowrap flex items-center gap-3 px-4 py-3.5 text-sm font-bold rounded-xl transition border border-white/15 bg-white/10 hover:bg-white/25 hover:border-white/40 text-white backdrop-blur-md shadow-sm">
                 <i class="fa-solid fa-mobile-screen-button w-5 text-center text-lg"></i> <span>Mượn Device</span>
             </a>
             
-            <!-- Nút 3: Thông tin Device (ACTIVE) -->
+            <!-- NÚT ACTIVE: Thông tin Device -->
             <a href="device_info" class="whitespace-nowrap flex items-center gap-3 px-4 py-3.5 text-sm font-bold rounded-xl transition border border-indigo-300/50 bg-indigo-600/70 hover:bg-indigo-500/70 text-white backdrop-blur-md shadow-lg">
                 <i class="fa-solid fa-circle-info w-5 text-center text-lg"></i> <span>Thông tin Device</span>
             </a>
             
-            <!-- Nút 4: Xin OFF / WFH -->
             <a href="log_off" class="whitespace-nowrap flex items-center gap-3 px-4 py-3.5 text-sm font-bold rounded-xl transition border border-white/15 bg-white/10 hover:bg-white/25 hover:border-white/40 text-white backdrop-blur-md shadow-sm">
                 <i class="fa-solid fa-calendar-minus w-5 text-center text-lg"></i> <span>Xin OFF / WFH</span>
             </a>
@@ -83,11 +82,14 @@
 
     <!-- ================= MAIN CONTENT ================= -->
     <div class="flex-1 flex flex-col h-full overflow-hidden bg-slate-50 relative">
-        
-        <!-- HEADER -->
         <header class="bg-white text-slate-800 shadow-sm border-b border-slate-200 z-10 p-3 px-4 md:px-6 flex justify-between items-center min-h-[72px]">
-            <div>
+            <div class="flex items-center gap-3 flex-1 shrink-0">
+                <!-- Nút Hamburger Mở Menu trên Mobile -->
+                <button onclick="toggleSidebar()" class="md:hidden text-slate-500 hover:text-indigo-600 focus:outline-none p-1 transition">
+                    <i class="fa-solid fa-bars text-xl"></i>
+                </button>
                 <h2 class="text-xl font-bold text-slate-800 hidden sm:block">Danh Sách Thiết Bị</h2>
+                <h2 class="text-lg font-bold text-slate-800 sm:hidden">DS Thiết Bị</h2>
             </div>
             
             <div class="flex items-center gap-4">
@@ -97,34 +99,27 @@
             </div>
         </header>
 
-        <!-- MAIN SCROLLABLE CONTENT -->
         <main class="flex-1 overflow-y-auto p-4 md:p-6 relative">
             <div class="w-full mx-auto 2xl:max-w-[1600px] space-y-6">
-                
                 <section class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden w-full">
-                    <!-- Thanh công cụ -->
-                    <div class="p-5 border-b border-slate-200 flex flex-col sm:flex-row justify-between items-center gap-4 bg-slate-50/80">
+                    <div class="p-4 sm:p-5 border-b border-slate-200 flex flex-col sm:flex-row justify-between items-center gap-4 bg-slate-50/80">
                         <h3 class="text-base font-bold text-slate-800 flex items-center gap-2">
-                            <i class="fa-solid fa-mobile-screen text-indigo-600"></i>
-                            Cấu hình & Hiệu năng
+                            <i class="fa-solid fa-mobile-screen text-indigo-600"></i> Cấu hình & Hiệu năng
                         </h3>
                         
-                        <div class="flex items-center gap-3 w-full sm:w-auto">
+                        <div class="flex flex-wrap sm:flex-nowrap items-center gap-3 w-full sm:w-auto">
                             <div class="relative w-full sm:w-72">
                                 <i class="fa-solid fa-search absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-sm"></i>
-                                <input type="text" id="searchInput" oninput="searchDevices()" placeholder="Tìm tên máy, OS, hiệu năng..." class="w-full h-10 bg-white border border-slate-300 text-slate-700 font-medium text-xs rounded-xl pl-9 pr-4 focus:ring-2 focus:ring-indigo-500 outline-none shadow-sm transition">
+                                <input type="text" id="searchInput" oninput="searchDevices()" placeholder="Tìm tên máy, OS..." class="w-full h-10 bg-white border border-slate-300 text-slate-700 font-medium text-xs rounded-xl pl-9 pr-4 focus:ring-2 focus:ring-indigo-500 outline-none shadow-sm transition">
                             </div>
-                            
-                            <!-- Nút Thêm Mới -->
-                            <button onclick="openDeviceModal()" class="whitespace-nowrap h-10 px-4 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold rounded-xl shadow-sm transition flex items-center gap-2">
+                            <button onclick="openDeviceModal()" class="w-full sm:w-auto whitespace-nowrap h-10 px-4 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold rounded-xl shadow-sm transition flex items-center justify-center gap-2">
                                 <i class="fa-solid fa-plus"></i> Thêm mới
                             </button>
                         </div>
                     </div>
 
-                    <!-- Bảng Dữ Liệu -->
                     <div class="overflow-x-auto min-h-[500px]">
-                        <table class="w-full text-sm text-left text-slate-600">
+                        <table class="w-full text-sm text-left text-slate-600 min-w-[700px]">
                             <thead class="text-slate-700 uppercase bg-slate-100 sticky top-0 border-b border-slate-200 text-xs font-bold">
                                 <tr>
                                     <th class="px-5 py-4 w-16 text-center">STT</th>
@@ -136,22 +131,18 @@
                                 </tr>
                             </thead>
                             <tbody id="deviceTableBody" class="divide-y divide-slate-200 font-medium">
-                                <tr>
-                                    <td colspan="6" class="text-center py-10 text-slate-400 italic">Đang tải dữ liệu từ Firebase...</td>
-                                </tr>
+                                <tr><td colspan="6" class="text-center py-10 text-slate-400 italic">Đang tải dữ liệu từ Firebase...</td></tr>
                             </tbody>
                         </table>
                     </div>
                 </section>
-
             </div>
         </main>
     </div>
 
     <!-- ================= MODAL THÊM/SỬA THIẾT BỊ ================= -->
-    <div id="deviceModal" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-sm px-4">
+    <div id="deviceModal" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4">
         <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden flex flex-col transform transition-all">
-            <!-- Modal Header -->
             <div class="px-6 py-4 border-b border-slate-200 flex justify-between items-center bg-slate-50">
                 <h3 id="deviceModalTitle" class="text-lg font-bold text-indigo-900 flex items-center gap-2">
                     <i class="fa-solid fa-mobile-button text-indigo-600"></i> Thêm Mới Thiết Bị
@@ -161,15 +152,12 @@
                 </button>
             </div>
             
-            <!-- Modal Body -->
             <div class="p-6 space-y-4">
                 <input type="hidden" id="modalDeviceId">
-                
                 <div>
                     <label class="block text-xs font-bold text-slate-700 mb-1.5">Tên Thiết Bị <span class="text-red-500">*</span></label>
                     <input type="text" id="modalDeviceName" placeholder="VD: iPhone 14 Pro Max" class="w-full border border-slate-300 rounded-xl p-2.5 text-sm font-semibold focus:ring-2 focus:ring-indigo-500 outline-none transition">
                 </div>
-                
                 <div class="grid grid-cols-2 gap-4">
                     <div>
                         <label class="block text-xs font-bold text-slate-700 mb-1.5">Nền Tảng</label>
@@ -190,14 +178,12 @@
                         </select>
                     </div>
                 </div>
-
                 <div>
                     <label class="block text-xs font-bold text-slate-700 mb-1.5">Phiên Bản OS <span class="text-slate-400 font-normal">(Tùy chọn)</span></label>
                     <input type="text" id="modalDeviceOS" placeholder="VD: iOS 16.4.1" class="w-full border border-slate-300 rounded-xl p-2.5 text-sm font-semibold focus:ring-2 focus:ring-indigo-500 outline-none transition">
                 </div>
             </div>
 
-            <!-- Modal Footer -->
             <div class="px-6 py-4 border-t border-slate-100 bg-slate-50 flex justify-end gap-3">
                 <button onclick="closeDeviceModal()" class="px-5 py-2.5 bg-white border border-slate-300 hover:bg-slate-100 text-slate-700 text-xs font-bold rounded-xl transition shadow-sm">Hủy Bỏ</button>
                 <button id="btnSaveDevice" onclick="saveDevice()" class="px-5 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold rounded-xl transition shadow-sm flex items-center gap-2">
@@ -208,7 +194,7 @@
     </div>
 
     <!-- Modal Alert -->
-    <div id="customAlertModal" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-sm">
+    <div id="customAlertModal" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4">
         <div class="bg-white rounded-2xl shadow-2xl w-full max-w-sm overflow-hidden p-8 text-center space-y-4">
             <div id="customAlertIcon" class="w-20 h-20 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center mx-auto text-4xl shadow-inner">
                 <i class="fa-solid fa-circle-check"></i>
@@ -220,6 +206,21 @@
     </div>
 
     <script>
+        // JS ẨN/HIỆN SIDEBAR MOBILE
+        function toggleSidebar() {
+            const sidebar = document.getElementById('mainSidebar');
+            const overlay = document.getElementById('sidebarOverlay');
+            if (sidebar.classList.contains('-translate-x-full')) {
+                sidebar.classList.remove('-translate-x-full');
+                overlay.classList.remove('hidden');
+                setTimeout(() => overlay.classList.remove('opacity-0'), 10);
+            } else {
+                sidebar.classList.add('-translate-x-full');
+                overlay.classList.add('opacity-0');
+                setTimeout(() => overlay.classList.add('hidden'), 300);
+            }
+        }
+
         // === CẤU HÌNH FIREBASE ===
         const firebaseConfig = {
             apiKey: "AIzaSyBZ72fOBO-VPMDrXBS4E15TN5L7tfcL46s",
@@ -240,7 +241,6 @@
 
         let allDevicesList = [];
 
-        // Lấy dữ liệu Real-time từ Firebase
         if (db) {
             db.collection("devices").orderBy("name").onSnapshot((snapshot) => {
                 allDevicesList = [];
@@ -253,7 +253,6 @@
             });
         }
 
-        // ================= HÀM RENDER UI =================
         function renderTable(data) {
             const tbody = document.getElementById("deviceTableBody");
             document.getElementById("totalDeviceBadge").innerText = data.length;
@@ -273,18 +272,15 @@
                 const osVersion = device.osVersion || "N/A";
                 const perf = device.performance || "Chưa rõ";
 
-                // CSS Nền tảng
                 let typeBadge = `<span class="bg-slate-100 text-slate-600 px-2.5 py-1 rounded text-xs font-bold border border-slate-200">${type}</span>`;
                 if (type.toLowerCase() === "ios") typeBadge = `<span class="bg-blue-50 text-blue-700 px-2.5 py-1 rounded text-xs font-bold border border-blue-200"><i class="fa-brands fa-apple mr-1"></i>${type}</span>`;
                 if (type.toLowerCase() === "android") typeBadge = `<span class="bg-emerald-50 text-emerald-700 px-2.5 py-1 rounded text-xs font-bold border border-emerald-200"><i class="fa-brands fa-android mr-1"></i>${type}</span>`;
 
-                // CSS Hiệu năng
                 let perfBadge = `<span class="text-slate-500 font-semibold">${perf}</span>`;
                 if (perf.toLowerCase() === "mạnh") perfBadge = `<span class="text-emerald-600 font-black"><i class="fa-solid fa-bolt mr-1"></i>Mạnh</span>`;
                 if (perf.toLowerCase().includes("trung")) perfBadge = `<span class="text-amber-500 font-black"><i class="fa-solid fa-battery-half mr-1"></i>Trung</span>`;
                 if (perf.toLowerCase() === "yếu") perfBadge = `<span class="text-rose-500 font-black"><i class="fa-solid fa-battery-quarter mr-1"></i>Yếu</span>`;
 
-                // Nén object device thành chuỗi an toàn
                 const deviceStr = encodeURIComponent(JSON.stringify(device));
 
                 tr.innerHTML = `
@@ -317,7 +313,6 @@
             renderTable(filtered);
         }
 
-        // ================= HÀM MODAL THÊM/SỬA =================
         function openDeviceModal(deviceStr = null) {
             const modal = document.getElementById('deviceModal');
             const title = document.getElementById('deviceModalTitle');
@@ -328,7 +323,6 @@
             const perfInput = document.getElementById('modalDevicePerf');
 
             if (deviceStr) {
-                // CHẾ ĐỘ SỬA
                 const device = JSON.parse(decodeURIComponent(deviceStr));
                 title.innerHTML = '<i class="fa-solid fa-pen text-indigo-600"></i> Chỉnh Sửa Thiết Bị';
                 idInput.value = device.id;
@@ -340,7 +334,6 @@
                 if (p === 'Trung') p = 'Trung bình';
                 perfInput.value = p || "Chưa phân loại";
             } else {
-                // CHẾ ĐỘ THÊM MỚI
                 title.innerHTML = '<i class="fa-solid fa-mobile-button text-indigo-600"></i> Thêm Mới Thiết Bị';
                 idInput.value = "";
                 nameInput.value = "";
@@ -348,13 +341,10 @@
                 osInput.value = "";
                 perfInput.value = "Mạnh";
             }
-
             modal.classList.remove('hidden');
         }
 
-        function closeDeviceModal() {
-            document.getElementById('deviceModal').classList.add('hidden');
-        }
+        function closeDeviceModal() { document.getElementById('deviceModal').classList.add('hidden'); }
 
         function saveDevice() {
             const id = document.getElementById('modalDeviceId').value;
@@ -365,69 +355,41 @@
 
             if (perf === 'Trung bình') perf = 'Trung';
 
-            if (!name) {
-                showAlert('Lỗi', 'Vui lòng nhập Tên thiết bị!', true);
-                return;
-            }
+            if (!name) { showAlert('Lỗi', 'Vui lòng nhập Tên thiết bị!', true); return; }
 
             const btn = document.getElementById('btnSaveDevice');
             const origHTML = btn.innerHTML;
             btn.disabled = true;
             btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> Đang lưu...`;
 
-            const deviceData = {
-                name: name,
-                type: type,
-                osVersion: os,
-                performance: perf
-            };
+            const deviceData = { name: name, type: type, osVersion: os, performance: perf };
 
             if (id) {
                 db.collection("devices").doc(id).update(deviceData)
-                .then(() => {
-                    closeDeviceModal();
-                    showAlert('Thành công', `Đã cập nhật: ${name}`);
-                })
-                .catch(err => {
-                    console.error(err);
-                    showAlert('Lỗi', 'Không thể cập nhật thiết bị!', true);
-                })
+                .then(() => { closeDeviceModal(); showAlert('Thành công', `Đã cập nhật: ${name}`); })
+                .catch(err => { console.error(err); showAlert('Lỗi', 'Không thể cập nhật thiết bị!', true); })
                 .finally(() => { btn.disabled = false; btn.innerHTML = origHTML; });
             } else {
                 db.collection("devices").add(deviceData)
-                .then(() => {
-                    closeDeviceModal();
-                    showAlert('Thành công', `Đã thêm mới: ${name}`);
-                })
-                .catch(err => {
-                    console.error(err);
-                    showAlert('Lỗi', 'Không thể thêm thiết bị mới!', true);
-                })
+                .then(() => { closeDeviceModal(); showAlert('Thành công', `Đã thêm mới: ${name}`); })
+                .catch(err => { console.error(err); showAlert('Lỗi', 'Không thể thêm thiết bị mới!', true); })
                 .finally(() => { btn.disabled = false; btn.innerHTML = origHTML; });
             }
         }
 
-        // ================= HÀM XÓA =================
         function deleteDevice(id, name) {
             if (confirm(`⚠️ Bạn có chắc chắn muốn xóa thiết bị [${name}] không?\nHành động này không thể hoàn tác.`)) {
                 db.collection("devices").doc(id).delete()
-                .then(() => {
-                    showAlert('Đã Xóa', `Thiết bị [${name}] đã được xóa khỏi hệ thống.`);
-                })
-                .catch(err => {
-                    console.error("Lỗi xóa:", err);
-                    showAlert('Lỗi', 'Không thể xóa thiết bị này!', true);
-                });
+                .then(() => { showAlert('Đã Xóa', `Thiết bị [${name}] đã được xóa khỏi hệ thống.`); })
+                .catch(err => { console.error("Lỗi xóa:", err); showAlert('Lỗi', 'Không thể xóa thiết bị này!', true); });
             }
         }
 
-        // ================= ALERT POPUP =================
         function showAlert(title, message, isError = false) {
             const modal = document.getElementById('customAlertModal');
             document.getElementById('customAlertTitle').innerText = title;
             document.getElementById('customAlertMessage').innerText = message;
             const iconContainer = document.getElementById('customAlertIcon');
-
             if (isError) {
                 iconContainer.className = "w-20 h-20 bg-rose-100 text-rose-600 rounded-full flex items-center justify-center mx-auto text-4xl shadow-inner";
                 iconContainer.innerHTML = '<i class="fa-solid fa-triangle-exclamation"></i>';
