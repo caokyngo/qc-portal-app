@@ -10,6 +10,12 @@
     
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- Flatpickr (Chọn nhiều ngày) -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+    <script src="https://npmcdn.com/flatpickr/dist/l10n/vn.js"></script>
+
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#312e81">
     
@@ -17,6 +23,21 @@
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
     
+    <!-- Sửa lỗi GSI_LOGGER bằng cách đưa khai báo lên đầu -->
+    <script>
+        let loggedInUser = null;
+        function decodeJwtResponse(token) {
+            let base64Url = token.split('.')[1];
+            let base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+            return JSON.parse(decodeURIComponent(atob(base64).split('').map(c => '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2)).join('')));
+        }
+        function handleCredentialResponse(response) {
+            const payload = decodeJwtResponse(response.credential);
+            loggedInUser = { name: payload.name, email: payload.email, picture: payload.picture };
+            localStorage.setItem('jira_google_user', JSON.stringify(loggedInUser));
+            if (typeof updateAuthUI === 'function') updateAuthUI();
+        }
+    </script>
     <script src="https://accounts.google.com/gsi/client" async defer></script>
 
     <!-- Script PWA Auto Update -->
@@ -33,14 +54,14 @@
                 }
               };
             };
-          }).catch(err => console.log('Lỗi Service Worker:', err));
+          }).catch(err => console.log('Lỗi SW:', err));
         });
       }
     </script>
 </head>
 <body class="bg-slate-50 text-slate-800 font-sans h-screen w-full flex flex-col md:flex-row overflow-hidden">
 
-  <!-- ================= SIDEBAR MENU (BACKGROUND TRÙNG KHÁNH) ================= -->
+    <!-- ================= SIDEBAR MENU (BACKGROUND TRÙNG KHÁNH & GLASSMORPHISM) ================= -->
     <aside class="w-full md:w-64 text-white flex flex-col flex-shrink-0 shadow-2xl z-20 transition-all bg-cover bg-center bg-no-repeat relative"
            style="background-image: linear-gradient(to bottom, rgba(15, 23, 42, 0.65), rgba(30, 27, 75, 0.75)), url('./trungkhanh.jpg');">
         
@@ -55,22 +76,19 @@
         </div>
 
         <nav class="flex md:flex-col gap-2.5 p-4 overflow-x-auto md:overflow-y-auto flex-1 bg-transparent custom-scrollbar">
-            <!-- Nút 1: Báo Cáo Daily -->
             <a href="index" class="whitespace-nowrap flex items-center gap-3 px-4 py-3.5 text-sm font-bold rounded-xl transition border border-white/15 bg-white/10 hover:bg-white/25 hover:border-white/40 text-white backdrop-blur-md shadow-sm">
                 <i class="fa-solid fa-chart-line w-5 text-center text-lg"></i> <span>Báo Cáo Daily</span>
             </a>
             
-            <!-- Nút 2: Mượn Device -->
             <a href="device_manage" class="whitespace-nowrap flex items-center gap-3 px-4 py-3.5 text-sm font-bold rounded-xl transition border border-white/15 bg-white/10 hover:bg-white/25 hover:border-white/40 text-white backdrop-blur-md shadow-sm">
                 <i class="fa-solid fa-mobile-screen-button w-5 text-center text-lg"></i> <span>Mượn Device</span>
             </a>
             
-            <!-- Nút 3: Thông tin Device -->
             <a href="device_info" class="whitespace-nowrap flex items-center gap-3 px-4 py-3.5 text-sm font-bold rounded-xl transition border border-white/15 bg-white/10 hover:bg-white/25 hover:border-white/40 text-white backdrop-blur-md shadow-sm">
                 <i class="fa-solid fa-circle-info w-5 text-center text-lg"></i> <span>Thông tin Device</span>
             </a>
             
-            <!-- Nút 4: Xin OFF / WFH (ACTIVE TRANG NÀY) -->
+            <!-- NÚT ACTIVE TRANG NÀY -->
             <a href="log_off" class="whitespace-nowrap flex items-center gap-3 px-4 py-3.5 text-sm font-bold rounded-xl transition border border-indigo-300/50 bg-indigo-600/70 hover:bg-indigo-500/70 text-white backdrop-blur-md shadow-lg">
                 <i class="fa-solid fa-calendar-minus w-5 text-center text-lg"></i> <span>Xin OFF / WFH</span>
             </a>
@@ -84,7 +102,6 @@
                 <h2 class="text-xl font-bold text-slate-800 hidden sm:block">Đăng Ký Nghỉ Phép / WFH</h2>
             </div>
             <div class="flex-1 flex justify-end items-center gap-4">
-                <!-- Auth User -->
                 <div id="authSection" class="relative flex items-center min-h-[40px]">
                     <div id="g_id_onload" data-client_id="149310433677-uvpoilv41na98qdjlj58cpmfl8u9946e.apps.googleusercontent.com" data-callback="handleCredentialResponse" data-auto_prompt="false"></div>
                     <div id="loginOption" class="relative cursor-pointer flex items-center gap-2.5 px-3 py-1.5 bg-slate-100 hover:bg-slate-200 rounded-xl border border-slate-200 transition overflow-hidden">
@@ -108,22 +125,21 @@
             </div>
         </header>
 
-        <main class="flex-1 overflow-y-auto p-4 md:p-6 bg-slate-50 flex flex-col items-center pt-6 md:pt-10">
+        <main class="flex-1 overflow-y-auto p-4 md:p-6 bg-cover bg-center bg-no-repeat bg-fixed relative" style="background-image: linear-gradient(to bottom, rgba(248, 250, 252, 0.85), rgba(248, 250, 252, 0.95)), url('./bg-chongqing.jpg');">
             
             <!-- Toolbar -->
-            <div class="w-full max-w-2xl mb-4 flex justify-between items-end">
+            <div class="w-full max-w-2xl mx-auto mb-4 flex justify-between items-end">
                 <button onclick="openHistoryModal()" class="px-4 py-2 bg-white hover:bg-slate-100 border border-slate-300 text-slate-700 text-sm font-bold rounded-lg shadow-sm transition flex items-center gap-2">
                     <i class="fa-solid fa-clock-rotate-left text-indigo-600"></i> Lịch Sử Của Tôi
                 </button>
                 
-                <!-- Nút Duyệt Phép (Chỉ hiện cho Quản lý Lan, Ky) -->
                 <button id="btnManagerApprove" onclick="openApprovalModal()" class="hidden px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-bold rounded-lg shadow-sm transition flex items-center gap-2">
                     <i class="fa-solid fa-clipboard-check"></i> Duyệt Phép <span id="pendingCountBadge" class="bg-rose-500 text-white text-[10px] px-1.5 py-0.5 rounded-full ml-1 hidden">0</span>
                 </button>
             </div>
 
             <!-- Form Đăng Ký -->
-            <div class="w-full max-w-2xl bg-white rounded-2xl shadow-sm border border-slate-200 p-6 sm:p-8 space-y-6">
+            <div class="w-full max-w-2xl mx-auto bg-white/90 backdrop-blur-md rounded-2xl shadow-sm border border-slate-200 p-6 sm:p-8 space-y-6">
                 <div class="flex items-center gap-3 border-b border-slate-100 pb-4">
                     <div class="w-12 h-12 bg-indigo-100 text-indigo-600 rounded-xl flex items-center justify-center text-2xl shadow-inner">
                         <i class="fa-solid fa-paper-plane"></i>
@@ -178,8 +194,11 @@
                             </select>
                         </div>
                         <div>
-                            <label class="block text-xs font-bold text-slate-700 mb-1.5">Ngày nghỉ/WFH <span class="text-red-500">*</span></label>
-                            <input type="date" id="leaveDate" required class="w-full h-11 bg-white border border-slate-300 text-slate-800 font-semibold text-sm rounded-xl px-4 outline-none shadow-sm cursor-pointer">
+                            <label class="block text-xs font-bold text-slate-700 mb-1.5">Ngày nghỉ/WFH (Có thể chọn nhiều ngày) <span class="text-red-500">*</span></label>
+                            <div class="relative">
+                                <i class="fa-regular fa-calendar absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400"></i>
+                                <input type="text" id="leaveDate" required placeholder="Chọn một hoặc nhiều ngày..." class="w-full h-11 pl-10 bg-white border border-slate-300 text-slate-800 font-semibold text-sm rounded-xl pr-4 outline-none shadow-sm cursor-pointer">
+                            </div>
                         </div>
                     </div>
 
@@ -256,7 +275,7 @@
                         <tr>
                             <th class="px-4 py-3">Ngày gửi</th>
                             <th class="px-4 py-3">Loại</th>
-                            <th class="px-4 py-3">Ngày Off</th>
+                            <th class="px-4 py-3 max-w-[150px]">Ngày Off/WFH</th>
                             <th class="px-4 py-3">Lý do</th>
                             <th class="px-4 py-3 text-center">Trạng thái</th>
                         </tr>
@@ -298,7 +317,10 @@
             
             <div>
                 <label class="block text-xs font-bold text-slate-700 mb-1">Ngày nghỉ/WFH <span class="text-red-500">*</span></label>
-                <input type="date" id="editLeaveDate" class="w-full h-10 bg-white border border-slate-300 text-slate-800 font-semibold text-xs rounded-xl px-3 outline-none cursor-pointer">
+                <div class="relative">
+                    <i class="fa-regular fa-calendar absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 text-xs"></i>
+                    <input type="text" id="editLeaveDate" class="w-full h-10 pl-9 bg-white border border-slate-300 text-slate-800 font-semibold text-xs rounded-xl pr-3 outline-none cursor-pointer">
+                </div>
             </div>
             
             <div>
@@ -332,7 +354,7 @@
                         <tr>
                             <th class="px-4 py-3">Người Xin</th>
                             <th class="px-4 py-3">Loại</th>
-                            <th class="px-4 py-3">Ngày Off</th>
+                            <th class="px-4 py-3 max-w-[150px]">Ngày Off</th>
                             <th class="px-4 py-3">Lý do</th>
                             <th class="px-4 py-3 text-right">Thao Tác</th>
                         </tr>
@@ -375,11 +397,8 @@
     <script>
         // ================= CẤU HÌNH =================
         const GOOGLE_CHAT_WEBHOOK_URL = "https://chat.googleapis.com/v1/spaces/AAQANDj2-vM/messages?key=AIzaSyDdI0hCZtE6vySjMm-WEfRq3CPzqKqqsHI&token=9SHNcBKnjS2oqVvpT7__Q0TCC-uZxdqgBqnjqbaKqzw"; 
-        
-        // Nhận diện Quản lý (Lan và Ky)
         const MANAGER_KEYWORDS = ["53 - Lan L"];
 
-        // FIREBASE CONFIG
         const firebaseConfig = {
             apiKey: "AIzaSyBZ72fOBO-VPMDrXBS4E15TN5L7tfcL46s",
             authDomain: "device-manage-d4f5d.firebaseapp.com",
@@ -395,22 +414,8 @@
             db = firebase.firestore();
         } catch (e) { console.error("Lỗi Firebase:", e); }
 
-        let loggedInUser = null;
-
-        // ================= AUTH GOOGLE =================
-        function decodeJwtResponse(token) {
-            let base64Url = token.split('.')[1];
-            let base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
-            let jsonPayload = decodeURIComponent(atob(base64).split('').map(c => '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2)).join(''));
-            return JSON.parse(jsonPayload);
-        }
-
-        function handleCredentialResponse(response) {
-            const payload = decodeJwtResponse(response.credential);
-            loggedInUser = { name: payload.name, email: payload.email, picture: payload.picture };
-            localStorage.setItem('jira_google_user', JSON.stringify(loggedInUser));
-            updateAuthUI();
-        }
+        let flatpickrInstance = null;
+        let flatpickrEditInstance = null;
 
         function updateAuthUI() {
             const storedUser = localStorage.getItem('jira_google_user');
@@ -424,7 +429,6 @@
                 const appNameInput = document.getElementById('applicantName');
                 if(!appNameInput.value) appNameInput.value = loggedInUser.name;
 
-                // Check hiển thị Nút Quản Lý (Lan, Ky)
                 const isManager = MANAGER_KEYWORDS.some(k => loggedInUser.name.toLowerCase().includes(k.toLowerCase()));
                 if (isManager) {
                     document.getElementById('btnManagerApprove').classList.remove('hidden');
@@ -448,10 +452,23 @@
 
         document.addEventListener('DOMContentLoaded', () => {
             updateAuthUI();
-            const dateInput = document.getElementById('leaveDate');
-            dateInput.value = new Date().toISOString().split('T')[0];
 
-            const formElements = document.querySelectorAll('#logoffForm input, #logoffForm select');
+            // Khởi tạo Flatpickr cho phép chọn NHIỀU NGÀY
+            flatpickrInstance = flatpickr("#leaveDate", {
+                mode: "multiple",
+                dateFormat: "Y-m-d",
+                locale: "vn",
+                defaultDate: new Date(),
+                onChange: updatePreview
+            });
+
+            flatpickrEditInstance = flatpickr("#editLeaveDate", {
+                mode: "multiple",
+                dateFormat: "Y-m-d",
+                locale: "vn"
+            });
+
+            const formElements = document.querySelectorAll('#logoffForm input:not(#leaveDate), #logoffForm select');
             formElements.forEach(el => el.addEventListener('input', updatePreview));
             formElements.forEach(el => el.addEventListener('change', updatePreview));
             updatePreview();
@@ -463,11 +480,15 @@
             });
         });
 
-        // ================= LOGIC FORM & PREVIEW =================
+        // ================= LOGIC FORMAT & PREVIEW =================
         function formatDateToDDMM(dateString) {
             if (!dateString) return "";
-            const parts = dateString.split('-');
-            return `${parts[2]}/${parts[1]}`;
+            // Xử lý chuỗi gồm nhiều ngày: "2026-10-15, 2026-10-16" -> "15/10, 16/10"
+            return dateString.split(',').map(d => {
+                const parts = d.trim().split('-');
+                if(parts.length === 3) return `${parts[2]}/${parts[1]}`;
+                return d.trim();
+            }).join(', ');
         }
 
         function generateMessageText() {
@@ -476,7 +497,8 @@
             const userPronoun = document.getElementById('userPronoun').value.trim();
             const applicant = document.getElementById('applicantName').value.trim();
             const leaveType = document.getElementById('leaveType').value;
-            const leaveDate = formatDateToDDMM(document.getElementById('leaveDate').value);
+            const leaveDateVal = document.getElementById('leaveDate').value;
+            const leaveDateFormatted = formatDateToDDMM(leaveDateVal);
             const reason = document.getElementById('leaveReason').value.trim();
             
             let ccList = [];
@@ -486,9 +508,17 @@
             let ccString = ccList.length > 0 ? `\nCc: ${ccList.join(' , ')}` : "";
 
             const managerPrefix = managerSalutation ? `${managerSalutation} ` : "";
-            const datePrefix = leaveType.toLowerCase().endsWith('ngày') ? '' : 'ngày ';
+            
+            // Nếu chọn nhiều ngày thì ghi là "các ngày", 1 ngày thì tùy chọn
+            const numDates = leaveDateVal ? leaveDateVal.split(',').length : 1;
+            let datePrefix = "";
+            if (numDates > 1) {
+                datePrefix = "các ngày ";
+            } else {
+                datePrefix = leaveType.toLowerCase().endsWith('ngày') ? '' : 'ngày ';
+            }
 
-            return `${managerPrefix}${manager} , ${userPronoun} ${applicant} xin ${leaveType} ${datePrefix}${leaveDate} - Lý do: ${reason}${ccString}`;
+            return `${managerPrefix}${manager} , ${userPronoun} ${applicant} xin ${leaveType} ${datePrefix}${leaveDateFormatted} - Lý do: ${reason}${ccString}`;
         }
 
         function updatePreview() {
@@ -499,6 +529,9 @@
         async function submitLogOff() {
             if (!loggedInUser) { showCustomAlert("Cảnh báo", "Vui lòng đăng nhập Google để gửi đơn!", true); return; }
             if (GOOGLE_CHAT_WEBHOOK_URL.includes("XXXXXXX")) { showCustomAlert("Lỗi", "Chưa cấu hình Webhook URL!", true); return; }
+
+            const leaveDateVal = document.getElementById('leaveDate').value;
+            if (!leaveDateVal) { alert("Vui lòng chọn ngày nghỉ!"); return; }
 
             const btn = document.getElementById('btnSubmitMessage');
             const origHtml = btn.innerHTML;
@@ -523,7 +556,7 @@
                     applicantName: document.getElementById('applicantName').value.trim(),
                     applicantEmail: loggedInUser.email,
                     leaveType: document.getElementById('leaveType').value,
-                    leaveDate: document.getElementById('leaveDate').value,
+                    leaveDate: leaveDateVal,
                     reason: document.getElementById('leaveReason').value.trim(),
                     threadKey: threadKey,
                     status: "Chờ duyệt",
@@ -543,131 +576,130 @@
             }
         }
 
-       // Hàm phụ: Bóc tách chính xác số ngày từ Cột Loại (leaveType)
-function parseLeaveDays(typeStr) {
-    if (!typeStr) return 1;
-    let s = typeStr.toLowerCase().replace(',', '.');
+        // Hàm Tách số ngày theo Cột Loại
+        function parseLeaveDays(typeStr) {
+            if (!typeStr) return 1;
+            let s = typeStr.toLowerCase().replace(',', '.');
+            if (s.includes('0.25')) return 0.25;
+            if (s.includes('0.5') || s.includes('sáng') || s.includes('chiều') || s.includes('half')) return 0.5;
+            const match = s.match(/(\d+(?:\.\d+)?)/);
+            if (match) {
+                const val = parseFloat(match[1]);
+                if (val > 0 && val < 60) return val;
+            }
+            return 1;
+        }
 
-    // 1. Nếu chứa 0.5, 0.25, nửa ngày, sáng/chiều -> Trả về đúng 0.5 hoặc 0.25
-    if (s.includes('0.25')) return 0.25;
-    if (s.includes('0.5') || s.includes('sáng') || s.includes('chiều') || s.includes('half')) return 0.5;
+        // ================= MODAL LỊCH SỬ CỦA TÔI =================
+        function openHistoryModal() {
+            if (!loggedInUser) { showCustomAlert("Lỗi", "Vui lòng đăng nhập để xem lịch sử!", true); return; }
+            document.getElementById('historyModal').classList.remove('hidden');
+            
+            const tbody = document.getElementById('historyTableBody');
+            tbody.innerHTML = '<tr><td colspan="5" class="text-center py-8">Đang tải dữ liệu...</td></tr>';
+            
+            document.getElementById('totalOffCount').innerText = '...';
+            document.getElementById('totalWfhCount').innerText = '...';
 
-    // 2. Loại bỏ các con số năm (2025, 2026) và dạng ngày tháng (25/05, 08-06) để không bị cộng nhầm
-    s = s.replace(/\b20\d{2}\b/g, ''); 
-    s = s.replace(/\d{1,2}[\/\.-]\d{1,2}/g, '');
+            db.collection("leave_requests")
+              .orderBy("createdAt", "desc")
+              .limit(1000)
+              .get().then(snapshot => {
+                  tbody.innerHTML = '';
+                  let count = 0;
+                  let totalOff = 0;
+                  let totalWfh = 0;
 
-    // 3. Bóc tách số ngày cụ thể (VD: "off 2d", "5d", "1 ngày", "off 3")
-    const match = s.match(/(\d+(?:\.\d+)?)/);
-    if (match) {
-        const val = parseFloat(match[1]);
-        if (val > 0 && val < 60) return val; // Lọc các số hợp lệ < 60 ngày
-    }
+                  const myEmail = loggedInUser.email.toLowerCase();
+                  const myName = loggedInUser.name.toLowerCase();
+                  const myIdMatch = loggedInUser.name.match(/\d+/);
+                  const myId = myIdMatch ? myIdMatch[0] : null;
 
-    return 1; // Mặc định 1 ngày nếu không có số lẻ
-}
+                  snapshot.forEach(doc => {
+                      const data = doc.data();
+                      const appEmail = (data.applicantEmail || "").toLowerCase();
+                      const appName = (data.applicantName || "").toLowerCase();
+                      const appDataIdMatch = appName.match(/\d+/);
+                      const appDataId = appDataIdMatch ? appDataIdMatch[0] : null;
 
-// ================= MODAL LỊCH SỬ CỦA TÔI (ĐÃ CỦNG CỐ CÁCH TÍNH TỔNG) =================
-function openHistoryModal() {
-    if (!loggedInUser) { showCustomAlert("Lỗi", "Vui lòng đăng nhập để xem lịch sử!", true); return; }
-    document.getElementById('historyModal').classList.remove('hidden');
-    
-    const tbody = document.getElementById('historyTableBody');
-    tbody.innerHTML = '<tr><td colspan="5" class="text-center py-8">Đang tải dữ liệu...</td></tr>';
-    
-    document.getElementById('totalOffCount').innerText = '...';
-    document.getElementById('totalWfhCount').innerText = '...';
+                      const isMatchEmail = (appEmail === myEmail);
+                      const isMatchId = (myId && appDataId && myId === appDataId);
+                      const isMatchName = myName.includes(appName) || appName.includes(myName);
+                      const isMatchLegacy = (appEmail === "legacy_import@enotion.io") && (isMatchId || isMatchName);
 
-    db.collection("leave_requests")
-      .orderBy("createdAt", "desc")
-      .limit(1000)
-      .get().then(snapshot => {
-          tbody.innerHTML = '';
-          let count = 0;
-          let totalOff = 0;
-          let totalWfh = 0;
+                      if (isMatchEmail || isMatchLegacy) {
+                          count++;
 
-          const myEmail = loggedInUser.email.toLowerCase();
-          const myName = loggedInUser.name.toLowerCase();
-          const myIdMatch = loggedInUser.name.match(/\d+/);
-          const myId = myIdMatch ? myIdMatch[0] : null;
+                          // TÍNH TỔNG SỐ NGÀY THEO CÔNG THỨC MỚI (Nhiều ngày)
+                          if (data.status !== "Từ chối" && data.status !== "Đã hủy") {
+                              const typeStr = data.leaveType || "";
+                              const dateStr = data.leaveDate || "";
+                              const numDates = dateStr ? dateStr.split(',').length : 1;
+                              const daysPerDate = parseLeaveDays(typeStr);
+                              
+                              const totalDaysForThisRecord = numDates * daysPerDate;
 
-          snapshot.forEach(doc => {
-              const data = doc.data();
-              const appEmail = (data.applicantEmail || "").toLowerCase();
-              const appName = (data.applicantName || "").toLowerCase();
-              const appDataIdMatch = appName.match(/\d+/);
-              const appDataId = appDataIdMatch ? appDataIdMatch[0] : null;
+                              if (typeStr.toLowerCase().includes("wfh")) {
+                                  totalWfh += totalDaysForThisRecord;
+                              } else {
+                                  totalOff += totalDaysForThisRecord;
+                              }
+                          }
 
-              const isMatchEmail = (appEmail === myEmail);
-              const isMatchId = (myId && appDataId && myId === appDataId);
-              const isMatchName = myName.includes(appName) || appName.includes(myName);
-              const isMatchLegacy = (appEmail === "legacy_import@enotion.io") && (isMatchId || isMatchName);
+                          const dateObj = data.createdAt ? data.createdAt.toDate() : new Date();
+                          const createdStr = `${dateObj.getDate()}/${dateObj.getMonth()+1}/${dateObj.getFullYear()}`;
+                          
+                          let statusHtml = `<span class="bg-amber-100 text-amber-700 px-2 py-1 rounded font-bold text-[10px]">Chờ duyệt</span>`;
 
-              if (isMatchEmail || isMatchLegacy) {
-                  count++;
+                          if (data.status === "Chờ duyệt") {
+                              const escapedReason = (data.reason || '').replace(/'/g, "\\'");
+                              statusHtml += `
+                                <div class="mt-1 flex gap-2 justify-center">
+                                    <button onclick="openEditModal('${doc.id}', '${data.leaveType}', '${data.leaveDate}', '${escapedReason}', '${data.threadKey}')" class="text-indigo-600 hover:underline font-bold text-[11px]">
+                                        <i class="fa-solid fa-pen-to-square"></i> Sửa
+                                    </button>
+                                    <button onclick="cancelLeaveRequest('${doc.id}', '${data.threadKey}', '${data.leaveDate}')" class="text-rose-600 hover:underline font-bold text-[11px]">
+                                        <i class="fa-solid fa-trash-can"></i> Hủy
+                                    </button>
+                                </div>`;
+                          } else if (data.status === "Đã duyệt") {
+                              statusHtml = `<span class="bg-emerald-100 text-emerald-700 px-2 py-1 rounded font-bold text-[10px]">Đã duyệt</span>`;
+                          } else if (data.status === "Từ chối") {
+                              statusHtml = `<span class="bg-rose-100 text-rose-700 px-2 py-1 rounded font-bold text-[10px]">Từ chối</span><div class="text-[10px] mt-1 text-rose-500">${data.replyReason || ''}</div>`;
+                          }
 
-                  // TÍNH TỔNG: Chỉ tính dựa trên CỘT LOẠI (leaveType) và bỏ qua đơn Hủy/Từ chối
-                  if (data.status !== "Từ chối" && data.status !== "Đã hủy") {
-                      const typeStr = data.leaveType || "";
-                      const days = parseLeaveDays(typeStr);
-
-                      if (typeStr.toLowerCase().includes("wfh")) {
-                          totalWfh += days;
-                      } else {
-                          totalOff += days;
+                          tbody.innerHTML += `
+                              <tr class="hover:bg-slate-50 border-b border-slate-100">
+                                  <td class="px-4 py-3 font-mono text-slate-500">${createdStr}</td>
+                                  <td class="px-4 py-3 font-semibold text-indigo-700">${data.leaveType}</td>
+                                  <td class="px-4 py-3 font-bold text-slate-800 break-words">${formatDateToDDMM(data.leaveDate)}</td>
+                                  <td class="px-4 py-3 truncate max-w-[180px]" title="${data.reason}">${data.reason}</td>
+                                  <td class="px-4 py-3 text-center">${statusHtml}</td>
+                              </tr>`;
                       }
+                  });
+
+                  document.getElementById('totalOffCount').innerText = totalOff;
+                  document.getElementById('totalWfhCount').innerText = totalWfh;
+
+                  if (count === 0) {
+                      tbody.innerHTML = '<tr><td colspan="5" class="text-center py-8 text-slate-400">Chưa tìm thấy lịch sử nào phù hợp với tài khoản của bạn.</td></tr>';
                   }
+              });
+        }
 
-                  const dateObj = data.createdAt ? data.createdAt.toDate() : new Date();
-                  const createdStr = `${dateObj.getDate()}/${dateObj.getMonth()+1}/${dateObj.getFullYear()}`;
-                  
-                  let statusHtml = `<span class="bg-amber-100 text-amber-700 px-2 py-1 rounded font-bold text-[10px]">Chờ duyệt</span>`;
-
-                  if (data.status === "Chờ duyệt") {
-                      const escapedReason = (data.reason || '').replace(/'/g, "\\'");
-                      statusHtml += `
-                        <div class="mt-1 flex gap-2 justify-center">
-                            <button onclick="openEditModal('${doc.id}', '${data.leaveType}', '${data.leaveDate}', '${escapedReason}', '${data.threadKey}')" class="text-indigo-600 hover:underline font-bold text-[11px]">
-                                <i class="fa-solid fa-pen-to-square"></i> Sửa
-                            </button>
-                            <button onclick="cancelLeaveRequest('${doc.id}', '${data.threadKey}', '${data.leaveDate}')" class="text-rose-600 hover:underline font-bold text-[11px]">
-                                <i class="fa-solid fa-trash-can"></i> Hủy
-                            </button>
-                        </div>`;
-                  } else if (data.status === "Đã duyệt") {
-                      statusHtml = `<span class="bg-emerald-100 text-emerald-700 px-2 py-1 rounded font-bold text-[10px]">Đã duyệt</span>`;
-                  } else if (data.status === "Từ chối") {
-                      statusHtml = `<span class="bg-rose-100 text-rose-700 px-2 py-1 rounded font-bold text-[10px]">Từ chối</span><div class="text-[10px] mt-1 text-rose-500">${data.replyReason || ''}</div>`;
-                  }
-
-                  tbody.innerHTML += `
-                      <tr class="hover:bg-slate-50 border-b border-slate-100">
-                          <td class="px-4 py-3 font-mono text-slate-500">${createdStr}</td>
-                          <td class="px-4 py-3 font-semibold text-indigo-700">${data.leaveType}</td>
-                          <td class="px-4 py-3 font-bold text-slate-800">${formatDateToDDMM(data.leaveDate)}</td>
-                          <td class="px-4 py-3 truncate max-w-[180px]" title="${data.reason}">${data.reason}</td>
-                          <td class="px-4 py-3 text-center">${statusHtml}</td>
-                      </tr>`;
-              }
-          });
-
-          // Cập nhật kết quả tính chuẩn ra màn hình
-          document.getElementById('totalOffCount').innerText = totalOff;
-          document.getElementById('totalWfhCount').innerText = totalWfh;
-
-          if (count === 0) {
-              tbody.innerHTML = '<tr><td colspan="5" class="text-center py-8 text-slate-400">Chưa tìm thấy lịch sử nào phù hợp với tài khoản của bạn.</td></tr>';
-          }
-      });
-}
         // ================= XỬ LÝ SỬA VÀ HỦY ĐƠN =================
         function openEditModal(docId, leaveType, leaveDate, reason, threadKey) {
             document.getElementById('editDocId').value = docId;
             document.getElementById('editThreadKey').value = threadKey;
             document.getElementById('editLeaveType').value = leaveType;
-            document.getElementById('editLeaveDate').value = leaveDate;
-            document.getElementById('editReason').value = reason;
             
+            // Set nhiều ngày vào Flatpickr edit
+            if(flatpickrEditInstance && leaveDate) {
+                flatpickrEditInstance.setDate(leaveDate.split(',').map(d => d.trim()));
+            }
+
+            document.getElementById('editReason').value = reason;
             document.getElementById('editModal').classList.remove('hidden');
         }
 
@@ -678,6 +710,7 @@ function openHistoryModal() {
             const leaveDate = document.getElementById('editLeaveDate').value;
             const reason = document.getElementById('editReason').value.trim();
 
+            if (!leaveDate) { alert("Vui lòng chọn ngày nghỉ!"); return; }
             if (!reason) { alert("Vui lòng nhập lý do nghỉ!"); return; }
 
             const btn = document.getElementById('btnSaveEdit');
@@ -696,9 +729,10 @@ function openHistoryModal() {
 
                 if (threadKey && threadKey !== "imported_legacy" && !GOOGLE_CHAT_WEBHOOK_URL.includes("XXXXXXX")) {
                     const formattedDate = formatDateToDDMM(leaveDate);
-                    const datePrefix = leaveType.toLowerCase().endsWith('ngày') ? '' : 'ngày ';
+                    const numDates = leaveDate.split(',').length;
+                    const datePrefix = numDates > 1 ? "các ngày " : (leaveType.toLowerCase().endsWith('ngày') ? '' : 'ngày ');
+
                     const replyText = `✏️ [CẬP NHẬT ĐƠN OFF] Em xin phép cập nhật lại thông tin: ${leaveType} ${datePrefix}${formattedDate} - Lý do: ${reason}`;
-                    
                     const webhookWithThread = `${GOOGLE_CHAT_WEBHOOK_URL}&messageReplyOption=REPLY_MESSAGE_FALLBACK_TO_NEW_THREAD&threadKey=${threadKey}`;
                     
                     await fetch(webhookWithThread, {
@@ -722,11 +756,11 @@ function openHistoryModal() {
         }
 
         async function cancelLeaveRequest(docId, threadKey, leaveDate) {
-            if (!confirm(`Bạn có chắc chắn muốn HỦY và XÓA đơn xin off ngày ${formatDateToDDMM(leaveDate)} khỏi hệ thống không?`)) return;
+            if (!confirm(`Bạn có chắc chắn muốn HỦY và XÓA đơn xin off các ngày [${formatDateToDDMM(leaveDate)}] khỏi hệ thống không?`)) return;
 
             try {
                 if (threadKey && threadKey !== "imported_legacy" && !GOOGLE_CHAT_WEBHOOK_URL.includes("XXXXXXX")) {
-                    const replyText = `❌ [ĐÃ HỦY] Em xin phép HỦY đơn xin off ngày ${formatDateToDDMM(leaveDate)} này ạ.`;
+                    const replyText = `❌ [ĐÃ HỦY] Em xin phép HỦY đơn xin off các ngày ${formatDateToDDMM(leaveDate)} này ạ.`;
                     const webhookWithThread = `${GOOGLE_CHAT_WEBHOOK_URL}&messageReplyOption=REPLY_MESSAGE_FALLBACK_TO_NEW_THREAD&threadKey=${threadKey}`;
                     
                     await fetch(webhookWithThread, {
@@ -779,7 +813,7 @@ function openHistoryModal() {
                         <tr class="hover:bg-slate-50 border-b border-slate-100" id="row_${doc.id}">
                             <td class="px-4 py-3 font-bold text-indigo-800">${data.applicantName}</td>
                             <td class="px-4 py-3 font-semibold text-slate-700">${data.leaveType}</td>
-                            <td class="px-4 py-3 font-bold text-rose-600">${formatDateToDDMM(data.leaveDate)}</td>
+                            <td class="px-4 py-3 font-bold text-rose-600 break-words">${formatDateToDDMM(data.leaveDate)}</td>
                             <td class="px-4 py-3 text-slate-600">${data.reason}</td>
                             <td class="px-4 py-3 text-right whitespace-nowrap">
                                 <button onclick="approveRequest('${doc.id}', '${data.threadKey}', '${data.applicantName}')" class="px-3 py-1.5 bg-emerald-100 hover:bg-emerald-600 hover:text-white text-emerald-700 font-bold rounded transition mr-1">Duyệt</button>
