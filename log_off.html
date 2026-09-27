@@ -478,45 +478,67 @@
             }
         }
 
-        // ================= MODAL LỊCH SỬ CỦA TÔI =================
-        function openHistoryModal() {
-            if (!loggedInUser) { showCustomAlert("Lỗi", "Vui lòng đăng nhập để xem lịch sử!", true); return; }
-            document.getElementById('historyModal').classList.remove('hidden');
-            
-            const tbody = document.getElementById('historyTableBody');
-            tbody.innerHTML = '<tr><td colspan="5" class="text-center py-8">Đang tải...</td></tr>';
+       // ================= MODAL LỊCH SỬ CỦA TÔI (ĐÃ TỐI ƯU KHỚP DỮ LIỆU CŨ) =================
+function openHistoryModal() {
+    if (!loggedInUser) { showCustomAlert("Lỗi", "Vui lòng đăng nhập để xem lịch sử!", true); return; }
+    document.getElementById('historyModal').classList.remove('hidden');
+    
+    const tbody = document.getElementById('historyTableBody');
+    tbody.innerHTML = '<tr><td colspan="5" class="text-center py-8">Đang tải dữ liệu...</td></tr>';
 
-            db.collection("leave_requests")
-              .where("applicantEmail", "==", loggedInUser.email)
-              .orderBy("createdAt", "desc")
-              .limit(30)
-              .get().then(snapshot => {
-                  tbody.innerHTML = '';
-                  if(snapshot.empty) {
-                      tbody.innerHTML = '<tr><td colspan="5" class="text-center py-8 text-slate-400">Chưa có lịch sử nào.</td></tr>';
-                      return;
-                  }
-                  snapshot.forEach(doc => {
-                      const data = doc.data();
-                      const dateObj = data.createdAt ? data.createdAt.toDate() : new Date();
-                      const createdStr = `${dateObj.getDate()}/${dateObj.getMonth()+1} ${dateObj.getHours()}:${dateObj.getMinutes()}`;
-                      
-                      let statusHtml = `<span class="bg-amber-100 text-amber-700 px-2 py-1 rounded font-bold text-[10px]">Chờ duyệt</span>`;
-                      if (data.status === "Đã duyệt") statusHtml = `<span class="bg-emerald-100 text-emerald-700 px-2 py-1 rounded font-bold text-[10px]">Đã duyệt</span>`;
-                      if (data.status === "Từ chối") statusHtml = `<span class="bg-rose-100 text-rose-700 px-2 py-1 rounded font-bold text-[10px]">Từ chối</span><div class="text-[10px] mt-1 text-rose-500">${data.replyReason || ''}</div>`;
+    // Lấy 150 bản ghi gần nhất để đối soát
+    db.collection("leave_requests")
+      .orderBy("createdAt", "desc")
+      .limit(150)
+      .get().then(snapshot => {
+          tbody.innerHTML = '';
+          let count = 0;
 
-                      tbody.innerHTML += `
-                          <tr class="hover:bg-slate-50 border-b border-slate-100">
-                              <td class="px-4 py-3 font-mono">${createdStr}</td>
-                              <td class="px-4 py-3 font-semibold text-indigo-700">${data.leaveType}</td>
-                              <td class="px-4 py-3 font-bold">${formatDateToDDMM(data.leaveDate)}</td>
-                              <td class="px-4 py-3 truncate max-w-[150px]" title="${data.reason}">${data.reason}</td>
-                              <td class="px-4 py-3 text-center">${statusHtml}</td>
-                          </tr>`;
-                  });
-              });
-        }
+          // Chuẩn hóa tên user đang đăng nhập (VD: "927", "Kenz", "Ky") để so sánh
+          const myEmail = loggedInUser.email.toLowerCase();
+          const myName = loggedInUser.name.toLowerCase();
 
+          snapshot.forEach(doc => {
+              const data = doc.data();
+              const appEmail = (data.applicantEmail || "").toLowerCase();
+              const appName = (data.applicantName || "").toLowerCase();
+
+              // 1. Khớp chính xác Email Google
+              const isMatchEmail = (appEmail === myEmail);
+
+              // 2. Khớp dữ liệu Import cũ (nếu Email là legacy_import và Tên/ID chứa trong tên Google)
+              const isMatchLegacy = (appEmail === "legacy_import@enotion.io") && 
+                                    (myName.includes(appName) || appName.includes(myName) || 
+                                     (appName.length > 2 && myName.includes(appName.split(' ')[0])));
+
+              if (isMatchEmail || isMatchLegacy) {
+                  count++;
+                  const dateObj = data.createdAt ? data.createdAt.toDate() : new Date();
+                  const createdStr = `${dateObj.getDate()}/${dateObj.getMonth()+1}/${dateObj.getFullYear()}`;
+                  
+                  let statusHtml = `<span class="bg-amber-100 text-amber-700 px-2 py-1 rounded font-bold text-[10px]">Chờ duyệt</span>`;
+                  if (data.status === "Đã duyệt") statusHtml = `<span class="bg-emerald-100 text-emerald-700 px-2 py-1 rounded font-bold text-[10px]">Đã duyệt</span>`;
+                  if (data.status === "Từ chối") statusHtml = `<span class="bg-rose-100 text-rose-700 px-2 py-1 rounded font-bold text-[10px]">Từ chối</span><div class="text-[10px] mt-1 text-rose-500">${data.replyReason || ''}</div>`;
+
+                  tbody.innerHTML += `
+                      <tr class="hover:bg-slate-50 border-b border-slate-100">
+                          <td class="px-4 py-3 font-mono text-slate-500">${createdStr}</td>
+                          <td class="px-4 py-3 font-semibold text-indigo-700">${data.leaveType}</td>
+                          <td class="px-4 py-3 font-bold text-slate-800">${formatDateToDDMM(data.leaveDate)}</td>
+                          <td class="px-4 py-3 truncate max-w-[180px]" title="${data.reason}">${data.reason}</td>
+                          <td class="px-4 py-3 text-center">${statusHtml}</td>
+                      </tr>`;
+              }
+          });
+
+          if (count === 0) {
+              tbody.innerHTML = '<tr><td colspan="5" class="text-center py-8 text-slate-400">Chưa tìm thấy lịch sử nào phù hợp với tài khoản của bạn.</td></tr>';
+          }
+      }).catch(err => {
+          console.error(err);
+          tbody.innerHTML = '<tr><td colspan="5" class="text-center py-8 text-rose-500 font-bold">Lỗi khi tải dữ liệu lịch sử!</td></tr>';
+      });
+}
         // ================= MODAL DUYỆT PHÉP (MANAGER) =================
         function listenForPendingApprovals() {
             if(!db) return;
