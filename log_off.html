@@ -12,9 +12,14 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#312e81">
+    
+    <!-- FIREBASE SDK -->
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+    
     <script src="https://accounts.google.com/gsi/client" async defer></script>
 
-    <!-- Script Kiểm tra & Tự động Update bản mới (PWA) -->
+    <!-- Script PWA -->
     <script>
       if ('serviceWorker' in navigator) {
         window.addEventListener('load', () => {
@@ -24,7 +29,6 @@
               const installingWorker = reg.installing;
               installingWorker.onstatechange = () => {
                 if (installingWorker.state === 'installed' && navigator.serviceWorker.controller) {
-                  console.log('Có phiên bản code mới! Đang tự động tải lại...');
                   window.location.reload();
                 }
               };
@@ -47,23 +51,18 @@
                 </div>
             </div>
         </div>
-        
         <nav class="flex md:flex-col gap-2 p-4 overflow-x-auto md:overflow-y-auto flex-1 bg-indigo-800 md:bg-transparent custom-scrollbar">
             <a href="index" class="whitespace-nowrap flex items-center gap-3 px-4 py-3.5 text-sm font-bold rounded-xl transition text-indigo-200 hover:bg-white/10 hover:text-white">
-                <i class="fa-solid fa-chart-line w-5 text-center text-lg"></i> 
-                <span>Báo Cáo Daily</span>
+                <i class="fa-solid fa-chart-line w-5 text-center text-lg"></i> <span>Báo Cáo Daily</span>
             </a>
             <a href="device_manage" class="whitespace-nowrap flex items-center gap-3 px-4 py-3.5 text-sm font-bold rounded-xl transition text-indigo-200 hover:bg-white/10 hover:text-white">
-                <i class="fa-solid fa-mobile-screen-button w-5 text-center text-lg"></i> 
-                <span>Mượn Device</span>
+                <i class="fa-solid fa-mobile-screen-button w-5 text-center text-lg"></i> <span>Mượn Device</span>
             </a>
             <a href="device_info" class="whitespace-nowrap flex items-center gap-3 px-4 py-3.5 text-sm font-bold rounded-xl transition text-indigo-200 hover:bg-white/10 hover:text-white">
-                <i class="fa-solid fa-circle-info w-5 text-center text-lg"></i> 
-                <span>Thông tin Device</span>
+                <i class="fa-solid fa-circle-info w-5 text-center text-lg"></i> <span>Thông tin Device</span>
             </a>
             <a href="log_off" class="whitespace-nowrap flex items-center gap-3 px-4 py-3.5 text-sm font-bold rounded-xl transition bg-indigo-600 text-white shadow-md">
-                <i class="fa-solid fa-calendar-minus w-5 text-center text-lg"></i> 
-                <span>Xin Off</span>
+                <i class="fa-solid fa-calendar-minus w-5 text-center text-lg"></i> <span>Xin OFF</span>
             </a>
         </nav>
     </aside>
@@ -74,7 +73,6 @@
             <div class="flex-1 shrink-0">
                 <h2 class="text-xl font-bold text-slate-800 hidden sm:block">Đăng Ký Nghỉ Phép / WFH</h2>
             </div>
-            
             <div class="flex-1 flex justify-end items-center gap-4">
                 <!-- Auth User -->
                 <div id="authSection" class="relative flex items-center min-h-[40px]">
@@ -100,57 +98,67 @@
             </div>
         </header>
 
-        <main class="flex-1 overflow-y-auto p-4 md:p-6 bg-slate-50 flex justify-center items-start pt-6 md:pt-10">
+        <main class="flex-1 overflow-y-auto p-4 md:p-6 bg-slate-50 flex flex-col items-center pt-6 md:pt-10">
+            
+            <!-- Toolbar: Nút Lịch sử & Nút Duyệt phép -->
+            <div class="w-full max-w-2xl mb-4 flex justify-between items-end">
+                <button onclick="openHistoryModal()" class="px-4 py-2 bg-white hover:bg-slate-100 border border-slate-300 text-slate-700 text-sm font-bold rounded-lg shadow-sm transition flex items-center gap-2">
+                    <i class="fa-solid fa-clock-rotate-left"></i> Lịch Sử Của Tôi
+                </button>
+                
+                <!-- Nút này chỉ hiện khi User có tên Lan L. -->
+                <button id="btnManagerApprove" onclick="openApprovalModal()" class="hidden px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-bold rounded-lg shadow-sm transition flex items-center gap-2">
+                    <i class="fa-solid fa-clipboard-check"></i> Duyệt Phép <span id="pendingCountBadge" class="bg-rose-500 text-white text-[10px] px-1.5 py-0.5 rounded-full ml-1 hidden">0</span>
+                </button>
+            </div>
+
             <!-- Form Đăng Ký -->
             <div class="w-full max-w-2xl bg-white rounded-2xl shadow-sm border border-slate-200 p-6 sm:p-8 space-y-6">
-                
                 <div class="flex items-center gap-3 border-b border-slate-100 pb-4">
                     <div class="w-12 h-12 bg-indigo-100 text-indigo-600 rounded-xl flex items-center justify-center text-2xl shadow-inner">
                         <i class="fa-solid fa-paper-plane"></i>
                     </div>
                     <div>
                         <h2 class="text-xl font-bold text-slate-800">Gửi Yêu Cầu Xin Off / WFH</h2>
-                        <p class="text-xs text-slate-500 font-medium mt-0.5">Hệ thống sẽ tự động format text và gửi vào Group Chat QC House.</p>
+                        <p class="text-xs text-slate-500 font-medium mt-0.5">Hệ thống sẽ tự động gửi vào Group Chat QC House.</p>
                     </div>
                 </div>
 
                 <form id="logoffForm" class="space-y-5" onsubmit="event.preventDefault(); submitLogOff();">
-                    
-                    <!-- Dòng 1: Quản lý & Người xin -->
+                    <!-- Dòng 1 -->
                     <div class="grid grid-cols-1 sm:grid-cols-2 gap-5">
                         <div>
                             <label class="block text-xs font-bold text-slate-700 mb-1.5">Gửi tới Quản lý <span class="text-red-500">*</span></label>
                             <div class="flex gap-2">
-                                <select id="managerSalutation" class="w-28 h-11 bg-slate-50 border border-slate-300 text-slate-800 font-bold text-xs rounded-xl px-2.5 focus:ring-2 focus:ring-indigo-500 outline-none cursor-pointer">
+                                <select id="managerSalutation" class="w-28 h-11 bg-slate-50 border border-slate-300 text-slate-800 font-bold text-xs rounded-xl px-2.5 outline-none cursor-pointer">
                                     <option value="Dạ chị">Dạ chị</option>
                                     <option value="Dạ anh">Dạ anh</option>
                                     <option value="Dạ">Dạ</option>
                                     <option value="">(Không)</option>
                                 </select>
-                                <input type="text" id="managerName" required placeholder="VD: @53 - Lan L. - QC" value="@53 - Lan L. - QC" class="flex-1 min-w-0 h-11 bg-slate-50 border border-slate-300 text-slate-800 font-semibold text-sm rounded-xl px-3 focus:ring-2 focus:ring-indigo-500 focus:bg-white outline-none transition shadow-sm">
+                                <input type="text" id="managerName" required value="@53 - Lan L. - QC" class="flex-1 min-w-0 h-11 bg-slate-50 border border-slate-300 text-slate-800 font-semibold text-sm rounded-xl px-3 outline-none shadow-sm">
                             </div>
                         </div>
-
                         <div>
                             <label class="block text-xs font-bold text-slate-700 mb-1.5">Tên của bạn <span class="text-red-500">*</span></label>
                             <div class="flex gap-2">
-                                <select id="userPronoun" class="w-24 h-11 bg-white border border-slate-300 text-slate-800 font-bold text-xs rounded-xl px-2.5 focus:ring-2 focus:ring-indigo-500 outline-none cursor-pointer">
+                                <select id="userPronoun" class="w-24 h-11 bg-white border border-slate-300 text-slate-800 font-bold text-xs rounded-xl px-2.5 outline-none cursor-pointer">
                                     <option value="em">em</option>
                                     <option value="anh">anh</option>
                                     <option value="chị">chị</option>
                                     <option value="tôi">tôi</option>
                                     <option value="tui">tui</option>
                                 </select>
-                                <input type="text" id="applicantName" required placeholder="VD: 927 - Kenz" class="flex-1 min-w-0 h-11 bg-white border border-slate-300 text-slate-800 font-semibold text-sm rounded-xl px-3 focus:ring-2 focus:ring-indigo-500 outline-none transition shadow-sm">
+                                <input type="text" id="applicantName" required placeholder="VD: 927 - Kenz" class="flex-1 min-w-0 h-11 bg-white border border-slate-300 text-slate-800 font-semibold text-sm rounded-xl px-3 outline-none shadow-sm">
                             </div>
                         </div>
                     </div>
 
-                    <!-- Dòng 2: Loại nghỉ & Ngày -->
+                    <!-- Dòng 2 -->
                     <div class="grid grid-cols-1 sm:grid-cols-2 gap-5">
                         <div>
                             <label class="block text-xs font-bold text-slate-700 mb-1.5">Loại yêu cầu <span class="text-red-500">*</span></label>
-                            <select id="leaveType" required class="w-full h-11 bg-white border border-slate-300 text-slate-800 font-semibold text-sm rounded-xl px-4 focus:ring-2 focus:ring-indigo-500 outline-none cursor-pointer shadow-sm">
+                            <select id="leaveType" required class="w-full h-11 bg-white border border-slate-300 text-slate-800 font-semibold text-sm rounded-xl px-4 outline-none cursor-pointer shadow-sm">
                                 <option value="off 1 ngày">Off 1 ngày</option>
                                 <option value="off 0.5d sáng nay">Off 0.5 ngày (Sáng)</option>
                                 <option value="off 0.5d chiều nay">Off 0.5 ngày (Chiều)</option>
@@ -161,86 +169,180 @@
                         </div>
                         <div>
                             <label class="block text-xs font-bold text-slate-700 mb-1.5">Ngày nghỉ/WFH <span class="text-red-500">*</span></label>
-                            <div class="relative">
-                                <input type="date" id="leaveDate" required class="w-full h-11 bg-white border border-slate-300 text-slate-800 font-semibold text-sm rounded-xl px-4 focus:ring-2 focus:ring-indigo-500 outline-none shadow-sm cursor-pointer">
-                            </div>
+                            <input type="date" id="leaveDate" required class="w-full h-11 bg-white border border-slate-300 text-slate-800 font-semibold text-sm rounded-xl px-4 outline-none shadow-sm cursor-pointer">
                         </div>
                     </div>
 
-                    <!-- Dòng 3: Lý do -->
+                    <!-- Dòng 3 -->
                     <div>
                         <label class="block text-xs font-bold text-slate-700 mb-1.5">Lý do <span class="text-red-500">*</span></label>
-                        <input type="text" id="leaveReason" required placeholder="VD: có việc cá nhân ạ, bị ốm ạ..." class="w-full h-11 bg-white border border-slate-300 text-slate-800 font-semibold text-sm rounded-xl px-4 focus:ring-2 focus:ring-indigo-500 outline-none transition shadow-sm">
+                        <input type="text" id="leaveReason" required placeholder="VD: có việc cá nhân ạ..." class="w-full h-11 bg-white border border-slate-300 text-slate-800 font-semibold text-sm rounded-xl px-4 outline-none shadow-sm">
                     </div>
 
-                    <!-- Dòng 4: CC (Checkboxes) -->
+                    <!-- Dòng 4 -->
                     <div class="bg-slate-50 border border-slate-200 rounded-xl p-4">
                         <label class="block text-xs font-bold text-slate-700 mb-2"><i class="fa-solid fa-at text-slate-400 mr-1"></i> Cc tới (Tự động chèn):</label>
                         <div class="flex flex-col sm:flex-row gap-3">
                             <label class="flex items-center gap-2 cursor-pointer group">
-                                <input type="checkbox" value="@974 - Mochi - HROP" checked class="w-4 h-4 text-indigo-600 border-slate-300 rounded focus:ring-indigo-500 cursor-pointer">
+                                <input type="checkbox" value="@974 - Mochi - HROP" checked class="w-4 h-4 text-indigo-600 rounded">
                                 <span class="text-sm font-semibold text-slate-700 group-hover:text-indigo-600 transition">Mochi (HROP)</span>
                             </label>
                             <label class="flex items-center gap-2 cursor-pointer group">
-                                <input type="checkbox" value="@1033 - Thanh V. - QC" checked class="w-4 h-4 text-indigo-600 border-slate-300 rounded focus:ring-indigo-500 cursor-pointer">
+                                <input type="checkbox" value="@1033 - Thanh V. - QC" checked class="w-4 h-4 text-indigo-600 rounded">
                                 <span class="text-sm font-semibold text-slate-700 group-hover:text-indigo-600 transition">Thanh V. (QC)</span>
                             </label>
-                              <label class="flex items-center gap-2 cursor-pointer group">
-                                <input type="checkbox" value="@996 - Pocky - HR" checked class="w-4 h-4 text-indigo-600 border-slate-300 rounded focus:ring-indigo-500 cursor-pointer">
+                             <label class="flex items-center gap-2 cursor-pointer group">
+                                <input type="checkbox" value="@996 - Pocky - HR" checked class="w-4 h-4 text-indigo-600 rounded">
                                 <span class="text-sm font-semibold text-slate-700 group-hover:text-indigo-600 transition">Pocky - HR</span>
                             </label>
                         </div>
                         <input type="text" id="extraCc" placeholder="Cc người khác (VD: @123 - Name)..." class="mt-3 w-full h-9 bg-white border border-slate-300 text-slate-700 font-medium text-xs rounded-lg px-3 outline-none">
                     </div>
 
-                    <!-- Kết quả preview text -->
+                    <!-- Preview -->
                     <div class="bg-indigo-50/50 border border-indigo-100 rounded-xl p-4 text-sm font-medium text-slate-600 italic">
-                        <span class="font-bold text-indigo-800 not-italic block mb-1">📝 Preview tin nhắn sẽ gửi:</span>
-                        <div id="messagePreview" class="text-slate-700 font-sans">Hãy điền thông tin để xem trước nội dung tin nhắn.</div>
+                        <span class="font-bold text-indigo-800 not-italic block mb-1">📝 Preview tin nhắn:</span>
+                        <div id="messagePreview" class="text-slate-700 font-sans"></div>
                     </div>
 
-                    <!-- Nút Submit -->
                     <div class="pt-2">
-                        <button type="submit" id="btnSubmitMessage" class="w-full h-12 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-bold rounded-xl shadow-sm hover:shadow-md transition flex items-center justify-center gap-2">
+                        <button type="submit" id="btnSubmitMessage" class="w-full h-12 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-bold rounded-xl shadow-sm transition flex items-center justify-center gap-2">
                             <i class="fa-regular fa-paper-plane"></i> Gửi Tin Nhắn Vào Group Chat
                         </button>
                     </div>
-
                 </form>
             </div>
         </main>
     </div>
 
+    <!-- ================= MODAL LỊCH SỬ CỦA TÔI ================= -->
+    <div id="historyModal" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4">
+        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-4xl overflow-hidden flex flex-col max-h-[80vh]">
+            <div class="px-6 py-4 border-b border-slate-200 flex justify-between items-center bg-slate-50">
+                <h3 class="text-lg font-bold text-indigo-900 flex items-center gap-2">
+                    <i class="fa-solid fa-clock-rotate-left text-indigo-600"></i> Lịch Sử Xin Off/WFH
+                </h3>
+                <button onclick="closeModal('historyModal')" class="text-slate-400 hover:text-rose-500 transition">
+                    <i class="fa-solid fa-xmark text-xl"></i>
+                </button>
+            </div>
+            <div class="p-6 overflow-y-auto flex-1 bg-white">
+                <table class="w-full text-xs text-left text-slate-600">
+                    <thead class="text-slate-700 uppercase bg-slate-100 border-b border-slate-200">
+                        <tr>
+                            <th class="px-4 py-3">Ngày gửi</th>
+                            <th class="px-4 py-3">Loại</th>
+                            <th class="px-4 py-3">Ngày Off</th>
+                            <th class="px-4 py-3">Lý do</th>
+                            <th class="px-4 py-3 text-center">Trạng thái</th>
+                        </tr>
+                    </thead>
+                    <tbody id="historyTableBody" class="divide-y divide-slate-100">
+                        <tr><td colspan="5" class="text-center py-8 text-slate-400">Đang tải dữ liệu...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- ================= MODAL DUYỆT PHÉP (DÀNH CHO QUẢN LÝ) ================= -->
+    <div id="approvalModal" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4">
+        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-5xl overflow-hidden flex flex-col max-h-[85vh]">
+            <div class="px-6 py-4 border-b border-slate-200 flex justify-between items-center bg-indigo-50">
+                <h3 class="text-lg font-bold text-indigo-900 flex items-center gap-2">
+                    <i class="fa-solid fa-clipboard-list text-indigo-600"></i> Danh Sách Phép Cần Duyệt
+                </h3>
+                <button onclick="closeModal('approvalModal')" class="text-slate-400 hover:text-rose-500 transition">
+                    <i class="fa-solid fa-xmark text-xl"></i>
+                </button>
+            </div>
+            <div class="p-4 sm:p-6 overflow-y-auto flex-1 bg-white">
+                <table class="w-full text-xs text-left text-slate-600">
+                    <thead class="text-slate-700 uppercase bg-slate-100 border-b border-slate-200">
+                        <tr>
+                            <th class="px-4 py-3">Người Xin</th>
+                            <th class="px-4 py-3">Loại</th>
+                            <th class="px-4 py-3">Ngày Off</th>
+                            <th class="px-4 py-3">Lý do</th>
+                            <th class="px-4 py-3 text-right">Thao Tác</th>
+                        </tr>
+                    </thead>
+                    <tbody id="approvalTableBody" class="divide-y divide-slate-100">
+                        <tr><td colspan="5" class="text-center py-8 text-slate-400">Không có đơn nào cần duyệt!</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Nhập Lý Do Từ Chối -->
+    <div id="rejectModal" class="hidden fixed inset-0 z-[60] flex items-center justify-center bg-slate-900/60 backdrop-blur-sm">
+        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden p-6 space-y-4">
+            <h3 class="text-lg font-bold text-rose-600">Lý do không duyệt</h3>
+            <p class="text-xs text-slate-500">Tin nhắn này sẽ được reply trực tiếp lại tin nhắn của bạn đó trên Group Chat.</p>
+            <textarea id="rejectReasonInput" rows="3" placeholder="VD: Dự án đang gấp, em sắp xếp nghỉ bù hôm khác nhé..." class="w-full border border-slate-300 rounded-xl p-3 text-sm focus:ring-2 focus:ring-rose-500 outline-none"></textarea>
+            <input type="hidden" id="currentRejectId">
+            <input type="hidden" id="currentRejectThread">
+            <div class="flex justify-end gap-3 pt-2">
+                <button onclick="closeModal('rejectModal')" class="px-4 py-2 bg-slate-100 text-slate-700 font-bold rounded-lg">Hủy</button>
+                <button onclick="confirmReject()" class="px-4 py-2 bg-rose-600 hover:bg-rose-700 text-white font-bold rounded-lg shadow-sm">Xác nhận Từ Chối</button>
+            </div>
+        </div>
+    </div>
+
     <!-- Modal Alert -->
-    <div id="customAlertModal" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-sm">
-        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-sm overflow-hidden p-8 text-center space-y-4 transform transition-all scale-100">
+    <div id="customAlertModal" class="hidden fixed inset-0 z-[70] flex items-center justify-center bg-slate-900/60 backdrop-blur-sm">
+        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-sm overflow-hidden p-8 text-center space-y-4">
             <div id="customAlertIcon" class="w-20 h-20 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center mx-auto text-4xl shadow-inner">
                 <i class="fa-solid fa-circle-check"></i>
             </div>
             <h3 class="text-xl font-bold text-slate-800" id="customAlertTitle">Thành công!</h3>
-            <p class="text-sm text-slate-600 font-medium" id="customAlertMessage">Đã gửi tin nhắn xin off thành công.</p>
-            <button onclick="document.getElementById('customAlertModal').classList.add('hidden')" class="w-full px-4 py-3 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl shadow-sm transition mt-2">OK</button>
+            <p class="text-sm text-slate-600 font-medium" id="customAlertMessage">Đã thực hiện thành công.</p>
+            <button onclick="closeModal('customAlertModal')" class="w-full px-4 py-3 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl shadow-sm mt-2">OK</button>
         </div>
     </div>
 
     <script>
-        // ================= CẤU HÌNH WEBHOOK GOOGLE CHAT =================
+        // ================= CẤU HÌNH =================
+        // THAY BẰNG WEBHOOK URL GROUP CHAT CỦA BẠN (Ví dụ: https://chat.googleapis.com/v1/spaces/XXXX/messages?key=YYY&token=ZZZ)
         const GOOGLE_CHAT_WEBHOOK_URL = "https://chat.googleapis.com/v1/spaces/AAQANDj2-vM/messages?key=AIzaSyDdI0hCZtE6vySjMm-WEfRq3CPzqKqqsHI&token=9SHNcBKnjS2oqVvpT7__Q0TCC-uZxdqgBqnjqbaKqzw"; 
+        
+        // Nhận diện Quản lý (Chỉ hiện nút Duyệt khi tên gg chứa chữ này)
+        const MANAGER_KEYWORD = "Ky"; 
 
-        // Hàm Auth Google
+        // CẤU HÌNH FIREBASE
+        const firebaseConfig = {
+            apiKey: "AIzaSyBZ72fOBO-VPMDrXBS4E15TN5L7tfcL46s",
+            authDomain: "device-manage-d4f5d.firebaseapp.com",
+            projectId: "device-manage-d4f5d",
+            storageBucket: "device-manage-d4f5d.firebasestorage.app",
+            messagingSenderId: "747189096859",
+            appId: "1:747189096859:web:abcdef..."
+        };
+
+        let db = null;
+        try {
+            firebase.initializeApp(firebaseConfig);
+            db = firebase.firestore();
+        } catch (e) { console.error("Lỗi Firebase:", e); }
+
         let loggedInUser = null;
+
+        // ================= AUTH GOOGLE =================
         function decodeJwtResponse(token) {
             let base64Url = token.split('.')[1];
             let base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
             let jsonPayload = decodeURIComponent(atob(base64).split('').map(c => '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2)).join(''));
             return JSON.parse(jsonPayload);
         }
+
         function handleCredentialResponse(response) {
             const payload = decodeJwtResponse(response.credential);
             loggedInUser = { name: payload.name, email: payload.email, picture: payload.picture };
             localStorage.setItem('jira_google_user', JSON.stringify(loggedInUser));
             updateAuthUI();
         }
+
         function updateAuthUI() {
             const storedUser = localStorage.getItem('jira_google_user');
             if (storedUser) {
@@ -252,35 +354,38 @@
                 
                 const appNameInput = document.getElementById('applicantName');
                 if(!appNameInput.value) appNameInput.value = loggedInUser.name;
+
+                // Check hiển thị Nút Quản Lý
+                if (loggedInUser.name.toLowerCase().includes(MANAGER_KEYWORD.toLowerCase())) {
+                    document.getElementById('btnManagerApprove').classList.remove('hidden');
+                    listenForPendingApprovals();
+                } else {
+                    document.getElementById('btnManagerApprove').classList.add('hidden');
+                }
             } else {
                 loggedInUser = null;
                 document.getElementById('loginOption').classList.remove('hidden');
                 document.getElementById('userProfileBtn').classList.add('hidden');
+                document.getElementById('btnManagerApprove').classList.add('hidden');
             }
         }
+
         function handleLogout() {
             google.accounts.id.disableAutoSelect();
             localStorage.removeItem('jira_google_user');
             updateAuthUI();
         }
 
-        // Script chính của trang
         document.addEventListener('DOMContentLoaded', () => {
             updateAuthUI();
-            
-            // Set ngày mặc định là hôm nay
             const dateInput = document.getElementById('leaveDate');
-            const today = new Date();
-            dateInput.value = today.toISOString().split('T')[0];
+            dateInput.value = new Date().toISOString().split('T')[0];
 
-            // Cập nhật Preview mỗi khi có sự thay đổi
             const formElements = document.querySelectorAll('#logoffForm input, #logoffForm select');
             formElements.forEach(el => el.addEventListener('input', updatePreview));
             formElements.forEach(el => el.addEventListener('change', updatePreview));
-            
             updatePreview();
 
-            // Toggle Dropdown Profile
             document.addEventListener('click', function(e) {
                 const btn = document.getElementById('userProfileBtn');
                 const drop = document.getElementById('userDropdown');
@@ -288,14 +393,13 @@
             });
         });
 
-        // Format Date to DD/MM
+        // ================= LOGIC GỬI ĐƠN & PREVIEW =================
         function formatDateToDDMM(dateString) {
             if (!dateString) return "";
             const parts = dateString.split('-');
             return `${parts[2]}/${parts[1]}`;
         }
 
-        // Tạo nội dung tin nhắn linh hoạt xưng hô & tránh lặp từ "ngày"
         function generateMessageText() {
             const managerSalutation = document.getElementById('managerSalutation').value.trim();
             const manager = document.getElementById('managerName').value.trim();
@@ -305,65 +409,218 @@
             const leaveDate = formatDateToDDMM(document.getElementById('leaveDate').value);
             const reason = document.getElementById('leaveReason').value.trim();
             
-            // Lấy danh sách CC
             let ccList = [];
             document.querySelectorAll('input[type="checkbox"]:checked').forEach(cb => ccList.push(cb.value));
             const extraCc = document.getElementById('extraCc').value.trim();
             if (extraCc) ccList.push(extraCc);
-
             let ccString = ccList.length > 0 ? `\nCc: ${ccList.join(' , ')}` : "";
 
-            // Tiền tố xưng hô Quản lý (VD: "Dạ chị " hoặc "")
             const managerPrefix = managerSalutation ? `${managerSalutation} ` : "";
-
-            // Tự động kiểm tra: Nếu loại yêu cầu kết thúc bằng "ngày" (như "off 1 ngày") thì KHÔNG thêm chữ "ngày" trước ngày tháng nữa
             const datePrefix = leaveType.toLowerCase().endsWith('ngày') ? '' : 'ngày ';
 
             return `${managerPrefix}${manager} , ${userPronoun} ${applicant} xin ${leaveType} ${datePrefix}${leaveDate} - Lý do: ${reason}${ccString}`;
         }
 
-        // Cập nhật khung xem trước
         function updatePreview() {
             const text = generateMessageText();
             document.getElementById('messagePreview').innerHTML = text.replace(/\n/g, '<br>');
         }
 
-        // Gửi tin nhắn
         async function submitLogOff() {
+            if (!loggedInUser) { showCustomAlert("Cảnh báo", "Vui lòng đăng nhập Google để gửi đơn!", true); return; }
+            if (GOOGLE_CHAT_WEBHOOK_URL.includes("XXXXXXX")) { showCustomAlert("Lỗi", "Chưa cấu hình Webhook URL!", true); return; }
+
             const btn = document.getElementById('btnSubmitMessage');
             const origHtml = btn.innerHTML;
-            
-            if (GOOGLE_CHAT_WEBHOOK_URL.includes("XXXXXXX")) {
-                showCustomAlert("Lỗi cấu hình", "Bạn chưa cài đặt Webhook URL của Google Chat trong code!", true);
-                return;
-            }
-
             const messageToSend = generateMessageText();
+            
+            // Tạo 1 threadKey duy nhất cho đơn này để sau này có thể reply
+            const threadKey = "leave_" + Date.now();
+            const webhookWithThread = `${GOOGLE_CHAT_WEBHOOK_URL}&messageReplyOption=REPLY_MESSAGE_FALLBACK_TO_NEW_THREAD&threadKey=${threadKey}`;
 
             try {
                 btn.disabled = true;
-                btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> Đang gửi tin nhắn...`;
+                btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> Đang gửi...`;
 
-                const response = await fetch(GOOGLE_CHAT_WEBHOOK_URL, {
+                // 1. Gửi lên Google Chat
+                const response = await fetch(webhookWithThread, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json; charset=UTF-8' },
                     body: JSON.stringify({ text: messageToSend })
                 });
 
-                if (response.ok) {
-                    showCustomAlert("Thành công!", "Đã gửi thông báo xin Off/WFH vào nhóm Chat.");
-                    document.getElementById('leaveReason').value = ""; // Xóa lý do sau khi gửi
-                    updatePreview();
-                } else {
-                    throw new Error("Mã lỗi: " + response.status);
-                }
+                if (!response.ok) throw new Error("Mã lỗi: " + response.status);
+
+                // 2. Lưu vào Firebase Database
+                const requestData = {
+                    applicantName: document.getElementById('applicantName').value.trim(),
+                    applicantEmail: loggedInUser.email,
+                    leaveType: document.getElementById('leaveType').value,
+                    leaveDate: document.getElementById('leaveDate').value,
+                    reason: document.getElementById('leaveReason').value.trim(),
+                    threadKey: threadKey, // Quan trọng: Phải lưu mã này để Quản lý reply đúng dòng chat
+                    status: "Chờ duyệt",
+                    createdAt: firebase.firestore.FieldValue.serverTimestamp()
+                };
+
+                await db.collection("leave_requests").add(requestData);
+
+                showCustomAlert("Thành công!", "Đã gửi đơn xin nghỉ vào nhóm Chat và lưu lịch sử.");
+                document.getElementById('leaveReason').value = ""; 
+                updatePreview();
+
             } catch (error) {
-                console.error('Error sending message:', error);
-                showCustomAlert("Lỗi Server", "Không thể gửi tin nhắn. Vui lòng kiểm tra lại cấu hình Webhook.", true);
+                console.error(error);
+                showCustomAlert("Lỗi Server", "Không thể gửi tin nhắn hoặc lưu data.", true);
             } finally {
                 btn.disabled = false;
                 btn.innerHTML = origHtml;
             }
+        }
+
+        // ================= MODAL LỊCH SỬ CỦA TÔI =================
+        function openHistoryModal() {
+            if (!loggedInUser) { showCustomAlert("Lỗi", "Vui lòng đăng nhập để xem lịch sử!", true); return; }
+            document.getElementById('historyModal').classList.remove('hidden');
+            
+            const tbody = document.getElementById('historyTableBody');
+            tbody.innerHTML = '<tr><td colspan="5" class="text-center py-8">Đang tải...</td></tr>';
+
+            db.collection("leave_requests")
+              .where("applicantEmail", "==", loggedInUser.email)
+              .orderBy("createdAt", "desc")
+              .limit(30)
+              .get().then(snapshot => {
+                  tbody.innerHTML = '';
+                  if(snapshot.empty) {
+                      tbody.innerHTML = '<tr><td colspan="5" class="text-center py-8 text-slate-400">Chưa có lịch sử nào.</td></tr>';
+                      return;
+                  }
+                  snapshot.forEach(doc => {
+                      const data = doc.data();
+                      const dateObj = data.createdAt ? data.createdAt.toDate() : new Date();
+                      const createdStr = `${dateObj.getDate()}/${dateObj.getMonth()+1} ${dateObj.getHours()}:${dateObj.getMinutes()}`;
+                      
+                      let statusHtml = `<span class="bg-amber-100 text-amber-700 px-2 py-1 rounded font-bold text-[10px]">Chờ duyệt</span>`;
+                      if (data.status === "Đã duyệt") statusHtml = `<span class="bg-emerald-100 text-emerald-700 px-2 py-1 rounded font-bold text-[10px]">Đã duyệt</span>`;
+                      if (data.status === "Từ chối") statusHtml = `<span class="bg-rose-100 text-rose-700 px-2 py-1 rounded font-bold text-[10px]">Từ chối</span><div class="text-[10px] mt-1 text-rose-500">${data.replyReason || ''}</div>`;
+
+                      tbody.innerHTML += `
+                          <tr class="hover:bg-slate-50 border-b border-slate-100">
+                              <td class="px-4 py-3 font-mono">${createdStr}</td>
+                              <td class="px-4 py-3 font-semibold text-indigo-700">${data.leaveType}</td>
+                              <td class="px-4 py-3 font-bold">${formatDateToDDMM(data.leaveDate)}</td>
+                              <td class="px-4 py-3 truncate max-w-[150px]" title="${data.reason}">${data.reason}</td>
+                              <td class="px-4 py-3 text-center">${statusHtml}</td>
+                          </tr>`;
+                  });
+              });
+        }
+
+        // ================= MODAL DUYỆT PHÉP (MANAGER) =================
+        function listenForPendingApprovals() {
+            if(!db) return;
+            db.collection("leave_requests").where("status", "==", "Chờ duyệt").onSnapshot(snapshot => {
+                const count = snapshot.size;
+                const badge = document.getElementById('pendingCountBadge');
+                if (count > 0) {
+                    badge.innerText = count;
+                    badge.classList.remove('hidden');
+                } else {
+                    badge.classList.add('hidden');
+                }
+            });
+        }
+
+        function openApprovalModal() {
+            document.getElementById('approvalModal').classList.remove('hidden');
+            const tbody = document.getElementById('approvalTableBody');
+            tbody.innerHTML = '<tr><td colspan="5" class="text-center py-8">Đang tải đơn...</td></tr>';
+
+            db.collection("leave_requests").where("status", "==", "Chờ duyệt").orderBy("createdAt", "asc").get().then(snapshot => {
+                tbody.innerHTML = '';
+                if(snapshot.empty) {
+                    tbody.innerHTML = '<tr><td colspan="5" class="text-center py-8 text-slate-400">Tuyệt vời! Đã hết đơn cần duyệt.</td></tr>';
+                    return;
+                }
+                snapshot.forEach(doc => {
+                    const data = doc.data();
+                    tbody.innerHTML += `
+                        <tr class="hover:bg-slate-50 border-b border-slate-100" id="row_${doc.id}">
+                            <td class="px-4 py-3 font-bold text-indigo-800">${data.applicantName}</td>
+                            <td class="px-4 py-3 font-semibold text-slate-700">${data.leaveType}</td>
+                            <td class="px-4 py-3 font-bold text-rose-600">${formatDateToDDMM(data.leaveDate)}</td>
+                            <td class="px-4 py-3 text-slate-600">${data.reason}</td>
+                            <td class="px-4 py-3 text-right whitespace-nowrap">
+                                <button onclick="approveRequest('${doc.id}', '${data.threadKey}', '${data.applicantName}')" class="px-3 py-1.5 bg-emerald-100 hover:bg-emerald-600 hover:text-white text-emerald-700 font-bold rounded transition mr-1">Duyệt</button>
+                                <button onclick="openRejectModal('${doc.id}', '${data.threadKey}')" class="px-3 py-1.5 bg-rose-100 hover:bg-rose-600 hover:text-white text-rose-700 font-bold rounded transition">Từ chối</button>
+                            </td>
+                        </tr>`;
+                });
+            });
+        }
+
+        // --- Xử lý Duyệt ---
+        async function approveRequest(docId, threadKey, applicantName) {
+            try {
+                // 1. Reply Google Chat
+                const replyText = `Ok em.`;
+                const webhookWithThread = `${GOOGLE_CHAT_WEBHOOK_URL}&messageReplyOption=REPLY_MESSAGE_FALLBACK_TO_NEW_THREAD&threadKey=${threadKey}`;
+                await fetch(webhookWithThread, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ text: replyText })
+                });
+
+                // 2. Cập nhật Firebase
+                await db.collection("leave_requests").doc(docId).update({ status: "Đã duyệt" });
+                
+                // 3. Ẩn dòng đó đi
+                document.getElementById(`row_${docId}`).style.display = 'none';
+                showCustomAlert("Đã duyệt", `Đã reply đồng ý cho ${applicantName} trên Chat!`);
+            } catch (e) {
+                console.error(e); showCustomAlert("Lỗi", "Không thể duyệt. Vui lòng thử lại.", true);
+            }
+        }
+
+        // --- Xử lý Từ chối ---
+        function openRejectModal(docId, threadKey) {
+            document.getElementById('currentRejectId').value = docId;
+            document.getElementById('currentRejectThread').value = threadKey;
+            document.getElementById('rejectReasonInput').value = '';
+            document.getElementById('rejectModal').classList.remove('hidden');
+        }
+
+        async function confirmReject() {
+            const reason = document.getElementById('rejectReasonInput').value.trim();
+            if (!reason) { alert("Vui lòng ghi rõ lý do không duyệt!"); return; }
+            
+            const docId = document.getElementById('currentRejectId').value;
+            const threadKey = document.getElementById('currentRejectThread').value;
+
+            try {
+                // 1. Reply Google Chat
+                const replyText = `Không duyệt. Lý do: ${reason}`;
+                const webhookWithThread = `${GOOGLE_CHAT_WEBHOOK_URL}&messageReplyOption=REPLY_MESSAGE_FALLBACK_TO_NEW_THREAD&threadKey=${threadKey}`;
+                await fetch(webhookWithThread, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ text: replyText })
+                });
+
+                // 2. Cập nhật Firebase
+                await db.collection("leave_requests").doc(docId).update({ status: "Từ chối", replyReason: reason });
+                
+                closeModal('rejectModal');
+                document.getElementById(`row_${docId}`).style.display = 'none';
+                showCustomAlert("Đã từ chối", "Đã gửi reply từ chối vào Chat!");
+            } catch (e) {
+                console.error(e); showCustomAlert("Lỗi", "Có lỗi xảy ra.", true);
+            }
+        }
+
+        function closeModal(modalId) {
+            document.getElementById(modalId).classList.add('hidden');
         }
 
         function showCustomAlert(title, message, isError = false) {
