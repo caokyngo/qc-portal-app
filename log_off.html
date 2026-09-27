@@ -3,6 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
     <title>QC Portal - Xin Off/WFH</title>
     
     <script src="https://cdn.tailwindcss.com"></script>
@@ -10,6 +13,26 @@
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#312e81">
     <script src="https://accounts.google.com/gsi/client" async defer></script>
+
+    <!-- Script Kiểm tra & Tự động Update bản mới (PWA) -->
+    <script>
+      if ('serviceWorker' in navigator) {
+        window.addEventListener('load', () => {
+          navigator.serviceWorker.register('./sw.js').then(reg => {
+            reg.update();
+            reg.onupdatefound = () => {
+              const installingWorker = reg.installing;
+              installingWorker.onstatechange = () => {
+                if (installingWorker.state === 'installed' && navigator.serviceWorker.controller) {
+                  console.log('Có phiên bản code mới! Đang tự động tải lại...');
+                  window.location.reload();
+                }
+              };
+            };
+          }).catch(err => console.log('Lỗi Service Worker:', err));
+        });
+      }
+    </script>
 </head>
 <body class="bg-slate-50 text-slate-800 font-sans h-screen w-full flex flex-col md:flex-row overflow-hidden">
 
@@ -38,7 +61,6 @@
                 <i class="fa-solid fa-circle-info w-5 text-center text-lg"></i> 
                 <span>Thông tin Device</span>
             </a>
-            <!-- NÚT MENU MỚI -->
             <a href="log_off" class="whitespace-nowrap flex items-center gap-3 px-4 py-3.5 text-sm font-bold rounded-xl transition bg-indigo-600 text-white shadow-md">
                 <i class="fa-solid fa-calendar-minus w-5 text-center text-lg"></i> 
                 <span>Xin Off / WFH</span>
@@ -78,7 +100,7 @@
             </div>
         </header>
 
-        <main class="flex-1 overflow-y-auto p-4 md:p-6 bg-slate-50 flex justify-center items-start pt-10">
+        <main class="flex-1 overflow-y-auto p-4 md:p-6 bg-slate-50 flex justify-center items-start pt-6 md:pt-10">
             <!-- Form Đăng Ký -->
             <div class="w-full max-w-2xl bg-white rounded-2xl shadow-sm border border-slate-200 p-6 sm:p-8 space-y-6">
                 
@@ -98,11 +120,29 @@
                     <div class="grid grid-cols-1 sm:grid-cols-2 gap-5">
                         <div>
                             <label class="block text-xs font-bold text-slate-700 mb-1.5">Gửi tới Quản lý <span class="text-red-500">*</span></label>
-                            <input type="text" id="managerName" required placeholder="VD: @53 - Lan L. - QC" value="@53 - Lan L. - QC" class="w-full h-11 bg-slate-50 border border-slate-300 text-slate-800 font-semibold text-sm rounded-xl px-4 focus:ring-2 focus:ring-indigo-500 focus:bg-white outline-none transition shadow-sm">
+                            <div class="flex gap-2">
+                                <select id="managerSalutation" class="w-28 h-11 bg-slate-50 border border-slate-300 text-slate-800 font-bold text-xs rounded-xl px-2.5 focus:ring-2 focus:ring-indigo-500 outline-none cursor-pointer">
+                                    <option value="Dạ chị">Dạ chị</option>
+                                    <option value="Dạ anh">Dạ anh</option>
+                                    <option value="Dạ">Dạ</option>
+                                    <option value="">(Không)</option>
+                                </select>
+                                <input type="text" id="managerName" required placeholder="VD: @53 - Lan L. - QC" value="@53 - Lan L. - QC" class="flex-1 min-w-0 h-11 bg-slate-50 border border-slate-300 text-slate-800 font-semibold text-sm rounded-xl px-3 focus:ring-2 focus:ring-indigo-500 focus:bg-white outline-none transition shadow-sm">
+                            </div>
                         </div>
+
                         <div>
                             <label class="block text-xs font-bold text-slate-700 mb-1.5">Tên của bạn <span class="text-red-500">*</span></label>
-                            <input type="text" id="applicantName" required placeholder="VD: 124-Khanh Lam" class="w-full h-11 bg-white border border-slate-300 text-slate-800 font-semibold text-sm rounded-xl px-4 focus:ring-2 focus:ring-indigo-500 outline-none transition shadow-sm">
+                            <div class="flex gap-2">
+                                <select id="userPronoun" class="w-24 h-11 bg-white border border-slate-300 text-slate-800 font-bold text-xs rounded-xl px-2.5 focus:ring-2 focus:ring-indigo-500 outline-none cursor-pointer">
+                                    <option value="em">em</option>
+                                    <option value="anh">anh</option>
+                                    <option value="chị">chị</option>
+                                    <option value="tôi">tôi</option>
+                                    <option value="tui">tui</option>
+                                </select>
+                                <input type="text" id="applicantName" required placeholder="VD: 927 - Kenz" class="flex-1 min-w-0 h-11 bg-white border border-slate-300 text-slate-800 font-semibold text-sm rounded-xl px-3 focus:ring-2 focus:ring-indigo-500 outline-none transition shadow-sm">
+                            </div>
                         </div>
                     </div>
 
@@ -145,6 +185,10 @@
                                 <input type="checkbox" value="@1033 - Thanh V. - QC" checked class="w-4 h-4 text-indigo-600 border-slate-300 rounded focus:ring-indigo-500 cursor-pointer">
                                 <span class="text-sm font-semibold text-slate-700 group-hover:text-indigo-600 transition">Thanh V. (QC)</span>
                             </label>
+                              <label class="flex items-center gap-2 cursor-pointer group">
+                                <input type="checkbox" value="@996 - Pocky - HR" checked class="w-4 h-4 text-indigo-600 border-slate-300 rounded focus:ring-indigo-500 cursor-pointer">
+                                <span class="text-sm font-semibold text-slate-700 group-hover:text-indigo-600 transition">Pocky - HR</span>
+                            </label>
                         </div>
                         <input type="text" id="extraCc" placeholder="Cc người khác (VD: @123 - Name)..." class="mt-3 w-full h-9 bg-white border border-slate-300 text-slate-700 font-medium text-xs rounded-lg px-3 outline-none">
                     </div>
@@ -152,7 +196,7 @@
                     <!-- Kết quả preview text -->
                     <div class="bg-indigo-50/50 border border-indigo-100 rounded-xl p-4 text-sm font-medium text-slate-600 italic">
                         <span class="font-bold text-indigo-800 not-italic block mb-1">📝 Preview tin nhắn sẽ gửi:</span>
-                        <div id="messagePreview" class="text-slate-700">Hãy điền thông tin để xem trước nội dung tin nhắn.</div>
+                        <div id="messagePreview" class="text-slate-700 font-sans">Hãy điền thông tin để xem trước nội dung tin nhắn.</div>
                     </div>
 
                     <!-- Nút Submit -->
@@ -181,8 +225,7 @@
 
     <script>
         // ================= CẤU HÌNH WEBHOOK GOOGLE CHAT =================
-        // BẠN PHẢI THAY ĐỔI ĐƯỜNG LINK NÀY THÀNH WEBHOOK CỦA SPACE GOOGLE CHAT CỦA CÔNG TY BẠN
-        const GOOGLE_CHAT_WEBHOOK_URL = "https://chat.googleapis.com/v1/spaces/AAQANDj2-vM/messages?key=AIzaSyDdI0hCZtE6vySjMm-WEfRq3CPzqKqqsHI&token=9SHNcBKnjS2oqVvpT7__Q0TCC-uZxdqgBqnjqbaKqzw"; 
+        const GOOGLE_CHAT_WEBHOOK_URL = "https://chat.googleapis.com/v1/spaces/XXXXXXX/messages?key=YYYYYY&token=ZZZZZZ"; 
 
         // Hàm Auth Google
         let loggedInUser = null;
@@ -207,7 +250,6 @@
                 document.getElementById('userNameDisplay').innerText = loggedInUser.name;
                 document.getElementById('userAvatar').src = loggedInUser.picture;
                 
-                // Tự động điền tên người xin nếu ô đang trống
                 const appNameInput = document.getElementById('applicantName');
                 if(!appNameInput.value) appNameInput.value = loggedInUser.name;
             } else {
@@ -253,9 +295,11 @@
             return `${parts[2]}/${parts[1]}`;
         }
 
-        // Tạo nội dung tin nhắn
+        // Tạo nội dung tin nhắn linh hoạt xưng hô & tránh lặp từ "ngày"
         function generateMessageText() {
+            const managerSalutation = document.getElementById('managerSalutation').value.trim();
             const manager = document.getElementById('managerName').value.trim();
+            const userPronoun = document.getElementById('userPronoun').value.trim();
             const applicant = document.getElementById('applicantName').value.trim();
             const leaveType = document.getElementById('leaveType').value;
             const leaveDate = formatDateToDDMM(document.getElementById('leaveDate').value);
@@ -269,14 +313,18 @@
 
             let ccString = ccList.length > 0 ? `\nCc: ${ccList.join(' , ')}` : "";
 
-            // Format chuẩn template: Dạ chị @53 - Lan L. - QC , em 927-Kenz xin off 0.5d sáng nay ngày 23/09 - Lý do: có việc cá nhân ạ
-            return `Dạ chị ${manager} , em ${applicant} xin ${leaveType} ngày ${leaveDate} - Lý do: ${reason}${ccString}`;
+            // Tiền tố xưng hô Quản lý (VD: "Dạ chị " hoặc "")
+            const managerPrefix = managerSalutation ? `${managerSalutation} ` : "";
+
+            // Tự động kiểm tra: Nếu loại yêu cầu kết thúc bằng "ngày" (như "off 1 ngày") thì KHÔNG thêm chữ "ngày" trước ngày tháng nữa
+            const datePrefix = leaveType.toLowerCase().endsWith('ngày') ? '' : 'ngày ';
+
+            return `${managerPrefix}${manager} , ${userPronoun} ${applicant} xin ${leaveType} ${datePrefix}${leaveDate} - Lý do: ${reason}${ccString}`;
         }
 
         // Cập nhật khung xem trước
         function updatePreview() {
             const text = generateMessageText();
-            // Đổi xuống dòng (\n) thành thẻ <br> để HTML hiển thị đúng
             document.getElementById('messagePreview').innerHTML = text.replace(/\n/g, '<br>');
         }
 
@@ -285,7 +333,6 @@
             const btn = document.getElementById('btnSubmitMessage');
             const origHtml = btn.innerHTML;
             
-            // Kiểm tra Webhook
             if (GOOGLE_CHAT_WEBHOOK_URL.includes("XXXXXXX")) {
                 showCustomAlert("Lỗi cấu hình", "Bạn chưa cài đặt Webhook URL của Google Chat trong code!", true);
                 return;
