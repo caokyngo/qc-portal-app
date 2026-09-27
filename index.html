@@ -37,18 +37,20 @@
       }
     </script>
 
-    <!-- CSS dòng thông báo chạy liên tục, màu sắc dịu và dễ đọc -->
+    <!-- CSS Dòng thông báo chạy liên tục chuẩn mượt -->
     <style>
         .travel-marquee {
             width: 100%;
-            max-width: 430px;
+            max-width: 460px;
             overflow: hidden;
+            mask-image: linear-gradient(to right, transparent, black 8%, black 92%, transparent);
+            -webkit-mask-image: linear-gradient(to right, transparent, black 8%, black 92%, transparent);
         }
 
         .travel-marquee-track {
             display: flex;
             width: max-content;
-            animation: travel-marquee-scroll 12s linear infinite;
+            animation: travel-marquee-scroll 18s linear infinite;
             will-change: transform;
         }
 
@@ -57,34 +59,56 @@
             flex: 0 0 auto;
             align-items: center;
             padding-right: 2.5rem;
+            gap: 2.5rem;
         }
 
         .travel-marquee-message {
             display: inline-flex;
             align-items: center;
-            gap: 0.5rem;
+            gap: 0.4rem;
             white-space: nowrap;
-            color: #334155;
             font-family: 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
-            font-size: 14px;
-            font-weight: 600;
-            letter-spacing: 0.1px;
+            font-size: 16px;
+            font-weight: 800;
+            letter-spacing: 0.2px;
             line-height: 1.5;
+            
+            background: linear-gradient(90deg, #ea580c 0%, #d97706 50%, #ca8a04 100%);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+
+            animation: travel-blink 1.2s infinite ease-in-out;
         }
 
         .travel-marquee-message i {
-            color: #475569;
-            font-size: 13px;
+            color: #ea580c;
+            font-size: 15.5px;
         }
 
         .travel-marquee-count {
-            color: #0f766e;
-            font-size: 15px;
-            font-weight: 700;
+            font-size: 17px;
+            font-weight: 900;
+            background: linear-gradient(90deg, #c2410c 0%, #ea580c 100%);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+            padding: 0 2px;
         }
 
         @keyframes travel-marquee-scroll {
             to { transform: translateX(-50%); }
+        }
+
+        @keyframes travel-blink {
+            0%, 100% {
+                opacity: 1;
+                filter: drop-shadow(0 0 1px rgba(234, 88, 12, 0.4));
+            }
+            50% {
+                opacity: 0.45;
+                filter: drop-shadow(0 0 5px rgba(234, 88, 12, 0.7));
+            }
         }
 
         @media (prefers-reduced-motion: reduce) {
@@ -130,6 +154,10 @@
                 <i class="fa-solid fa-circle-info w-5 text-center text-lg"></i> 
                 <span>Thông tin Device</span>
             </a>
+            <a href="log_off" class="whitespace-nowrap flex items-center gap-3 px-4 py-3.5 text-sm font-bold rounded-xl transition text-indigo-200 hover:bg-white/10 hover:text-white">
+                <i class="fa-solid fa-calendar-minus w-5 text-center text-lg"></i> 
+                <span>Xin Off</span>
+            </a>
         </nav>
     </aside>
 
@@ -137,26 +165,33 @@
     <div class="flex-1 flex flex-col h-full overflow-hidden bg-slate-50 relative">
         <!-- HEADER MỚI VỚI BỐ CỤC 3 PHẦN -->
         <header class="bg-white text-slate-800 shadow-sm border-b border-slate-200 z-10 p-3 px-4 md:px-6 flex justify-between items-center min-h-[72px]">
-            <!-- Phần bên trái: Tiêu đề -->
             <div class="flex-1 shrink-0">
                 <h2 class="text-xl font-bold text-slate-800 hidden sm:block">Báo Cáo Daily (Jira)</h2>
             </div>
             
             <!-- Phần ở giữa: Thông báo đếm ngược chạy liên tục -->
             <div class="hidden lg:flex flex-1 min-w-0 justify-center items-center">
-                <div class="w-full max-w-[430px] px-4 py-2 rounded-full bg-slate-50/90 border border-slate-200 shadow-sm cursor-default">
+                <div class="w-full max-w-[460px] px-4 py-2 rounded-full bg-slate-50/90 border border-slate-200 shadow-sm cursor-default">
                     <div class="travel-marquee">
                         <div class="travel-marquee-track">
                             <div class="travel-marquee-group">
                                 <span class="travel-marquee-message soft-text">
                                     <i class="fa-solid fa-plane-departure" aria-hidden="true"></i>
-                                    Chỉ còn <strong class="mondayCountText travel-marquee-count">...</strong> Thứ 2 nữa là đi Trùng Khánh! 🇨🇳
+                                    Chỉ còn <strong class="mondayCountText travel-marquee-count">...</strong> Thứ 2 nữa là đi Trùng Khánh nhoa cả nhà iu! 🇨🇳
+                                </span>
+                                <span class="travel-marquee-message soft-text">
+                                    <i class="fa-solid fa-plane-departure" aria-hidden="true"></i>
+                                    Chạy task lẹ tay để còn kịp nhoa! 🇨🇳
                                 </span>
                             </div>
                             <div class="travel-marquee-group" aria-hidden="true">
                                 <span class="travel-marquee-message soft-text">
                                     <i class="fa-solid fa-plane-departure" aria-hidden="true"></i>
-                                    Chỉ còn <strong class="mondayCountText travel-marquee-count">...</strong> Thứ 2 nữa là đi Trùng Khánh! 🇨🇳
+                                    Chỉ còn <strong class="mondayCountText travel-marquee-count">...</strong> Thứ 2 nữa là đi Trùng Khánh nhoa cả nhà iu! 🇨🇳
+                                </span>
+                                <span class="travel-marquee-message soft-text">
+                                    <i class="fa-solid fa-plane-departure" aria-hidden="true"></i>
+                                    Chạy task lẹ tay để còn kịp nhoa! 🇨🇳
                                 </span>
                             </div>
                         </div>
@@ -464,7 +499,6 @@
                 current.setDate(current.getDate() + 1);
             }
             
-            // Cập nhật số ngày cho cả dòng chính và bản sao dùng để cuộn liên tục
             const txtElements = document.querySelectorAll('.mondayCountText');
             txtElements.forEach(el => {
                 el.innerText = mondaysCount;
@@ -540,7 +574,7 @@
 
         document.addEventListener('DOMContentLoaded', () => {
             updateAuthUI();
-            calculateMondaysLeft(); 
+            calculateMondaysLeft();
             
             const savedScope = localStorage.getItem('jira_scope_testing');
             if (savedScope && document.getElementById('scopeOfTestingInput')) document.getElementById('scopeOfTestingInput').value = savedScope;
@@ -1281,7 +1315,6 @@
                         if (index < tagOrder.length - 1) reportLines.push('-----');
                     });
                 } else {
-                    // TRƯỜNG HỢP XUẤT 0 TICKET
                     reportLines.push('B. [TICKETS]');
                     reportLines.push('- Không có ticket nào (0 Ticket).');
                 }
