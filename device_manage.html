@@ -8,6 +8,7 @@
     <meta http-equiv="Expires" content="0">
     <title>QC Portal - Mượn Thiết Bị</title>
     
+    <!-- Cảnh báo Tailwind CDN là bình thường, không ảnh hưởng chức năng -->
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
@@ -48,7 +49,6 @@
               const installingWorker = reg.installing;
               installingWorker.onstatechange = () => {
                 if (installingWorker.state === 'installed' && navigator.serviceWorker.controller) {
-                  console.log('Có phiên bản code mới! Đang tự động tải lại...');
                   window.location.reload();
                 }
               };
@@ -162,7 +162,7 @@
 
         <main class="flex-1 overflow-y-auto p-4 md:p-6 bg-cover bg-center bg-no-repeat bg-fixed relative" style="background-image: linear-gradient(to bottom, rgba(248, 250, 252, 0.85), rgba(248, 250, 252, 0.95)), url('./bg-chongqing.jpg');">
             <div class="w-full mx-auto 2xl:max-w-[1600px] space-y-6">
-                <!-- Form Mượn Device -->
+                <!-- KHẮC PHỤC LỖI ĐÈ GIAO DIỆN DROPDOWN: Đã thêm z-20 và relative -->
                 <section class="relative z-20 bg-white/90 backdrop-blur-md rounded-xl shadow-sm border border-slate-200 p-5 sm:p-6 space-y-5 w-full">
                     <div class="flex items-center justify-between border-b border-slate-100 pb-3">
                         <div class="flex items-center gap-2">
@@ -439,7 +439,7 @@
             });
             const searchInput = document.getElementById('deviceSearchInput');
             if (currentAvailableDevices.length > 0) {
-                searchInput.placeholder = `-- Gõ tìm / Chọn (${currentAvailableDevices.length} máy) --`;
+                searchInput.placeholder = "-- Gõ tìm / Chọn (" + currentAvailableDevices.length + " máy) --";
                 searchInput.disabled = false;
             } else {
                 searchInput.placeholder = "-- Hết thiết bị khả dụng --";
@@ -455,7 +455,7 @@
             devices.forEach(d => {
                 const li = document.createElement('li');
                 li.className = 'px-3 py-2.5 hover:bg-indigo-50 hover:text-indigo-700 cursor-pointer transition';
-                li.textContent = `${d.name} [${d.performance}]`;
+                li.textContent = d.name + " [" + d.performance + "]";
                 li.onclick = () => { const input = document.getElementById('deviceSearchInput'); input.value = d.name; input.dataset.value = d.name; closeDeviceDropdown(); };
                 ul.appendChild(li);
             });
@@ -496,6 +496,7 @@
             currentDevicePage = 1; renderPaginatedDeviceLogs();
         }
 
+        // KHẮC PHỤC LỖI TẤT CẢ CÁC BACKTICKS 
         function renderPaginatedDeviceLogs() {
             const tbody = document.getElementById('deviceLogTableBody'); if (!tbody) return;
             tbody.innerHTML = '';
@@ -504,13 +505,13 @@
             if (isOnlyUnreturned) { filteredLogs = filteredLogs.filter(r => !String(r.trangThai || '').toLowerCase().includes('đã trả')); }
             if (currentSearchKeyword !== "") {
                 filteredLogs = filteredLogs.filter(r => {
-                    const rowText = `${r.thoiGian \vert{}\vert{} ''}${r.nguoiMuon || ''} ${r.thietBi \vert{}\vert{} ''}${r.trangThai || ''}`.toLowerCase();
+                    const rowText = ((r.thoiGian || '') + " " + (r.nguoiMuon || '') + " " + (r.thietBi || '') + " " + (r.trangThai || '')).toLowerCase();
                     return rowText.includes(currentSearchKeyword);
                 });
             }
 
             const totalLogs = filteredLogs.length;
-            if (document.getElementById('logCountBadge')) document.getElementById('logCountBadge').innerText = `${totalLogs} lượt`;
+            if (document.getElementById('logCountBadge')) document.getElementById('logCountBadge').innerText = totalLogs + " lượt";
             if (document.getElementById('totalLogsText')) document.getElementById('totalLogsText').innerText = totalLogs;
 
             if (totalLogs === 0) {
@@ -538,32 +539,30 @@
                 const currentUserName = loggedInUser ? loggedInUser.name : '';
                 const isOwner = (currentUserName === r.nguoiMuon) || (currentUserName === r.nguoiThaoTac);
 
-                let statusBadge = `<span class="bg-amber-100 text-amber-800 px-2.5 py-1 rounded-md text-[11px] font-bold shadow-sm">Đang Mượn</span>`;
+                let statusBadge = '<span class="bg-amber-100 text-amber-800 px-2.5 py-1 rounded-md text-[11px] font-bold shadow-sm">Đang Mượn</span>';
                 let actionButton = '';
 
                 if (isReturned) {
-                    statusBadge = `<span class="bg-emerald-100 text-emerald-800 px-2.5 py-1 rounded-md text-[11px] font-bold shadow-sm">Đã Trả</span>`;
-                    actionButton = `<span class="text-slate-400 text-[11px] italic font-medium"><i class="fa-solid fa-check mr-1"></i>Hoàn tất</span>`;
+                    statusBadge = '<span class="bg-emerald-100 text-emerald-800 px-2.5 py-1 rounded-md text-[11px] font-bold shadow-sm">Đã Trả</span>';
+                    actionButton = '<span class="text-slate-400 text-[11px] italic font-medium"><i class="fa-solid fa-check mr-1"></i>Hoàn tất</span>';
                 } else {
                     if (isOwner) {
                         const safeId = escapeSingleQuotes(r.id); const safeDevice = escapeSingleQuotes(r.thietBi); const safeBorrower = escapeSingleQuotes(r.nguoiMuon);
-                        actionButton = `<button onclick="submitReturnDevice('${safeId}', '${safeDevice}', '${safeBorrower}')" class="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white text-[11px] font-bold rounded-md shadow-sm transition inline-flex items-center gap-1.5"><i class="fa-solid fa-rotate-left"></i> Trả Device</button>`;
+                        actionButton = '<button onclick="submitReturnDevice(\'' + safeId + '\', \'' + safeDevice + '\', \'' + safeBorrower + '\')" class="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white text-[11px] font-bold rounded-md shadow-sm transition inline-flex items-center gap-1.5"><i class="fa-solid fa-rotate-left"></i> Trả Device</button>';
                     } else {
-                        actionButton = `<button disabled class="px-3 py-1.5 bg-slate-200 text-slate-400 text-[11px] font-bold rounded-md shadow-sm inline-flex items-center gap-1.5 cursor-not-allowed" title="Chỉ tài khoản mượn mới được phép trả thiết bị"><i class="fa-solid fa-lock"></i> Trả Device</button>`;
+                        actionButton = '<button disabled class="px-3 py-1.5 bg-slate-200 text-slate-400 text-[11px] font-bold rounded-md shadow-sm inline-flex items-center gap-1.5 cursor-not-allowed" title="Chỉ tài khoản mượn mới được phép trả thiết bị"><i class="fa-solid fa-lock"></i> Trả Device</button>';
                     }
                 }
-                tr.innerHTML = `
-                    <td class="px-5 py-3.5 font-mono text-indigo-600 font-bold whitespace-nowrap">${r.thoiGian || ''}</td>
-                    <td class="px-5 py-3.5 font-bold text-slate-800 whitespace-nowrap">${r.nguoiMuon || ''}</td>
-                    <td class="px-5 py-3.5 text-emerald-700 font-bold max-w-xs truncate" title="${r.thietBi \vert{}\vert{} ''}">${r.thietBi || ''}</td>
-                    <td class="px-5 py-3.5 whitespace-nowrap">${statusBadge}</td>
-                    <td class="px-5 py-3.5 text-slate-500 font-mono text-[11px] font-bold whitespace-nowrap">${r.gioTra || ''}</td>
-                    <td class="px-5 py-3.5 whitespace-nowrap text-right">${actionButton}</td>
-                `;
+                tr.innerHTML = '<td class="px-5 py-3.5 font-mono text-indigo-600 font-bold whitespace-nowrap">' + (r.thoiGian || '') + '</td>' +
+                               '<td class="px-5 py-3.5 font-bold text-slate-800 whitespace-nowrap">' + (r.nguoiMuon || '') + '</td>' +
+                               '<td class="px-5 py-3.5 text-emerald-700 font-bold max-w-xs truncate" title="' + (r.thietBi || '') + '">' + (r.thietBi || '') + '</td>' +
+                               '<td class="px-5 py-3.5 whitespace-nowrap">' + statusBadge + '</td>' +
+                               '<td class="px-5 py-3.5 text-slate-500 font-mono text-[11px] font-bold whitespace-nowrap">' + (r.gioTra || '') + '</td>' +
+                               '<td class="px-5 py-3.5 whitespace-nowrap text-right">' + actionButton + '</td>';
                 tbody.appendChild(tr);
             });
 
-            if (document.getElementById('pageRangeText')) document.getElementById('pageRangeText').innerText = `${startIndex + 1} -${endIndex}`;
+            if (document.getElementById('pageRangeText')) document.getElementById('pageRangeText').innerText = (startIndex + 1) + " - " + endIndex;
             if (document.getElementById('currentPageText')) document.getElementById('currentPageText').innerText = currentDevicePage;
             if (document.getElementById('totalPagesText')) document.getElementById('totalPagesText').innerText = totalPages;
             if (document.getElementById('btnPrevPage')) document.getElementById('btnPrevPage').disabled = (currentDevicePage === 1);
@@ -583,21 +582,21 @@
 
             const btn = document.getElementById('btnSubmitBorrow'); 
             const origHtml = btn ? btn.innerHTML : '';
-            if (btn) { btn.disabled = true; btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin text-sm"></i> Đang ghi...`; }
+            if (btn) { btn.disabled = true; btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin text-sm"></i> Đang ghi...'; }
 
             const now = new Date(); const pad = (n) => n.toString().padStart(2, '0');
-            const exactTimeStr = `${pad(now.getDate())}/${pad(now.getMonth()+1)}/${now.getFullYear()}${pad(now.getHours())}:${pad(now.getMinutes())}:${pad(now.getSeconds())}`;
-            const timeStr = `${pad(now.getHours())}:${pad(now.getMinutes())}${pad(now.getDate())}/${pad(now.getMonth()+1)}/${now.getFullYear()}`;
+            const exactTimeStr = pad(now.getDate()) + "/" + pad(now.getMonth()+1) + "/" + now.getFullYear() + " " + pad(now.getHours()) + ":" + pad(now.getMinutes()) + ":" + pad(now.getSeconds());
+            const timeStr = pad(now.getHours()) + ":" + pad(now.getMinutes()) + " " + pad(now.getDate()) + "/" + pad(now.getMonth()+1) + "/" + now.getFullYear();
 
             const newRecord = { nguoiMuon: borrowerName, nguoiThaoTac: operatorName, thietBi: device, thoiGian: timeStr, trangThai: "Đang Mượn", gioTra: "", createdAt: firebase.firestore.FieldValue.serverTimestamp() };
 
             if (db) {
                 db.collection("device_logs").add(newRecord).then(() => {
                     if (btn) { btn.disabled = false; btn.innerHTML = origHtml; }
-                    showCustomAlert('Thành Công!', `Đã ghi nhận mượn [${device}] cho${borrowerName}.`);
-                    let displayBorrower = `**${borrowerName}**`;
-                    if (borrowerName !== operatorName) displayBorrower += `\n*(Log hộ bởi: ${operatorName})*`;
-                    sendDiscordNotification({ title: "🟦 THÔNG BÁO MƯỢN THIẾT BỊ", color: 16753920, fields: [{ name: "👤 Người thực hiện", value: displayBorrower, inline: true }, { name: "📱 Thiết bị", value: `\`${device}\``, inline: true }, { name: "⏰ Thời gian mượn", value: exactTimeStr, inline: false }, { name: "📌 Trạng thái", value: "🟡 **Đang Mượn**", inline: false }], timestamp: now.toISOString(), footer: { text: "QA Internal Portal System" } });
+                    showCustomAlert('Thành Công!', "Đã ghi nhận mượn [" + device + "] cho " + borrowerName + ".");
+                    let displayBorrower = "**" + borrowerName + "**";
+                    if (borrowerName !== operatorName) displayBorrower += "\n*(Log hộ bởi: " + operatorName + ")*";
+                    sendDiscordNotification({ title: "🟦 THÔNG BÁO MƯỢN THIẾT BỊ", color: 16753920, fields: [{ name: "👤 Người thực hiện", value: displayBorrower, inline: true }, { name: "📱 Thiết bị", value: "`" + device + "`", inline: true }, { name: "⏰ Thời gian mượn", value: exactTimeStr, inline: false }, { name: "📌 Trạng thái", value: "🟡 **Đang Mượn**", inline: false }], timestamp: now.toISOString(), footer: { text: "QC Internal Portal System" } });
                 }).catch((err) => {
                     console.error("Lỗi Firestore:", err); 
                     if (btn) { btn.disabled = false; btn.innerHTML = origHtml; }
@@ -607,15 +606,15 @@
         }
 
         function submitReturnDevice(docId, deviceName, borrowerName) {
-            if (!confirm(`Xác nhận trả thiết bị: [${deviceName}]?`)) return;
+            if (!confirm("Xác nhận trả thiết bị: [" + deviceName + "]?")) return;
             const now = new Date(); const pad = (n) => n.toString().padStart(2, '0');
-            const exactTimeStr = `${pad(now.getDate())}/${pad(now.getMonth()+1)}/${now.getFullYear()}${pad(now.getHours())}:${pad(now.getMinutes())}:${pad(now.getSeconds())}`;
-            const nowStr = `${pad(now.getHours())}:${pad(now.getMinutes())}${pad(now.getDate())}/${pad(now.getMonth()+1)}/${now.getFullYear()}`; 
+            const exactTimeStr = pad(now.getDate()) + "/" + pad(now.getMonth()+1) + "/" + now.getFullYear() + " " + pad(now.getHours()) + ":" + pad(now.getMinutes()) + ":" + pad(now.getSeconds());
+            const nowStr = pad(now.getHours()) + ":" + pad(now.getMinutes()) + " " + pad(now.getDate()) + "/" + pad(now.getMonth()+1) + "/" + now.getFullYear(); 
 
             if (db) {
                 db.collection("device_logs").doc(docId).update({ trangThai: "Đã Trả", gioTra: nowStr }).then(() => {
-                    showCustomAlert('Thành Công!', `Đã xác nhận trả thiết bị [${deviceName}].`);
-                    sendDiscordNotification({ title: "✅ THÔNG BÁO TRẢ THIẾT BỊ", color: 3066993, fields: [{ name: "👤 Người thực hiện", value: `**${borrowerName}**`, inline: true }, { name: "📱 Thiết bị", value: `\`${deviceName}\``, inline: true }, { name: "⏰ Thời gian trả", value: exactTimeStr, inline: false }, { name: "📌 Trạng thái", value: "🟢 **Đã Trả**", inline: false }], timestamp: now.toISOString(), footer: { text: "QA Internal Portal System" } });
+                    showCustomAlert('Thành Công!', "Đã xác nhận trả thiết bị [" + deviceName + "].");
+                    sendDiscordNotification({ title: "✅ THÔNG BÁO TRẢ THIẾT BỊ", color: 3066993, fields: [{ name: "👤 Người thực hiện", value: "**" + borrowerName + "**", inline: true }, { name: "📱 Thiết bị", value: "`" + deviceName + "`", inline: true }, { name: "⏰ Thời gian trả", value: exactTimeStr, inline: false }, { name: "📌 Trạng thái", value: "🟢 **Đã Trả**", inline: false }], timestamp: now.toISOString(), footer: { text: "QC Internal Portal System" } });
                 }).catch((err) => {
                     console.error("Lỗi cập nhật trả:", err); showCustomAlert("Lỗi Server", "Không thể cập nhật trạng thái trả!", true);
                 });
@@ -628,7 +627,7 @@
             if (isOnlyUnreturned) dataToExport = dataToExport.filter(r => !String(r.trangThai || '').toLowerCase().includes('đã trả'));
             if (currentSearchKeyword !== "") {
                 dataToExport = dataToExport.filter(r => {
-                    const rowText = `${r.thoiGian || ''} ${r.nguoiMuon || ''} ${r.thietBi || ''} ${r.trangThai || ''}`.toLowerCase();
+                    const rowText = ((r.thoiGian || '') + " " + (r.nguoiMuon || '') + " " + (r.thietBi || '') + " " + (r.trangThai || '')).toLowerCase();
                     return rowText.includes(currentSearchKeyword);
                 });
             }
@@ -641,7 +640,7 @@
             const ws = XLSX.utils.json_to_sheet(exportData); const wb = XLSX.utils.book_new();
             XLSX.utils.book_append_sheet(wb, ws, "NhatKyMuonTra");
             const dateStr = new Date().toISOString().slice(0, 10);
-            XLSX.writeFile(wb, `NhatKy_MuonTra_Device_${dateStr}.xlsx`);
+            XLSX.writeFile(wb, "NhatKy_MuonTra_Device_" + dateStr + ".xlsx");
         }
 
         function closeModal(modalId) {
