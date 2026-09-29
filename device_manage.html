@@ -48,6 +48,7 @@
               const installingWorker = reg.installing;
               installingWorker.onstatechange = () => {
                 if (installingWorker.state === 'installed' && navigator.serviceWorker.controller) {
+                  console.log('Có phiên bản code mới! Đang tự động tải lại...');
                   window.location.reload();
                 }
               };
@@ -161,8 +162,9 @@
 
         <main class="flex-1 overflow-y-auto p-4 md:p-6 bg-cover bg-center bg-no-repeat bg-fixed relative" style="background-image: linear-gradient(to bottom, rgba(248, 250, 252, 0.85), rgba(248, 250, 252, 0.95)), url('./bg-chongqing.jpg');">
             <div class="w-full mx-auto 2xl:max-w-[1600px] space-y-6">
-                <!-- Form Mượn Device -->
-                <section class="bg-white/90 backdrop-blur-md rounded-xl shadow-sm border border-slate-200 p-5 sm:p-6 space-y-5 w-full">
+                
+                <!-- Form Mượn Device - Đã thêm relative z-20 để ưu tiên nổi lên trên -->
+                <section class="relative z-20 bg-white/90 backdrop-blur-md rounded-xl shadow-sm border border-slate-200 p-5 sm:p-6 space-y-5 w-full">
                     <div class="flex items-center justify-between border-b border-slate-100 pb-3">
                         <div class="flex items-center gap-2">
                             <i class="fa-solid fa-hand-holding-hand text-indigo-600 text-xl"></i>
@@ -193,6 +195,7 @@
                                 <input type="text" id="deviceSearchInput" onfocus="openDeviceDropdown()" oninput="filterDeviceListUI()" autocomplete="off" placeholder="-- Đang tải danh sách... --" class="w-full h-[42px] bg-white border border-slate-300 text-slate-800 font-medium text-xs rounded-lg px-3 pr-8 focus:ring-2 focus:ring-indigo-500 outline-none transition cursor-text shadow-sm">
                                 <i class="fa-solid fa-chevron-down absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 text-xs pointer-events-none"></i>
                             </div>
+                            <!-- Dropdown list -->
                             <div id="deviceDropdownContainer" class="hidden absolute z-50 w-full mt-1 bg-white border border-slate-200 rounded-lg shadow-xl max-h-48 overflow-y-auto custom-scrollbar">
                                 <ul id="deviceListUl" class="text-xs font-medium text-slate-700 py-1 divide-y divide-slate-100"></ul>
                             </div>
@@ -503,7 +506,7 @@
             if (isOnlyUnreturned) { filteredLogs = filteredLogs.filter(r => !String(r.trangThai || '').toLowerCase().includes('đã trả')); }
             if (currentSearchKeyword !== "") {
                 filteredLogs = filteredLogs.filter(r => {
-                    const rowText = `${r.thoiGian || ''} ${r.nguoiMuon || ''} ${r.thietBi || ''} ${r.trangThai || ''}`.toLowerCase();
+                    const rowText = `${r.thoiGian \vert{}\vert{} ''}${r.nguoiMuon || ''} ${r.thietBi \vert{}\vert{} ''}${r.trangThai || ''}`.toLowerCase();
                     return rowText.includes(currentSearchKeyword);
                 });
             }
@@ -554,7 +557,7 @@
                 tr.innerHTML = `
                     <td class="px-5 py-3.5 font-mono text-indigo-600 font-bold whitespace-nowrap">${r.thoiGian || ''}</td>
                     <td class="px-5 py-3.5 font-bold text-slate-800 whitespace-nowrap">${r.nguoiMuon || ''}</td>
-                    <td class="px-5 py-3.5 text-emerald-700 font-bold max-w-xs truncate" title="${r.thietBi || ''}">${r.thietBi || ''}</td>
+                    <td class="px-5 py-3.5 text-emerald-700 font-bold max-w-xs truncate" title="${r.thietBi \vert{}\vert{} ''}">${r.thietBi || ''}</td>
                     <td class="px-5 py-3.5 whitespace-nowrap">${statusBadge}</td>
                     <td class="px-5 py-3.5 text-slate-500 font-mono text-[11px] font-bold whitespace-nowrap">${r.gioTra || ''}</td>
                     <td class="px-5 py-3.5 whitespace-nowrap text-right">${actionButton}</td>
@@ -562,7 +565,7 @@
                 tbody.appendChild(tr);
             });
 
-            if (document.getElementById('pageRangeText')) document.getElementById('pageRangeText').innerText = `${startIndex + 1} - ${endIndex}`;
+            if (document.getElementById('pageRangeText')) document.getElementById('pageRangeText').innerText = `${startIndex + 1} -${endIndex}`;
             if (document.getElementById('currentPageText')) document.getElementById('currentPageText').innerText = currentDevicePage;
             if (document.getElementById('totalPagesText')) document.getElementById('totalPagesText').innerText = totalPages;
             if (document.getElementById('btnPrevPage')) document.getElementById('btnPrevPage').disabled = (currentDevicePage === 1);
@@ -585,18 +588,18 @@
             if (btn) { btn.disabled = true; btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin text-sm"></i> Đang ghi...`; }
 
             const now = new Date(); const pad = (n) => n.toString().padStart(2, '0');
-            const exactTimeStr = `${pad(now.getDate())}/${pad(now.getMonth()+1)}/${now.getFullYear()} ${pad(now.getHours())}:${pad(now.getMinutes())}:${pad(now.getSeconds())}`;
-            const timeStr = `${pad(now.getHours())}:${pad(now.getMinutes())} ${pad(now.getDate())}/${pad(now.getMonth()+1)}/${now.getFullYear()}`;
+            const exactTimeStr = `${pad(now.getDate())}/${pad(now.getMonth()+1)}/${now.getFullYear()}${pad(now.getHours())}:${pad(now.getMinutes())}:${pad(now.getSeconds())}`;
+            const timeStr = `${pad(now.getHours())}:${pad(now.getMinutes())}${pad(now.getDate())}/${pad(now.getMonth()+1)}/${now.getFullYear()}`;
 
             const newRecord = { nguoiMuon: borrowerName, nguoiThaoTac: operatorName, thietBi: device, thoiGian: timeStr, trangThai: "Đang Mượn", gioTra: "", createdAt: firebase.firestore.FieldValue.serverTimestamp() };
 
             if (db) {
                 db.collection("device_logs").add(newRecord).then(() => {
                     if (btn) { btn.disabled = false; btn.innerHTML = origHtml; }
-                    showCustomAlert('Thành Công!', `Đã ghi nhận mượn [${device}] cho ${borrowerName}.`);
+                    showCustomAlert('Thành Công!', `Đã ghi nhận mượn [${device}] cho${borrowerName}.`);
                     let displayBorrower = `**${borrowerName}**`;
                     if (borrowerName !== operatorName) displayBorrower += `\n*(Log hộ bởi: ${operatorName})*`;
-                    sendDiscordNotification({ title: "🟦 THÔNG BÁO MƯỢN THIẾT BỊ", color: 16753920, fields: [{ name: "👤 Người thực hiện", value: displayBorrower, inline: true }, { name: "📱 Thiết bị", value: `\`${device}\``, inline: true }, { name: "⏰ Thời gian mượn", value: exactTimeStr, inline: false }, { name: "📌 Trạng thái", value: "🟡 **Đang Mượn**", inline: false }], timestamp: now.toISOString(), footer: { text: "QA Internal Portal System" } });
+                    sendDiscordNotification({ title: "🟦 THÔNG BÁO MƯỢN THIẾT BỊ", color: 16753920, fields: [{ name: "👤 Người thực hiện", value: displayBorrower, inline: true }, { name: "📱 Thiết bị", value: `\`${device}\``, inline: true }, { name: "⏰ Thời gian mượn", value: exactTimeStr, inline: false }, { name: "📌 Trạng thái", value: "🟡 **Đang Mượn**", inline: false }], timestamp: now.toISOString(), footer: { text: "QC Internal Portal System" } });
                 }).catch((err) => {
                     console.error("Lỗi Firestore:", err); 
                     if (btn) { btn.disabled = false; btn.innerHTML = origHtml; }
@@ -608,13 +611,13 @@
         function submitReturnDevice(docId, deviceName, borrowerName) {
             if (!confirm(`Xác nhận trả thiết bị: [${deviceName}]?`)) return;
             const now = new Date(); const pad = (n) => n.toString().padStart(2, '0');
-            const exactTimeStr = `${pad(now.getDate())}/${pad(now.getMonth()+1)}/${now.getFullYear()} ${pad(now.getHours())}:${pad(now.getMinutes())}:${pad(now.getSeconds())}`;
-            const nowStr = `${pad(now.getHours())}:${pad(now.getMinutes())} ${pad(now.getDate())}/${pad(now.getMonth()+1)}/${now.getFullYear()}`; 
+            const exactTimeStr = `${pad(now.getDate())}/${pad(now.getMonth()+1)}/${now.getFullYear()}${pad(now.getHours())}:${pad(now.getMinutes())}:${pad(now.getSeconds())}`;
+            const nowStr = `${pad(now.getHours())}:${pad(now.getMinutes())}${pad(now.getDate())}/${pad(now.getMonth()+1)}/${now.getFullYear()}`; 
 
             if (db) {
                 db.collection("device_logs").doc(docId).update({ trangThai: "Đã Trả", gioTra: nowStr }).then(() => {
                     showCustomAlert('Thành Công!', `Đã xác nhận trả thiết bị [${deviceName}].`);
-                    sendDiscordNotification({ title: "✅ THÔNG BÁO TRẢ THIẾT BỊ", color: 3066993, fields: [{ name: "👤 Người thực hiện", value: `**${borrowerName}**`, inline: true }, { name: "📱 Thiết bị", value: `\`${deviceName}\``, inline: true }, { name: "⏰ Thời gian trả", value: exactTimeStr, inline: false }, { name: "📌 Trạng thái", value: "🟢 **Đã Trả**", inline: false }], timestamp: now.toISOString(), footer: { text: "QA Internal Portal System" } });
+                    sendDiscordNotification({ title: "✅ THÔNG BÁO TRẢ THIẾT BỊ", color: 3066993, fields: [{ name: "👤 Người thực hiện", value: `**${borrowerName}**`, inline: true }, { name: "📱 Thiết bị", value: `\`${deviceName}\``, inline: true }, { name: "⏰ Thời gian trả", value: exactTimeStr, inline: false }, { name: "📌 Trạng thái", value: "🟢 **Đã Trả**", inline: false }], timestamp: now.toISOString(), footer: { text: "QC Internal Portal System" } });
                 }).catch((err) => {
                     console.error("Lỗi cập nhật trả:", err); showCustomAlert("Lỗi Server", "Không thể cập nhật trạng thái trả!", true);
                 });
@@ -661,6 +664,8 @@
             }
             modal.classList.remove('hidden');
         }
+
+        function closeCustomAlert() { document.getElementById('customAlertModal').classList.add('hidden'); }
     </script>
 </body>
 </html>
