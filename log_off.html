@@ -510,7 +510,7 @@
 
     <script>
         // CẬP NHẬT URL GOOGLE APPS SCRIPT PROXY MỚI NHẤT
-        const JIRA_PROXY_API_URL = "https://script.google.com/a/macros/enotion.io/s/AKfycbzrjd8DVZLI1uqv1s1e75RE8auUAISpSwq73wfvCUMVW6g0WqsYRZHpwFZ76HfGZiTt/exec";
+        const JIRA_PROXY_API_URL = "https://script.google.com/a/macros/enotion.io/s/AKfycbyFpgvtA4iBMqXNN_OviIOR2WodC3Q7pvnIlZ-l2ib2SxKH9Rvn25XgfsjxpNATdwwI/exec";
         const URL_REPORT_API = "https://script.google.com/macros/s/AKfycbzynUh65kMWVtwRdYdg8x35-6LViA_JwMPrWhEoMdDXFDP7tpcheilYrReQSIrQ6zAtIQ/exec";
 
         function toggleSidebar() {
@@ -669,7 +669,7 @@
                 let projectName = "";
 
                 if (url.searchParams.has('jql')) {
-                    // GIẢI MÃ VÀ XÓA TOÀN BỘ KÝ TỰ XUỐNG DÒNG THỪA
+                    // GIẢI MÃ VÀ XÓA TOÀN BỘ KÝ TỰ XUỐNG DÒNG THỪA (\n, \r, %0A)
                     jql = decodeURIComponent(url.searchParams.get('jql')).replace(/[\r\n]+/g, ' ').trim();
                     const projMatch = jql.match(/project\s*=\s*["']?([a-zA-Z0-9_]+)["']?/i);
                     if (projMatch && projMatch[1]) projectName = projMatch[1];
@@ -779,7 +779,9 @@
 
             const script = document.createElement('script');
             script.id = 'jiraJsonpScript';
-            script.src = JIRA_PROXY_API_URL + '?domain=' + encodeURIComponent(parsed.domain) + '&jql=' + encodeURIComponent(parsed.jql) + '&email=' + encodeURIComponent(loggedInUser.email) + '&callback=handleJiraResponse';
+            
+            // THÊM & _t=${Date.now()} ĐỂ ÉP TRÌNH DUYỆT CHỐNG CACHE VÀ LẤY ĐỦ 100% TICKET MỚI NHẤT
+            script.src = JIRA_PROXY_API_URL + '?domain=' + encodeURIComponent(parsed.domain) + '&jql=' + encodeURIComponent(parsed.jql) + '&email=' + encodeURIComponent(loggedInUser.email) + '&callback=handleJiraResponse&_t=' + Date.now();
             
             script.onerror = function() {
                 if (isFinished) return;
