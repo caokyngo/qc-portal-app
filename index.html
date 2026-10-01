@@ -72,7 +72,7 @@
 
     <div id="sidebarOverlay" onclick="toggleSidebar()" class="fixed inset-0 bg-slate-900/60 z-40 hidden md:hidden backdrop-blur-sm transition-opacity opacity-0"></div>
 
-     <!-- ================= SIDEBAR MENU RESPONSIVE (BACKGROUND TRÙNG KHÁNH) ================= -->
+    <!-- SIDEBAR -->
     <aside id="mainSidebar" class="fixed md:relative top-0 left-0 h-screen w-[260px] md:w-64 text-white flex flex-col flex-shrink-0 shadow-2xl z-50 transition-transform duration-300 -translate-x-full md:translate-x-0 bg-cover bg-center bg-no-repeat"
            style="background-image: linear-gradient(to bottom, rgba(15, 23, 42, 0.65), rgba(30, 27, 75, 0.75)), url('./trungkhanh.jpg');">
         
@@ -84,24 +84,27 @@
                     <p class="text-indigo-200 text-[11px] font-medium tracking-wide">Report & Device Tool</p>
                 </div>
             </div>
-            <!-- Nút đóng Menu trên Mobile -->
             <button onclick="toggleSidebar()" class="md:hidden text-white/70 hover:text-white focus:outline-none">
                 <i class="fa-solid fa-xmark text-2xl"></i>
             </button>
         </div>
 
         <nav class="flex flex-col gap-2.5 p-4 overflow-y-auto flex-1 bg-transparent custom-scrollbar">
-            <!-- NÚT ACTIVE: Báo Cáo Daily -->
             <a href="index" class="whitespace-nowrap flex items-center gap-3 px-4 py-3.5 text-sm font-bold rounded-xl transition border border-indigo-300/50 bg-indigo-600/70 hover:bg-indigo-500/70 text-white backdrop-blur-md shadow-lg">
-                <i class="fa-solid fa-chart-line w-5 text-center text-lg"></i> <span>Báo Cáo Daily</span>
+                <i class="fa-solid fa-chart-line w-5 text-center text-lg"></i> 
+                <span>Báo Cáo Daily</span>
             </a>
-            
             <a href="device_manage" class="whitespace-nowrap flex items-center gap-3 px-4 py-3.5 text-sm font-bold rounded-xl transition border border-white/15 bg-white/10 hover:bg-white/25 hover:border-white/40 text-white backdrop-blur-md shadow-sm">
-                <i class="fa-solid fa-mobile-screen-button w-5 text-center text-lg"></i> <span>Mượn Device</span>
+                <i class="fa-solid fa-mobile-screen-button w-5 text-center text-lg"></i> 
+                <span>Mượn Device</span>
             </a>
-            
             <a href="device_info" class="whitespace-nowrap flex items-center gap-3 px-4 py-3.5 text-sm font-bold rounded-xl transition border border-white/15 bg-white/10 hover:bg-white/25 hover:border-white/40 text-white backdrop-blur-md shadow-sm">
-                <i class="fa-solid fa-circle-info w-5 text-center text-lg"></i> <span>Thông tin Device</span>
+                <i class="fa-solid fa-circle-info w-5 text-center text-lg"></i> 
+                <span>Thông tin Device</span>
+            </a>
+            <a href="log_off" class="whitespace-nowrap flex items-center gap-3 px-4 py-3.5 text-sm font-bold rounded-xl transition border border-white/15 bg-white/10 hover:bg-white/25 hover:border-white/40 text-white backdrop-blur-md shadow-sm">
+                <i class="fa-solid fa-calendar-minus w-5 text-center text-lg"></i> 
+                <span>Xin OFF / WFH</span>
             </a>
         </nav>
     </aside>
@@ -266,36 +269,36 @@
                                             <input type="checkbox" id="cbJira" checked onchange="saveHeaderConfig();" class="rounded text-indigo-600 focus:ring-indigo-500">
                                             <span class="font-bold text-indigo-900">Link Jira</span>
                                         </label>
-                                        <label class="inline-flex items-center gap-1.5 cursor-pointer bg-indigo-50/60 hover:bg-indigo-100 px-2.5 py-1.5 rounded-lg border border-indigo-200 transition">
-                                            <input type="checkbox" id="cbTestcase" checked onchange="toggleLinkInputs(); saveHeaderConfig();" class="rounded text-indigo-600 focus:ring-indigo-500">
-                                            <span class="font-bold text-indigo-900">Link Testcase</span>
-                                        </label>
                                         <label class="inline-flex items-center gap-1.5 cursor-pointer bg-slate-100 hover:bg-slate-200 px-2.5 py-1.5 rounded-lg border border-slate-200 transition">
                                             <input type="checkbox" id="cbPreprod" onchange="toggleLinkInputs(); saveHeaderConfig();" class="rounded text-indigo-600 focus:ring-indigo-500">
                                             <span class="font-bold text-slate-700">Preprod</span>
                                         </label>
                                         <label class="inline-flex items-center gap-1.5 cursor-pointer bg-slate-100 hover:bg-slate-200 px-2.5 py-1.5 rounded-lg border border-slate-200 transition">
                                             <input type="checkbox" id="cbWebapp" onchange="toggleLinkInputs(); saveHeaderConfig();" class="rounded text-indigo-600 focus:ring-indigo-500">
-                                            <span class="font-bold text-slate-700">Webapp / App name</span>
+                                            <span class="font-bold text-slate-700">Webapp</span>
+                                        </label>
+                                        <label class="inline-flex items-center gap-1.5 cursor-pointer bg-slate-100 hover:bg-slate-200 px-2.5 py-1.5 rounded-lg border border-slate-200 transition">
+                                            <input type="checkbox" id="cbAppname" onchange="toggleLinkInputs(); saveHeaderConfig();" class="rounded text-indigo-600 focus:ring-indigo-500">
+                                            <span class="font-bold text-slate-700">App name</span>
                                         </label>
                                     </div>
 
-                                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
                                         <div id="fieldIframe">
                                             <label class="block text-[11px] font-bold text-slate-600 mb-1">Link Iframe (theo lang):</label>
                                             <input type="text" id="reportLinkIframeInput" oninput="saveHeaderConfig()" placeholder="VD: https://iframe..." class="w-full bg-slate-50 border border-slate-300 text-xs rounded-lg p-2 outline-none font-medium">
-                                        </div>
-                                        <div id="fieldTestcase">
-                                            <label class="block text-[11px] font-bold text-slate-600 mb-1">Testcase Link:</label>
-                                            <input type="text" id="reportTestcaseInput" oninput="saveHeaderConfig()" placeholder="VD: https://docs.google.com/spreadsheets/d/..." class="w-full bg-slate-50 border border-slate-300 text-xs rounded-lg p-2 outline-none font-medium">
                                         </div>
                                         <div id="fieldPreprod" class="hidden">
                                             <label class="block text-[11px] font-bold text-slate-600 mb-1">Preprod Link (nếu có):</label>
                                             <input type="text" id="reportLinkPreprodInput" oninput="saveHeaderConfig()" placeholder="VD: https://preprod..." class="w-full bg-slate-50 border border-slate-300 text-xs rounded-lg p-2 outline-none font-medium">
                                         </div>
                                         <div id="fieldWebapp" class="hidden">
-                                            <label class="block text-[11px] font-bold text-slate-600 mb-1">Webapp Link / App Name:</label>
-                                            <input type="text" id="reportLinkWebappInput" oninput="saveHeaderConfig()" placeholder="VD: Webapp - Apptek12" class="w-full bg-slate-50 border border-slate-300 text-xs rounded-lg p-2 outline-none font-medium">
+                                            <label class="block text-[11px] font-bold text-slate-600 mb-1">Webapp Link:</label>
+                                            <input type="text" id="reportLinkWebappInput" oninput="saveHeaderConfig()" placeholder="VD: https://webapp..." class="w-full bg-slate-50 border border-slate-300 text-xs rounded-lg p-2 outline-none font-medium">
+                                        </div>
+                                        <div id="fieldAppname" class="hidden">
+                                            <label class="block text-[11px] font-bold text-slate-600 mb-1">App name:</label>
+                                            <input type="text" id="reportLinkAppnameInput" oninput="saveHeaderConfig()" placeholder="VD: Apptek12 / GoldDigger.apk" class="w-full bg-slate-50 border border-slate-300 text-xs rounded-lg p-2 outline-none font-medium">
                                         </div>
                                     </div>
                                 </div>
@@ -534,7 +537,7 @@
     </div>
 
     <script>
-        const JIRA_PROXY_API_URL = "https://script.google.com/a/macros/enotion.io/s/AKfycbz948vll_3cMrDw3Vnj4CLVqbxyyfMPI87iUo9U_3HSQPralPZmySydiI0CXZ636FHl/exec";
+        const JIRA_PROXY_API_URL = "https://script.google.com/a/macros/enotion.io/s/AKfycbxPildwCueaf6amysgKyXwjVR3gW_autSZOb8Aacj81Dta29Pr3S4qWySdbuudM1XSK/exec";
         const URL_REPORT_API = "https://script.google.com/macros/s/AKfycbzynUh65kMWVtwRdYdg8x35-6LViA_JwMPrWhEoMdDXFDP7tpcheilYrReQSIrQ6zAtIQ/exec";
 
         let currentBoardId = null;
@@ -586,9 +589,9 @@
         function toggleLinkInputs() {
             const linkConfigs = [
                 { cb: 'cbIframe', field: 'fieldIframe' },
-                { cb: 'cbTestcase', field: 'fieldTestcase' },
                 { cb: 'cbPreprod', field: 'fieldPreprod' },
-                { cb: 'cbWebapp', field: 'fieldWebapp' }
+                { cb: 'cbWebapp', field: 'fieldWebapp' },
+                { cb: 'cbAppname', field: 'fieldAppname' }
             ];
 
             linkConfigs.forEach(item => {
@@ -613,13 +616,13 @@
                 env: document.getElementById('reportEnvInput')?.value || '',
                 cbIframe: document.getElementById('cbIframe')?.checked || false,
                 cbJira: document.getElementById('cbJira')?.checked || false,
-                cbTestcase: document.getElementById('cbTestcase')?.checked || false,
                 cbPreprod: document.getElementById('cbPreprod')?.checked || false,
                 cbWebapp: document.getElementById('cbWebapp')?.checked || false,
+                cbAppname: document.getElementById('cbAppname')?.checked || false,
                 linkIframe: document.getElementById('reportLinkIframeInput')?.value || '',
-                linkTestcase: document.getElementById('reportTestcaseInput')?.value || '',
                 linkPreprod: document.getElementById('reportLinkPreprodInput')?.value || '',
                 linkWebapp: document.getElementById('reportLinkWebappInput')?.value || '',
+                linkAppname: document.getElementById('reportLinkAppnameInput')?.value || '',
                 notes: document.getElementById('reportNotesInput')?.value || '',
                 metadata: document.getElementById('reportMetadataInput')?.value || ''
             };
@@ -639,14 +642,14 @@
                 
                 if (config.cbIframe !== undefined && document.getElementById('cbIframe')) document.getElementById('cbIframe').checked = config.cbIframe;
                 if (config.cbJira !== undefined && document.getElementById('cbJira')) document.getElementById('cbJira').checked = config.cbJira;
-                if (config.cbTestcase !== undefined && document.getElementById('cbTestcase')) document.getElementById('cbTestcase').checked = config.cbTestcase;
                 if (config.cbPreprod !== undefined && document.getElementById('cbPreprod')) document.getElementById('cbPreprod').checked = config.cbPreprod;
                 if (config.cbWebapp !== undefined && document.getElementById('cbWebapp')) document.getElementById('cbWebapp').checked = config.cbWebapp;
+                if (config.cbAppname !== undefined && document.getElementById('cbAppname')) document.getElementById('cbAppname').checked = config.cbAppname;
 
                 if (config.linkIframe !== undefined && document.getElementById('reportLinkIframeInput')) document.getElementById('reportLinkIframeInput').value = config.linkIframe;
-                if (config.linkTestcase !== undefined && document.getElementById('reportTestcaseInput')) document.getElementById('reportTestcaseInput').value = config.linkTestcase;
                 if (config.linkPreprod !== undefined && document.getElementById('reportLinkPreprodInput')) document.getElementById('reportLinkPreprodInput').value = config.linkPreprod;
                 if (config.linkWebapp !== undefined && document.getElementById('reportLinkWebappInput')) document.getElementById('reportLinkWebappInput').value = config.linkWebapp;
+                if (config.linkAppname !== undefined && document.getElementById('reportLinkAppnameInput')) document.getElementById('reportLinkAppnameInput').value = config.linkAppname;
 
                 if (config.notes !== undefined && document.getElementById('reportNotesInput')) document.getElementById('reportNotesInput').value = config.notes;
                 if (config.metadata !== undefined && document.getElementById('reportMetadataInput')) document.getElementById('reportMetadataInput').value = config.metadata;
@@ -717,23 +720,23 @@
                     filledCount++;
                 }
 
-                const webappMatch = text.match(/^\s*(?:[•\-\*]\s*)?(?:Webapp|App name|Webapp\/App name):\s*(.*)/im);
+                const webappMatch = text.match(/^\s*(?:[•\-\*]\s*)?Webapp:\s*(.*)/im);
                 if (webappMatch && webappMatch[1].trim()) {
                     if (document.getElementById('reportLinkWebappInput')) document.getElementById('reportLinkWebappInput').value = webappMatch[1].trim();
                     if (document.getElementById('cbWebapp')) document.getElementById('cbWebapp').checked = true;
                     filledCount++;
                 }
 
-                const jiraLinkMatch = text.match(/^Link Jira:\s*(.*)/im);
-                if (jiraLinkMatch) {
-                    if (document.getElementById('cbJira')) document.getElementById('cbJira').checked = true;
+                const appnameMatch = text.match(/^\s*(?:[•\-\*]\s*)?App name:\s*(.*)/im);
+                if (appnameMatch && appnameMatch[1].trim()) {
+                    if (document.getElementById('reportLinkAppnameInput')) document.getElementById('reportLinkAppnameInput').value = appnameMatch[1].trim();
+                    if (document.getElementById('cbAppname')) document.getElementById('cbAppname').checked = true;
                     filledCount++;
                 }
 
-                const tcMatch = text.match(/^Test case:\s*(.*)/im);
-                if (tcMatch) {
-                    if (document.getElementById('reportTestcaseInput')) document.getElementById('reportTestcaseInput').value = tcMatch[1].trim();
-                    if (document.getElementById('cbTestcase')) document.getElementById('cbTestcase').checked = true;
+                const jiraLinkMatch = text.match(/^Link Jira:\s*(.*)/im);
+                if (jiraLinkMatch) {
+                    if (document.getElementById('cbJira')) document.getElementById('cbJira').checked = true;
                     filledCount++;
                 }
 
@@ -752,7 +755,7 @@
                 }
 
                 toggleLinkInputs();
-                saveHeaderConfig(); // LƯU VÀO LOCALSTORAGE SAU KHU AUTO-FILL
+                saveHeaderConfig();
 
                 if (filledCount > 0) {
                     showCustomAlert("Tự Động Điền Thành Công!", "Đã bóc tách và điền tự động " + filledCount + " trường dữ liệu từ Báo cáo Clipboard.");
@@ -951,7 +954,7 @@
         document.addEventListener('DOMContentLoaded', () => {
             updateAuthUI();
             calculateMondaysLeft();
-            loadHeaderConfig(); // KHÔI PHỦC DỮ LIỆU CẤU HÌNH KHI RELOAD TRANG
+            loadHeaderConfig();
             
             const savedJiraUrl = localStorage.getItem('jira_last_url') || '';
             if (savedJiraUrl && document.getElementById('jiraUrlInput')) document.getElementById('jiraUrlInput').value = savedJiraUrl;
@@ -1351,6 +1354,9 @@
         }
 
         function parseProgressDataFromMatrix(rows) {
+            // LẤY TRỰC TIẾP LINK TESTCASE TỪ Ô A1 CỦA GOOGLE SHEET (rows[0][0])
+            let testcaseLinkFromA1 = (rows && rows[0] && rows[0][0]) ? String(rows[0][0]).trim() : "";
+
             let row16colI = "";
             if (rows.length > 15 && rows[15] && rows[15][8] !== undefined && rows[15][8] !== null) {
                 row16colI = String(rows[15][8]).trim();
@@ -1442,7 +1448,8 @@
 
             return {
                 text: lines.join('\n'),
-                targetData: row16colI
+                targetData: row16colI,
+                testcaseLink: testcaseLinkFromA1
             };
         }
 
@@ -1482,7 +1489,7 @@
             });
         }
 
-        // GENERATE REPORT CHUẨN: TỰ ĐỘNG SINH LINK JIRA TỪ PROJECT KEY VÀ BOARD ID
+        // GENERATE REPORT CHUẨN
         async function confirmAndCopyReport(skipTagFilter = false) {
             let allowedTags = [];
             
@@ -1527,14 +1534,14 @@
                 // Lấy trạng thái Checkbox & Links
                 const isIframeChecked = document.getElementById('cbIframe') ? document.getElementById('cbIframe').checked : false;
                 const isJiraChecked = document.getElementById('cbJira') ? document.getElementById('cbJira').checked : false;
-                const isTestcaseChecked = document.getElementById('cbTestcase') ? document.getElementById('cbTestcase').checked : false;
                 const isPreprodChecked = document.getElementById('cbPreprod') ? document.getElementById('cbPreprod').checked : false;
                 const isWebappChecked = document.getElementById('cbWebapp') ? document.getElementById('cbWebapp').checked : false;
+                const isAppnameChecked = document.getElementById('cbAppname') ? document.getElementById('cbAppname').checked : false;
 
                 const linkIframe = document.getElementById('reportLinkIframeInput') ? document.getElementById('reportLinkIframeInput').value.trim() : '';
                 const linkPreprod = document.getElementById('reportLinkPreprodInput') ? document.getElementById('reportLinkPreprodInput').value.trim() : '';
                 const linkWebapp = document.getElementById('reportLinkWebappInput') ? document.getElementById('reportLinkWebappInput').value.trim() : '';
-                const testcaseLink = document.getElementById('reportTestcaseInput') ? document.getElementById('reportTestcaseInput').value.trim() : '';
+                const linkAppname = document.getElementById('reportLinkAppnameInput') ? document.getElementById('reportLinkAppnameInput').value.trim() : '';
                 
                 // TỰ ĐỘNG SINH LINK JIRA THEO CHUẨN KHI TÍCH CHỌN "Link Jira"
                 let generatedJiraLink = "";
@@ -1593,6 +1600,9 @@
                     progressReportObj = await fetchGSheetProgressReport(gasUrl, sheetName);
                 }
 
+                // LẤY TỰ ĐỘNG LINK TESTCASE TỪ Ô A1 CỦA GOOGLE SHEET
+                let testcaseLink = (progressReportObj && progressReportObj.testcaseLink) ? progressReportObj.testcaseLink : '';
+
                 let reportLines = [];
 
                 // HEADER REPORT (CHỈ HIỂN THỊ DÒNG NÀO CÓ GIÁ TRỊ)
@@ -1602,17 +1612,18 @@
                 if (envText) reportLines.push('Env: ' + envText);
                 
                 // SECTION LINKS DẠNG CÂY BULLET (CHỈ HIỂN THỊ NẾU ĐƯỢC CHỌN & CÓ GIÁ TRỊ)
-                const hasSubLinks = (isIframeChecked && linkIframe) || (isPreprodChecked && linkPreprod) || (isWebappChecked && linkWebapp);
+                const hasSubLinks = (isIframeChecked && linkIframe) || (isPreprodChecked && linkPreprod) || (isWebappChecked && linkWebapp) || (isAppnameChecked && linkAppname);
 
                 if (hasSubLinks) {
                     reportLines.push('Link:');
                     if (isIframeChecked && linkIframe) reportLines.push('  • Iframe: ' + linkIframe);
                     if (isPreprodChecked && linkPreprod) reportLines.push('  • Preprod: ' + linkPreprod);
                     if (isWebappChecked && linkWebapp) reportLines.push('  • Webapp: ' + linkWebapp);
+                    if (isAppnameChecked && linkAppname) reportLines.push('  • App name: ' + linkAppname);
                 }
                 
                 if (isJiraChecked && generatedJiraLink) reportLines.push('Link Jira: ' + generatedJiraLink);
-                if (isTestcaseChecked && testcaseLink) reportLines.push('Test case: ' + testcaseLink);
+                if (testcaseLink) reportLines.push('Test case: ' + testcaseLink);
                 reportLines.push('---------------------------------------------');
 
                 // A. [SUMMARY]
@@ -1711,7 +1722,7 @@
                             }
                         });
 
-                        if (index < tagOrder.length - 1) reportLines.push('----------');
+                        if (index < tagOrder.length - 1) reportLines.push('-----');
                     });
                 } else {
                     reportLines.push('B. [TICKETS]');
