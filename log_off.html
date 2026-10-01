@@ -212,6 +212,73 @@
 
                 <div id="reportDashboard" class="hidden space-y-6">
                     <div id="mainDashboardView" class="space-y-6">
+                        
+                        <!-- CẤU HÌNH THÔNG TIN BÁO CÁO HEADER & FOOTER -->
+                        <section class="bg-white rounded-xl shadow-sm border border-slate-200 p-4 sm:p-5 space-y-4 w-full">
+                            <div class="flex items-center justify-between border-b border-slate-100 pb-3">
+                                <h3 class="text-base font-bold text-slate-800 flex items-center gap-2">
+                                    <i class="fa-solid fa-file-signature text-indigo-600"></i> Cấu hình Thông tin Báo Cáo Daily
+                                </h3>
+                                <button type="button" onclick="document.getElementById('reportHeaderConfigBody').classList.toggle('hidden')" class="text-xs text-indigo-600 font-bold hover:underline">
+                                    Ẩn/Hiện Cấu hình
+                                </button>
+                            </div>
+
+                            <div id="reportHeaderConfigBody" class="space-y-4">
+                                <!-- HEADER REPORT PARAMS -->
+                                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                                    <div>
+                                        <label class="block text-[11px] font-bold text-slate-600 mb-1">ID & Game Name:</label>
+                                        <input type="text" id="reportGameNameInput" placeholder="VD: 5980 - Gold Digger" class="w-full bg-slate-50 border border-slate-300 text-xs rounded-lg p-2 outline-none font-medium">
+                                    </div>
+                                    <div>
+                                        <label class="block text-[11px] font-bold text-slate-600 mb-1">Version Game & Ngày build:</label>
+                                        <input type="text" id="reportVersionGameInput" placeholder="VD: v1.0.0 (02/10/2026)" class="w-full bg-slate-50 border border-slate-300 text-xs rounded-lg p-2 outline-none font-medium">
+                                    </div>
+                                    <div>
+                                        <label class="block text-[11px] font-bold text-slate-600 mb-1">Version App:</label>
+                                        <input type="text" id="reportVersionAppInput" placeholder="VD: v2.1.0" class="w-full bg-slate-50 border border-slate-300 text-xs rounded-lg p-2 outline-none font-medium">
+                                    </div>
+                                    <div>
+                                        <label class="block text-[11px] font-bold text-slate-600 mb-1">Môi trường Test (Env):</label>
+                                        <input type="text" id="reportEnvInput" placeholder="VD: Iframe/App - Internal Staging" class="w-full bg-slate-50 border border-slate-300 text-xs rounded-lg p-2 outline-none font-medium">
+                                    </div>
+                                    <div>
+                                        <label class="block text-[11px] font-bold text-slate-600 mb-1">Link General / Game Link:</label>
+                                        <input type="text" id="reportLinkGeneralInput" placeholder="VD: https://staging..." class="w-full bg-slate-50 border border-slate-300 text-xs rounded-lg p-2 outline-none font-medium">
+                                    </div>
+                                    <div>
+                                        <label class="block text-[11px] font-bold text-slate-600 mb-1">Link Iframe (theo lang):</label>
+                                        <input type="text" id="reportLinkIframeInput" placeholder="VD: https://iframe..." class="w-full bg-slate-50 border border-slate-300 text-xs rounded-lg p-2 outline-none font-medium">
+                                    </div>
+                                    <div>
+                                        <label class="block text-[11px] font-bold text-slate-600 mb-1">Preprod Link (nếu có):</label>
+                                        <input type="text" id="reportLinkPreprodInput" placeholder="VD: https://preprod..." class="w-full bg-slate-50 border border-slate-300 text-xs rounded-lg p-2 outline-none font-medium">
+                                    </div>
+                                    <div>
+                                        <label class="block text-[11px] font-bold text-slate-600 mb-1">Webapp Link / App Name:</label>
+                                        <input type="text" id="reportLinkWebappInput" placeholder="VD: Webapp - Apptek12" class="w-full bg-slate-50 border border-slate-300 text-xs rounded-lg p-2 outline-none font-medium">
+                                    </div>
+                                    <div>
+                                        <label class="block text-[11px] font-bold text-slate-600 mb-1">Testcase Link:</label>
+                                        <input type="text" id="reportTestcaseInput" placeholder="VD: https://docs.google.com/spreadsheets/d/..." class="w-full bg-slate-50 border border-slate-300 text-xs rounded-lg p-2 outline-none font-medium">
+                                    </div>
+                                </div>
+
+                                <!-- FOOTER & NOTES PARAMS -->
+                                <div class="grid grid-cols-1 md:grid-cols-2 gap-3 border-t border-slate-100 pt-3">
+                                    <div>
+                                        <label class="block text-[11px] font-bold text-slate-600 mb-1"><i class="fa-solid fa-note-sticky text-amber-500 mr-1"></i> Ghi chú bổ sung (Section C - Notes):</label>
+                                        <textarea id="reportNotesInput" rows="3" placeholder="Nhập mỗi ghi chú trên 1 dòng..." class="w-full bg-slate-50 border border-slate-300 text-xs rounded-lg p-2 outline-none font-medium custom-scrollbar"></textarea>
+                                    </div>
+                                    <div>
+                                        <label class="block text-[11px] font-bold text-slate-600 mb-1"><i class="fa-solid fa-database text-purple-500 mr-1"></i> Metadata Game (Cuối Report):</label>
+                                        <textarea id="reportMetadataInput" rows="3" placeholder="VD: Transferred: 53.2 MB&#10;Request network: 193 requests&#10;Resource: 67.4 MB&#10;Draw call: 32~65" class="w-full bg-slate-50 border border-slate-300 text-xs rounded-lg p-2 outline-none font-medium custom-scrollbar"></textarea>
+                                    </div>
+                                </div>
+                            </div>
+                        </section>
+
                         <section class="bg-white rounded-xl shadow-sm border border-slate-200 p-4 sm:p-5 space-y-4 w-full">
                             <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-slate-100 pb-4">
                                 <div class="flex items-center gap-2">
@@ -432,7 +499,6 @@
     </div>
 
     <script>
-        // CẬP NHẬT ĐƯỜNG LINK WEB APP GOOGLE APPS SCRIPT MỚI NHẤT
         const JIRA_PROXY_API_URL = "https://script.google.com/a/macros/enotion.io/s/AKfycbwxoCNnIyGZKuEXWy5yMMP1ZP2IZuTv7m4kJqxYV-yyAcBZvzTCSWZn7fTje75Qn3GP/exec";
         const URL_REPORT_API = "https://script.google.com/macros/s/AKfycbzynUh65kMWVtwRdYdg8x35-6LViA_JwMPrWhEoMdDXFDP7tpcheilYrReQSIrQ6zAtIQ/exec";
 
@@ -484,7 +550,6 @@
             rawJiraData = [];
         }
 
-        // TỐI ƯU HÀM PARSE JIRA URL: GIẢI MÃ CHUẨN CÚ PHÁP JQL PHỨC TẠP
         function parseJiraUrl(urlStr) {
             try {
                 const url = new URL(urlStr);
@@ -845,7 +910,7 @@
 
                 let priorityBadgesHtml = '';
                 ['Highest', 'High', 'Medium', 'Low', 'Lowest', 'Unassigned'].forEach(p => {
-                    if (pMap[p]) priorityBadgesHtml += `<span onclick="event.stopPropagation(); openDetailView({ tag: '${tag}', priority: '${p}' })" class="inline-flex items-center gap-1 text-[11px] font-bold px-2 py-0.5 rounded-md text-white hover:opacity-80 transition cursor-pointer" style="background-color: ${priorityColors[p] || '#64748B'}" title="Click xem ticket Tag [${tag}] - Priority ${p}">${p}: ${pMap[p]}</span>`;
+                    if (pMap[p]) priorityBadgesHtml += `<span onclick="event.stopPropagation(); openDetailView({ tag: '${tag}', priority: '${p}' })" class="inline-flex items-center gap-1 text-[11px] font-bold px-2 py-0.5 rounded-md text-white hover:opacity-80 transition cursor-pointer" style="background-color: ${priorityColors[p] || '#64748B'}" title="Click xem ticket Tag [${tag}] - Priority${p}">${p}:${pMap[p]}</span>`;
                 });
 
                 card.innerHTML = `<div class="flex justify-between items-center mb-3"><strong class="text-sm text-indigo-700 font-bold">[${tag}]</strong><span class="text-xs bg-indigo-100 text-indigo-800 font-bold px-2.5 py-1 rounded-full hover:bg-indigo-200 transition">${total} ticket</span></div><div class="flex flex-wrap gap-1.5 mt-2">${priorityBadgesHtml}</div>`;
@@ -1150,7 +1215,7 @@
                         if (!localTree[item.platform||''][item.os||'']) localTree[item.platform||''][item.os||''] = {};
                         localTree[item.platform||''][item.os||''][item.browser||''] = { val: item.val, orig: item.orig };
                     });
-                    rollupTree(localTree, globalTree[block.base], [block.base]).unrolled.forEach(u => lines.push(`  + ${u.name}: ${u.val}`));
+                    rollupTree(localTree, globalTree[block.base], [block.base]).unrolled.forEach(u => lines.push(`  + ${u.name}:${u.val}`));
                 });
                 return lines;
             };
@@ -1202,6 +1267,7 @@
             });
         }
 
+        // TỰ ĐỘNG GENERATE REPORT ĐÚNG THEO TEMPLATE MỚI CỦA BẠN
         async function confirmAndCopyReport(skipTagFilter = false) {
             let allowedTags = [];
             
@@ -1237,6 +1303,20 @@
                     if (parts.length === 3) dateStr = `${parts[2]}/${parts[1]}/${parts[0]}`;
                 }
 
+                // Lấy các trường cấu hình Header/Notes từ UI
+                const gameName = document.getElementById('reportGameNameInput') ? document.getElementById('reportGameNameInput').value.trim() : '';
+                const verGame = document.getElementById('reportVersionGameInput') ? document.getElementById('reportVersionGameInput').value.trim() : '';
+                const verApp = document.getElementById('reportVersionAppInput') ? document.getElementById('reportVersionAppInput').value.trim() : '';
+                const envText = document.getElementById('reportEnvInput') ? document.getElementById('reportEnvInput').value.trim() : '';
+                const linkGen = document.getElementById('reportLinkGeneralInput') ? document.getElementById('reportLinkGeneralInput').value.trim() : '';
+                const linkIframe = document.getElementById('reportLinkIframeInput') ? document.getElementById('reportLinkIframeInput').value.trim() : '';
+                const linkPreprod = document.getElementById('reportLinkPreprodInput') ? document.getElementById('reportLinkPreprodInput').value.trim() : '';
+                const linkWebapp = document.getElementById('reportLinkWebappInput') ? document.getElementById('reportLinkWebappInput').value.trim() : '';
+                const testcaseLink = document.getElementById('reportTestcaseInput') ? document.getElementById('reportTestcaseInput').value.trim() : '';
+                const jiraLastUrl = localStorage.getItem('jira_last_url') || '';
+                const customNotes = document.getElementById('reportNotesInput') ? document.getElementById('reportNotesInput').value.trim() : '';
+                const metadataText = document.getElementById('reportMetadataInput') ? document.getElementById('reportMetadataInput').value.trim() : '';
+
                 let totalFileTickets = 0, totalSelectedTickets = 0;
                 let summaryCounts = { 'Highest': 0, 'High': 0, 'Medium': 0, 'Low': 0, 'Lowest': 0, 'Improvement': 0, 'Question': 0 };
                 
@@ -1268,12 +1348,12 @@
 
                 let statsArr = [];
                 ['Highest', 'High', 'Medium', 'Low', 'Lowest', 'Improvement', 'Question'].forEach(k => {
-                    if (summaryCounts[k] > 0) statsArr.push(`${k}: ${summaryCounts[k]}`);
+                    if (summaryCounts[k] > 0) statsArr.push(`${k}:${summaryCounts[k]}`);
                 });
 
                 let statsString = statsArr.length > 0 ? ` (${statsArr.join(' - ')})` : '';
                 let ticketWord = totalSelectedTickets > 1 ? "Tickets" : "Ticket";
-                let buildStatusStr = `- Build status: ${totalSelectedTickets} ${ticketWord}${statsString} / Total: ${totalFileTickets} Tickets`;
+                let buildStatusStr = `3. Build status: ${totalSelectedTickets}${ticketWord}${statsString} / Total:${totalFileTickets} Tickets`;
 
                 let progressReportObj = null;
                 if (gasUrl && sheetName) {
@@ -1282,32 +1362,31 @@
 
                 let reportLines = [];
 
-                if (progressReportObj && progressReportObj.targetData) {
-                    let row16Text = progressReportObj.targetData;
-                    if (dateStr && /\[ngày\]/i.test(row16Text)) {
-                        row16Text = row16Text.replace(/\[ngày\]/ig, dateStr);
-                        reportLines.push(row16Text);
-                    } else {
-                        if (dateStr) reportLines.push(`Ngày: ${dateStr}`);
-                        reportLines.push(row16Text);
-                    }
-                    reportLines.push(`----------------------------------`);
-                } else if (dateStr) {
-                    reportLines.push(`Ngày báo cáo: ${dateStr}`);
-                    reportLines.push(`----------------------------------`);
-                }
+                // HEADER BÁO CÁO MỚI
+                reportLines.push(`Report for ${gameName \vert{}\vert{} 'ID - Name'} (${dateStr || 'dd/mm/yyyy'})`);
+                reportLines.push(`Version game: ${verGame || 'vx.x.x (dd/mm/yyyy)'}`);
+                reportLines.push(`Version App: ${verApp}`);
+                reportLines.push(`Env: ${envText || 'Iframe/App/WebApp - Internal Staging'}`);
+                if (linkGen) reportLines.push(`Link: ${linkGen}`);
+                if (linkIframe) reportLines.push(`Iframe: ${linkIframe}`);
+                if (linkPreprod) reportLines.push(`Preprod: ${linkPreprod}`);
+                if (linkWebapp) reportLines.push(`Webapp/App name: ${linkWebapp}`);
+                reportLines.push(`Link Jira: ${jiraLastUrl}`);
+                reportLines.push(`Test case: ${testcaseLink}`);
+                reportLines.push(`---------------------------------------------`);
 
+                // A. [SUMMARY]
                 reportLines.push(`A. [SUMMARY]`);
-                reportLines.push(`- Scope of testing: ${scopeText}`);
-                reportLines.push(`- Testing Status: In-Testing`);
+                reportLines.push(`1. Scope of testing: ${scopeText}`);
+                reportLines.push(`2. Testing Status: In-testing`);
                 reportLines.push(buildStatusStr);
-                reportLines.push(`----------------------------------`);
 
                 if (progressReportObj && progressReportObj.text) {
                     reportLines.push(progressReportObj.text);
-                    reportLines.push(`----------------------------------`);
                 }
+                reportLines.push(`---------------------------------------------`);
 
+                // B. [TICKETS]
                 const specialTagsList = ['improvement', 'question'];
                 const tagDataMap = {}; 
                 const tagOrder = [];
@@ -1331,7 +1410,7 @@
                             tagOrder.push(tag); 
                         }
                         tagDataMap[tag].counts[priority]++;
-                        tagDataMap[tag].tickets.push({ ticketNumber: getTicketNumber(key), cleanSummary: cleanTicketSummary(summary) });
+                        tagDataMap[tag].tickets.push({ ticketNumber: getTicketNumber(key), cleanSummary: cleanTicketSummary(summary), priority: priority });
                     });
                 });
 
@@ -1343,7 +1422,6 @@
                 tagOrder.sort((a, b) => {
                     const indexA = predefinedOrder.indexOf(a.toLowerCase());
                     const indexB = predefinedOrder.indexOf(b.toLowerCase());
-
                     if (indexA !== -1 && indexB !== -1) return indexA - indexB; 
                     if (indexA !== -1) return -1; 
                     if (indexB !== -1) return 1;  
@@ -1356,13 +1434,24 @@
 
                     tagOrder.forEach((tag, index) => {
                         reportLines.push(`${toRoman(index + 1)}. [${(tag || '').toUpperCase()}]`);
-                        if (specialTagsList.includes(tag.toLowerCase())) {
-                            tagDataMap[tag].tickets.forEach(t => reportLines.push(`- Ticket ${t.ticketNumber}: ${t.cleanSummary}`));
-                        } else {
-                            ['Highest', 'High', 'Medium', 'Low', 'Lowest', 'Unassigned'].forEach(p => {
-                                if (tagDataMap[tag].counts[p] > 0) reportLines.push(`- ${p}: ${tagDataMap[tag].counts[p]}`);
-                            });
-                        }
+                        const ticketsList = tagDataMap[tag].tickets;
+                        
+                        // Phân nhóm ticket theo Priority
+                        const priorityGroups = {};
+                        ticketsList.forEach(t => {
+                            if (!priorityGroups[t.priority]) priorityGroups[t.priority] = [];
+                            priorityGroups[t.priority].push(t);
+                        });
+
+                        ['Highest', 'High', 'Medium', 'Low', 'Lowest', 'Unassigned'].forEach(p => {
+                            if (priorityGroups[p] && priorityGroups[p].length > 0) {
+                                reportLines.push(`- ${p}:${priorityGroups[p].length}`);
+                                priorityGroups[p].forEach(t => {
+                                    reportLines.push(`  + Ticket ${t.ticketNumber}:${t.cleanSummary}`);
+                                });
+                            }
+                        });
+
                         if (index < tagOrder.length - 1) reportLines.push('-----');
                     });
                 } else {
@@ -1370,28 +1459,33 @@
                     reportLines.push('- Không có ticket nào (0 Ticket).');
                 }
 
-                reportLines.push(`----------------------------------`);
-                reportLines.push(`C. [NOTES]`);
+                reportLines.push(`---------------------------------------------`);
                 
-                const totalUnverified = countDeployed + countInTesting;
-                if (totalUnverified > 0) {
-                    let cols = [];
-                    if (countDeployed > 0) cols.push("DEPLOYED");
-                    if (countInTesting > 0) cols.push("IN TESTING");
-                    
-                    const verb = totalUnverified > 1 ? "are" : "is";
-                    const ticketWord2 = totalUnverified > 1 ? "Tickets" : "Ticket";
-                    const colString = cols.join(" and ");
-                    const colWord = cols.length > 1 ? "columns" : "column";
-                    
-                    reportLines.push(`- There ${verb} ${totalUnverified} unverified ${ticketWord2} in the ${colString} ${colWord}`);
+                // C. [NOTES]
+                reportLines.push(`C. [NOTES]`);
+                if (customNotes) {
+                    customNotes.split('\n').forEach(line => {
+                        if (line.trim()) reportLines.push(`- ${line.trim()}`);
+                    });
+                } else {
+                    const totalUnverified = countDeployed + countInTesting;
+                    if (totalUnverified > 0) {
+                        reportLines.push(`- ${totalUnverified} bugs remain unverified in the "In-Testing" column`);
+                    }
+                    reportLines.push(`- QC: ${qcMembers}`);
                 }
 
-                reportLines.push(`- QC: ${qcMembers}`);
+                if (metadataText) {
+                    reportLines.push(``);
+                    reportLines.push(`Meta Data:`);
+                    metadataText.split('\n').forEach(line => {
+                        if (line.trim()) reportLines.push(`${line.trim()}`);
+                    });
+                }
 
                 await navigator.clipboard.writeText(reportLines.join('\n'));
                 if (!skipTagFilter) closeTagModal();
-                showCustomAlert('Copy Thành Công!', 'Báo Cáo Daily đã được sao chép vào Clipboard.');
+                showCustomAlert('Copy Thành Công!', 'Báo Cáo Daily theo Mẫu Mới đã được sao chép vào Clipboard.');
 
             } catch (err) {
                 console.error('Lỗi khi copy:', err);
