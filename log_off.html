@@ -510,7 +510,7 @@
 
     <script>
         // CẬP NHẬT URL GOOGLE APPS SCRIPT PROXY MỚI NHẤT
-        const JIRA_PROXY_API_URL = "https://script.google.com/a/macros/enotion.io/s/AKfycbyFpgvtA4iBMqXNN_OviIOR2WodC3Q7pvnIlZ-l2ib2SxKH9Rvn25XgfsjxpNATdwwI/exec";
+        const JIRA_PROXY_API_URL = "https://script.google.com/a/macros/enotion.io/s/AKfycbzWdaMltLm0lgvLwPzOyKRldvx7TtSnRk2usofrkJnoEpLaNyD019FmZd4cC_N5m9Id/exec";
         const URL_REPORT_API = "https://script.google.com/macros/s/AKfycbzynUh65kMWVtwRdYdg8x35-6LViA_JwMPrWhEoMdDXFDP7tpcheilYrReQSIrQ6zAtIQ/exec";
 
         function toggleSidebar() {
@@ -669,7 +669,6 @@
                 let projectName = "";
 
                 if (url.searchParams.has('jql')) {
-                    // GIẢI MÃ VÀ XÓA TOÀN BỘ KÝ TỰ XUỐNG DÒNG THỪA (\n, \r, %0A)
                     jql = decodeURIComponent(url.searchParams.get('jql')).replace(/[\r\n]+/g, ' ').trim();
                     const projMatch = jql.match(/project\s*=\s*["']?([a-zA-Z0-9_]+)["']?/i);
                     if (projMatch && projMatch[1]) projectName = projMatch[1];
@@ -706,9 +705,8 @@
             const origBtnHtml = btn.innerHTML;
 
             btn.disabled = true;
-            btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Đang tải dữ liệu từ Jira...';
+            btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Đang tải toàn bộ dữ liệu từ Jira...';
 
-            // GIỮ NGUYÊN LINK JIRA BAN ĐẦU ĐỂ DÙNG IN REPORT
             localStorage.setItem('jira_last_url', rawUrl);
 
             let isFinished = false;
@@ -723,7 +721,7 @@
 
                     showCustomAlert("Thời gian chờ quá lâu (Timeout)", "Hệ thống không nhận được phản hồi từ Google Apps Script Proxy. Vui lòng thử lại!", true);
                 }
-            }, 15000);
+            }, 30000); // Nâng timeout lên 30s để xử lý phân trang nhiều data
 
             window.handleJiraResponse = function(json) {
                 if (isFinished) return;
@@ -780,7 +778,7 @@
             const script = document.createElement('script');
             script.id = 'jiraJsonpScript';
             
-            // THÊM & _t=${Date.now()} ĐỂ ÉP TRÌNH DUYỆT CHỐNG CACHE VÀ LẤY ĐỦ 100% TICKET MỚI NHẤT
+            // THÊM TIMESTAMP &_t ĐỂ CHỐNG CACHE VÀ BẮT TRÌNH DUYỆT TẢI FULL RECENT RECORD
             script.src = JIRA_PROXY_API_URL + '?domain=' + encodeURIComponent(parsed.domain) + '&jql=' + encodeURIComponent(parsed.jql) + '&email=' + encodeURIComponent(loggedInUser.email) + '&callback=handleJiraResponse&_t=' + Date.now();
             
             script.onerror = function() {
@@ -825,7 +823,7 @@
             showCustomAlert('Đăng xuất', 'Bạn đã đăng xuất tài khoản Google thành công.');
         }
 
-        // LẤY TRỌN VẸN FULL ISSUE KEY (VD: EJ9686-168, WS1PD9773-445)
+        // LẤY TRỌN VẸN FULL ISSUE KEY (VD: EJ9686-168)
         function getFullTicketKey(key) {
             if (!key || typeof key !== 'string') return '';
             return key.trim();
