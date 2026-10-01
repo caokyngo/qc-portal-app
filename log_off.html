@@ -510,7 +510,7 @@
 
     <script>
         // CẬP NHẬT URL GOOGLE APPS SCRIPT PROXY MỚI NHẤT
-        const JIRA_PROXY_API_URL = "https://script.google.com/a/macros/enotion.io/s/AKfycbxNoWYQUe67PEouGdZDGP5jCHC5rnIOYWxOtRUJDh5wCh9ohClwKnSTaa5jS-e5fZdf/exec";
+        const JIRA_PROXY_API_URL = "https://script.google.com/a/macros/enotion.io/s/AKfycbxPildwCueaf6amysgKyXwjVR3gW_autSZOb8Aacj81Dta29Pr3S4qWySdbuudM1XSK/exec";
         const URL_REPORT_API = "https://script.google.com/macros/s/AKfycbzynUh65kMWVtwRdYdg8x35-6LViA_JwMPrWhEoMdDXFDP7tpcheilYrReQSIrQ6zAtIQ/exec";
 
         function toggleSidebar() {
@@ -669,7 +669,6 @@
                 let projectName = "";
 
                 if (url.searchParams.has('jql')) {
-                    // GIẢI MÃ VÀ XÓA TOÀN BỘ KÝ TỰ XUỐNG DÒNG THỪA (\n, \r, %0A)
                     jql = decodeURIComponent(url.searchParams.get('jql')).replace(/[\r\n]+/g, ' ').trim();
                     const projMatch = jql.match(/project\s*=\s*["']?([a-zA-Z0-9_]+)["']?/i);
                     if (projMatch && projMatch[1]) projectName = projMatch[1];
@@ -722,7 +721,7 @@
 
                     showCustomAlert("Thời gian chờ quá lâu (Timeout)", "Hệ thống không nhận được phản hồi từ Google Apps Script Proxy. Vui lòng thử lại!", true);
                 }
-            }, 30000); // Nâng timeout lên 30s để xử lý phân trang nhiều data
+            }, 30000);
 
             window.handleJiraResponse = function(json) {
                 if (isFinished) return;
