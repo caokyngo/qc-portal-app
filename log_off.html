@@ -509,7 +509,6 @@
     </div>
 
     <script>
-        // CẬP NHẬT URL GOOGLE APPS SCRIPT PROXY MỚI NHẤT
         const JIRA_PROXY_API_URL = "https://script.google.com/a/macros/enotion.io/s/AKfycbxPildwCueaf6amysgKyXwjVR3gW_autSZOb8Aacj81Dta29Pr3S4qWySdbuudM1XSK/exec";
         const URL_REPORT_API = "https://script.google.com/macros/s/AKfycbzynUh65kMWVtwRdYdg8x35-6LViA_JwMPrWhEoMdDXFDP7tpcheilYrReQSIrQ6zAtIQ/exec";
 
@@ -553,6 +552,18 @@
             'Highest': '#DC2626', 'High': '#F97316', 'Medium': '#F59E0B',
             'Low': '#3B82F6', 'Lowest': '#10B981', 'Unassigned': '#64748B'
         };
+
+        // HÀM CHUẨN HÓA & LÀM GỌN LINK JIRA CHO BÁO CÁO
+        function cleanJiraUrlForReport(urlStr) {
+            if (!urlStr) return '';
+            try {
+                // Decode mã hóa URI rác (như %20, %3D, %2C, %0A) để link phẳng, đẹp và dễ đọc
+                let decoded = decodeURIComponent(urlStr).replace(/[\r\n]+/g, ' ').replace(/\s+/g, ' ').trim();
+                return decoded;
+            } catch(e) {
+                return urlStr;
+            }
+        }
 
         // HÀM AUTO-FILL BÁO CÁO CŨ TỪ CLIPBOARD
         async function pasteReportFromClipboard() {
@@ -660,7 +671,6 @@
             rawJiraData = [];
         }
 
-        // TỐI ƯU HÀM PARSE JIRA URL: LỌC BỎ KÝ TỰ XUỐNG DÒNG RÁC (%0A / \n)
         function parseJiraUrl(urlStr) {
             try {
                 const url = new URL(urlStr);
@@ -778,7 +788,6 @@
             const script = document.createElement('script');
             script.id = 'jiraJsonpScript';
             
-            // THÊM TIMESTAMP &_t ĐỂ CHỐNG CACHE VÀ BẮT TRÌNH DUYỆT TẢI FULL RECENT RECORD
             script.src = JIRA_PROXY_API_URL + '?domain=' + encodeURIComponent(parsed.domain) + '&jql=' + encodeURIComponent(parsed.jql) + '&email=' + encodeURIComponent(loggedInUser.email) + '&callback=handleJiraResponse&_t=' + Date.now();
             
             script.onerror = function() {
@@ -823,7 +832,6 @@
             showCustomAlert('Đăng xuất', 'Bạn đã đăng xuất tài khoản Google thành công.');
         }
 
-        // LẤY TRỌN VẸN FULL ISSUE KEY (VD: EJ9686-168)
         function getFullTicketKey(key) {
             if (!key || typeof key !== 'string') return '';
             return key.trim();
@@ -1367,7 +1375,7 @@
             });
         }
 
-        // GENERATE REPORT CHUẨN VỚI FULL ISSUE KEY & LINK JIRA GỐC
+        // GENERATE REPORT CHUẨN VỚI FULL ISSUE KEY & LINK JIRA ĐÃ ĐƯỢC CHUẨN HÓA GỌN GÀNG
         async function confirmAndCopyReport(skipTagFilter = false) {
             let allowedTags = [];
             
@@ -1414,9 +1422,9 @@
                 const linkWebapp = document.getElementById('reportLinkWebappInput') ? document.getElementById('reportLinkWebappInput').value.trim() : '';
                 const testcaseLink = document.getElementById('reportTestcaseInput') ? document.getElementById('reportTestcaseInput').value.trim() : '';
                 
-                // ĐẢM BẢO LẤY LINK JIRA GỐC ĐÃ NHẬP BẰNG INPUT HOẶC LOCALSTORAGE
+                // LẤY VÀ LÀM GỌN LINK JIRA ĐÃ NHẬP
                 const rawJiraInputUrl = document.getElementById('jiraUrlInput') ? document.getElementById('jiraUrlInput').value.trim() : '';
-                const jiraLastUrl = rawJiraInputUrl || localStorage.getItem('jira_last_url') || '';
+                const jiraLastUrl = cleanJiraUrlForReport(rawJiraInputUrl || localStorage.getItem('jira_last_url') || '');
                 
                 const customNotes = document.getElementById('reportNotesInput') ? document.getElementById('reportNotesInput').value.trim() : '';
                 const metadataText = document.getElementById('reportMetadataInput') ? document.getElementById('reportMetadataInput').value.trim() : '';
@@ -1515,7 +1523,6 @@
                         }
                         tagDataMap[tag].counts[priority]++;
                         
-                        // LẤY NGUYÊN FULL ISSUE KEY (VD: EJ9686-168)
                         tagDataMap[tag].tickets.push({ 
                             fullKey: getFullTicketKey(key), 
                             cleanSummary: cleanTicketSummary(summary), 
@@ -1587,17 +1594,22 @@
                 
                 // C. [NOTES]
                 reportLines.push('C. [NOTES]');
+                
+                // 1. HIỂN THỊ NỘI DUNG GHI CHÚ BỔ SUNG TRÊN CÙNG (NẾU CÓ)
                 if (customNotes) {
                     customNotes.split('\n').forEach(line => {
                         if (line.trim()) reportLines.push('- ' + line.trim());
                     });
-                } else {
-                    const totalUnverified = countDeployed + countInTesting;
-                    if (totalUnverified > 0) {
-                        reportLines.push('- ' + totalUnverified + ' bugs remain unverified in the "In-Testing" column');
-                    }
-                    reportLines.push('- QC: ' + qcMembers);
                 }
+
+                // 2. LUÔN LUÔN HIỂN THỊ SỐ TICKET TẠI CỘT IN-TESTING & DEPLOYED (NẾU CÓ)
+                const totalUnverified = countDeployed + countInTesting;
+                if (totalUnverified > 0) {
+                    reportLines.push('- ' + totalUnverified + ' bugs remain unverified in the "In-Testing" column');
+                }
+
+                // 3. LUÔN LUÔN HIỂN THỊ DANH SÁCH QC TEST PHÍA DƯỚI CÙNG
+                reportLines.push('- QC: ' + qcMembers);
 
                 if (metadataText) {
                     reportLines.push('');
