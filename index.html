@@ -156,7 +156,7 @@
             <div class="flex-1 flex justify-end items-center gap-4">
                 <div id="fileInfo" class="hidden flex items-center gap-3 bg-indigo-50 px-4 py-2 rounded-xl border border-indigo-100 text-xs shadow-sm">
                     <div><span class="text-indigo-400 font-medium">Đang xử lý:</span> <strong id="fileName" class="text-indigo-800 font-bold"></strong></div>
-                    <button onclick="changeJiraFile()" class="px-2.5 py-1.5 bg-indigo-600 hover:bg-indigo-500 text-white text-[11px] font-bold rounded-lg transition flex items-center gap-1.5 shadow-sm">
+                    <button onclick="changeJiraFile()" class="px-2.5 py-1.5 bg-indigo-600 hover:bg-indigo-50 text-white text-[11px] font-bold rounded-lg transition flex items-center gap-1.5 shadow-sm">
                         <i class="fa-solid fa-arrows-rotate"></i> Đổi File
                     </button>
                 </div>
@@ -426,7 +426,8 @@
             </div>
             <h3 class="text-xl font-bold text-slate-800" id="customAlertTitle">Thành công!</h3>
             <p class="text-sm text-slate-600 font-medium" id="customAlertMessage">Đã thực hiện xong thao tác.</p>
-            <button onclick="closeModal('customAlertModal')" class="w-full px-4 py-3 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl shadow-sm transition mt-2">OK</button>
+            <!-- LỖI ĐÃ ĐƯỢC FIX TẠI DÒNG NÀY: closeCustomAlert() thay vì closeModal -->
+            <button onclick="closeCustomAlert()" class="w-full px-4 py-3 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl shadow-sm mt-2">OK</button>
         </div>
     </div>
 
@@ -907,7 +908,6 @@
             document.querySelectorAll('.tag-select-cb').forEach(cb => cb.checked = checked);
         }
 
-        // ================= HÀM XỬ LÝ FORMAT % (FIX LỖI) =================
         function formatPctDisplayFixed(val) {
             if (val === null || val === undefined || val === '') return '0%';
             let s = String(val).trim();
@@ -921,7 +921,6 @@
             return s;
         }
 
-        // --- XỬ LÝ DỮ LIỆU TIẾN ĐỘ GOOGLE SHEET MATRIX ---
         function parsePctNum(val) {
             let s = String(val || '').trim();
             if (s.includes('<<')) s = s.split('<<')[0].trim();
