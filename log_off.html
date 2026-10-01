@@ -189,7 +189,7 @@
                             <i class="fa-brands fa-jira"></i>
                         </div>
                         <h2 class="text-xl font-bold text-slate-800">Tải Dữ Liệu Báo Cáo Từ Jira</h2>
-                        <p class="text-xs text-slate-500 max-w-md mx-auto">Dán đường link dự án hoặc Filter Jira (yêu cầu đăng nhập tài khoản mail công ty).</p>
+                        <p class="text-xs text-slate-500 max-w-md mx-auto">Dán đường link dự án hoặc Filter Jira (yêu cầu đăng nhập tài khoản Google có quyền truy cập Jira).</p>
                     </div>
 
                     <div class="space-y-4">
@@ -206,7 +206,7 @@
                         <!-- THÔNG BÁO XÁC THỰC -->
                         <div class="flex items-center gap-2 text-xs text-slate-500 bg-slate-50 p-3 rounded-xl border border-slate-200">
                             <i class="fa-solid fa-shield-halved text-emerald-600 text-sm"></i>
-                            <span>Hệ thống tự động xác thực bằng tài khoản Google công ty (<strong class="text-slate-700">@enotion.io</strong>) đã đăng nhập.</span>
+                            <span>Hệ thống tự động xác thực bằng tài khoản Google đã đăng nhập.</span>
                         </div>
 
                         <button type="button" id="btnFetchJira" onclick="fetchJiraDataFromUrl()" class="w-full h-12 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl shadow-md transition flex items-center justify-center gap-2 text-sm">
@@ -641,7 +641,7 @@
                 }
 
                 if (filledCount > 0) {
-                    showCustomAlert("Tự Động Điền Thành Công!", `Đã bóc tách và điền tự động ${filledCount} trường dữ liệu từ Báo cáo Clipboard.`);
+                    showCustomAlert("Tự Động Điền Thành Công!", "Đã bóc tách và điền tự động " + filledCount + " trường dữ liệu từ Báo cáo Clipboard.");
                 } else {
                     showCustomAlert("Thông báo", "Không nhận diện được định dạng Báo cáo trong Clipboard. Vui lòng kiểm tra lại văn bản copy!", true);
                 }
@@ -674,7 +674,7 @@
                     const projectMatch = url.pathname.match(/\/projects\/([^\/]+)/i);
                     if (projectMatch && projectMatch[1]) {
                         projectName = projectMatch[1];
-                        jql = `project = "${projectName}" ORDER BY created DESC`;
+                        jql = 'project = "' + projectName + '" ORDER BY created DESC';
                     }
                 }
                 return { domain, jql, projectName: projectName || "Jira Filter" };
@@ -683,12 +683,7 @@
 
         function fetchJiraDataFromUrl() {
             if (!loggedInUser) {
-                showCustomAlert("Yêu cầu đăng nhập", "Vui lòng Đăng nhập tài khoản Google công ty (@enotion.io) trước khi tải dữ liệu!", true);
-                return;
-            }
-
-            if (!loggedInUser.email.toLowerCase().endsWith("@enotion.io")) {
-                showCustomAlert("Từ chối truy cập", "Tài khoản của bạn (" + loggedInUser.email + ") không thuộc hệ thống công ty enotion.io!", true);
+                showCustomAlert("Yêu cầu đăng nhập", "Vui lòng Đăng nhập tài khoản Google trước khi tải dữ liệu!", true);
                 return;
             }
 
@@ -708,7 +703,7 @@
             const origBtnHtml = btn.innerHTML;
 
             btn.disabled = true;
-            btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> Đang tải dữ liệu từ Jira...`;
+            btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Đang tải dữ liệu từ Jira...';
 
             localStorage.setItem('jira_last_url', rawUrl);
 
@@ -722,7 +717,7 @@
                     const scriptEl = document.getElementById('jiraJsonpScript');
                     if (scriptEl) scriptEl.remove();
 
-                    showCustomAlert("Thời gian chờ quá lâu (Timeout)", "Hệ thống không nhận được phản hồi từ Google Apps Script Proxy. Vui lòng kiểm tra lại xem bạn đã đăng nhập đúng mail công ty chưa!", true);
+                    showCustomAlert("Thời gian chờ quá lâu (Timeout)", "Hệ thống không nhận được phản hồi từ Google Apps Script Proxy. Vui lòng thử lại!", true);
                 }
             }, 15000);
 
@@ -772,7 +767,7 @@
                 buildDynamicStatusFilters();
                 processData();
 
-                showCustomAlert("Thành công!", `Đã xác thực tài khoản ${loggedInUser.email} & tải thành công ${rawJiraData.length} ticket từ Jira!`);
+                showCustomAlert("Thành công!", "Đã xác thực tài khoản " + loggedInUser.email + " & tải thành công " + rawJiraData.length + " ticket từ Jira!");
             };
 
             const existingScript = document.getElementById('jiraJsonpScript');
@@ -780,7 +775,7 @@
 
             const script = document.createElement('script');
             script.id = 'jiraJsonpScript';
-            script.src = `${JIRA_PROXY_API_URL}?domain=${encodeURIComponent(parsed.domain)}&jql=${encodeURIComponent(parsed.jql)}&email=${encodeURIComponent(loggedInUser.email)}&callback=handleJiraResponse`;
+            script.src = JIRA_PROXY_API_URL + '?domain=' + encodeURIComponent(parsed.domain) + '&jql=' + encodeURIComponent(parsed.jql) + '&email=' + encodeURIComponent(loggedInUser.email) + '&callback=handleJiraResponse';
             
             script.onerror = function() {
                 if (isFinished) return;
@@ -790,7 +785,7 @@
                 btn.disabled = false;
                 btn.innerHTML = origBtnHtml;
                 script.remove();
-                showCustomAlert("Lỗi Kết Nối", "Không thể tải Script từ App Script Proxy. Vui lòng kiểm tra lại quyền đăng nhập tài khoản công ty!", true);
+                showCustomAlert("Lỗi Kết Nối", "Không thể tải Script từ App Script Proxy. Vui lòng kiểm tra lại quyền đăng nhập tài khoản!", true);
             };
 
             document.body.appendChild(script);
@@ -854,7 +849,7 @@
             const dateInput = document.getElementById('reportDateInput');
             if (dateInput) {
                 const today = new Date();
-                dateInput.value = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
+                dateInput.value = today.getFullYear() + '-' + String(today.getMonth() + 1).padStart(2, '0') + '-' + String(today.getDate()).padStart(2, '0');
             }
 
             document.addEventListener('click', function(event) {
@@ -910,7 +905,7 @@
             availableStatuses.forEach(status => {
                 const label = document.createElement('label');
                 label.className = 'flex items-center gap-2 cursor-pointer bg-slate-50 hover:bg-slate-100 px-3 py-1.5 rounded-lg border border-slate-200 transition font-semibold text-slate-700';
-                label.innerHTML = `<input type="checkbox" class="status-dynamic-cb text-indigo-600 rounded" value="${status}" checked onchange="processData()"><span>${status}</span>`;
+                label.innerHTML = '<input type="checkbox" class="status-dynamic-cb text-indigo-600 rounded" value="' + status + '" checked onchange="processData()"><span>' + status + '</span>';
                 container.appendChild(label);
             });
         }
@@ -1019,10 +1014,10 @@
 
                 let priorityBadgesHtml = '';
                 ['Highest', 'High', 'Medium', 'Low', 'Lowest', 'Unassigned'].forEach(p => {
-                    if (pMap[p]) priorityBadgesHtml += `<span onclick="event.stopPropagation(); openDetailView({ tag: '${tag}', priority: '${p}' })" class="inline-flex items-center gap-1 text-[11px] font-bold px-2 py-0.5 rounded-md text-white hover:opacity-80 transition cursor-pointer" style="background-color: ${priorityColors[p] || '#64748B'}" title="Click xem ticket Tag [${tag}] - Priority${p}">${p}:${pMap[p]}</span>`;
+                    if (pMap[p]) priorityBadgesHtml += '<span onclick="event.stopPropagation(); openDetailView({ tag: \'' + tag + '\', priority: \'' + p + '\' })" class="inline-flex items-center gap-1 text-[11px] font-bold px-2 py-0.5 rounded-md text-white hover:opacity-80 transition cursor-pointer" style="background-color: ' + (priorityColors[p] || '#64748B') + '" title="Click xem ticket Tag [' + tag + '] - Priority ' + p + '">' + p + ': ' + pMap[p] + '</span>';
                 });
 
-                card.innerHTML = `<div class="flex justify-between items-center mb-3"><strong class="text-sm text-indigo-700 font-bold">[${tag}]</strong><span class="text-xs bg-indigo-100 text-indigo-800 font-bold px-2.5 py-1 rounded-full hover:bg-indigo-200 transition">${total} ticket</span></div><div class="flex flex-wrap gap-1.5 mt-2">${priorityBadgesHtml}</div>`;
+                card.innerHTML = '<div class="flex justify-between items-center mb-3"><strong class="text-sm text-indigo-700 font-bold">[' + tag + ']</strong><span class="text-xs bg-indigo-100 text-indigo-800 font-bold px-2.5 py-1 rounded-full hover:bg-indigo-200 transition">' + total + ' ticket</span></div><div class="flex flex-wrap gap-1.5 mt-2">' + priorityBadgesHtml + '</div>';
                 container.appendChild(card);
             });
         }
@@ -1041,7 +1036,7 @@
                 else if (['WONT FIX', 'WON\'T FIX'].includes(sUpper)) statusClass = 'bg-rose-100 text-rose-800';
                 const pColor = priorityColors[row.priority] || '#64748B';
 
-                tr.innerHTML = `<td class="px-4 py-3 font-bold text-indigo-600 whitespace-nowrap">${row.key || 'N/A'}</td><td class="px-4 py-3 whitespace-nowrap"><span class="bg-indigo-50 text-indigo-700 border border-indigo-200 px-2 py-0.5 rounded text-[11px] font-bold">[${row.tags}]</span></td><td class="px-4 py-3 max-w-md truncate font-medium text-slate-700" title="${row.summary}">${row.summary}</td><td class="px-4 py-3 whitespace-nowrap"><span class="text-white text-[10px] font-bold px-2 py-1 rounded" style="background-color: ${pColor}">${row.priority}</span></td><td class="px-4 py-3 whitespace-nowrap"><span class="px-2.5 py-1 rounded-full text-[11px] font-bold ${statusClass}">${row.status}</span></td><td class="px-4 py-3 whitespace-nowrap font-medium text-slate-600">${row.assignee}</td>`;
+                tr.innerHTML = '<td class="px-4 py-3 font-bold text-indigo-600 whitespace-nowrap">' + (row.key || 'N/A') + '</td><td class="px-4 py-3 whitespace-nowrap"><span class="bg-indigo-50 text-indigo-700 border border-indigo-200 px-2 py-0.5 rounded text-[11px] font-bold">[' + row.tags + ']</span></td><td class="px-4 py-3 max-w-md truncate font-medium text-slate-700" title="' + row.summary + '">' + row.summary + '</td><td class="px-4 py-3 whitespace-nowrap"><span class="text-white text-[10px] font-bold px-2 py-1 rounded" style="background-color: ' + pColor + '">' + row.priority + '</span></td><td class="px-4 py-3 whitespace-nowrap"><span class="px-2.5 py-1 rounded-full text-[11px] font-bold ' + statusClass + '">' + row.status + '</span></td><td class="px-4 py-3 whitespace-nowrap font-medium text-slate-600">' + row.assignee + '</td>';
                 tbody.appendChild(tr);
             });
         }
@@ -1068,10 +1063,10 @@
             });
 
             let titleParts = [];
-            if (filterContext.tag) titleParts.push(`Loại Tag: <span class="text-indigo-600">[${filterContext.tag}]</span>`);
-            if (filterContext.priority) titleParts.push(`Priority: <span class="text-indigo-600">${filterContext.priority}</span>`);
+            if (filterContext.tag) titleParts.push('Loại Tag: <span class="text-indigo-600">[' + filterContext.tag + ']</span>');
+            if (filterContext.priority) titleParts.push('Priority: <span class="text-indigo-600">' + filterContext.priority + '</span>');
             
-            document.getElementById('detailViewTitle').innerHTML = `Chi tiết Ticket • ` + titleParts.join(' & ');
+            document.getElementById('detailViewTitle').innerHTML = 'Chi tiết Ticket • ' + titleParts.join(' & ');
             document.getElementById('detailCountBadge').innerText = detailRows.length;
 
             const detailTbody = document.getElementById('detailTicketTableBody');
@@ -1088,11 +1083,11 @@
                     else if (['IN PROGRESS', 'IN-PROGRESS'].includes(sUpper)) statusClass = 'bg-amber-100 text-amber-800';
                     else if (['WONT FIX', 'WON\'T FIX'].includes(sUpper)) statusClass = 'bg-rose-100 text-rose-800';
 
-                    tr.innerHTML = `<td class="px-4 py-3 font-bold text-indigo-600 whitespace-nowrap">${row.key || 'N/A'}</td><td class="px-4 py-3 whitespace-nowrap"><span class="bg-indigo-50 text-indigo-700 border border-indigo-200 px-2 py-0.5 rounded text-[11px] font-bold">[${row.tags}]</span></td><td class="px-4 py-3 max-w-md truncate font-medium">${row.summary}</td><td class="px-4 py-3 whitespace-nowrap"><span class="text-white text-[10px] font-bold px-2 py-1 rounded" style="background-color: ${pColor}">${row.priority}</span></td><td class="px-4 py-3 whitespace-nowrap"><span class="px-2.5 py-1 rounded-full text-[11px] font-bold ${statusClass}">${row.status}</span></td><td class="px-4 py-3 whitespace-nowrap font-medium text-slate-600">${row.assignee}</td>`;
+                    tr.innerHTML = '<td class="px-4 py-3 font-bold text-indigo-600 whitespace-nowrap">' + (row.key || 'N/A') + '</td><td class="px-4 py-3 whitespace-nowrap"><span class="bg-indigo-50 text-indigo-700 border border-indigo-200 px-2 py-0.5 rounded text-[11px] font-bold">[' + row.tags + ']</span></td><td class="px-4 py-3 max-w-md truncate font-medium">' + row.summary + '</td><td class="px-4 py-3 whitespace-nowrap"><span class="text-white text-[10px] font-bold px-2 py-1 rounded" style="background-color: ' + pColor + '">' + row.priority + '</span></td><td class="px-4 py-3 whitespace-nowrap"><span class="px-2.5 py-1 rounded-full text-[11px] font-bold ' + statusClass + '">' + row.status + '</span></td><td class="px-4 py-3 whitespace-nowrap font-medium text-slate-600">' + row.assignee + '</td>';
                     detailTbody.appendChild(tr);
                 });
             } else {
-                detailTbody.innerHTML = `<tr><td colspan="6" class="text-center py-8 text-slate-400 font-medium text-sm">Không tìm thấy ticket nào thỏa điều kiện!</td></tr>`;
+                detailTbody.innerHTML = '<tr><td colspan="6" class="text-center py-8 text-slate-400 font-medium text-sm">Không tìm thấy ticket nào thỏa điều kiện!</td></tr>';
             }
 
             document.getElementById('mainDashboardView').classList.add('hidden');
@@ -1144,20 +1139,12 @@
             container.innerHTML = '';
 
             if (foundTags.size === 0) {
-                container.innerHTML = `
-                    <div class="w-full text-center py-6 bg-slate-100 rounded-xl border border-slate-200">
-                        <i class="fa-solid fa-check-circle text-emerald-500 text-3xl mb-2"></i>
-                        <p class="text-sm font-bold text-slate-700">Tất cả ticket đều đã Closed!</p>
-                        <p class="text-xs text-slate-500 mt-1">Báo cáo sẽ được tạo với trạng thái 0 Ticket.</p>
-                    </div>`;
+                container.innerHTML = '<div class="w-full text-center py-6 bg-slate-100 rounded-xl border border-slate-200"><i class="fa-solid fa-check-circle text-emerald-500 text-3xl mb-2"></i><p class="text-sm font-bold text-slate-700">Tất cả ticket đều đã Closed!</p><p class="text-xs text-slate-500 mt-1">Báo cáo sẽ được tạo với trạng thái 0 Ticket.</p></div>';
             } else {
                 Array.from(foundTags).sort().forEach(tag => {
                     const label = document.createElement('label');
                     label.className = 'flex items-center gap-2 cursor-pointer bg-indigo-50/50 hover:bg-indigo-50 border border-indigo-100 px-3 py-2 rounded-lg transition';
-                    label.innerHTML = `
-                        <input type="checkbox" class="tag-select-cb text-indigo-600 rounded" value="${tag}" checked>
-                        <span class="font-bold text-indigo-900">[${tag}]</span>
-                    `;
+                    label.innerHTML = '<input type="checkbox" class="tag-select-cb text-indigo-600 rounded" value="' + tag + '" checked><span class="font-bold text-indigo-900">[' + tag + ']</span>';
                     container.appendChild(label);
                 });
             }
@@ -1218,9 +1205,9 @@
         function formatName(path, multiplePlats) {
             let res = path[0] || '';
             if (multiplePlats) res += ' Iframe/App';
-            else if (path[1]) res += ` ${path[1]}`;
-            if (path[2]) res += ` on ${path[2]}`;
-            if (path[3]) res += (path[2] ? `/${path[3]}` : ` ${path[3]}`);
+            else if (path[1]) res += ' ' + path[1];
+            if (path[2]) res += ' on ' + path[2];
+            if (path[3]) res += (path[2] ? '/' + path[3] : ' ' + path[3]);
             return res.replace(/\s+/g, ' ').trim();
         }
 
@@ -1324,15 +1311,15 @@
                         if (!localTree[item.platform||''][item.os||'']) localTree[item.platform||''][item.os||''] = {};
                         localTree[item.platform||''][item.os||''][item.browser||''] = { val: item.val, orig: item.orig };
                     });
-                    rollupTree(localTree, globalTree[block.base], [block.base]).unrolled.forEach(u => lines.push(`  + ${u.name}:${u.val}`));
+                    rollupTree(localTree, globalTree[block.base], [block.base]).unrolled.forEach(u => lines.push('  + ' + u.name + ': ' + u.val));
                 });
                 return lines;
             };
 
             const lines = [];
-            if (!isZeroPct(doneOverall) && doneRaw.length > 0) { lines.push(`- DONE: ${formatPctDisplayFixed(doneOverall)}`); lines.push(...consolidate(doneRaw)); }
-            if (!isZeroPct(inProgressOverall) && inProgressRaw.length > 0) { lines.push(`- IN PROGRESS: ${formatPctDisplayFixed(inProgressOverall)}`); lines.push(...consolidate(inProgressRaw)); }
-            if (!isZeroPct(remainingOverall) && remainingRaw.length > 0) { lines.push(`- REMAINING: ${formatPctDisplayFixed(remainingOverall)}`); lines.push(...consolidate(remainingRaw)); }
+            if (!isZeroPct(doneOverall) && doneRaw.length > 0) { lines.push('- DONE: ' + formatPctDisplayFixed(doneOverall)); lines.push(...consolidate(doneRaw)); }
+            if (!isZeroPct(inProgressOverall) && inProgressRaw.length > 0) { lines.push('- IN PROGRESS: ' + formatPctDisplayFixed(inProgressOverall)); lines.push(...consolidate(inProgressRaw)); }
+            if (!isZeroPct(remainingOverall) && remainingRaw.length > 0) { lines.push('- REMAINING: ' + formatPctDisplayFixed(remainingOverall)); lines.push(...consolidate(remainingRaw)); }
 
             return {
                 text: lines.join('\n'),
@@ -1350,8 +1337,8 @@
                 const callbackName = 'jsonpCallback_' + Math.round(100000 * Math.random());
                 let fetchUrl = gasUrl;
                 const separator = fetchUrl.includes('?') ? '&' : '?';
-                fetchUrl += `${separator}callback=${callbackName}`;
-                if (sheetName) fetchUrl += `&sheet=${encodeURIComponent(sheetName)}`;
+                fetchUrl += separator + 'callback=' + callbackName;
+                if (sheetName) fetchUrl += '&sheet=' + encodeURIComponent(sheetName);
 
                 window[callbackName] = function(data) {
                     delete window[callbackName];
@@ -1376,7 +1363,7 @@
             });
         }
 
-        // TỰ ĐỘNG GENERATE REPORT ĐÚNG THEO TEMPLATE MỚI CỦA BẠN
+        // TỰ ĐỘNG GENERATE REPORT ĐÚNG THEO TEMPLATE MỚI
         async function confirmAndCopyReport(skipTagFilter = false) {
             let allowedTags = [];
             
@@ -1396,7 +1383,7 @@
             
             try {
                 copyBtn.disabled = true;
-                copyBtn.innerHTML = `<i class="fa-solid fa-spinner fa-spin text-sm"></i> Đang xử lý...`;
+                copyBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin text-sm"></i> Đang xử lý...';
 
                 const selectedStatusSet = getSelectedStatuses();
                 const tagMode = document.getElementById('tagModeSelect').value;
@@ -1409,10 +1396,9 @@
                 let dateStr = '';
                 if (dateVal) {
                     const parts = dateVal.split('-');
-                    if (parts.length === 3) dateStr = `${parts[2]}/${parts[1]}/${parts[0]}`;
+                    if (parts.length === 3) dateStr = parts[2] + '/' + parts[1] + '/' + parts[0];
                 }
 
-                // Lấy các trường cấu hình Header/Notes từ UI
                 const gameName = document.getElementById('reportGameNameInput') ? document.getElementById('reportGameNameInput').value.trim() : '';
                 const verGame = document.getElementById('reportVersionGameInput') ? document.getElementById('reportVersionGameInput').value.trim() : '';
                 const verApp = document.getElementById('reportVersionAppInput') ? document.getElementById('reportVersionAppInput').value.trim() : '';
@@ -1457,12 +1443,12 @@
 
                 let statsArr = [];
                 ['Highest', 'High', 'Medium', 'Low', 'Lowest', 'Improvement', 'Question'].forEach(k => {
-                    if (summaryCounts[k] > 0) statsArr.push(`${k}:${summaryCounts[k]}`);
+                    if (summaryCounts[k] > 0) statsArr.push(k + ': ' + summaryCounts[k]);
                 });
 
-                let statsString = statsArr.length > 0 ? ` (${statsArr.join(' - ')})` : '';
+                let statsString = statsArr.length > 0 ? ' (' + statsArr.join(' - ') + ')' : '';
                 let ticketWord = totalSelectedTickets > 1 ? "Tickets" : "Ticket";
-                let buildStatusStr = `3. Build status: ${totalSelectedTickets}${ticketWord}${statsString} / Total:${totalFileTickets} Tickets`;
+                let buildStatusStr = '3. Build status: ' + totalSelectedTickets + ' ' + ticketWord + statsString + ' / Total: ' + totalFileTickets + ' Tickets';
 
                 let progressReportObj = null;
                 if (gasUrl && sheetName) {
@@ -1471,31 +1457,28 @@
 
                 let reportLines = [];
 
-                // HEADER BÁO CÁO MỚI
-                reportLines.push(`Report for ${gameName \vert{}\vert{} 'ID - Name'} (${dateStr || 'dd/mm/yyyy'})`);
-                reportLines.push(`Version game: ${verGame || 'vx.x.x (dd/mm/yyyy)'}`);
-                reportLines.push(`Version App: ${verApp}`);
-                reportLines.push(`Env: ${envText || 'Iframe/App/WebApp - Internal Staging'}`);
-                if (linkGen) reportLines.push(`Link: ${linkGen}`);
-                if (linkIframe) reportLines.push(`Iframe: ${linkIframe}`);
-                if (linkPreprod) reportLines.push(`Preprod: ${linkPreprod}`);
-                if (linkWebapp) reportLines.push(`Webapp/App name: ${linkWebapp}`);
-                reportLines.push(`Link Jira: ${jiraLastUrl}`);
-                reportLines.push(`Test case: ${testcaseLink}`);
-                reportLines.push(`---------------------------------------------`);
+                reportLines.push('Report for ' + (gameName || 'ID - Name') + ' (' + (dateStr || 'dd/mm/yyyy') + ')');
+                reportLines.push('Version game: ' + (verGame || 'vx.x.x (dd/mm/yyyy)'));
+                reportLines.push('Version App: ' + verApp);
+                reportLines.push('Env: ' + (envText || 'Iframe/App/WebApp - Internal Staging'));
+                if (linkGen) reportLines.push('Link: ' + linkGen);
+                if (linkIframe) reportLines.push('Iframe: ' + linkIframe);
+                if (linkPreprod) reportLines.push('Preprod: ' + linkPreprod);
+                if (linkWebapp) reportLines.push('Webapp/App name: ' + linkWebapp);
+                reportLines.push('Link Jira: ' + jiraLastUrl);
+                reportLines.push('Test case: ' + testcaseLink);
+                reportLines.push('---------------------------------------------');
 
-                // A. [SUMMARY]
-                reportLines.push(`A. [SUMMARY]`);
-                reportLines.push(`1. Scope of testing: ${scopeText}`);
-                reportLines.push(`2. Testing Status: In-testing`);
+                reportLines.push('A. [SUMMARY]');
+                reportLines.push('1. Scope of testing: ' + scopeText);
+                reportLines.push('2. Testing Status: In-testing');
                 reportLines.push(buildStatusStr);
 
                 if (progressReportObj && progressReportObj.text) {
                     reportLines.push(progressReportObj.text);
                 }
-                reportLines.push(`---------------------------------------------`);
+                reportLines.push('---------------------------------------------');
 
-                // B. [TICKETS]
                 const specialTagsList = ['improvement', 'question'];
                 const tagDataMap = {}; 
                 const tagOrder = [];
@@ -1542,7 +1525,7 @@
                     const toRoman = (num) => { const lookup = {M:1000,CM:900,D:500,CD:400,C:100,XC:90,L:50,XL:40,X:10,IX:9,V:5,IV:4,I:1}; let r = ''; for (let i in lookup) { while (num >= lookup[i]) { r += i; num -= lookup[i]; } } return r; };
 
                     tagOrder.forEach((tag, index) => {
-                        reportLines.push(`${toRoman(index + 1)}. [${(tag || '').toUpperCase()}]`);
+                        reportLines.push(toRoman(index + 1) + '. [' + (tag || '').toUpperCase() + ']');
                         const ticketsList = tagDataMap[tag].tickets;
                         
                         const priorityGroups = {};
@@ -1553,9 +1536,9 @@
 
                         ['Highest', 'High', 'Medium', 'Low', 'Lowest', 'Unassigned'].forEach(p => {
                             if (priorityGroups[p] && priorityGroups[p].length > 0) {
-                                reportLines.push(`- ${p}:${priorityGroups[p].length}`);
+                                reportLines.push('- ' + p + ': ' + priorityGroups[p].length);
                                 priorityGroups[p].forEach(t => {
-                                    reportLines.push(`  + Ticket ${t.ticketNumber}:${t.cleanSummary}`);
+                                    reportLines.push('  + Ticket ' + t.ticketNumber + ': ' + t.cleanSummary);
                                 });
                             }
                         });
@@ -1567,27 +1550,26 @@
                     reportLines.push('- Không có ticket nào (0 Ticket).');
                 }
 
-                reportLines.push(`---------------------------------------------`);
+                reportLines.push('---------------------------------------------');
                 
-                // C. [NOTES]
-                reportLines.push(`C. [NOTES]`);
+                reportLines.push('C. [NOTES]');
                 if (customNotes) {
                     customNotes.split('\n').forEach(line => {
-                        if (line.trim()) reportLines.push(`- ${line.trim()}`);
+                        if (line.trim()) reportLines.push('- ' + line.trim());
                     });
                 } else {
                     const totalUnverified = countDeployed + countInTesting;
                     if (totalUnverified > 0) {
-                        reportLines.push(`- ${totalUnverified} bugs remain unverified in the "In-Testing" column`);
+                        reportLines.push('- ' + totalUnverified + ' bugs remain unverified in the "In-Testing" column');
                     }
-                    reportLines.push(`- QC: ${qcMembers}`);
+                    reportLines.push('- QC: ' + qcMembers);
                 }
 
                 if (metadataText) {
-                    reportLines.push(``);
-                    reportLines.push(`Meta Data:`);
+                    reportLines.push('');
+                    reportLines.push('Meta Data:');
                     metadataText.split('\n').forEach(line => {
-                        if (line.trim()) reportLines.push(`${line.trim()}`);
+                        if (line.trim()) reportLines.push(line.trim());
                     });
                 }
 
