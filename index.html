@@ -300,6 +300,11 @@
                                             <label class="block text-[11px] font-bold text-slate-600 mb-1">App name:</label>
                                             <input type="text" id="reportLinkAppnameInput" oninput="saveHeaderConfig()" placeholder="VD: Apptek12 / GoldDigger.apk" class="w-full bg-slate-50 border border-slate-300 text-xs rounded-lg p-2 outline-none font-medium">
                                         </div>
+                                        
+                                        <!-- Ô NHẬP LINK TESTCASE ẨN DÙNG CHO AUTO-FILL CLIPBOARD -->
+                                        <div id="fieldTestcaseHidden" style="display:none;">
+                                            <input type="text" id="reportTestcaseInput" oninput="saveHeaderConfig()">
+                                        </div>
                                     </div>
                                 </div>
 
@@ -585,7 +590,6 @@
             'Low': '#3B82F6', 'Lowest': '#10B981', 'Unassigned': '#64748B'
         };
 
-        // BẬT / ẨN Ô NHẬP THEO CHECKBOX LINK
         function toggleLinkInputs() {
             const linkConfigs = [
                 { cb: 'cbIframe', field: 'fieldIframe' },
@@ -607,7 +611,6 @@
             });
         }
 
-        // TỰ ĐỘNG LƯU TOÀN BỘ CẤU HÌNH THÔNG TIN BÁO CÁO VÀO LOCALSTORAGE
         function saveHeaderConfig() {
             const config = {
                 gameName: document.getElementById('reportGameNameInput')?.value || '',
@@ -624,12 +627,14 @@
                 linkWebapp: document.getElementById('reportLinkWebappInput')?.value || '',
                 linkAppname: document.getElementById('reportLinkAppnameInput')?.value || '',
                 notes: document.getElementById('reportNotesInput')?.value || '',
-                metadata: document.getElementById('reportMetadataInput')?.value || ''
+                metadata: document.getElementById('reportMetadataInput')?.value || '',
+                
+                // LƯU LẠI GIÁ TRỊ ẨN CỦA TESTCASE TỪ AUTO-FILL CLIPBOARD (NẾU CÓ)
+                linkTestcase: document.getElementById('reportTestcaseInput')?.value || ''
             };
             localStorage.setItem('jira_header_config', JSON.stringify(config));
         }
 
-        // KHÔI PHỦC TOÀN BỘ CẤU HÌNH BÁO CÁO TỪ LOCALSTORAGE KHI RELOAD TRANG
         function loadHeaderConfig() {
             const saved = localStorage.getItem('jira_header_config');
             if (!saved) return;
@@ -651,6 +656,9 @@
                 if (config.linkWebapp !== undefined && document.getElementById('reportLinkWebappInput')) document.getElementById('reportLinkWebappInput').value = config.linkWebapp;
                 if (config.linkAppname !== undefined && document.getElementById('reportLinkAppnameInput')) document.getElementById('reportLinkAppnameInput').value = config.linkAppname;
 
+                // KHÔI PHỤC GIÁ TRỊ ẨN CỦA TESTCASE TỪ AUTO-FILL CLIPBOARD (NẾU CÓ)
+                if (config.linkTestcase !== undefined && document.getElementById('reportTestcaseInput')) document.getElementById('reportTestcaseInput').value = config.linkTestcase;
+
                 if (config.notes !== undefined && document.getElementById('reportNotesInput')) document.getElementById('reportNotesInput').value = config.notes;
                 if (config.metadata !== undefined && document.getElementById('reportMetadataInput')) document.getElementById('reportMetadataInput').value = config.metadata;
 
@@ -660,7 +668,6 @@
             }
         }
 
-        // HÀM CHUẨN HÓA & LÀM GỌN LINK JIRA CHO BÁO CÁO
         function cleanJiraUrlForReport(urlStr) {
             if (!urlStr) return '';
             try {
@@ -671,7 +678,6 @@
             }
         }
 
-        // HÀM AUTO-FILL BÁO CÁO CŨ TỪ CLIPBOARD
         async function pasteReportFromClipboard() {
             try {
                 const text = await navigator.clipboard.readText();
@@ -740,7 +746,13 @@
                     filledCount++;
                 }
 
-                const scopeMatch = text.match(/1\.\s*Scope of testing:\s*(.*)/i);
+                const tcMatch = text.match(/^Test case:\s*(.*)/im);
+                if (tcMatch && document.getElementById('reportTestcaseInput')) {
+                    document.getElementById('reportTestcaseInput').value = tcMatch[1].trim();
+                    filledCount++;
+                }
+
+                const scopeMatch = text.match(/1\.\s*Scope of testing:\s*(.*)/i) || text.match(/-\s*Scope of testing:\s*(.*)/i);
                 if (scopeMatch) {
                     if (document.getElementById('scopeOfTestingInput')) document.getElementById('scopeOfTestingInput').value = scopeMatch[1].trim();
                     saveScopeTesting();
@@ -1354,8 +1366,21 @@
         }
 
         function parseProgressDataFromMatrix(rows) {
-            // LẤY TRỰC TIẾP LINK TESTCASE TỪ Ô A1 CỦA GOOGLE SHEET (rows[0][0])
-            let testcaseLinkFromA1 = (rows && rows[0] && rows[0][0]) ? String(rows[0][0]).trim() : "";
+            // Quét 3 dòng đầu, 5 cột đầu để tìm Link Testcase (bỏ qua nếu rỗng)
+            let testcaseLinkFromSheet = "";
+            if (rows && rows.length > 0) {
+                for (let i = 0; i < Math.min(rows.length, 3); i++) {
+                    if (!rows[i]) continue;
+                    for (let j = 0; j < Math.min(rows[i].length, 5); j++) {
+                        let cellVal = String(rows[i][j]).trim();
+                        if (cellVal.startsWith("http://") || cellVal.startsWith("https://")) {
+                            testcaseLinkFromSheet = cellVal;
+                            break;
+                        }
+                    }
+                    if (testcaseLinkFromSheet) break;
+                }
+            }
 
             let row16colI = "";
             if (rows.length > 15 && rows[15] && rows[15][8] !== undefined && rows[15][8] !== null) {
@@ -1449,7 +1474,7 @@
             return {
                 text: lines.join('\n'),
                 targetData: row16colI,
-                testcaseLink: testcaseLinkFromA1
+                testcaseLink: testcaseLinkFromSheet
             };
         }
 
@@ -1600,8 +1625,10 @@
                     progressReportObj = await fetchGSheetProgressReport(gasUrl, sheetName);
                 }
 
-                // LẤY TỰ ĐỘNG LINK TESTCASE TỪ Ô A1 CỦA GOOGLE SHEET
-                let testcaseLink = (progressReportObj && progressReportObj.testcaseLink) ? progressReportObj.testcaseLink : '';
+                // ƯU TIÊN LẤY LINK TESTCASE TỪ GOOGLE SHEET TRƯỚC (NẾU CÓ), SAU ĐÓ MỚI ĐẾN CLIPBOARD
+                let sheetTestcase = (progressReportObj && progressReportObj.testcaseLink) ? progressReportObj.testcaseLink : '';
+                let clipboardTestcase = document.getElementById('reportTestcaseInput') ? document.getElementById('reportTestcaseInput').value.trim() : '';
+                let testcaseLinkToUse = sheetTestcase || clipboardTestcase;
 
                 let reportLines = [];
 
@@ -1623,7 +1650,7 @@
                 }
                 
                 if (isJiraChecked && generatedJiraLink) reportLines.push('Link Jira: ' + generatedJiraLink);
-                if (testcaseLink) reportLines.push('Test case: ' + testcaseLink);
+                if (testcaseLinkToUse) reportLines.push('Test case: ' + testcaseLinkToUse);
                 reportLines.push('---------------------------------------------');
 
                 // A. [SUMMARY]
