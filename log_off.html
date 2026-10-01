@@ -432,8 +432,8 @@
     </div>
 
     <script>
-        // CẬP NHẬT URL GOOGLE APPS SCRIPT MỚI CỦA BẠN
-        const JIRA_PROXY_API_URL = "https://script.google.com/a/macros/enotion.io/s/AKfycbxCYwNSr-GMUfAt64IR3Jr2or7lsM_N3FZtzzN-d93s61hon5GuRBqmVUvJ5pker4nP/exec";
+        // CẬP NHẬT ĐƯỜNG LINK WEB APP GOOGLE APPS SCRIPT MỚI NHẤT
+        const JIRA_PROXY_API_URL = "https://script.google.com/a/macros/enotion.io/s/AKfycbw5XGKg1yYtVD8mXp_3kcXiKXM6jnvtMLBJVK5X6aZ7hyNzxj6b-3g9D-PgudEXteMs/exec";
         const URL_REPORT_API = "https://script.google.com/macros/s/AKfycbzynUh65kMWVtwRdYdg8x35-6LViA_JwMPrWhEoMdDXFDP7tpcheilYrReQSIrQ6zAtIQ/exec";
 
         function toggleSidebar() {
@@ -506,7 +506,7 @@
             } catch (e) { return null; }
         }
 
-        // TẢI DỮ LIỆU BẰNG CƠ CHẾ JSONP TĨNH (VƯỢT 100% LỖI CORS & DOMAIN CÔNG TY)
+        // TẢI DỮ LIỆU TỪ JIRA BẰNG CƠ CHẾ JSONP CÓ BỘ TIMEOUT CHỐNG TREO
         function fetchJiraDataFromUrl() {
             if (!loggedInUser) {
                 showCustomAlert("Yêu cầu đăng nhập", "Vui lòng Đăng nhập tài khoản Google công ty (@enotion.io) trước khi tải dữ liệu!", true);
@@ -538,13 +538,35 @@
 
             localStorage.setItem('jira_last_url', rawUrl);
 
-            // Dùng callback tĩnh duy nhất
+            let isFinished = false;
+            const fetchTimeout = setTimeout(() => {
+                if (!isFinished) {
+                    isFinished = true;
+                    btn.disabled = false;
+                    btn.innerHTML = origBtnHtml;
+                    
+                    const scriptEl = document.getElementById('jiraJsonpScript');
+                    if (scriptEl) scriptEl.remove();
+
+                    showCustomAlert("Thời gian chờ quá lâu (Timeout)", "Hệ thống không nhận được phản hồi từ Google Apps Script Proxy. Vui lòng kiểm tra lại xem bạn đã đăng nhập đúng mail công ty chưa!", true);
+                }
+            }, 15000);
+
             window.handleJiraResponse = function(json) {
+                if (isFinished) return;
+                isFinished = true;
+                clearTimeout(fetchTimeout);
+
                 btn.disabled = false;
                 btn.innerHTML = origBtnHtml;
 
                 const scriptEl = document.getElementById('jiraJsonpScript');
                 if (scriptEl) scriptEl.remove();
+
+                if (!json) {
+                    showCustomAlert("Lỗi Dữ Liệu", "Google Script trả về dữ liệu rỗng!", true);
+                    return;
+                }
 
                 if (json.error) {
                     showCustomAlert("Lỗi tải dữ liệu Jira", json.error, true);
@@ -587,10 +609,14 @@
             script.src = `${JIRA_PROXY_API_URL}?domain=${encodeURIComponent(parsed.domain)}&jql=${encodeURIComponent(parsed.jql)}&email=${encodeURIComponent(loggedInUser.email)}&callback=handleJiraResponse`;
             
             script.onerror = function() {
+                if (isFinished) return;
+                isFinished = true;
+                clearTimeout(fetchTimeout);
+
                 btn.disabled = false;
                 btn.innerHTML = origBtnHtml;
                 script.remove();
-                showCustomAlert("Lỗi Kết Nối", "Không thể kết nối đến App Script Proxy. Vui lòng kiểm tra xem bạn đã đăng nhập tài khoản công ty trên trình duyệt chưa!", true);
+                showCustomAlert("Lỗi Kết Nối", "Không thể tải Script từ App Script Proxy. Vui lòng kiểm tra lại quyền đăng nhập tài khoản công ty!", true);
             };
 
             document.body.appendChild(script);
