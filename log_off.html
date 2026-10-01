@@ -239,19 +239,19 @@
                                 <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
                                     <div>
                                         <label class="block text-[11px] font-bold text-slate-600 mb-1">ID & Game Name:</label>
-                                        <input type="text" id="reportGameNameInput" placeholder="VD: 5980 - Gold Digger" class="w-full bg-slate-50 border border-slate-300 text-xs rounded-lg p-2 outline-none font-medium">
+                                        <input type="text" id="reportGameNameInput" oninput="saveHeaderConfig()" placeholder="VD: 5980 - Gold Digger" class="w-full bg-slate-50 border border-slate-300 text-xs rounded-lg p-2 outline-none font-medium">
                                     </div>
                                     <div>
                                         <label class="block text-[11px] font-bold text-slate-600 mb-1">Version Game & Ngày build:</label>
-                                        <input type="text" id="reportVersionGameInput" placeholder="VD: v1.0.0 (02/10/2026)" class="w-full bg-slate-50 border border-slate-300 text-xs rounded-lg p-2 outline-none font-medium">
+                                        <input type="text" id="reportVersionGameInput" oninput="saveHeaderConfig()" placeholder="VD: v1.0.0 (02/10/2026)" class="w-full bg-slate-50 border border-slate-300 text-xs rounded-lg p-2 outline-none font-medium">
                                     </div>
                                     <div>
                                         <label class="block text-[11px] font-bold text-slate-600 mb-1">Version App:</label>
-                                        <input type="text" id="reportVersionAppInput" placeholder="VD: v2.1.0" class="w-full bg-slate-50 border border-slate-300 text-xs rounded-lg p-2 outline-none font-medium">
+                                        <input type="text" id="reportVersionAppInput" oninput="saveHeaderConfig()" placeholder="VD: v2.1.0" class="w-full bg-slate-50 border border-slate-300 text-xs rounded-lg p-2 outline-none font-medium">
                                     </div>
                                     <div>
                                         <label class="block text-[11px] font-bold text-slate-600 mb-1">Môi trường Test (Env):</label>
-                                        <input type="text" id="reportEnvInput" placeholder="VD: Iframe/App - Internal Staging" class="w-full bg-slate-50 border border-slate-300 text-xs rounded-lg p-2 outline-none font-medium">
+                                        <input type="text" id="reportEnvInput" oninput="saveHeaderConfig()" placeholder="VD: Iframe/App - Internal Staging" class="w-full bg-slate-50 border border-slate-300 text-xs rounded-lg p-2 outline-none font-medium">
                                     </div>
                                 </div>
 
@@ -262,23 +262,23 @@
                                     </label>
                                     <div class="flex flex-wrap gap-3 text-xs font-medium text-slate-700 mb-3">
                                         <label class="inline-flex items-center gap-1.5 cursor-pointer bg-indigo-50/60 hover:bg-indigo-100 px-2.5 py-1.5 rounded-lg border border-indigo-200 transition">
-                                            <input type="checkbox" id="cbIframe" checked onchange="toggleLinkInputs()" class="rounded text-indigo-600 focus:ring-indigo-500">
+                                            <input type="checkbox" id="cbIframe" checked onchange="toggleLinkInputs(); saveHeaderConfig();" class="rounded text-indigo-600 focus:ring-indigo-500">
                                             <span class="font-bold text-indigo-900">Link Iframe</span>
                                         </label>
                                         <label class="inline-flex items-center gap-1.5 cursor-pointer bg-indigo-50/60 hover:bg-indigo-100 px-2.5 py-1.5 rounded-lg border border-indigo-200 transition">
-                                            <input type="checkbox" id="cbJira" checked class="rounded text-indigo-600 focus:ring-indigo-500">
+                                            <input type="checkbox" id="cbJira" checked onchange="saveHeaderConfig();" class="rounded text-indigo-600 focus:ring-indigo-500">
                                             <span class="font-bold text-indigo-900">Link Jira</span>
                                         </label>
                                         <label class="inline-flex items-center gap-1.5 cursor-pointer bg-indigo-50/60 hover:bg-indigo-100 px-2.5 py-1.5 rounded-lg border border-indigo-200 transition">
-                                            <input type="checkbox" id="cbTestcase" checked onchange="toggleLinkInputs()" class="rounded text-indigo-600 focus:ring-indigo-500">
+                                            <input type="checkbox" id="cbTestcase" checked onchange="toggleLinkInputs(); saveHeaderConfig();" class="rounded text-indigo-600 focus:ring-indigo-500">
                                             <span class="font-bold text-indigo-900">Link Testcase</span>
                                         </label>
                                         <label class="inline-flex items-center gap-1.5 cursor-pointer bg-slate-100 hover:bg-slate-200 px-2.5 py-1.5 rounded-lg border border-slate-200 transition">
-                                            <input type="checkbox" id="cbPreprod" onchange="toggleLinkInputs()" class="rounded text-indigo-600 focus:ring-indigo-500">
+                                            <input type="checkbox" id="cbPreprod" onchange="toggleLinkInputs(); saveHeaderConfig();" class="rounded text-indigo-600 focus:ring-indigo-500">
                                             <span class="font-bold text-slate-700">Preprod</span>
                                         </label>
                                         <label class="inline-flex items-center gap-1.5 cursor-pointer bg-slate-100 hover:bg-slate-200 px-2.5 py-1.5 rounded-lg border border-slate-200 transition">
-                                            <input type="checkbox" id="cbWebapp" onchange="toggleLinkInputs()" class="rounded text-indigo-600 focus:ring-indigo-500">
+                                            <input type="checkbox" id="cbWebapp" onchange="toggleLinkInputs(); saveHeaderConfig();" class="rounded text-indigo-600 focus:ring-indigo-500">
                                             <span class="font-bold text-slate-700">Webapp / App name</span>
                                         </label>
                                     </div>
@@ -286,19 +286,19 @@
                                     <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
                                         <div id="fieldIframe">
                                             <label class="block text-[11px] font-bold text-slate-600 mb-1">Link Iframe (theo lang):</label>
-                                            <input type="text" id="reportLinkIframeInput" placeholder="VD: https://iframe..." class="w-full bg-slate-50 border border-slate-300 text-xs rounded-lg p-2 outline-none font-medium">
+                                            <input type="text" id="reportLinkIframeInput" oninput="saveHeaderConfig()" placeholder="VD: https://iframe..." class="w-full bg-slate-50 border border-slate-300 text-xs rounded-lg p-2 outline-none font-medium">
                                         </div>
                                         <div id="fieldTestcase">
                                             <label class="block text-[11px] font-bold text-slate-600 mb-1">Testcase Link:</label>
-                                            <input type="text" id="reportTestcaseInput" placeholder="VD: https://docs.google.com/spreadsheets/d/..." class="w-full bg-slate-50 border border-slate-300 text-xs rounded-lg p-2 outline-none font-medium">
+                                            <input type="text" id="reportTestcaseInput" oninput="saveHeaderConfig()" placeholder="VD: https://docs.google.com/spreadsheets/d/..." class="w-full bg-slate-50 border border-slate-300 text-xs rounded-lg p-2 outline-none font-medium">
                                         </div>
                                         <div id="fieldPreprod" class="hidden">
                                             <label class="block text-[11px] font-bold text-slate-600 mb-1">Preprod Link (nếu có):</label>
-                                            <input type="text" id="reportLinkPreprodInput" placeholder="VD: https://preprod..." class="w-full bg-slate-50 border border-slate-300 text-xs rounded-lg p-2 outline-none font-medium">
+                                            <input type="text" id="reportLinkPreprodInput" oninput="saveHeaderConfig()" placeholder="VD: https://preprod..." class="w-full bg-slate-50 border border-slate-300 text-xs rounded-lg p-2 outline-none font-medium">
                                         </div>
                                         <div id="fieldWebapp" class="hidden">
                                             <label class="block text-[11px] font-bold text-slate-600 mb-1">Webapp Link / App Name:</label>
-                                            <input type="text" id="reportLinkWebappInput" placeholder="VD: Webapp - Apptek12" class="w-full bg-slate-50 border border-slate-300 text-xs rounded-lg p-2 outline-none font-medium">
+                                            <input type="text" id="reportLinkWebappInput" oninput="saveHeaderConfig()" placeholder="VD: Webapp - Apptek12" class="w-full bg-slate-50 border border-slate-300 text-xs rounded-lg p-2 outline-none font-medium">
                                         </div>
                                     </div>
                                 </div>
@@ -307,11 +307,11 @@
                                 <div class="grid grid-cols-1 md:grid-cols-2 gap-3 border-t border-slate-100 pt-3">
                                     <div>
                                         <label class="block text-[11px] font-bold text-slate-600 mb-1"><i class="fa-solid fa-note-sticky text-amber-500 mr-1"></i> Ghi chú bổ sung (Section C - Notes):</label>
-                                        <textarea id="reportNotesInput" rows="3" placeholder="Nhập mỗi ghi chú trên 1 dòng..." class="w-full bg-slate-50 border border-slate-300 text-xs rounded-lg p-2 outline-none font-medium custom-scrollbar"></textarea>
+                                        <textarea id="reportNotesInput" oninput="saveHeaderConfig()" rows="3" placeholder="Nhập mỗi ghi chú trên 1 dòng..." class="w-full bg-slate-50 border border-slate-300 text-xs rounded-lg p-2 outline-none font-medium custom-scrollbar"></textarea>
                                     </div>
                                     <div>
                                         <label class="block text-[11px] font-bold text-slate-600 mb-1"><i class="fa-solid fa-database text-purple-500 mr-1"></i> Metadata Game (Cuối Report):</label>
-                                        <textarea id="reportMetadataInput" rows="3" placeholder="VD: Transferred: 53.2 MB&#10;Request network: 193 requests&#10;Resource: 67.4 MB&#10;Draw call: 32~65" class="w-full bg-slate-50 border border-slate-300 text-xs rounded-lg p-2 outline-none font-medium custom-scrollbar"></textarea>
+                                        <textarea id="reportMetadataInput" oninput="saveHeaderConfig()" rows="3" placeholder="VD: Transferred: 53.2 MB&#10;Request network: 193 requests&#10;Resource: 67.4 MB&#10;Draw call: 32~65" class="w-full bg-slate-50 border border-slate-300 text-xs rounded-lg p-2 outline-none font-medium custom-scrollbar"></textarea>
                                     </div>
                                 </div>
                             </div>
@@ -607,6 +607,70 @@
             });
         }
 
+        // TỰ ĐỘNG LƯU TOÀN BỘ CẤU HÌNH THÔNG TIN BÁO CÁO VÀO LOCALSTORAGE
+        function saveHeaderConfig() {
+            const config = {
+                gameName: document.getElementById('reportGameNameInput')?.value || '',
+                versionGame: document.getElementById('reportVersionGameInput')?.value || '',
+                versionApp: document.getElementById('reportVersionAppInput')?.value || '',
+                env: document.getElementById('reportEnvInput')?.value || '',
+                cbIframe: document.getElementById('cbIframe')?.checked || false,
+                cbJira: document.getElementById('cbJira')?.checked || false,
+                cbTestcase: document.getElementById('cbTestcase')?.checked || false,
+                cbPreprod: document.getElementById('cbPreprod')?.checked || false,
+                cbWebapp: document.getElementById('cbWebapp')?.checked || false,
+                linkIframe: document.getElementById('reportLinkIframeInput')?.value || '',
+                linkTestcase: document.getElementById('reportTestcaseInput')?.value || '',
+                linkPreprod: document.getElementById('reportLinkPreprodInput')?.value || '',
+                linkWebapp: document.getElementById('reportLinkWebappInput')?.value || '',
+                notes: document.getElementById('reportNotesInput')?.value || '',
+                metadata: document.getElementById('reportMetadataInput')?.value || ''
+            };
+            localStorage.setItem('jira_header_config', JSON.stringify(config));
+        }
+
+        // KHÔI PHỦC TOÀN BỘ CẤU HÌNH BÁO CÁO TỪ LOCALSTORAGE KHI RELOAD TRANG
+        function loadHeaderConfig() {
+            const saved = localStorage.getItem('jira_header_config');
+            if (!saved) return;
+            try {
+                const config = JSON.parse(saved);
+                if (config.gameName !== undefined && document.getElementById('reportGameNameInput')) document.getElementById('reportGameNameInput').value = config.gameName;
+                if (config.versionGame !== undefined && document.getElementById('reportVersionGameInput')) document.getElementById('reportVersionGameInput').value = config.versionGame;
+                if (config.versionApp !== undefined && document.getElementById('reportVersionAppInput')) document.getElementById('reportVersionAppInput').value = config.versionApp;
+                if (config.env !== undefined && document.getElementById('reportEnvInput')) document.getElementById('reportEnvInput').value = config.env;
+                
+                if (config.cbIframe !== undefined && document.getElementById('cbIframe')) document.getElementById('cbIframe').checked = config.cbIframe;
+                if (config.cbJira !== undefined && document.getElementById('cbJira')) document.getElementById('cbJira').checked = config.cbJira;
+                if (config.cbTestcase !== undefined && document.getElementById('cbTestcase')) document.getElementById('cbTestcase').checked = config.cbTestcase;
+                if (config.cbPreprod !== undefined && document.getElementById('cbPreprod')) document.getElementById('cbPreprod').checked = config.cbPreprod;
+                if (config.cbWebapp !== undefined && document.getElementById('cbWebapp')) document.getElementById('cbWebapp').checked = config.cbWebapp;
+
+                if (config.linkIframe !== undefined && document.getElementById('reportLinkIframeInput')) document.getElementById('reportLinkIframeInput').value = config.linkIframe;
+                if (config.linkTestcase !== undefined && document.getElementById('reportTestcaseInput')) document.getElementById('reportTestcaseInput').value = config.linkTestcase;
+                if (config.linkPreprod !== undefined && document.getElementById('reportLinkPreprodInput')) document.getElementById('reportLinkPreprodInput').value = config.linkPreprod;
+                if (config.linkWebapp !== undefined && document.getElementById('reportLinkWebappInput')) document.getElementById('reportLinkWebappInput').value = config.linkWebapp;
+
+                if (config.notes !== undefined && document.getElementById('reportNotesInput')) document.getElementById('reportNotesInput').value = config.notes;
+                if (config.metadata !== undefined && document.getElementById('reportMetadataInput')) document.getElementById('reportMetadataInput').value = config.metadata;
+
+                toggleLinkInputs();
+            } catch(e) {
+                console.error("Lỗi khôi phục cấu hình từ localStorage:", e);
+            }
+        }
+
+        // HÀM CHUẨN HÓA & LÀM GỌN LINK JIRA CHO BÁO CÁO
+        function cleanJiraUrlForReport(urlStr) {
+            if (!urlStr) return '';
+            try {
+                let decoded = decodeURIComponent(urlStr).replace(/[\r\n]+/g, ' ').replace(/\s+/g, ' ').trim();
+                return decoded;
+            } catch(e) {
+                return urlStr;
+            }
+        }
+
         // HÀM AUTO-FILL BÁO CÁO CŨ TỪ CLIPBOARD
         async function pasteReportFromClipboard() {
             try {
@@ -691,6 +755,7 @@
                 }
 
                 toggleLinkInputs();
+                saveHeaderConfig(); // LƯU VÀO LOCALSTORAGE SAU KHU AUTO-FILL
 
                 if (filledCount > 0) {
                     showCustomAlert("Tự Động Điền Thành Công!", "Đã bóc tách và điền tự động " + filledCount + " trường dữ liệu từ Báo cáo Clipboard.");
@@ -794,7 +859,6 @@
                     return;
                 }
 
-                // Lưu lại Board ID và Project Key
                 currentBoardId = json.boardId || null;
                 currentProjectKey = json.projectKey || parsed.projectName;
                 currentJiraDomain = parsed.domain;
@@ -890,7 +954,7 @@
         document.addEventListener('DOMContentLoaded', () => {
             updateAuthUI();
             calculateMondaysLeft();
-            toggleLinkInputs();
+            loadHeaderConfig(); // KHÔI PHỦC DỮ LIỆU CẤU HÌNH KHI RELOAD TRANG
             
             const savedJiraUrl = localStorage.getItem('jira_last_url') || '';
             if (savedJiraUrl && document.getElementById('jiraUrlInput')) document.getElementById('jiraUrlInput').value = savedJiraUrl;
@@ -1483,7 +1547,6 @@
                         generatedJiraLink += `/${currentBoardId}`;
                     }
                 } else {
-                    // Fallback nếu không có projectKey
                     generatedJiraLink = document.getElementById('jiraUrlInput') ? document.getElementById('jiraUrlInput').value.trim() : '';
                 }
                 
