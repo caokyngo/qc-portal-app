@@ -61,7 +61,7 @@
         .travel-marquee { width: 100%; max-width: 460px; overflow: hidden; mask-image: linear-gradient(to right, transparent, black 8%, black 92%, transparent); -webkit-mask-image: linear-gradient(to right, transparent, black 8%, black 92%, transparent); }
         .travel-marquee-track { display: flex; width: max-content; animation: travel-marquee-scroll 18s linear infinite; will-change: transform; }
         .travel-marquee-group { display: flex; flex: 0 0 auto; align-items: center; padding-right: 2.5rem; gap: 2.5rem; }
-        .travel-marquee-message { display: inline-flex; align-items: center; gap: 0.4rem; white-space: nowrap; font-family: 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; font-size: 16px; font-weight: 800; background: linear-gradient(90deg, #ea580c 0%, #d97706 50%, #ca8a04 100%); -webkit-background-clip: text; background-clip: text; color: transparent; animation: travel-blink 1.2s infinite ease-in-out; }
+        .travel-marquee-message { display: inline-flex; items-center; gap: 0.4rem; white-space: nowrap; font-family: 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; font-size: 16px; font-weight: 800; background: linear-gradient(90deg, #ea580c 0%, #d97706 50%, #ca8a04 100%); -webkit-background-clip: text; background-clip: text; color: transparent; animation: travel-blink 1.2s infinite ease-in-out; }
         .travel-marquee-message i { color: #ea580c; font-size: 15.5px; }
         .travel-marquee-count { font-size: 17px; font-weight: 900; background: linear-gradient(90deg, #c2410c 0%, #ea580c 100%); -webkit-background-clip: text; background-clip: text; color: transparent; padding: 0 2px; }
         @keyframes travel-marquee-scroll { to { transform: translateX(-50%); } }
@@ -72,6 +72,7 @@
 
     <div id="sidebarOverlay" onclick="toggleSidebar()" class="fixed inset-0 bg-slate-900/60 z-40 hidden md:hidden backdrop-blur-sm transition-opacity opacity-0"></div>
 
+    <!-- SIDEBAR -->
     <aside id="mainSidebar" class="fixed md:relative top-0 left-0 h-screen w-[260px] md:w-64 text-white flex flex-col flex-shrink-0 shadow-2xl z-50 transition-transform duration-300 -translate-x-full md:translate-x-0 bg-cover bg-center bg-no-repeat"
            style="background-image: linear-gradient(to bottom, rgba(15, 23, 42, 0.65), rgba(30, 27, 75, 0.75)), url('./trungkhanh.jpg');">
         
@@ -93,17 +94,14 @@
                 <i class="fa-solid fa-chart-line w-5 text-center text-lg"></i> 
                 <span>Báo Cáo Daily</span>
             </a>
-            
             <a href="device_manage" class="whitespace-nowrap flex items-center gap-3 px-4 py-3.5 text-sm font-bold rounded-xl transition border border-white/15 bg-white/10 hover:bg-white/25 hover:border-white/40 text-white backdrop-blur-md shadow-sm">
                 <i class="fa-solid fa-mobile-screen-button w-5 text-center text-lg"></i> 
                 <span>Mượn Device</span>
             </a>
-            
             <a href="device_info" class="whitespace-nowrap flex items-center gap-3 px-4 py-3.5 text-sm font-bold rounded-xl transition border border-white/15 bg-white/10 hover:bg-white/25 hover:border-white/40 text-white backdrop-blur-md shadow-sm">
                 <i class="fa-solid fa-circle-info w-5 text-center text-lg"></i> 
                 <span>Thông tin Device</span>
             </a>
-            
             <a href="log_off" class="whitespace-nowrap flex items-center gap-3 px-4 py-3.5 text-sm font-bold rounded-xl transition border border-white/15 bg-white/10 hover:bg-white/25 hover:border-white/40 text-white backdrop-blur-md shadow-sm">
                 <i class="fa-solid fa-calendar-minus w-5 text-center text-lg"></i> 
                 <span>Xin OFF / WFH</span>
@@ -117,7 +115,7 @@
                 <button onclick="toggleSidebar()" class="md:hidden text-slate-500 hover:text-indigo-600 focus:outline-none p-1 transition">
                     <i class="fa-solid fa-bars text-xl"></i>
                 </button>
-                <h2 class="text-xl font-bold text-slate-800 hidden sm:block">Báo Cáo Daily (Jira Live API)</h2>
+                <h2 class="text-xl font-bold text-slate-800 hidden sm:block">Báo Cáo Daily (Jira Auto-Auth)</h2>
                 <h2 class="text-lg font-bold text-slate-800 sm:hidden">Báo Cáo Daily</h2>
             </div>
             
@@ -191,7 +189,7 @@
                             <i class="fa-brands fa-jira"></i>
                         </div>
                         <h2 class="text-xl font-bold text-slate-800">Tải Dữ Liệu Báo Cáo Từ Jira</h2>
-                        <p class="text-xs text-slate-500 max-w-md mx-auto">Dán đường link dự án hoặc Filter Jira (List view) để hệ thống tự động bóc tách dữ liệu.</p>
+                        <p class="text-xs text-slate-500 max-w-md mx-auto">Dán đường link dự án hoặc Filter Jira (yêu cầu đăng nhập tài khoản mail công ty).</p>
                     </div>
 
                     <div class="space-y-4">
@@ -200,24 +198,10 @@
                             <input type="url" id="jiraUrlInput" placeholder="VD: https://enotion.atlassian.net/jira/software/c/projects/KTFMLMC/issues" class="w-full h-12 bg-slate-50 border border-slate-300 text-slate-800 text-sm font-medium rounded-xl px-4 focus:ring-2 focus:ring-indigo-500 focus:bg-white outline-none transition shadow-sm">
                         </div>
 
-                        <div class="border border-indigo-100 bg-indigo-50/40 rounded-xl p-4 space-y-3">
-                            <div class="flex justify-between items-center cursor-pointer" onclick="document.getElementById('jiraAuthConfig').classList.toggle('hidden')">
-                                <span class="text-xs font-bold text-indigo-900 flex items-center gap-1.5">
-                                    <i class="fa-solid fa-key text-indigo-600"></i> Cấu hình tài khoản Jira API
-                                </span>
-                                <i class="fa-solid fa-chevron-down text-indigo-400 text-xs"></i>
-                            </div>
-                            
-                            <div id="jiraAuthConfig" class="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2">
-                                <div>
-                                    <label class="block text-[11px] font-semibold text-slate-600 mb-1">Email tài khoản Jira:</label>
-                                    <input type="email" id="jiraEmailInput" oninput="saveJiraCredentials()" placeholder="VD: ky.ngo@enotion.io" class="w-full h-9 bg-white border border-slate-300 text-slate-700 text-xs rounded-lg px-3 outline-none">
-                                </div>
-                                <div>
-                                    <label class="block text-[11px] font-semibold text-slate-600 mb-1">Jira API Token:</label>
-                                    <input type="password" id="jiraTokenInput" oninput="saveJiraCredentials()" placeholder="Nhập API Token..." class="w-full h-9 bg-white border border-slate-300 text-slate-700 text-xs rounded-lg px-3 outline-none">
-                                </div>
-                            </div>
+                        <!-- THÔNG BÁO XÁC THỰC -->
+                        <div class="flex items-center gap-2 text-xs text-slate-500 bg-slate-50 p-3 rounded-xl border border-slate-200">
+                            <i class="fa-solid fa-shield-halved text-emerald-600 text-sm"></i>
+                            <span>Hệ thống tự động xác thực bằng tài khoản Google công ty (<strong class="text-slate-700">@enotion.io</strong>) đã đăng nhập.</span>
                         </div>
 
                         <button type="button" id="btnFetchJira" onclick="fetchJiraDataFromUrl()" class="w-full h-12 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl shadow-md transition flex items-center justify-center gap-2 text-sm">
@@ -228,7 +212,6 @@
 
                 <div id="reportDashboard" class="hidden space-y-6">
                     <div id="mainDashboardView" class="space-y-6">
-                        
                         <section class="bg-white rounded-xl shadow-sm border border-slate-200 p-4 sm:p-5 space-y-4 w-full">
                             <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-slate-100 pb-4">
                                 <div class="flex items-center gap-2">
@@ -449,9 +432,23 @@
     </div>
 
     <script>
-        const JIRA_PROXY_API_URL = "https://script.google.com/macros/s/AKfycbyaOWgy-X1-4B1TOKJXAi9E4wrP5pMTZGW-R80m02lb5J7JYjLOS7WKoCYugfLy7a7v/exec";
-        const DEFAULT_JIRA_TOKEN = "ATATT3xFfGF0R_7KzjO3hXmMudetRKSnq2oyVg6tqRgZOnGDBEUfnuMFSE1jLlfJpBZ0KWPRrLiYwP-AZFpN-c1SlR4kcvNFDOM5h9KrOfsipBNoTWiarwzEsbXbbAKTHvLoZJkjoaUUIv_WmQ9zsMKYDt2LdNXs192b85D_qw4EAWd5zHMxpKk=FDD2A46D";
+        // CẬP NHẬT URL GOOGLE APPS SCRIPT MỚI CỦA BẠN
+        const JIRA_PROXY_API_URL = "https://script.google.com/a/macros/enotion.io/s/AKfycbxCYwNSr-GMUfAt64IR3Jr2or7lsM_N3FZtzzN-d93s61hon5GuRBqmVUvJ5pker4nP/exec";
         const URL_REPORT_API = "https://script.google.com/macros/s/AKfycbzynUh65kMWVtwRdYdg8x35-6LViA_JwMPrWhEoMdDXFDP7tpcheilYrReQSIrQ6zAtIQ/exec";
+
+        function toggleSidebar() {
+            const sidebar = document.getElementById('mainSidebar');
+            const overlay = document.getElementById('sidebarOverlay');
+            if (sidebar.classList.contains('-translate-x-full')) {
+                sidebar.classList.remove('-translate-x-full');
+                overlay.classList.remove('hidden');
+                setTimeout(() => overlay.classList.remove('opacity-0'), 10);
+            } else {
+                sidebar.classList.add('-translate-x-full');
+                overlay.classList.add('opacity-0');
+                setTimeout(() => overlay.classList.add('hidden'), 300);
+            }
+        }
 
         const TARGET_TRIP_DATE = "2026-11-01"; 
 
@@ -459,7 +456,6 @@
             let today = new Date();
             let target = new Date(TARGET_TRIP_DATE);
             let mondaysCount = 0;
-            
             today.setHours(0,0,0,0);
             target.setHours(0,0,0,0);
 
@@ -468,7 +464,6 @@
                 if (current.getDay() === 1) mondaysCount++;
                 current.setDate(current.getDate() + 1);
             }
-            
             document.querySelectorAll('.mondayCountText').forEach(el => el.innerText = mondaysCount);
         }
 
@@ -481,26 +476,6 @@
             'Highest': '#DC2626', 'High': '#F97316', 'Medium': '#F59E0B',
             'Low': '#3B82F6', 'Lowest': '#10B981', 'Unassigned': '#64748B'
         };
-
-        function saveJiraCredentials() {
-            const email = document.getElementById('jiraEmailInput').value.trim();
-            const token = document.getElementById('jiraTokenInput').value.trim();
-            localStorage.setItem('jira_user_email', email);
-            localStorage.setItem('jira_user_token', token);
-        }
-
-        function loadJiraCredentials() {
-            const savedEmail = localStorage.getItem('jira_user_email');
-            const savedToken = localStorage.getItem('jira_user_token');
-            let email = savedEmail || (loggedInUser ? loggedInUser.email : 'ky.ngo@enotion.io');
-            let token = savedToken || DEFAULT_JIRA_TOKEN;
-
-            if (document.getElementById('jiraEmailInput')) document.getElementById('jiraEmailInput').value = email;
-            if (document.getElementById('jiraTokenInput')) document.getElementById('jiraTokenInput').value = token;
-            
-            const savedJiraUrl = localStorage.getItem('jira_last_url') || '';
-            if (savedJiraUrl && document.getElementById('jiraUrlInput')) document.getElementById('jiraUrlInput').value = savedJiraUrl;
-        }
 
         function changeJiraProject() {
             document.getElementById('fileInfo').classList.add('hidden');
@@ -531,8 +506,18 @@
             } catch (e) { return null; }
         }
 
-        // TÍNH NĂNG VƯỢT LỖI CORS DÙNG JSONP FALLBACK VÀO GOOGLE APPS SCRIPT
+        // TẢI DỮ LIỆU BẰNG CƠ CHẾ JSONP TĨNH (VƯỢT 100% LỖI CORS & DOMAIN CÔNG TY)
         function fetchJiraDataFromUrl() {
+            if (!loggedInUser) {
+                showCustomAlert("Yêu cầu đăng nhập", "Vui lòng Đăng nhập tài khoản Google công ty (@enotion.io) trước khi tải dữ liệu!", true);
+                return;
+            }
+
+            if (!loggedInUser.email.toLowerCase().endsWith("@enotion.io")) {
+                showCustomAlert("Từ chối truy cập", "Tài khoản của bạn (" + loggedInUser.email + ") không thuộc hệ thống công ty enotion.io!", true);
+                return;
+            }
+
             const rawUrl = document.getElementById('jiraUrlInput').value.trim();
             if (!rawUrl) {
                 showCustomAlert("Cảnh báo", "Vui lòng dán đường link Jira của dự án!", true);
@@ -545,12 +530,6 @@
                 return;
             }
 
-            let email = document.getElementById('jiraEmailInput').value.trim();
-            let token = document.getElementById('jiraTokenInput').value.trim();
-
-            if (!email) email = loggedInUser ? loggedInUser.email : 'ky.ngo@enotion.io';
-            if (!token) token = DEFAULT_JIRA_TOKEN;
-
             const btn = document.getElementById('btnFetchJira');
             const origBtnHtml = btn.innerHTML;
 
@@ -558,18 +537,14 @@
             btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> Đang tải dữ liệu từ Jira...`;
 
             localStorage.setItem('jira_last_url', rawUrl);
-            saveJiraCredentials();
 
-            const callbackName = 'jiraCallback_' + Math.round(100000 * Math.random());
-            let jsonpUrl = `${JIRA_PROXY_API_URL}?domain=${encodeURIComponent(parsed.domain)}&jql=${encodeURIComponent(parsed.jql)}&email=${encodeURIComponent(email)}&token=${encodeURIComponent(token)}&callback=${callbackName}`;
-
-            window[callbackName] = function(json) {
-                delete window[callbackName];
-                const scriptEl = document.getElementById('jiraJsonpScript');
-                if (scriptEl) scriptEl.remove();
-
+            // Dùng callback tĩnh duy nhất
+            window.handleJiraResponse = function(json) {
                 btn.disabled = false;
                 btn.innerHTML = origBtnHtml;
+
+                const scriptEl = document.getElementById('jiraJsonpScript');
+                if (scriptEl) scriptEl.remove();
 
                 if (json.error) {
                     showCustomAlert("Lỗi tải dữ liệu Jira", json.error, true);
@@ -601,19 +576,23 @@
                 buildDynamicStatusFilters();
                 processData();
 
-                showCustomAlert("Thành công!", `Đã tải thành công ${rawJiraData.length} ticket từ Jira!`);
+                showCustomAlert("Thành công!", `Đã xác thực tài khoản ${loggedInUser.email} & tải thành công ${rawJiraData.length} ticket từ Jira!`);
             };
+
+            const existingScript = document.getElementById('jiraJsonpScript');
+            if (existingScript) existingScript.remove();
 
             const script = document.createElement('script');
             script.id = 'jiraJsonpScript';
-            script.src = jsonpUrl;
+            script.src = `${JIRA_PROXY_API_URL}?domain=${encodeURIComponent(parsed.domain)}&jql=${encodeURIComponent(parsed.jql)}&email=${encodeURIComponent(loggedInUser.email)}&callback=handleJiraResponse`;
+            
             script.onerror = function() {
-                delete window[callbackName];
-                script.remove();
                 btn.disabled = false;
                 btn.innerHTML = origBtnHtml;
-                showCustomAlert("Lỗi Kết Nối", "Không thể kết nối dịch vụ Proxy Jira. Vui lòng thử lại!", true);
+                script.remove();
+                showCustomAlert("Lỗi Kết Nối", "Không thể kết nối đến App Script Proxy. Vui lòng kiểm tra xem bạn đã đăng nhập tài khoản công ty trên trình duyệt chưa!", true);
             };
+
             document.body.appendChild(script);
         }
 
@@ -659,8 +638,10 @@
         document.addEventListener('DOMContentLoaded', () => {
             updateAuthUI();
             calculateMondaysLeft();
-            loadJiraCredentials();
             
+            const savedJiraUrl = localStorage.getItem('jira_last_url') || '';
+            if (savedJiraUrl && document.getElementById('jiraUrlInput')) document.getElementById('jiraUrlInput').value = savedJiraUrl;
+
             const savedScope = localStorage.getItem('jira_scope_testing');
             if (savedScope && document.getElementById('scopeOfTestingInput')) document.getElementById('scopeOfTestingInput').value = savedScope;
             
