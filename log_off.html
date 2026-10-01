@@ -509,7 +509,8 @@
     </div>
 
     <script>
-        const JIRA_PROXY_API_URL = "https://script.google.com/a/macros/enotion.io/s/AKfycbwxoCNnIyGZKuEXWy5yMMP1ZP2IZuTv7m4kJqxYV-yyAcBZvzTCSWZn7fTje75Qn3GP/exec";
+        // CẬP NHẬT URL GOOGLE APPS SCRIPT PROXY MỚI NHẤT
+        const JIRA_PROXY_API_URL = "https://script.google.com/a/macros/enotion.io/s/AKfycbzrjd8DVZLI1uqv1s1e75RE8auUAISpSwq73wfvCUMVW6g0WqsYRZHpwFZ76HfGZiTt/exec";
         const URL_REPORT_API = "https://script.google.com/macros/s/AKfycbzynUh65kMWVtwRdYdg8x35-6LViA_JwMPrWhEoMdDXFDP7tpcheilYrReQSIrQ6zAtIQ/exec";
 
         function toggleSidebar() {
@@ -659,6 +660,7 @@
             rawJiraData = [];
         }
 
+        // TỐI ƯU HÀM PARSE JIRA URL: LỌC BỎ KÝ TỰ XUỐNG DÒNG RÁC (%0A / \n)
         function parseJiraUrl(urlStr) {
             try {
                 const url = new URL(urlStr);
@@ -667,7 +669,8 @@
                 let projectName = "";
 
                 if (url.searchParams.has('jql')) {
-                    jql = decodeURIComponent(url.searchParams.get('jql'));
+                    // GIẢI MÃ VÀ XÓA TOÀN BỘ KÝ TỰ XUỐNG DÒNG THỪA
+                    jql = decodeURIComponent(url.searchParams.get('jql')).replace(/[\r\n]+/g, ' ').trim();
                     const projMatch = jql.match(/project\s*=\s*["']?([a-zA-Z0-9_]+)["']?/i);
                     if (projMatch && projMatch[1]) projectName = projMatch[1];
                 } else {
@@ -705,6 +708,7 @@
             btn.disabled = true;
             btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Đang tải dữ liệu từ Jira...';
 
+            // GIỮ NGUYÊN LINK JIRA BAN ĐẦU ĐỂ DÙNG IN REPORT
             localStorage.setItem('jira_last_url', rawUrl);
 
             let isFinished = false;
@@ -819,10 +823,10 @@
             showCustomAlert('Đăng xuất', 'Bạn đã đăng xuất tài khoản Google thành công.');
         }
 
-        function getTicketNumber(key) {
+        // LẤY TRỌN VẸN FULL ISSUE KEY (VD: EJ9686-168, WS1PD9773-445)
+        function getFullTicketKey(key) {
             if (!key || typeof key !== 'string') return '';
-            const parts = key.trim().split('-');
-            return parts[parts.length - 1];
+            return key.trim();
         }
 
         function cleanTicketSummary(summary) {
@@ -1363,7 +1367,7 @@
             });
         }
 
-        // TỰ ĐỘNG GENERATE REPORT ĐÚNG THEO TEMPLATE MỚI
+        // GENERATE REPORT CHUẨN VỚI FULL ISSUE KEY & LINK JIRA GỐC
         async function confirmAndCopyReport(skipTagFilter = false) {
             let allowedTags = [];
             
@@ -1399,6 +1403,7 @@
                     if (parts.length === 3) dateStr = parts[2] + '/' + parts[1] + '/' + parts[0];
                 }
 
+                // Lấy thông tin Header & Links
                 const gameName = document.getElementById('reportGameNameInput') ? document.getElementById('reportGameNameInput').value.trim() : '';
                 const verGame = document.getElementById('reportVersionGameInput') ? document.getElementById('reportVersionGameInput').value.trim() : '';
                 const verApp = document.getElementById('reportVersionAppInput') ? document.getElementById('reportVersionAppInput').value.trim() : '';
@@ -1408,7 +1413,11 @@
                 const linkPreprod = document.getElementById('reportLinkPreprodInput') ? document.getElementById('reportLinkPreprodInput').value.trim() : '';
                 const linkWebapp = document.getElementById('reportLinkWebappInput') ? document.getElementById('reportLinkWebappInput').value.trim() : '';
                 const testcaseLink = document.getElementById('reportTestcaseInput') ? document.getElementById('reportTestcaseInput').value.trim() : '';
-                const jiraLastUrl = localStorage.getItem('jira_last_url') || '';
+                
+                // ĐẢM BẢO LẤY LINK JIRA GỐC ĐÃ NHẬP BẰNG INPUT HOẶC LOCALSTORAGE
+                const rawJiraInputUrl = document.getElementById('jiraUrlInput') ? document.getElementById('jiraUrlInput').value.trim() : '';
+                const jiraLastUrl = rawJiraInputUrl || localStorage.getItem('jira_last_url') || '';
+                
                 const customNotes = document.getElementById('reportNotesInput') ? document.getElementById('reportNotesInput').value.trim() : '';
                 const metadataText = document.getElementById('reportMetadataInput') ? document.getElementById('reportMetadataInput').value.trim() : '';
 
@@ -1457,6 +1466,7 @@
 
                 let reportLines = [];
 
+                // HEADER REPORT
                 reportLines.push('Report for ' + (gameName || 'ID - Name') + ' (' + (dateStr || 'dd/mm/yyyy') + ')');
                 reportLines.push('Version game: ' + (verGame || 'vx.x.x (dd/mm/yyyy)'));
                 reportLines.push('Version App: ' + verApp);
@@ -1469,6 +1479,7 @@
                 reportLines.push('Test case: ' + testcaseLink);
                 reportLines.push('---------------------------------------------');
 
+                // A. [SUMMARY]
                 reportLines.push('A. [SUMMARY]');
                 reportLines.push('1. Scope of testing: ' + scopeText);
                 reportLines.push('2. Testing Status: In-testing');
@@ -1479,6 +1490,7 @@
                 }
                 reportLines.push('---------------------------------------------');
 
+                // B. [TICKETS]
                 const specialTagsList = ['improvement', 'question'];
                 const tagDataMap = {}; 
                 const tagOrder = [];
@@ -1502,7 +1514,13 @@
                             tagOrder.push(tag); 
                         }
                         tagDataMap[tag].counts[priority]++;
-                        tagDataMap[tag].tickets.push({ ticketNumber: getTicketNumber(key), cleanSummary: cleanTicketSummary(summary), priority: priority });
+                        
+                        // LẤY NGUYÊN FULL ISSUE KEY (VD: EJ9686-168)
+                        tagDataMap[tag].tickets.push({ 
+                            fullKey: getFullTicketKey(key), 
+                            cleanSummary: cleanTicketSummary(summary), 
+                            priority: priority 
+                        });
                     });
                 });
 
@@ -1522,24 +1540,39 @@
 
                 if (tagOrder.length > 0) {
                     reportLines.push('B. [TICKETS]');
-                    const toRoman = (num) => { const lookup = {M:1000,CM:900,D:500,CD:400,C:100,XC:90,L:50,XL:40,X:10,IX:9,V:5,IV:4,I:1}; let r = ''; for (let i in lookup) { while (num >= lookup[i]) { r += i; num -= lookup[i]; } } return r; };
+                    const toRoman = (num) => { 
+                        const lookup = {M:1000,CM:900,D:500,CD:400,C:100,XC:90,L:50,XL:40,X:10,IX:9,V:5,IV:4,I:1}; 
+                        let r = ''; 
+                        for (let i in lookup) { 
+                            while (num >= lookup[i]) { r += i; num -= lookup[i]; } 
+                        } 
+                        return r; 
+                    };
 
                     tagOrder.forEach((tag, index) => {
                         reportLines.push(toRoman(index + 1) + '. [' + (tag || '').toUpperCase() + ']');
                         const ticketsList = tagDataMap[tag].tickets;
-                        
+                        const totalTagTickets = ticketsList.length;
+
                         const priorityGroups = {};
                         ticketsList.forEach(t => {
                             if (!priorityGroups[t.priority]) priorityGroups[t.priority] = [];
                             priorityGroups[t.priority].push(t);
                         });
 
+                        const shouldListAll = totalTagTickets < 5 || specialTagsList.includes(tag.toLowerCase());
+
                         ['Highest', 'High', 'Medium', 'Low', 'Lowest', 'Unassigned'].forEach(p => {
                             if (priorityGroups[p] && priorityGroups[p].length > 0) {
                                 reportLines.push('- ' + p + ': ' + priorityGroups[p].length);
-                                priorityGroups[p].forEach(t => {
-                                    reportLines.push('  + Ticket ' + t.ticketNumber + ': ' + t.cleanSummary);
-                                });
+                                
+                                const isHighPriority = ['Highest', 'High'].includes(p);
+                                
+                                if (shouldListAll || isHighPriority) {
+                                    priorityGroups[p].forEach(t => {
+                                        reportLines.push('  + ' + t.fullKey + ': ' + t.cleanSummary);
+                                    });
+                                }
                             }
                         });
 
@@ -1552,6 +1585,7 @@
 
                 reportLines.push('---------------------------------------------');
                 
+                // C. [NOTES]
                 reportLines.push('C. [NOTES]');
                 if (customNotes) {
                     customNotes.split('\n').forEach(line => {
