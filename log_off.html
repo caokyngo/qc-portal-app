@@ -270,6 +270,10 @@
                                         <input type="text" id="reportLinkWebappInput" placeholder="VD: Webapp - Apptek12" class="w-full bg-slate-50 border border-slate-300 text-xs rounded-lg p-2 outline-none font-medium">
                                     </div>
                                     <div>
+                                        <label class="block text-[11px] font-bold text-slate-600 mb-1">Link Jira (hiển thị trong Report):</label>
+                                        <input type="text" id="reportJiraLinkInput" placeholder="VD: https://enotion.atlassian.net/jira/software/projects/EJ9686/boards/1" class="w-full bg-slate-50 border border-slate-300 text-xs rounded-lg p-2 outline-none font-medium">
+                                    </div>
+                                    <div>
                                         <label class="block text-[11px] font-bold text-slate-600 mb-1">Testcase Link:</label>
                                         <input type="text" id="reportTestcaseInput" placeholder="VD: https://docs.google.com/spreadsheets/d/..." class="w-full bg-slate-50 border border-slate-300 text-xs rounded-lg p-2 outline-none font-medium">
                                     </div>
@@ -557,7 +561,6 @@
         function cleanJiraUrlForReport(urlStr) {
             if (!urlStr) return '';
             try {
-                // Decode mã hóa URI rác (như %20, %3D, %2C, %0A) để link phẳng, đẹp và dễ đọc
                 let decoded = decodeURIComponent(urlStr).replace(/[\r\n]+/g, ' ').replace(/\s+/g, ' ').trim();
                 return decoded;
             } catch(e) {
@@ -601,25 +604,25 @@
                 }
 
                 const linkMatch = text.match(/^Link:\s*(.*)/im);
-                if (linkMatch) {
+                if (linkMatch && linkMatch[1].trim()) {
                     if (document.getElementById('reportLinkGeneralInput')) document.getElementById('reportLinkGeneralInput').value = linkMatch[1].trim();
                     filledCount++;
                 }
 
-                const iframeMatch = text.match(/^Iframe:\s*(.*)/im);
-                if (iframeMatch) {
+                const iframeMatch = text.match(/(?:•|-)?\s*Iframe:\s*(.*)/i);
+                if (iframeMatch && iframeMatch[1].trim()) {
                     if (document.getElementById('reportLinkIframeInput')) document.getElementById('reportLinkIframeInput').value = iframeMatch[1].trim();
                     filledCount++;
                 }
 
-                const preprodMatch = text.match(/^Preprod:\s*(.*)/im);
-                if (preprodMatch) {
+                const preprodMatch = text.match(/(?:•|-)?\s*Preprod:\s*(.*)/i);
+                if (preprodMatch && preprodMatch[1].trim()) {
                     if (document.getElementById('reportLinkPreprodInput')) document.getElementById('reportLinkPreprodInput').value = preprodMatch[1].trim();
                     filledCount++;
                 }
 
-                const webappMatch = text.match(/^(?:Webapp|App name|Webapp\/App name):\s*(.*)/im);
-                if (webappMatch) {
+                const webappMatch = text.match(/(?:•|-)?\s*(?:Webapp|App name):\s*(.*)/i);
+                if (webappMatch && webappMatch[1].trim()) {
                     if (document.getElementById('reportLinkWebappInput')) document.getElementById('reportLinkWebappInput').value = webappMatch[1].trim();
                     filledCount++;
                 }
@@ -627,6 +630,7 @@
                 const jiraLinkMatch = text.match(/^Link Jira:\s*(.*)/im);
                 if (jiraLinkMatch) {
                     const jUrl = jiraLinkMatch[1].trim();
+                    if (document.getElementById('reportJiraLinkInput')) document.getElementById('reportJiraLinkInput').value = jUrl;
                     if (document.getElementById('jiraUrlInput')) document.getElementById('jiraUrlInput').value = jUrl;
                     localStorage.setItem('jira_last_url', jUrl);
                     filledCount++;
@@ -718,6 +722,9 @@
             btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Đang tải toàn bộ dữ liệu từ Jira...';
 
             localStorage.setItem('jira_last_url', rawUrl);
+            if (document.getElementById('reportJiraLinkInput') && !document.getElementById('reportJiraLinkInput').value.trim()) {
+                document.getElementById('reportJiraLinkInput').value = cleanJiraUrlForReport(rawUrl);
+            }
 
             let isFinished = false;
             const fetchTimeout = setTimeout(() => {
@@ -1375,7 +1382,7 @@
             });
         }
 
-        // GENERATE REPORT CHUẨN VỚI FULL ISSUE KEY & LINK JIRA ĐÃ ĐƯỢC CHUẨN HÓA GỌN GÀNG
+        // GENERATE REPORT CHUẨN VỚI DANH SÁCH LINK ĐỊNH DẠNG BULLET & FULL NOTE
         async function confirmAndCopyReport(skipTagFilter = false) {
             let allowedTags = [];
             
@@ -1422,9 +1429,10 @@
                 const linkWebapp = document.getElementById('reportLinkWebappInput') ? document.getElementById('reportLinkWebappInput').value.trim() : '';
                 const testcaseLink = document.getElementById('reportTestcaseInput') ? document.getElementById('reportTestcaseInput').value.trim() : '';
                 
-                // LẤY VÀ LÀM GỌN LINK JIRA ĐÃ NHẬP
+                // LẤY LINK JIRA TỪ Ô CẤU HÌNH BÁO CÁO (ƯU TIÊN) HOẶC LINK DÁN TẢI DATA
+                const reportJiraLink = document.getElementById('reportJiraLinkInput') ? document.getElementById('reportJiraLinkInput').value.trim() : '';
                 const rawJiraInputUrl = document.getElementById('jiraUrlInput') ? document.getElementById('jiraUrlInput').value.trim() : '';
-                const jiraLastUrl = cleanJiraUrlForReport(rawJiraInputUrl || localStorage.getItem('jira_last_url') || '');
+                const jiraLastUrl = cleanJiraUrlForReport(reportJiraLink || rawJiraInputUrl || localStorage.getItem('jira_last_url') || '');
                 
                 const customNotes = document.getElementById('reportNotesInput') ? document.getElementById('reportNotesInput').value.trim() : '';
                 const metadataText = document.getElementById('reportMetadataInput') ? document.getElementById('reportMetadataInput').value.trim() : '';
@@ -1479,10 +1487,29 @@
                 reportLines.push('Version game: ' + (verGame || 'vx.x.x (dd/mm/yyyy)'));
                 reportLines.push('Version App: ' + verApp);
                 reportLines.push('Env: ' + (envText || 'Iframe/App/WebApp - Internal Staging'));
-                if (linkGen) reportLines.push('Link: ' + linkGen);
-                if (linkIframe) reportLines.push('Iframe: ' + linkIframe);
-                if (linkPreprod) reportLines.push('Preprod: ' + linkPreprod);
-                if (linkWebapp) reportLines.push('Webapp/App name: ' + linkWebapp);
+
+                // CẬP NHẬT TRÌNH BÀY PHẦN LINK DẠNG GẠCH ĐẦU DÒNG (•) ĐÚNG THEO MẪU MỚI
+                let linkHeader = 'Link:';
+                if (linkGen) linkHeader += ' ' + linkGen;
+                reportLines.push(linkHeader);
+
+                if (linkIframe) reportLines.push('  • Iframe: ' + linkIframe);
+                if (linkPreprod) reportLines.push('  • Preprod: ' + linkPreprod);
+                if (linkWebapp) {
+                    if (linkWebapp.includes('\n')) {
+                        linkWebapp.split('\n').forEach(l => {
+                            if (l.trim()) {
+                                if (l.trim().startsWith('•') || l.trim().startsWith('-')) reportLines.push('  ' + l.trim());
+                                else reportLines.push('  • ' + l.trim());
+                            }
+                        });
+                    } else if (linkWebapp.toLowerCase().startsWith('webapp:') || linkWebapp.toLowerCase().startsWith('app name:')) {
+                        reportLines.push('  • ' + linkWebapp);
+                    } else {
+                        reportLines.push('  • Webapp: ' + linkWebapp);
+                    }
+                }
+
                 reportLines.push('Link Jira: ' + jiraLastUrl);
                 reportLines.push('Test case: ' + testcaseLink);
                 reportLines.push('---------------------------------------------');
