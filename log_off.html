@@ -266,16 +266,12 @@
                                             <span class="font-bold text-indigo-900">Link Iframe</span>
                                         </label>
                                         <label class="inline-flex items-center gap-1.5 cursor-pointer bg-indigo-50/60 hover:bg-indigo-100 px-2.5 py-1.5 rounded-lg border border-indigo-200 transition">
-                                            <input type="checkbox" id="cbJira" checked onchange="toggleLinkInputs()" class="rounded text-indigo-600 focus:ring-indigo-500">
+                                            <input type="checkbox" id="cbJira" checked class="rounded text-indigo-600 focus:ring-indigo-500">
                                             <span class="font-bold text-indigo-900">Link Jira</span>
                                         </label>
                                         <label class="inline-flex items-center gap-1.5 cursor-pointer bg-indigo-50/60 hover:bg-indigo-100 px-2.5 py-1.5 rounded-lg border border-indigo-200 transition">
                                             <input type="checkbox" id="cbTestcase" checked onchange="toggleLinkInputs()" class="rounded text-indigo-600 focus:ring-indigo-500">
                                             <span class="font-bold text-indigo-900">Link Testcase</span>
-                                        </label>
-                                        <label class="inline-flex items-center gap-1.5 cursor-pointer bg-slate-100 hover:bg-slate-200 px-2.5 py-1.5 rounded-lg border border-slate-200 transition">
-                                            <input type="checkbox" id="cbGeneral" onchange="toggleLinkInputs()" class="rounded text-indigo-600 focus:ring-indigo-500">
-                                            <span class="font-bold text-slate-700">General Link</span>
                                         </label>
                                         <label class="inline-flex items-center gap-1.5 cursor-pointer bg-slate-100 hover:bg-slate-200 px-2.5 py-1.5 rounded-lg border border-slate-200 transition">
                                             <input type="checkbox" id="cbPreprod" onchange="toggleLinkInputs()" class="rounded text-indigo-600 focus:ring-indigo-500">
@@ -287,22 +283,14 @@
                                         </label>
                                     </div>
 
-                                    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
                                         <div id="fieldIframe">
                                             <label class="block text-[11px] font-bold text-slate-600 mb-1">Link Iframe (theo lang):</label>
                                             <input type="text" id="reportLinkIframeInput" placeholder="VD: https://iframe..." class="w-full bg-slate-50 border border-slate-300 text-xs rounded-lg p-2 outline-none font-medium">
                                         </div>
-                                        <div id="fieldJira">
-                                            <label class="block text-[11px] font-bold text-slate-600 mb-1">Link Jira (hiển thị trong Report):</label>
-                                            <input type="text" id="reportJiraLinkInput" placeholder="VD: https://enotion.atlassian.net/jira/software/projects/EJ9686/boards/1" class="w-full bg-slate-50 border border-slate-300 text-xs rounded-lg p-2 outline-none font-medium">
-                                        </div>
                                         <div id="fieldTestcase">
                                             <label class="block text-[11px] font-bold text-slate-600 mb-1">Testcase Link:</label>
                                             <input type="text" id="reportTestcaseInput" placeholder="VD: https://docs.google.com/spreadsheets/d/..." class="w-full bg-slate-50 border border-slate-300 text-xs rounded-lg p-2 outline-none font-medium">
-                                        </div>
-                                        <div id="fieldGeneral" class="hidden">
-                                            <label class="block text-[11px] font-bold text-slate-600 mb-1">Link General / Game Link:</label>
-                                            <input type="text" id="reportLinkGeneralInput" placeholder="VD: https://staging..." class="w-full bg-slate-50 border border-slate-300 text-xs rounded-lg p-2 outline-none font-medium">
                                         </div>
                                         <div id="fieldPreprod" class="hidden">
                                             <label class="block text-[11px] font-bold text-slate-600 mb-1">Preprod Link (nếu có):</label>
@@ -549,8 +537,12 @@
     </div>
 
     <script>
-        const JIRA_PROXY_API_URL = "https://script.google.com/a/macros/enotion.io/s/AKfycbxPildwCueaf6amysgKyXwjVR3gW_autSZOb8Aacj81Dta29Pr3S4qWySdbuudM1XSK/exec";
+        const JIRA_PROXY_API_URL = "https://script.google.com/a/macros/enotion.io/s/AKfycbz948vll_3cMrDw3Vnj4CLVqbxyyfMPI87iUo9U_3HSQPralPZmySydiI0CXZ636FHl/exec";
         const URL_REPORT_API = "https://script.google.com/macros/s/AKfycbzynUh65kMWVtwRdYdg8x35-6LViA_JwMPrWhEoMdDXFDP7tpcheilYrReQSIrQ6zAtIQ/exec";
+
+        let currentBoardId = null;
+        let currentProjectKey = null;
+        let currentJiraDomain = null;
 
         function toggleSidebar() {
             const sidebar = document.getElementById('mainSidebar');
@@ -597,9 +589,7 @@
         function toggleLinkInputs() {
             const linkConfigs = [
                 { cb: 'cbIframe', field: 'fieldIframe' },
-                { cb: 'cbJira', field: 'fieldJira' },
                 { cb: 'cbTestcase', field: 'fieldTestcase' },
-                { cb: 'cbGeneral', field: 'fieldGeneral' },
                 { cb: 'cbPreprod', field: 'fieldPreprod' },
                 { cb: 'cbWebapp', field: 'fieldWebapp' }
             ];
@@ -615,17 +605,6 @@
                     }
                 }
             });
-        }
-
-        // HÀM CHUẨN HÓA & LÀM GỌN LINK JIRA CHO BÁO CÁO
-        function cleanJiraUrlForReport(urlStr) {
-            if (!urlStr) return '';
-            try {
-                let decoded = decodeURIComponent(urlStr).replace(/[\r\n]+/g, ' ').replace(/\s+/g, ' ').trim();
-                return decoded;
-            } catch(e) {
-                return urlStr;
-            }
         }
 
         // HÀM AUTO-FILL BÁO CÁO CŨ TỪ CLIPBOARD
@@ -663,13 +642,6 @@
                     filledCount++;
                 }
 
-                const linkMatch = text.match(/^Link:\s*(.*)/im);
-                if (linkMatch && linkMatch[1].trim()) {
-                    if (document.getElementById('reportLinkGeneralInput')) document.getElementById('reportLinkGeneralInput').value = linkMatch[1].trim();
-                    if (document.getElementById('cbGeneral')) document.getElementById('cbGeneral').checked = true;
-                    filledCount++;
-                }
-
                 const iframeMatch = text.match(/^\s*(?:[•\-\*]\s*)?Iframe:\s*(.*)/im);
                 if (iframeMatch && iframeMatch[1].trim()) {
                     if (document.getElementById('reportLinkIframeInput')) document.getElementById('reportLinkIframeInput').value = iframeMatch[1].trim();
@@ -693,11 +665,7 @@
 
                 const jiraLinkMatch = text.match(/^Link Jira:\s*(.*)/im);
                 if (jiraLinkMatch) {
-                    const jUrl = jiraLinkMatch[1].trim();
-                    if (document.getElementById('reportJiraLinkInput')) document.getElementById('reportJiraLinkInput').value = jUrl;
-                    if (document.getElementById('jiraUrlInput')) document.getElementById('jiraUrlInput').value = jUrl;
                     if (document.getElementById('cbJira')) document.getElementById('cbJira').checked = true;
-                    localStorage.setItem('jira_last_url', jUrl);
                     filledCount++;
                 }
 
@@ -790,9 +758,6 @@
             btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Đang tải toàn bộ dữ liệu từ Jira...';
 
             localStorage.setItem('jira_last_url', rawUrl);
-            if (document.getElementById('reportJiraLinkInput') && !document.getElementById('reportJiraLinkInput').value.trim()) {
-                document.getElementById('reportJiraLinkInput').value = cleanJiraUrlForReport(rawUrl);
-            }
 
             let isFinished = false;
             const fetchTimeout = setTimeout(() => {
@@ -829,6 +794,11 @@
                     return;
                 }
 
+                // Lưu lại Board ID và Project Key
+                currentBoardId = json.boardId || null;
+                currentProjectKey = json.projectKey || parsed.projectName;
+                currentJiraDomain = parsed.domain;
+
                 const issues = json.issues || [];
                 if (issues.length === 0) {
                     showCustomAlert("Thông báo", "Không tìm thấy ticket nào từ đường link Jira này!", true);
@@ -846,7 +816,7 @@
                     };
                 });
 
-                document.getElementById('jiraProjectName').innerText = parsed.projectName || "Jira Filter";
+                document.getElementById('jiraProjectName').innerText = currentProjectKey || "Jira Filter";
                 document.getElementById('fileInfo').classList.remove('hidden');
                 document.getElementById('jiraUrlSection').classList.add('hidden');
                 document.getElementById('reportDashboard').classList.remove('hidden');
@@ -854,7 +824,7 @@
                 buildDynamicStatusFilters();
                 processData();
 
-                showCustomAlert("Thành công!", "Đã xác thực tài khoản " + loggedInUser.email + " & tải thành công " + rawJiraData.length + " ticket từ Jira!");
+                showCustomAlert("Thành công!", "Đã tải thành công " + rawJiraData.length + " ticket từ Jira!");
             };
 
             const existingScript = document.getElementById('jiraJsonpScript');
@@ -1451,7 +1421,7 @@
             });
         }
 
-        // GENERATE REPORT CHUẨN: CHỈ HIỂN THỊ CÁC MỤC CÓ DỮ LIỆU/ĐƯỢC CHỌN
+        // GENERATE REPORT CHUẨN: TỰ ĐỘNG SINH LINK JIRA TỪ PROJECT KEY VÀ BOARD ID
         async function confirmAndCopyReport(skipTagFilter = false) {
             let allowedTags = [];
             
@@ -1497,19 +1467,25 @@
                 const isIframeChecked = document.getElementById('cbIframe') ? document.getElementById('cbIframe').checked : false;
                 const isJiraChecked = document.getElementById('cbJira') ? document.getElementById('cbJira').checked : false;
                 const isTestcaseChecked = document.getElementById('cbTestcase') ? document.getElementById('cbTestcase').checked : false;
-                const isGeneralChecked = document.getElementById('cbGeneral') ? document.getElementById('cbGeneral').checked : false;
                 const isPreprodChecked = document.getElementById('cbPreprod') ? document.getElementById('cbPreprod').checked : false;
                 const isWebappChecked = document.getElementById('cbWebapp') ? document.getElementById('cbWebapp').checked : false;
 
-                const linkGen = document.getElementById('reportLinkGeneralInput') ? document.getElementById('reportLinkGeneralInput').value.trim() : '';
                 const linkIframe = document.getElementById('reportLinkIframeInput') ? document.getElementById('reportLinkIframeInput').value.trim() : '';
                 const linkPreprod = document.getElementById('reportLinkPreprodInput') ? document.getElementById('reportLinkPreprodInput').value.trim() : '';
                 const linkWebapp = document.getElementById('reportLinkWebappInput') ? document.getElementById('reportLinkWebappInput').value.trim() : '';
                 const testcaseLink = document.getElementById('reportTestcaseInput') ? document.getElementById('reportTestcaseInput').value.trim() : '';
                 
-                const reportJiraLink = document.getElementById('reportJiraLinkInput') ? document.getElementById('reportJiraLinkInput').value.trim() : '';
-                const rawJiraInputUrl = document.getElementById('jiraUrlInput') ? document.getElementById('jiraUrlInput').value.trim() : '';
-                const jiraLastUrl = cleanJiraUrlForReport(reportJiraLink || rawJiraInputUrl || localStorage.getItem('jira_last_url') || '');
+                // TỰ ĐỘNG SINH LINK JIRA THEO CHUẨN KHI TÍCH CHỌN "Link Jira"
+                let generatedJiraLink = "";
+                if (currentProjectKey && currentJiraDomain) {
+                    generatedJiraLink = `${currentJiraDomain}/jira/software/projects/${currentProjectKey}/boards`;
+                    if (currentBoardId) {
+                        generatedJiraLink += `/${currentBoardId}`;
+                    }
+                } else {
+                    // Fallback nếu không có projectKey
+                    generatedJiraLink = document.getElementById('jiraUrlInput') ? document.getElementById('jiraUrlInput').value.trim() : '';
+                }
                 
                 const customNotes = document.getElementById('reportNotesInput') ? document.getElementById('reportNotesInput').value.trim() : '';
                 const metadataText = document.getElementById('reportMetadataInput') ? document.getElementById('reportMetadataInput').value.trim() : '';
@@ -1566,17 +1542,16 @@
                 if (envText) reportLines.push('Env: ' + envText);
                 
                 // SECTION LINKS DẠNG CÂY BULLET (CHỈ HIỂN THỊ NẾU ĐƯỢC CHỌN & CÓ GIÁ TRỊ)
-                const hasGeneralLink = isGeneralChecked && linkGen;
                 const hasSubLinks = (isIframeChecked && linkIframe) || (isPreprodChecked && linkPreprod) || (isWebappChecked && linkWebapp);
 
-                if (hasGeneralLink || hasSubLinks) {
-                    reportLines.push('Link:' + (hasGeneralLink ? ' ' + linkGen : ''));
+                if (hasSubLinks) {
+                    reportLines.push('Link:');
                     if (isIframeChecked && linkIframe) reportLines.push('  • Iframe: ' + linkIframe);
                     if (isPreprodChecked && linkPreprod) reportLines.push('  • Preprod: ' + linkPreprod);
                     if (isWebappChecked && linkWebapp) reportLines.push('  • Webapp: ' + linkWebapp);
                 }
                 
-                if (isJiraChecked && jiraLastUrl) reportLines.push('Link Jira: ' + jiraLastUrl);
+                if (isJiraChecked && generatedJiraLink) reportLines.push('Link Jira: ' + generatedJiraLink);
                 if (isTestcaseChecked && testcaseLink) reportLines.push('Test case: ' + testcaseLink);
                 reportLines.push('---------------------------------------------');
 
