@@ -433,7 +433,7 @@
 
     <script>
         // CẬP NHẬT ĐƯỜNG LINK WEB APP GOOGLE APPS SCRIPT MỚI NHẤT
-        const JIRA_PROXY_API_URL = "https://script.google.com/a/macros/enotion.io/s/AKfycbw5XGKg1yYtVD8mXp_3kcXiKXM6jnvtMLBJVK5X6aZ7hyNzxj6b-3g9D-PgudEXteMs/exec";
+        const JIRA_PROXY_API_URL = "https://script.google.com/a/macros/enotion.io/s/AKfycbwxoCNnIyGZKuEXWy5yMMP1ZP2IZuTv7m4kJqxYV-yyAcBZvzTCSWZn7fTje75Qn3GP/exec";
         const URL_REPORT_API = "https://script.google.com/macros/s/AKfycbzynUh65kMWVtwRdYdg8x35-6LViA_JwMPrWhEoMdDXFDP7tpcheilYrReQSIrQ6zAtIQ/exec";
 
         function toggleSidebar() {
@@ -484,6 +484,7 @@
             rawJiraData = [];
         }
 
+        // TỐI ƯU HÀM PARSE JIRA URL: GIẢI MÃ CHUẨN CÚ PHÁP JQL PHỨC TẠP
         function parseJiraUrl(urlStr) {
             try {
                 const url = new URL(urlStr);
@@ -492,7 +493,7 @@
                 let projectName = "";
 
                 if (url.searchParams.has('jql')) {
-                    jql = url.searchParams.get('jql');
+                    jql = decodeURIComponent(url.searchParams.get('jql'));
                     const projMatch = jql.match(/project\s*=\s*["']?([a-zA-Z0-9_]+)["']?/i);
                     if (projMatch && projMatch[1]) projectName = projMatch[1];
                 } else {
@@ -506,7 +507,6 @@
             } catch (e) { return null; }
         }
 
-        // TẢI DỮ LIỆU TỪ JIRA BẰNG CƠ CHẾ JSONP CÓ BỘ TIMEOUT CHỐNG TREO
         function fetchJiraDataFromUrl() {
             if (!loggedInUser) {
                 showCustomAlert("Yêu cầu đăng nhập", "Vui lòng Đăng nhập tài khoản Google công ty (@enotion.io) trước khi tải dữ liệu!", true);
