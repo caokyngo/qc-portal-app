@@ -9,13 +9,12 @@
     <title>QC Portal - Báo Cáo Daily</title>
     
     <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#312e81">
-    
+
     <script>
         let loggedInUser = null;
 
@@ -32,11 +31,14 @@
             const responsePayload = decodeJwtResponse(response.credential);
             loggedInUser = { name: responsePayload.name, email: responsePayload.email, picture: responsePayload.picture };
             localStorage.setItem('jira_google_user', JSON.stringify(loggedInUser));
-            if (typeof updateAuthUI === 'function') updateAuthUI();
+            if (typeof updateAuthUI === 'function') {
+                updateAuthUI();
+            }
         }
     </script>
     <script src="https://accounts.google.com/gsi/client" async defer></script>
 
+    <!-- Script PWA Auto Update -->
     <script>
       if ('serviceWorker' in navigator) {
         window.addEventListener('load', () => {
@@ -46,12 +48,11 @@
               const installingWorker = reg.installing;
               installingWorker.onstatechange = () => {
                 if (installingWorker.state === 'installed' && navigator.serviceWorker.controller) {
-                  console.log('Có phiên bản code mới! Đang tự động tải lại...');
                   window.location.reload();
                 }
               };
             };
-          });
+          }).catch(err => console.log('SW error:', err));
         });
       }
     </script>
@@ -60,21 +61,18 @@
         .travel-marquee { width: 100%; max-width: 460px; overflow: hidden; mask-image: linear-gradient(to right, transparent, black 8%, black 92%, transparent); -webkit-mask-image: linear-gradient(to right, transparent, black 8%, black 92%, transparent); }
         .travel-marquee-track { display: flex; width: max-content; animation: travel-marquee-scroll 18s linear infinite; will-change: transform; }
         .travel-marquee-group { display: flex; flex: 0 0 auto; align-items: center; padding-right: 2.5rem; gap: 2.5rem; }
-        .travel-marquee-message { display: inline-flex; align-items: center; gap: 0.4rem; white-space: nowrap; font-family: 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; font-size: 16px; font-weight: 800; letter-spacing: 0.2px; line-height: 1.5; background: linear-gradient(90deg, #ea580c 0%, #d97706 50%, #ca8a04 100%); -webkit-background-clip: text; background-clip: text; color: transparent; animation: travel-blink 1.2s infinite ease-in-out; }
+        .travel-marquee-message { display: inline-flex; items-center; gap: 0.4rem; white-space: nowrap; font-family: 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; font-size: 16px; font-weight: 800; background: linear-gradient(90deg, #ea580c 0%, #d97706 50%, #ca8a04 100%); -webkit-background-clip: text; background-clip: text; color: transparent; animation: travel-blink 1.2s infinite ease-in-out; }
         .travel-marquee-message i { color: #ea580c; font-size: 15.5px; }
         .travel-marquee-count { font-size: 17px; font-weight: 900; background: linear-gradient(90deg, #c2410c 0%, #ea580c 100%); -webkit-background-clip: text; background-clip: text; color: transparent; padding: 0 2px; }
         @keyframes travel-marquee-scroll { to { transform: translateX(-50%); } }
         @keyframes travel-blink { 0%, 100% { opacity: 1; filter: drop-shadow(0 0 1px rgba(234, 88, 12, 0.4)); } 50% { opacity: 0.45; filter: drop-shadow(0 0 5px rgba(234, 88, 12, 0.7)); } }
-        @media (prefers-reduced-motion: reduce) { .travel-marquee-track { animation: none; transform: none; } .travel-marquee-group[aria-hidden="true"] { display: none; } }
-        .soft-text { letter-spacing: 0.1px; }
     </style>
 </head>
-<body class="bg-slate-50 text-slate-800 font-sans h-screen w-full flex overflow-hidden">
+<body class="bg-slate-50 text-slate-800 font-sans h-screen w-full flex flex-col md:flex-row overflow-hidden">
 
-    <!-- OVERLAY ĐEN CHO MOBILE KHI MỞ MENU -->
     <div id="sidebarOverlay" onclick="toggleSidebar()" class="fixed inset-0 bg-slate-900/60 z-40 hidden md:hidden backdrop-blur-sm transition-opacity opacity-0"></div>
 
-    <!-- ================= SIDEBAR MENU RESPONSIVE (BACKGROUND TRÙNG KHÁNH) ================= -->
+     <!-- ================= SIDEBAR MENU RESPONSIVE (BACKGROUND TRÙNG KHÁNH) ================= -->
     <aside id="mainSidebar" class="fixed md:relative top-0 left-0 h-screen w-[260px] md:w-64 text-white flex flex-col flex-shrink-0 shadow-2xl z-50 transition-transform duration-300 -translate-x-full md:translate-x-0 bg-cover bg-center bg-no-repeat"
            style="background-image: linear-gradient(to bottom, rgba(15, 23, 42, 0.65), rgba(30, 27, 75, 0.75)), url('./trungkhanh.jpg');">
         
@@ -105,22 +103,16 @@
             <a href="device_info" class="whitespace-nowrap flex items-center gap-3 px-4 py-3.5 text-sm font-bold rounded-xl transition border border-white/15 bg-white/10 hover:bg-white/25 hover:border-white/40 text-white backdrop-blur-md shadow-sm">
                 <i class="fa-solid fa-circle-info w-5 text-center text-lg"></i> <span>Thông tin Device</span>
             </a>
-            
-            <a href="log_off" class="whitespace-nowrap flex items-center gap-3 px-4 py-3.5 text-sm font-bold rounded-xl transition border border-white/15 bg-white/10 hover:bg-white/25 hover:border-white/40 text-white backdrop-blur-md shadow-sm">
-                <i class="fa-solid fa-calendar-minus w-5 text-center text-lg"></i> <span>Xin OFF / WFH</span>
-            </a>
         </nav>
     </aside>
 
-    <!-- ================= MAIN CONTENT ================= -->
     <div class="flex-1 flex flex-col h-full overflow-hidden bg-slate-50 relative">
         <header class="bg-white text-slate-800 shadow-sm border-b border-slate-200 z-10 p-3 px-4 md:px-6 flex justify-between items-center min-h-[72px]">
             <div class="flex items-center gap-3 flex-1 shrink-0">
-                <!-- Nút Hamburger Mở Menu trên Mobile -->
                 <button onclick="toggleSidebar()" class="md:hidden text-slate-500 hover:text-indigo-600 focus:outline-none p-1 transition">
                     <i class="fa-solid fa-bars text-xl"></i>
                 </button>
-                <h2 class="text-xl font-bold text-slate-800 hidden sm:block">Báo Cáo Daily (Jira)</h2>
+                <h2 class="text-xl font-bold text-slate-800 hidden sm:block">Báo Cáo Daily (Jira Auto-Auth)</h2>
                 <h2 class="text-lg font-bold text-slate-800 sm:hidden">Báo Cáo Daily</h2>
             </div>
             
@@ -155,9 +147,9 @@
 
             <div class="flex-1 flex justify-end items-center gap-4">
                 <div id="fileInfo" class="hidden flex items-center gap-3 bg-indigo-50 px-4 py-2 rounded-xl border border-indigo-100 text-xs shadow-sm">
-                    <div><span class="text-indigo-400 font-medium">Đang xử lý:</span> <strong id="fileName" class="text-indigo-800 font-bold"></strong></div>
-                    <button onclick="changeJiraFile()" class="px-2.5 py-1.5 bg-indigo-600 hover:bg-indigo-500 text-white text-[11px] font-bold rounded-lg transition flex items-center gap-1.5 shadow-sm">
-                        <i class="fa-solid fa-arrows-rotate"></i> Đổi File
+                    <div><span class="text-indigo-400 font-medium">Jira Project:</span> <strong id="jiraProjectName" class="text-indigo-800 font-bold">---</strong></div>
+                    <button onclick="changeJiraProject()" class="px-2.5 py-1.5 bg-indigo-600 hover:bg-indigo-500 text-white text-[11px] font-bold rounded-lg transition flex items-center gap-1.5 shadow-sm">
+                        <i class="fa-solid fa-arrows-rotate"></i> Đổi Link Jira
                     </button>
                 </div>
                 
@@ -186,28 +178,142 @@
 
         <main class="flex-1 overflow-y-auto p-4 md:p-6 bg-slate-50">
             <div class="w-full mx-auto 2xl:max-w-[1600px] space-y-6">
-                <!-- Upload Box -->
-                <section id="uploadSection" class="bg-white rounded-2xl shadow-sm border border-slate-200 p-8 w-full max-w-4xl mx-auto mt-4">
-                    <div id="dropZone" class="border-2 border-dashed border-indigo-300 hover:border-indigo-500 rounded-xl p-10 text-center bg-indigo-50/30 transition cursor-pointer">
-                        <input type="file" id="excelFileInput" accept=".xlsx, .xls, .csv" class="hidden">
-                        <div class="space-y-4">
-                            <div class="w-20 h-20 bg-indigo-100 text-indigo-600 rounded-full flex items-center justify-center mx-auto text-3xl shadow-inner">
-                                <i class="fa-solid fa-file-excel"></i>
-                            </div>
-                            <div>
-                                <p class="text-lg font-bold text-slate-700">Tải lên file Jira Excel (.xlsx, .xls) hoặc CSV</p>
-                                <p class="text-sm text-slate-500 mt-2">Kéo thả file trực tiếp vào khu vực này hoặc bấm để chọn file từ máy tính của bạn</p>
-                            </div>
-                            <button type="button" onclick="event.stopPropagation(); document.getElementById('excelFileInput').click()" class="mt-4 inline-flex items-center gap-2 px-6 py-3 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl shadow-sm transition">
-                                <i class="fa-solid fa-upload"></i> Chọn file từ máy
-                            </button>
+                
+                <!-- KHUNG NHẬP LINK JIRA -->
+                <section id="jiraUrlSection" class="bg-white rounded-2xl shadow-sm border border-slate-200 p-6 sm:p-8 w-full max-w-4xl mx-auto mt-4 space-y-6">
+                    <div class="text-center space-y-2">
+                        <div class="w-16 h-16 bg-indigo-100 text-indigo-600 rounded-2xl flex items-center justify-center mx-auto text-3xl shadow-inner">
+                            <i class="fa-brands fa-jira"></i>
                         </div>
+                        <h2 class="text-xl font-bold text-slate-800">Tải Dữ Liệu Báo Cáo Từ Jira</h2>
+                        <p class="text-xs text-slate-500 max-w-md mx-auto">Dán đường link dự án hoặc Filter Jira (yêu cầu đăng nhập tài khoản Google có quyền truy cập Jira).</p>
+                    </div>
+
+                    <div class="space-y-4">
+                        <div>
+                            <div class="flex justify-between items-center mb-1.5">
+                                <label class="block text-xs font-bold text-slate-700"><i class="fa-solid fa-link text-indigo-500 mr-1"></i> Link Jira List / Project / Filter URL <span class="text-rose-500">*</span></label>
+                                <button type="button" onclick="pasteReportFromClipboard()" class="text-xs text-indigo-600 hover:text-indigo-800 font-bold flex items-center gap-1 transition">
+                                    <i class="fa-solid fa-paste"></i> Dán từ Clipboard (Auto-fill)
+                                </button>
+                            </div>
+                            <input type="url" id="jiraUrlInput" placeholder="VD: https://enotion.atlassian.net/jira/software/c/projects/KTFMLMC/issues" class="w-full h-12 bg-slate-50 border border-slate-300 text-slate-800 text-sm font-medium rounded-xl px-4 focus:ring-2 focus:ring-indigo-500 focus:bg-white outline-none transition shadow-sm">
+                        </div>
+
+                        <!-- THÔNG BÁO XÁC THỰC -->
+                        <div class="flex items-center gap-2 text-xs text-slate-500 bg-slate-50 p-3 rounded-xl border border-slate-200">
+                            <i class="fa-solid fa-shield-halved text-emerald-600 text-sm"></i>
+                            <span>Hệ thống tự động xác thực bằng tài khoản Google đã đăng nhập.</span>
+                        </div>
+
+                        <button type="button" id="btnFetchJira" onclick="fetchJiraDataFromUrl()" class="w-full h-12 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl shadow-md transition flex items-center justify-center gap-2 text-sm">
+                            <i class="fa-solid fa-cloud-arrow-down"></i> Tải Dữ Liệu Báo Cáo Từ Jira
+                        </button>
                     </div>
                 </section>
 
-                <!-- Dynamic Dashboard Container -->
                 <div id="reportDashboard" class="hidden space-y-6">
                     <div id="mainDashboardView" class="space-y-6">
+                        
+                        <!-- CẤU HÌNH THÔNG TIN BÁO CÁO HEADER & FOOTER -->
+                        <section class="bg-white rounded-xl shadow-sm border border-slate-200 p-4 sm:p-5 space-y-4 w-full">
+                            <div class="flex items-center justify-between border-b border-slate-100 pb-3">
+                                <h3 class="text-base font-bold text-slate-800 flex items-center gap-2">
+                                    <i class="fa-solid fa-file-signature text-indigo-600"></i> Cấu hình Thông tin Báo Cáo Daily
+                                </h3>
+                                <div class="flex items-center gap-3">
+                                    <button type="button" onclick="pasteReportFromClipboard()" class="text-xs bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-200 px-3 py-1.5 rounded-lg font-bold flex items-center gap-1.5 transition shadow-sm">
+                                        <i class="fa-solid fa-paste"></i> Dán từ Clipboard (Auto-fill)
+                                    </button>
+                                    <button type="button" onclick="document.getElementById('reportHeaderConfigBody').classList.toggle('hidden')" class="text-xs text-indigo-600 font-bold hover:underline">
+                                        Ẩn/Hiện Cấu hình
+                                    </button>
+                                </div>
+                            </div>
+
+                            <div id="reportHeaderConfigBody" class="space-y-4">
+                                <!-- HEADER REPORT PARAMS (THÔNG TIN CHUNG) -->
+                                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+                                    <div>
+                                        <label class="block text-[11px] font-bold text-slate-600 mb-1">ID & Game Name:</label>
+                                        <input type="text" id="reportGameNameInput" oninput="saveHeaderConfig()" placeholder="VD: 5980 - Gold Digger" class="w-full bg-slate-50 border border-slate-300 text-xs rounded-lg p-2 outline-none font-medium">
+                                    </div>
+                                    <div>
+                                        <label class="block text-[11px] font-bold text-slate-600 mb-1">Version Game & Ngày build:</label>
+                                        <input type="text" id="reportVersionGameInput" oninput="saveHeaderConfig()" placeholder="VD: v1.0.0 (02/10/2026)" class="w-full bg-slate-50 border border-slate-300 text-xs rounded-lg p-2 outline-none font-medium">
+                                    </div>
+                                    <div>
+                                        <label class="block text-[11px] font-bold text-slate-600 mb-1">Version App:</label>
+                                        <input type="text" id="reportVersionAppInput" oninput="saveHeaderConfig()" placeholder="VD: v2.1.0" class="w-full bg-slate-50 border border-slate-300 text-xs rounded-lg p-2 outline-none font-medium">
+                                    </div>
+                                    <div>
+                                        <label class="block text-[11px] font-bold text-slate-600 mb-1">Môi trường Test (Env):</label>
+                                        <input type="text" id="reportEnvInput" oninput="saveHeaderConfig()" placeholder="VD: Iframe/App - Internal Staging" class="w-full bg-slate-50 border border-slate-300 text-xs rounded-lg p-2 outline-none font-medium">
+                                    </div>
+                                </div>
+
+                                <!-- DYNAMIC LINK SELECTOR & INPUTS -->
+                                <div class="border-t border-slate-100 pt-3">
+                                    <label class="block text-xs font-bold text-slate-700 mb-2">
+                                        <i class="fa-solid fa-link text-indigo-500 mr-1"></i> Chọn các loại Link hiển thị trong Báo Cáo:
+                                    </label>
+                                    <div class="flex flex-wrap gap-3 text-xs font-medium text-slate-700 mb-3">
+                                        <label class="inline-flex items-center gap-1.5 cursor-pointer bg-indigo-50/60 hover:bg-indigo-100 px-2.5 py-1.5 rounded-lg border border-indigo-200 transition">
+                                            <input type="checkbox" id="cbIframe" checked onchange="toggleLinkInputs(); saveHeaderConfig();" class="rounded text-indigo-600 focus:ring-indigo-500">
+                                            <span class="font-bold text-indigo-900">Link Iframe</span>
+                                        </label>
+                                        <label class="inline-flex items-center gap-1.5 cursor-pointer bg-indigo-50/60 hover:bg-indigo-100 px-2.5 py-1.5 rounded-lg border border-indigo-200 transition">
+                                            <input type="checkbox" id="cbJira" checked onchange="saveHeaderConfig();" class="rounded text-indigo-600 focus:ring-indigo-500">
+                                            <span class="font-bold text-indigo-900">Link Jira</span>
+                                        </label>
+                                        <label class="inline-flex items-center gap-1.5 cursor-pointer bg-indigo-50/60 hover:bg-indigo-100 px-2.5 py-1.5 rounded-lg border border-indigo-200 transition">
+                                            <input type="checkbox" id="cbTestcase" checked onchange="toggleLinkInputs(); saveHeaderConfig();" class="rounded text-indigo-600 focus:ring-indigo-500">
+                                            <span class="font-bold text-indigo-900">Link Testcase</span>
+                                        </label>
+                                        <label class="inline-flex items-center gap-1.5 cursor-pointer bg-slate-100 hover:bg-slate-200 px-2.5 py-1.5 rounded-lg border border-slate-200 transition">
+                                            <input type="checkbox" id="cbPreprod" onchange="toggleLinkInputs(); saveHeaderConfig();" class="rounded text-indigo-600 focus:ring-indigo-500">
+                                            <span class="font-bold text-slate-700">Preprod</span>
+                                        </label>
+                                        <label class="inline-flex items-center gap-1.5 cursor-pointer bg-slate-100 hover:bg-slate-200 px-2.5 py-1.5 rounded-lg border border-slate-200 transition">
+                                            <input type="checkbox" id="cbWebapp" onchange="toggleLinkInputs(); saveHeaderConfig();" class="rounded text-indigo-600 focus:ring-indigo-500">
+                                            <span class="font-bold text-slate-700">Webapp / App name</span>
+                                        </label>
+                                    </div>
+
+                                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                        <div id="fieldIframe">
+                                            <label class="block text-[11px] font-bold text-slate-600 mb-1">Link Iframe (theo lang):</label>
+                                            <input type="text" id="reportLinkIframeInput" oninput="saveHeaderConfig()" placeholder="VD: https://iframe..." class="w-full bg-slate-50 border border-slate-300 text-xs rounded-lg p-2 outline-none font-medium">
+                                        </div>
+                                        <div id="fieldTestcase">
+                                            <label class="block text-[11px] font-bold text-slate-600 mb-1">Testcase Link:</label>
+                                            <input type="text" id="reportTestcaseInput" oninput="saveHeaderConfig()" placeholder="VD: https://docs.google.com/spreadsheets/d/..." class="w-full bg-slate-50 border border-slate-300 text-xs rounded-lg p-2 outline-none font-medium">
+                                        </div>
+                                        <div id="fieldPreprod" class="hidden">
+                                            <label class="block text-[11px] font-bold text-slate-600 mb-1">Preprod Link (nếu có):</label>
+                                            <input type="text" id="reportLinkPreprodInput" oninput="saveHeaderConfig()" placeholder="VD: https://preprod..." class="w-full bg-slate-50 border border-slate-300 text-xs rounded-lg p-2 outline-none font-medium">
+                                        </div>
+                                        <div id="fieldWebapp" class="hidden">
+                                            <label class="block text-[11px] font-bold text-slate-600 mb-1">Webapp Link / App Name:</label>
+                                            <input type="text" id="reportLinkWebappInput" oninput="saveHeaderConfig()" placeholder="VD: Webapp - Apptek12" class="w-full bg-slate-50 border border-slate-300 text-xs rounded-lg p-2 outline-none font-medium">
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- FOOTER & NOTES PARAMS -->
+                                <div class="grid grid-cols-1 md:grid-cols-2 gap-3 border-t border-slate-100 pt-3">
+                                    <div>
+                                        <label class="block text-[11px] font-bold text-slate-600 mb-1"><i class="fa-solid fa-note-sticky text-amber-500 mr-1"></i> Ghi chú bổ sung (Section C - Notes):</label>
+                                        <textarea id="reportNotesInput" oninput="saveHeaderConfig()" rows="3" placeholder="Nhập mỗi ghi chú trên 1 dòng..." class="w-full bg-slate-50 border border-slate-300 text-xs rounded-lg p-2 outline-none font-medium custom-scrollbar"></textarea>
+                                    </div>
+                                    <div>
+                                        <label class="block text-[11px] font-bold text-slate-600 mb-1"><i class="fa-solid fa-database text-purple-500 mr-1"></i> Metadata Game (Cuối Report):</label>
+                                        <textarea id="reportMetadataInput" oninput="saveHeaderConfig()" rows="3" placeholder="VD: Transferred: 53.2 MB&#10;Request network: 193 requests&#10;Resource: 67.4 MB&#10;Draw call: 32~65" class="w-full bg-slate-50 border border-slate-300 text-xs rounded-lg p-2 outline-none font-medium custom-scrollbar"></textarea>
+                                    </div>
+                                </div>
+                            </div>
+                        </section>
+
                         <section class="bg-white rounded-xl shadow-sm border border-slate-200 p-4 sm:p-5 space-y-4 w-full">
                             <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-slate-100 pb-4">
                                 <div class="flex items-center gap-2">
@@ -342,7 +448,6 @@
                         </section>
                     </div>
 
-                    <!-- VIEW 2: DETAIL TICKET VIEW -->
                     <div id="detailView" class="hidden space-y-6 w-full">
                         <section class="bg-white rounded-xl shadow-sm border border-slate-200 p-4 sm:p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                             <div class="flex flex-col sm:flex-row items-start sm:items-center gap-4">
@@ -383,7 +488,7 @@
         </main>
     </div>
 
-    <!-- ================= MODAL LỰA CHỌN TAG ================= -->
+    <!-- MODAL LỰA CHỌN TAG -->
     <div id="tagSelectionModal" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4">
         <div class="bg-white rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden flex flex-col transform transition-all">
             <div class="px-4 sm:px-6 py-4 border-b border-slate-200 flex justify-between items-center bg-slate-50">
@@ -404,9 +509,7 @@
                     <button onclick="toggleAllTags(false)" class="text-slate-500 hover:text-slate-700 transition">Bỏ chọn tất cả</button>
                 </div>
 
-                <div id="tagCheckboxContainer" class="flex flex-wrap gap-2 text-sm font-medium text-slate-700 max-h-[40vh] overflow-y-auto custom-scrollbar">
-                    <!-- Checkbox hoặc Thông báo rỗng được gen bằng JS -->
-                </div>
+                <div id="tagCheckboxContainer" class="flex flex-wrap gap-2 text-sm font-medium text-slate-700 max-h-[40vh] overflow-y-auto custom-scrollbar"></div>
             </div>
 
             <div class="px-4 sm:px-6 py-4 border-t border-slate-100 bg-slate-50 flex flex-col sm:flex-row justify-end gap-3">
@@ -431,7 +534,13 @@
     </div>
 
     <script>
-        // JS ẨN/HIỆN SIDEBAR MOBILE
+        const JIRA_PROXY_API_URL = "https://script.google.com/a/macros/enotion.io/s/AKfycbz948vll_3cMrDw3Vnj4CLVqbxyyfMPI87iUo9U_3HSQPralPZmySydiI0CXZ636FHl/exec";
+        const URL_REPORT_API = "https://script.google.com/macros/s/AKfycbzynUh65kMWVtwRdYdg8x35-6LViA_JwMPrWhEoMdDXFDP7tpcheilYrReQSIrQ6zAtIQ/exec";
+
+        let currentBoardId = null;
+        let currentProjectKey = null;
+        let currentJiraDomain = null;
+
         function toggleSidebar() {
             const sidebar = document.getElementById('mainSidebar');
             const overlay = document.getElementById('sidebarOverlay');
@@ -446,30 +555,21 @@
             }
         }
 
-        const URL_REPORT_API = "https://script.google.com/a/macros/enotion.io/s/AKfycbzynUh65kMWVtwRdYdg8x35-6LViA_JwMPrWhEoMdDXFDP7tpcheilYrReQSIrQ6zAtIQ/exec";
-
-        // ================= CẤU HÌNH NGÀY ĐI TRÙNG KHÁNH =================
         const TARGET_TRIP_DATE = "2026-11-01"; 
 
         function calculateMondaysLeft() {
             let today = new Date();
             let target = new Date(TARGET_TRIP_DATE);
             let mondaysCount = 0;
-            
             today.setHours(0,0,0,0);
             target.setHours(0,0,0,0);
 
             let current = new Date(today);
             while (current <= target) {
-                if (current.getDay() === 1) {
-                    mondaysCount++;
-                }
+                if (current.getDay() === 1) mondaysCount++;
                 current.setDate(current.getDate() + 1);
             }
-            
-            document.querySelectorAll('.mondayCountText').forEach(el => {
-                el.innerText = mondaysCount;
-            });
+            document.querySelectorAll('.mondayCountText').forEach(el => el.innerText = mondaysCount);
         }
 
         let rawJiraData = [];
@@ -481,6 +581,334 @@
             'Highest': '#DC2626', 'High': '#F97316', 'Medium': '#F59E0B',
             'Low': '#3B82F6', 'Lowest': '#10B981', 'Unassigned': '#64748B'
         };
+
+        // BẬT / ẨN Ô NHẬP THEO CHECKBOX LINK
+        function toggleLinkInputs() {
+            const linkConfigs = [
+                { cb: 'cbIframe', field: 'fieldIframe' },
+                { cb: 'cbTestcase', field: 'fieldTestcase' },
+                { cb: 'cbPreprod', field: 'fieldPreprod' },
+                { cb: 'cbWebapp', field: 'fieldWebapp' }
+            ];
+
+            linkConfigs.forEach(item => {
+                const cb = document.getElementById(item.cb);
+                const field = document.getElementById(item.field);
+                if (cb && field) {
+                    if (cb.checked) {
+                        field.classList.remove('hidden');
+                    } else {
+                        field.classList.add('hidden');
+                    }
+                }
+            });
+        }
+
+        // TỰ ĐỘNG LƯU TOÀN BỘ CẤU HÌNH THÔNG TIN BÁO CÁO VÀO LOCALSTORAGE
+        function saveHeaderConfig() {
+            const config = {
+                gameName: document.getElementById('reportGameNameInput')?.value || '',
+                versionGame: document.getElementById('reportVersionGameInput')?.value || '',
+                versionApp: document.getElementById('reportVersionAppInput')?.value || '',
+                env: document.getElementById('reportEnvInput')?.value || '',
+                cbIframe: document.getElementById('cbIframe')?.checked || false,
+                cbJira: document.getElementById('cbJira')?.checked || false,
+                cbTestcase: document.getElementById('cbTestcase')?.checked || false,
+                cbPreprod: document.getElementById('cbPreprod')?.checked || false,
+                cbWebapp: document.getElementById('cbWebapp')?.checked || false,
+                linkIframe: document.getElementById('reportLinkIframeInput')?.value || '',
+                linkTestcase: document.getElementById('reportTestcaseInput')?.value || '',
+                linkPreprod: document.getElementById('reportLinkPreprodInput')?.value || '',
+                linkWebapp: document.getElementById('reportLinkWebappInput')?.value || '',
+                notes: document.getElementById('reportNotesInput')?.value || '',
+                metadata: document.getElementById('reportMetadataInput')?.value || ''
+            };
+            localStorage.setItem('jira_header_config', JSON.stringify(config));
+        }
+
+        // KHÔI PHỦC TOÀN BỘ CẤU HÌNH BÁO CÁO TỪ LOCALSTORAGE KHI RELOAD TRANG
+        function loadHeaderConfig() {
+            const saved = localStorage.getItem('jira_header_config');
+            if (!saved) return;
+            try {
+                const config = JSON.parse(saved);
+                if (config.gameName !== undefined && document.getElementById('reportGameNameInput')) document.getElementById('reportGameNameInput').value = config.gameName;
+                if (config.versionGame !== undefined && document.getElementById('reportVersionGameInput')) document.getElementById('reportVersionGameInput').value = config.versionGame;
+                if (config.versionApp !== undefined && document.getElementById('reportVersionAppInput')) document.getElementById('reportVersionAppInput').value = config.versionApp;
+                if (config.env !== undefined && document.getElementById('reportEnvInput')) document.getElementById('reportEnvInput').value = config.env;
+                
+                if (config.cbIframe !== undefined && document.getElementById('cbIframe')) document.getElementById('cbIframe').checked = config.cbIframe;
+                if (config.cbJira !== undefined && document.getElementById('cbJira')) document.getElementById('cbJira').checked = config.cbJira;
+                if (config.cbTestcase !== undefined && document.getElementById('cbTestcase')) document.getElementById('cbTestcase').checked = config.cbTestcase;
+                if (config.cbPreprod !== undefined && document.getElementById('cbPreprod')) document.getElementById('cbPreprod').checked = config.cbPreprod;
+                if (config.cbWebapp !== undefined && document.getElementById('cbWebapp')) document.getElementById('cbWebapp').checked = config.cbWebapp;
+
+                if (config.linkIframe !== undefined && document.getElementById('reportLinkIframeInput')) document.getElementById('reportLinkIframeInput').value = config.linkIframe;
+                if (config.linkTestcase !== undefined && document.getElementById('reportTestcaseInput')) document.getElementById('reportTestcaseInput').value = config.linkTestcase;
+                if (config.linkPreprod !== undefined && document.getElementById('reportLinkPreprodInput')) document.getElementById('reportLinkPreprodInput').value = config.linkPreprod;
+                if (config.linkWebapp !== undefined && document.getElementById('reportLinkWebappInput')) document.getElementById('reportLinkWebappInput').value = config.linkWebapp;
+
+                if (config.notes !== undefined && document.getElementById('reportNotesInput')) document.getElementById('reportNotesInput').value = config.notes;
+                if (config.metadata !== undefined && document.getElementById('reportMetadataInput')) document.getElementById('reportMetadataInput').value = config.metadata;
+
+                toggleLinkInputs();
+            } catch(e) {
+                console.error("Lỗi khôi phục cấu hình từ localStorage:", e);
+            }
+        }
+
+        // HÀM CHUẨN HÓA & LÀM GỌN LINK JIRA CHO BÁO CÁO
+        function cleanJiraUrlForReport(urlStr) {
+            if (!urlStr) return '';
+            try {
+                let decoded = decodeURIComponent(urlStr).replace(/[\r\n]+/g, ' ').replace(/\s+/g, ' ').trim();
+                return decoded;
+            } catch(e) {
+                return urlStr;
+            }
+        }
+
+        // HÀM AUTO-FILL BÁO CÁO CŨ TỪ CLIPBOARD
+        async function pasteReportFromClipboard() {
+            try {
+                const text = await navigator.clipboard.readText();
+                if (!text || !text.trim()) {
+                    showCustomAlert("Cảnh báo", "Clipboard của bạn đang trống!", true);
+                    return;
+                }
+
+                let filledCount = 0;
+
+                const reportForMatch = text.match(/Report for\s+(.*?)\s*\((.*?)\)/i);
+                if (reportForMatch) {
+                    if (document.getElementById('reportGameNameInput')) document.getElementById('reportGameNameInput').value = reportForMatch[1].trim();
+                    filledCount++;
+                }
+
+                const verGameMatch = text.match(/Version game:\s*(.*)/i);
+                if (verGameMatch) {
+                    if (document.getElementById('reportVersionGameInput')) document.getElementById('reportVersionGameInput').value = verGameMatch[1].trim();
+                    filledCount++;
+                }
+
+                const verAppMatch = text.match(/Version App:\s*(.*)/i);
+                if (verAppMatch) {
+                    if (document.getElementById('reportVersionAppInput')) document.getElementById('reportVersionAppInput').value = verAppMatch[1].trim();
+                    filledCount++;
+                }
+
+                const envMatch = text.match(/Env:\s*(.*)/i);
+                if (envMatch) {
+                    if (document.getElementById('reportEnvInput')) document.getElementById('reportEnvInput').value = envMatch[1].trim();
+                    filledCount++;
+                }
+
+                const iframeMatch = text.match(/^\s*(?:[•\-\*]\s*)?Iframe:\s*(.*)/im);
+                if (iframeMatch && iframeMatch[1].trim()) {
+                    if (document.getElementById('reportLinkIframeInput')) document.getElementById('reportLinkIframeInput').value = iframeMatch[1].trim();
+                    if (document.getElementById('cbIframe')) document.getElementById('cbIframe').checked = true;
+                    filledCount++;
+                }
+
+                const preprodMatch = text.match(/^\s*(?:[•\-\*]\s*)?Preprod:\s*(.*)/im);
+                if (preprodMatch && preprodMatch[1].trim()) {
+                    if (document.getElementById('reportLinkPreprodInput')) document.getElementById('reportLinkPreprodInput').value = preprodMatch[1].trim();
+                    if (document.getElementById('cbPreprod')) document.getElementById('cbPreprod').checked = true;
+                    filledCount++;
+                }
+
+                const webappMatch = text.match(/^\s*(?:[•\-\*]\s*)?(?:Webapp|App name|Webapp\/App name):\s*(.*)/im);
+                if (webappMatch && webappMatch[1].trim()) {
+                    if (document.getElementById('reportLinkWebappInput')) document.getElementById('reportLinkWebappInput').value = webappMatch[1].trim();
+                    if (document.getElementById('cbWebapp')) document.getElementById('cbWebapp').checked = true;
+                    filledCount++;
+                }
+
+                const jiraLinkMatch = text.match(/^Link Jira:\s*(.*)/im);
+                if (jiraLinkMatch) {
+                    if (document.getElementById('cbJira')) document.getElementById('cbJira').checked = true;
+                    filledCount++;
+                }
+
+                const tcMatch = text.match(/^Test case:\s*(.*)/im);
+                if (tcMatch) {
+                    if (document.getElementById('reportTestcaseInput')) document.getElementById('reportTestcaseInput').value = tcMatch[1].trim();
+                    if (document.getElementById('cbTestcase')) document.getElementById('cbTestcase').checked = true;
+                    filledCount++;
+                }
+
+                const scopeMatch = text.match(/1\.\s*Scope of testing:\s*(.*)/i);
+                if (scopeMatch) {
+                    if (document.getElementById('scopeOfTestingInput')) document.getElementById('scopeOfTestingInput').value = scopeMatch[1].trim();
+                    saveScopeTesting();
+                    filledCount++;
+                }
+
+                const qcMatch = text.match(/-\s*QC:\s*(.*)/i);
+                if (qcMatch) {
+                    if (document.getElementById('qcMembersInput')) document.getElementById('qcMembersInput').value = qcMatch[1].trim();
+                    saveQCMembers();
+                    filledCount++;
+                }
+
+                toggleLinkInputs();
+                saveHeaderConfig(); // LƯU VÀO LOCALSTORAGE SAU KHU AUTO-FILL
+
+                if (filledCount > 0) {
+                    showCustomAlert("Tự Động Điền Thành Công!", "Đã bóc tách và điền tự động " + filledCount + " trường dữ liệu từ Báo cáo Clipboard.");
+                } else {
+                    showCustomAlert("Thông báo", "Không nhận diện được định dạng Báo cáo trong Clipboard. Vui lòng kiểm tra lại văn bản copy!", true);
+                }
+
+            } catch (err) {
+                console.error("Lỗi đọc Clipboard:", err);
+                showCustomAlert("Lỗi Quyền Truy Cập", "Không thể đọc dữ liệu từ Clipboard. Vui lòng cấp quyền Clipboard cho trang web!", true);
+            }
+        }
+
+        function changeJiraProject() {
+            document.getElementById('fileInfo').classList.add('hidden');
+            document.getElementById('reportDashboard').classList.add('hidden');
+            document.getElementById('jiraUrlSection').classList.remove('hidden');
+            rawJiraData = [];
+        }
+
+        function parseJiraUrl(urlStr) {
+            try {
+                const url = new URL(urlStr);
+                const domain = url.origin;
+                let jql = "";
+                let projectName = "";
+
+                if (url.searchParams.has('jql')) {
+                    jql = decodeURIComponent(url.searchParams.get('jql')).replace(/[\r\n]+/g, ' ').trim();
+                    const projMatch = jql.match(/project\s*=\s*["']?([a-zA-Z0-9_]+)["']?/i);
+                    if (projMatch && projMatch[1]) projectName = projMatch[1];
+                } else {
+                    const projectMatch = url.pathname.match(/\/projects\/([^\/]+)/i);
+                    if (projectMatch && projectMatch[1]) {
+                        projectName = projectMatch[1];
+                        jql = 'project = "' + projectName + '" ORDER BY created DESC';
+                    }
+                }
+                return { domain, jql, projectName: projectName || "Jira Filter" };
+            } catch (e) { return null; }
+        }
+
+        function fetchJiraDataFromUrl() {
+            if (!loggedInUser) {
+                showCustomAlert("Yêu cầu đăng nhập", "Vui lòng Đăng nhập tài khoản Google trước khi tải dữ liệu!", true);
+                return;
+            }
+
+            const rawUrl = document.getElementById('jiraUrlInput').value.trim();
+            if (!rawUrl) {
+                showCustomAlert("Cảnh báo", "Vui lòng dán đường link Jira của dự án!", true);
+                return;
+            }
+
+            const parsed = parseJiraUrl(rawUrl);
+            if (!parsed || !parsed.domain) {
+                showCustomAlert("Lỗi Link Jira", "Đường link Jira không đúng định dạng. Vui lòng kiểm tra lại!", true);
+                return;
+            }
+
+            const btn = document.getElementById('btnFetchJira');
+            const origBtnHtml = btn.innerHTML;
+
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Đang tải toàn bộ dữ liệu từ Jira...';
+
+            localStorage.setItem('jira_last_url', rawUrl);
+
+            let isFinished = false;
+            const fetchTimeout = setTimeout(() => {
+                if (!isFinished) {
+                    isFinished = true;
+                    btn.disabled = false;
+                    btn.innerHTML = origBtnHtml;
+                    
+                    const scriptEl = document.getElementById('jiraJsonpScript');
+                    if (scriptEl) scriptEl.remove();
+
+                    showCustomAlert("Thời gian chờ quá lâu (Timeout)", "Hệ thống không nhận được phản hồi từ Google Apps Script Proxy. Vui lòng thử lại!", true);
+                }
+            }, 30000);
+
+            window.handleJiraResponse = function(json) {
+                if (isFinished) return;
+                isFinished = true;
+                clearTimeout(fetchTimeout);
+
+                btn.disabled = false;
+                btn.innerHTML = origBtnHtml;
+
+                const scriptEl = document.getElementById('jiraJsonpScript');
+                if (scriptEl) scriptEl.remove();
+
+                if (!json) {
+                    showCustomAlert("Lỗi Dữ Liệu", "Google Script trả về dữ liệu rỗng!", true);
+                    return;
+                }
+
+                if (json.error) {
+                    showCustomAlert("Lỗi tải dữ liệu Jira", json.error, true);
+                    return;
+                }
+
+                currentBoardId = json.boardId || null;
+                currentProjectKey = json.projectKey || parsed.projectName;
+                currentJiraDomain = parsed.domain;
+
+                const issues = json.issues || [];
+                if (issues.length === 0) {
+                    showCustomAlert("Thông báo", "Không tìm thấy ticket nào từ đường link Jira này!", true);
+                    return;
+                }
+
+                rawJiraData = issues.map(item => {
+                    const fields = item.fields || {};
+                    return {
+                        "Issue key": item.key || "",
+                        "Summary": fields.summary || "",
+                        "Priority": fields.priority ? fields.priority.name : "Unassigned",
+                        "Status": fields.status ? fields.status.name : "N/A",
+                        "Assignee": fields.assignee ? fields.assignee.displayName : "Unassigned"
+                    };
+                });
+
+                document.getElementById('jiraProjectName').innerText = currentProjectKey || "Jira Filter";
+                document.getElementById('fileInfo').classList.remove('hidden');
+                document.getElementById('jiraUrlSection').classList.add('hidden');
+                document.getElementById('reportDashboard').classList.remove('hidden');
+
+                buildDynamicStatusFilters();
+                processData();
+
+                showCustomAlert("Thành công!", "Đã tải thành công " + rawJiraData.length + " ticket từ Jira!");
+            };
+
+            const existingScript = document.getElementById('jiraJsonpScript');
+            if (existingScript) existingScript.remove();
+
+            const script = document.createElement('script');
+            script.id = 'jiraJsonpScript';
+            
+            script.src = JIRA_PROXY_API_URL + '?domain=' + encodeURIComponent(parsed.domain) + '&jql=' + encodeURIComponent(parsed.jql) + '&email=' + encodeURIComponent(loggedInUser.email) + '&callback=handleJiraResponse&_t=' + Date.now();
+            
+            script.onerror = function() {
+                if (isFinished) return;
+                isFinished = true;
+                clearTimeout(fetchTimeout);
+
+                btn.disabled = false;
+                btn.innerHTML = origBtnHtml;
+                script.remove();
+                showCustomAlert("Lỗi Kết Nối", "Không thể tải Script từ App Script Proxy. Vui lòng kiểm tra lại quyền đăng nhập tài khoản!", true);
+            };
+
+            document.body.appendChild(script);
+        }
 
         function updateAuthUI() {
             const storedUser = localStorage.getItem('jira_google_user');
@@ -510,10 +938,9 @@
             showCustomAlert('Đăng xuất', 'Bạn đã đăng xuất tài khoản Google thành công.');
         }
 
-        function getTicketNumber(key) {
+        function getFullTicketKey(key) {
             if (!key || typeof key !== 'string') return '';
-            const parts = key.trim().split('-');
-            return parts[parts.length - 1];
+            return key.trim();
         }
 
         function cleanTicketSummary(summary) {
@@ -524,7 +951,11 @@
         document.addEventListener('DOMContentLoaded', () => {
             updateAuthUI();
             calculateMondaysLeft();
+            loadHeaderConfig(); // KHÔI PHỦC DỮ LIỆU CẤU HÌNH KHI RELOAD TRANG
             
+            const savedJiraUrl = localStorage.getItem('jira_last_url') || '';
+            if (savedJiraUrl && document.getElementById('jiraUrlInput')) document.getElementById('jiraUrlInput').value = savedJiraUrl;
+
             const savedScope = localStorage.getItem('jira_scope_testing');
             if (savedScope && document.getElementById('scopeOfTestingInput')) document.getElementById('scopeOfTestingInput').value = savedScope;
             
@@ -537,30 +968,9 @@
             const dateInput = document.getElementById('reportDateInput');
             if (dateInput) {
                 const today = new Date();
-                dateInput.value = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
+                dateInput.value = today.getFullYear() + '-' + String(today.getMonth() + 1).padStart(2, '0') + '-' + String(today.getDate()).padStart(2, '0');
             }
 
-            const dropZone = document.getElementById('dropZone');
-            const excelFileInput = document.getElementById('excelFileInput');
-
-            if (dropZone && excelFileInput) {
-                excelFileInput.addEventListener('click', (e) => e.stopPropagation());
-                dropZone.addEventListener('click', (e) => {
-                    if (e.target === excelFileInput) return;
-                    excelFileInput.click();
-                });
-                dropZone.addEventListener('dragover', (e) => { e.preventDefault(); dropZone.classList.add('border-indigo-600', 'bg-indigo-100/50'); });
-                dropZone.addEventListener('dragleave', () => { dropZone.classList.remove('border-indigo-600', 'bg-indigo-100/50'); });
-                dropZone.addEventListener('drop', (e) => {
-                    e.preventDefault(); dropZone.classList.remove('border-indigo-600', 'bg-indigo-100/50');
-                    if (e.dataTransfer.files.length > 0) handleFile(e.dataTransfer.files[0]);
-                });
-
-                excelFileInput.addEventListener('change', (e) => {
-                    if (e.target.files.length > 0) handleFile(e.target.files[0]);
-                });
-            }
-            
             document.addEventListener('click', function(event) {
                 const userProfileBtn = document.getElementById('userProfileBtn');
                 const userDropdown = document.getElementById('userDropdown');
@@ -569,39 +979,6 @@
                 }
             });
         });
-
-        function changeJiraFile() {
-            document.getElementById('excelFileInput').value = '';
-            document.getElementById('fileName').innerText = '';
-            document.getElementById('fileInfo').classList.add('hidden');
-            document.getElementById('reportDashboard').classList.add('hidden');
-            document.getElementById('uploadSection').classList.remove('hidden');
-            rawJiraData = [];
-        }
-
-        function handleFile(file) {
-            document.getElementById('fileName').innerText = file.name;
-            document.getElementById('fileInfo').classList.remove('hidden');
-            document.getElementById('uploadSection').classList.add('hidden');
-
-            const reader = new FileReader();
-            reader.onload = function (e) {
-                const data = new Uint8Array(e.target.result);
-                const workbook = XLSX.read(data, { type: 'array' });
-                const firstSheetName = workbook.SheetNames[0];
-                const worksheet = workbook.Sheets[firstSheetName];
-                rawJiraData = XLSX.utils.sheet_to_json(worksheet, { defval: "" });
-
-                if (rawJiraData.length > 0) {
-                    document.getElementById('reportDashboard').classList.remove('hidden');
-                    buildDynamicStatusFilters();
-                    processData();
-                } else {
-                    showCustomAlert('Lỗi File', 'File không chứa dữ liệu hợp lệ!', true);
-                }
-            };
-            reader.readAsArrayBuffer(file);
-        }
 
         function getColumnValue(row, possibleNames) {
             const keys = Object.keys(row);
@@ -647,7 +1024,7 @@
             availableStatuses.forEach(status => {
                 const label = document.createElement('label');
                 label.className = 'flex items-center gap-2 cursor-pointer bg-slate-50 hover:bg-slate-100 px-3 py-1.5 rounded-lg border border-slate-200 transition font-semibold text-slate-700';
-                label.innerHTML = `<input type="checkbox" class="status-dynamic-cb text-indigo-600 rounded" value="${status}" checked onchange="processData()"><span>${status}</span>`;
+                label.innerHTML = '<input type="checkbox" class="status-dynamic-cb text-indigo-600 rounded" value="' + status + '" checked onchange="processData()"><span>' + status + '</span>';
                 container.appendChild(label);
             });
         }
@@ -756,10 +1133,10 @@
 
                 let priorityBadgesHtml = '';
                 ['Highest', 'High', 'Medium', 'Low', 'Lowest', 'Unassigned'].forEach(p => {
-                    if (pMap[p]) priorityBadgesHtml += `<span onclick="event.stopPropagation(); openDetailView({ tag: '${tag}', priority: '${p}' })" class="inline-flex items-center gap-1 text-[11px] font-bold px-2 py-0.5 rounded-md text-white hover:opacity-80 transition cursor-pointer" style="background-color: ${priorityColors[p] || '#64748B'}" title="Click xem ticket Tag [${tag}] - Priority ${p}">${p}: ${pMap[p]}</span>`;
+                    if (pMap[p]) priorityBadgesHtml += '<span onclick="event.stopPropagation(); openDetailView({ tag: \'' + tag + '\', priority: \'' + p + '\' })" class="inline-flex items-center gap-1 text-[11px] font-bold px-2 py-0.5 rounded-md text-white hover:opacity-80 transition cursor-pointer" style="background-color: ' + (priorityColors[p] || '#64748B') + '" title="Click xem ticket Tag [' + tag + '] - Priority ' + p + '">' + p + ': ' + pMap[p] + '</span>';
                 });
 
-                card.innerHTML = `<div class="flex justify-between items-center mb-3"><strong class="text-sm text-indigo-700 font-bold">[${tag}]</strong><span class="text-xs bg-indigo-100 text-indigo-800 font-bold px-2.5 py-1 rounded-full hover:bg-indigo-200 transition">${total} ticket</span></div><div class="flex flex-wrap gap-1.5 mt-2">${priorityBadgesHtml}</div>`;
+                card.innerHTML = '<div class="flex justify-between items-center mb-3"><strong class="text-sm text-indigo-700 font-bold">[' + tag + ']</strong><span class="text-xs bg-indigo-100 text-indigo-800 font-bold px-2.5 py-1 rounded-full hover:bg-indigo-200 transition">' + total + ' ticket</span></div><div class="flex flex-wrap gap-1.5 mt-2">' + priorityBadgesHtml + '</div>';
                 container.appendChild(card);
             });
         }
@@ -778,7 +1155,7 @@
                 else if (['WONT FIX', 'WON\'T FIX'].includes(sUpper)) statusClass = 'bg-rose-100 text-rose-800';
                 const pColor = priorityColors[row.priority] || '#64748B';
 
-                tr.innerHTML = `<td class="px-4 py-3 font-bold text-indigo-600 whitespace-nowrap">${row.key || 'N/A'}</td><td class="px-4 py-3 whitespace-nowrap"><span class="bg-indigo-50 text-indigo-700 border border-indigo-200 px-2 py-0.5 rounded text-[11px] font-bold">[${row.tags}]</span></td><td class="px-4 py-3 max-w-md truncate font-medium text-slate-700" title="${row.summary}">${row.summary}</td><td class="px-4 py-3 whitespace-nowrap"><span class="text-white text-[10px] font-bold px-2 py-1 rounded" style="background-color: ${pColor}">${row.priority}</span></td><td class="px-4 py-3 whitespace-nowrap"><span class="px-2.5 py-1 rounded-full text-[11px] font-bold ${statusClass}">${row.status}</span></td><td class="px-4 py-3 whitespace-nowrap font-medium text-slate-600">${row.assignee}</td>`;
+                tr.innerHTML = '<td class="px-4 py-3 font-bold text-indigo-600 whitespace-nowrap">' + (row.key || 'N/A') + '</td><td class="px-4 py-3 whitespace-nowrap"><span class="bg-indigo-50 text-indigo-700 border border-indigo-200 px-2 py-0.5 rounded text-[11px] font-bold">[' + row.tags + ']</span></td><td class="px-4 py-3 max-w-md truncate font-medium text-slate-700" title="' + row.summary + '">' + row.summary + '</td><td class="px-4 py-3 whitespace-nowrap"><span class="text-white text-[10px] font-bold px-2 py-1 rounded" style="background-color: ' + pColor + '">' + row.priority + '</span></td><td class="px-4 py-3 whitespace-nowrap"><span class="px-2.5 py-1 rounded-full text-[11px] font-bold ' + statusClass + '">' + row.status + '</span></td><td class="px-4 py-3 whitespace-nowrap font-medium text-slate-600">' + row.assignee + '</td>';
                 tbody.appendChild(tr);
             });
         }
@@ -805,10 +1182,10 @@
             });
 
             let titleParts = [];
-            if (filterContext.tag) titleParts.push(`Loại Tag: <span class="text-indigo-600">[${filterContext.tag}]</span>`);
-            if (filterContext.priority) titleParts.push(`Priority: <span class="text-indigo-600">${filterContext.priority}</span>`);
+            if (filterContext.tag) titleParts.push('Loại Tag: <span class="text-indigo-600">[' + filterContext.tag + ']</span>');
+            if (filterContext.priority) titleParts.push('Priority: <span class="text-indigo-600">' + filterContext.priority + '</span>');
             
-            document.getElementById('detailViewTitle').innerHTML = `Chi tiết Ticket • ` + titleParts.join(' & ');
+            document.getElementById('detailViewTitle').innerHTML = 'Chi tiết Ticket • ' + titleParts.join(' & ');
             document.getElementById('detailCountBadge').innerText = detailRows.length;
 
             const detailTbody = document.getElementById('detailTicketTableBody');
@@ -825,11 +1202,11 @@
                     else if (['IN PROGRESS', 'IN-PROGRESS'].includes(sUpper)) statusClass = 'bg-amber-100 text-amber-800';
                     else if (['WONT FIX', 'WON\'T FIX'].includes(sUpper)) statusClass = 'bg-rose-100 text-rose-800';
 
-                    tr.innerHTML = `<td class="px-4 py-3 font-bold text-indigo-600 whitespace-nowrap">${row.key || 'N/A'}</td><td class="px-4 py-3 whitespace-nowrap"><span class="bg-indigo-50 text-indigo-700 border border-indigo-200 px-2 py-0.5 rounded text-[11px] font-bold">[${row.tags}]</span></td><td class="px-4 py-3 max-w-md truncate font-medium">${row.summary}</td><td class="px-4 py-3 whitespace-nowrap"><span class="text-white text-[10px] font-bold px-2 py-1 rounded" style="background-color: ${pColor}">${row.priority}</span></td><td class="px-4 py-3 whitespace-nowrap"><span class="px-2.5 py-1 rounded-full text-[11px] font-bold ${statusClass}">${row.status}</span></td><td class="px-4 py-3 whitespace-nowrap font-medium text-slate-600">${row.assignee}</td>`;
+                    tr.innerHTML = '<td class="px-4 py-3 font-bold text-indigo-600 whitespace-nowrap">' + (row.key || 'N/A') + '</td><td class="px-4 py-3 whitespace-nowrap"><span class="bg-indigo-50 text-indigo-700 border border-indigo-200 px-2 py-0.5 rounded text-[11px] font-bold">[' + row.tags + ']</span></td><td class="px-4 py-3 max-w-md truncate font-medium">' + row.summary + '</td><td class="px-4 py-3 whitespace-nowrap"><span class="text-white text-[10px] font-bold px-2 py-1 rounded" style="background-color: ' + pColor + '">' + row.priority + '</span></td><td class="px-4 py-3 whitespace-nowrap"><span class="px-2.5 py-1 rounded-full text-[11px] font-bold ' + statusClass + '">' + row.status + '</span></td><td class="px-4 py-3 whitespace-nowrap font-medium text-slate-600">' + row.assignee + '</td>';
                     detailTbody.appendChild(tr);
                 });
             } else {
-                detailTbody.innerHTML = `<tr><td colspan="6" class="text-center py-8 text-slate-400 font-medium text-sm">Không tìm thấy ticket nào thỏa điều kiện!</td></tr>`;
+                detailTbody.innerHTML = '<tr><td colspan="6" class="text-center py-8 text-slate-400 font-medium text-sm">Không tìm thấy ticket nào thỏa điều kiện!</td></tr>';
             }
 
             document.getElementById('mainDashboardView').classList.add('hidden');
@@ -851,12 +1228,11 @@
 
         function openTagSelectionModal() {
             if (rawJiraData.length === 0) {
-                showCustomAlert("Cảnh báo", "Vui lòng tải lên file Jira trước khi Copy Báo cáo!", true);
+                showCustomAlert("Cảnh báo", "Vui lòng tải dữ liệu Jira trước khi Copy Báo cáo!", true);
                 return;
             }
 
             const tagMode = document.getElementById('tagModeSelect').value;
-            
             if (tagMode === 'primary') {
                 confirmAndCopyReport(true);
                 return;
@@ -882,20 +1258,12 @@
             container.innerHTML = '';
 
             if (foundTags.size === 0) {
-                container.innerHTML = `
-                    <div class="w-full text-center py-6 bg-slate-100 rounded-xl border border-slate-200">
-                        <i class="fa-solid fa-check-circle text-emerald-500 text-3xl mb-2"></i>
-                        <p class="text-sm font-bold text-slate-700">Tất cả ticket đều đã Closed!</p>
-                        <p class="text-xs text-slate-500 mt-1">Báo cáo sẽ được tạo với trạng thái 0 Ticket.</p>
-                    </div>`;
+                container.innerHTML = '<div class="w-full text-center py-6 bg-slate-100 rounded-xl border border-slate-200"><i class="fa-solid fa-check-circle text-emerald-500 text-3xl mb-2"></i><p class="text-sm font-bold text-slate-700">Tất cả ticket đều đã Closed!</p><p class="text-xs text-slate-500 mt-1">Báo cáo sẽ được tạo với trạng thái 0 Ticket.</p></div>';
             } else {
                 Array.from(foundTags).sort().forEach(tag => {
                     const label = document.createElement('label');
                     label.className = 'flex items-center gap-2 cursor-pointer bg-indigo-50/50 hover:bg-indigo-50 border border-indigo-100 px-3 py-2 rounded-lg transition';
-                    label.innerHTML = `
-                        <input type="checkbox" class="tag-select-cb text-indigo-600 rounded" value="${tag}" checked>
-                        <span class="font-bold text-indigo-900">[${tag}]</span>
-                    `;
+                    label.innerHTML = '<input type="checkbox" class="tag-select-cb text-indigo-600 rounded" value="' + tag + '" checked><span class="font-bold text-indigo-900">[' + tag + ']</span>';
                     container.appendChild(label);
                 });
             }
@@ -911,7 +1279,6 @@
             document.querySelectorAll('.tag-select-cb').forEach(cb => cb.checked = checked);
         }
 
-        // ================= HÀM XỬ LÝ FORMAT % (FIX LỖI) =================
         function formatPctDisplayFixed(val) {
             if (val === null || val === undefined || val === '') return '0%';
             let s = String(val).trim();
@@ -925,7 +1292,6 @@
             return s;
         }
 
-        // --- XỬ LÝ DỮ LIỆU TIẾN ĐỘ GOOGLE SHEET MATRIX ---
         function parsePctNum(val) {
             let s = String(val || '').trim();
             if (s.includes('<<')) s = s.split('<<')[0].trim();
@@ -958,9 +1324,9 @@
         function formatName(path, multiplePlats) {
             let res = path[0] || '';
             if (multiplePlats) res += ' Iframe/App';
-            else if (path[1]) res += ` ${path[1]}`;
-            if (path[2]) res += ` on ${path[2]}`;
-            if (path[3]) res += (path[2] ? `/${path[3]}` : ` ${path[3]}`);
+            else if (path[1]) res += ' ' + path[1];
+            if (path[2]) res += ' on ' + path[2];
+            if (path[3]) res += (path[2] ? '/' + path[3] : ' ' + path[3]);
             return res.replace(/\s+/g, ' ').trim();
         }
 
@@ -1064,15 +1430,15 @@
                         if (!localTree[item.platform||''][item.os||'']) localTree[item.platform||''][item.os||''] = {};
                         localTree[item.platform||''][item.os||''][item.browser||''] = { val: item.val, orig: item.orig };
                     });
-                    rollupTree(localTree, globalTree[block.base], [block.base]).unrolled.forEach(u => lines.push(`  + ${u.name}: ${u.val}`));
+                    rollupTree(localTree, globalTree[block.base], [block.base]).unrolled.forEach(u => lines.push('  + ' + u.name + ': ' + u.val));
                 });
                 return lines;
             };
 
             const lines = [];
-            if (!isZeroPct(doneOverall) && doneRaw.length > 0) { lines.push(`- DONE: ${formatPctDisplayFixed(doneOverall)}`); lines.push(...consolidate(doneRaw)); }
-            if (!isZeroPct(inProgressOverall) && inProgressRaw.length > 0) { lines.push(`- IN PROGRESS: ${formatPctDisplayFixed(inProgressOverall)}`); lines.push(...consolidate(inProgressRaw)); }
-            if (!isZeroPct(remainingOverall) && remainingRaw.length > 0) { lines.push(`- REMAINING: ${formatPctDisplayFixed(remainingOverall)}`); lines.push(...consolidate(remainingRaw)); }
+            if (!isZeroPct(doneOverall) && doneRaw.length > 0) { lines.push('- DONE: ' + formatPctDisplayFixed(doneOverall)); lines.push(...consolidate(doneRaw)); }
+            if (!isZeroPct(inProgressOverall) && inProgressRaw.length > 0) { lines.push('- IN PROGRESS: ' + formatPctDisplayFixed(inProgressOverall)); lines.push(...consolidate(inProgressRaw)); }
+            if (!isZeroPct(remainingOverall) && remainingRaw.length > 0) { lines.push('- REMAINING: ' + formatPctDisplayFixed(remainingOverall)); lines.push(...consolidate(remainingRaw)); }
 
             return {
                 text: lines.join('\n'),
@@ -1090,8 +1456,8 @@
                 const callbackName = 'jsonpCallback_' + Math.round(100000 * Math.random());
                 let fetchUrl = gasUrl;
                 const separator = fetchUrl.includes('?') ? '&' : '?';
-                fetchUrl += `${separator}callback=${callbackName}`;
-                if (sheetName) fetchUrl += `&sheet=${encodeURIComponent(sheetName)}`;
+                fetchUrl += separator + 'callback=' + callbackName;
+                if (sheetName) fetchUrl += '&sheet=' + encodeURIComponent(sheetName);
 
                 window[callbackName] = function(data) {
                     delete window[callbackName];
@@ -1116,6 +1482,7 @@
             });
         }
 
+        // GENERATE REPORT CHUẨN: TỰ ĐỘNG SINH LINK JIRA TỪ PROJECT KEY VÀ BOARD ID
         async function confirmAndCopyReport(skipTagFilter = false) {
             let allowedTags = [];
             
@@ -1135,21 +1502,53 @@
             
             try {
                 copyBtn.disabled = true;
-                copyBtn.innerHTML = `<i class="fa-solid fa-spinner fa-spin text-sm"></i> Đang xử lý...`;
+                copyBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin text-sm"></i> Đang xử lý...';
 
                 const selectedStatusSet = getSelectedStatuses();
                 const tagMode = document.getElementById('tagModeSelect').value;
                 const gasUrl = URL_REPORT_API;
                 const sheetName = document.getElementById('sheetNameInput') ? document.getElementById('sheetNameInput').value.trim() : '';
-                const scopeText = document.getElementById('scopeOfTestingInput') ? document.getElementById('scopeOfTestingInput').value.trim() || 'Chưa nhập' : 'Chưa nhập';
-                const qcMembers = document.getElementById('qcMembersInput') ? document.getElementById('qcMembersInput').value.trim() || 'Chưa nhập' : 'Chưa nhập';
+                const scopeText = document.getElementById('scopeOfTestingInput') ? document.getElementById('scopeOfTestingInput').value.trim() : '';
+                const qcMembers = document.getElementById('qcMembersInput') ? document.getElementById('qcMembersInput').value.trim() : '';
                 
                 const dateVal = document.getElementById('reportDateInput') ? document.getElementById('reportDateInput').value : '';
                 let dateStr = '';
                 if (dateVal) {
                     const parts = dateVal.split('-');
-                    if (parts.length === 3) dateStr = `${parts[2]}/${parts[1]}/${parts[0]}`;
+                    if (parts.length === 3) dateStr = parts[2] + '/' + parts[1] + '/' + parts[0];
                 }
+
+                // Lấy thông tin Header
+                const gameName = document.getElementById('reportGameNameInput') ? document.getElementById('reportGameNameInput').value.trim() : '';
+                const verGame = document.getElementById('reportVersionGameInput') ? document.getElementById('reportVersionGameInput').value.trim() : '';
+                const verApp = document.getElementById('reportVersionAppInput') ? document.getElementById('reportVersionAppInput').value.trim() : '';
+                const envText = document.getElementById('reportEnvInput') ? document.getElementById('reportEnvInput').value.trim() : '';
+                
+                // Lấy trạng thái Checkbox & Links
+                const isIframeChecked = document.getElementById('cbIframe') ? document.getElementById('cbIframe').checked : false;
+                const isJiraChecked = document.getElementById('cbJira') ? document.getElementById('cbJira').checked : false;
+                const isTestcaseChecked = document.getElementById('cbTestcase') ? document.getElementById('cbTestcase').checked : false;
+                const isPreprodChecked = document.getElementById('cbPreprod') ? document.getElementById('cbPreprod').checked : false;
+                const isWebappChecked = document.getElementById('cbWebapp') ? document.getElementById('cbWebapp').checked : false;
+
+                const linkIframe = document.getElementById('reportLinkIframeInput') ? document.getElementById('reportLinkIframeInput').value.trim() : '';
+                const linkPreprod = document.getElementById('reportLinkPreprodInput') ? document.getElementById('reportLinkPreprodInput').value.trim() : '';
+                const linkWebapp = document.getElementById('reportLinkWebappInput') ? document.getElementById('reportLinkWebappInput').value.trim() : '';
+                const testcaseLink = document.getElementById('reportTestcaseInput') ? document.getElementById('reportTestcaseInput').value.trim() : '';
+                
+                // TỰ ĐỘNG SINH LINK JIRA THEO CHUẨN KHI TÍCH CHỌN "Link Jira"
+                let generatedJiraLink = "";
+                if (currentProjectKey && currentJiraDomain) {
+                    generatedJiraLink = `${currentJiraDomain}/jira/software/projects/${currentProjectKey}/boards`;
+                    if (currentBoardId) {
+                        generatedJiraLink += `/${currentBoardId}`;
+                    }
+                } else {
+                    generatedJiraLink = document.getElementById('jiraUrlInput') ? document.getElementById('jiraUrlInput').value.trim() : '';
+                }
+                
+                const customNotes = document.getElementById('reportNotesInput') ? document.getElementById('reportNotesInput').value.trim() : '';
+                const metadataText = document.getElementById('reportMetadataInput') ? document.getElementById('reportMetadataInput').value.trim() : '';
 
                 let totalFileTickets = 0, totalSelectedTickets = 0;
                 let summaryCounts = { 'Highest': 0, 'High': 0, 'Medium': 0, 'Low': 0, 'Lowest': 0, 'Improvement': 0, 'Question': 0 };
@@ -1182,12 +1581,12 @@
 
                 let statsArr = [];
                 ['Highest', 'High', 'Medium', 'Low', 'Lowest', 'Improvement', 'Question'].forEach(k => {
-                    if (summaryCounts[k] > 0) statsArr.push(`${k}: ${summaryCounts[k]}`);
+                    if (summaryCounts[k] > 0) statsArr.push(k + ': ' + summaryCounts[k]);
                 });
 
-                let statsString = statsArr.length > 0 ? ` (${statsArr.join(' - ')})` : '';
+                let statsString = statsArr.length > 0 ? ' (' + statsArr.join(' - ') + ')' : '';
                 let ticketWord = totalSelectedTickets > 1 ? "Tickets" : "Ticket";
-                let buildStatusStr = `- Build status: ${totalSelectedTickets} ${ticketWord}${statsString} / Total: ${totalFileTickets} Tickets`;
+                let buildStatusStr = '3. Build status: ' + totalSelectedTickets + ' ' + ticketWord + statsString + ' / Total: ' + totalFileTickets + ' Tickets';
 
                 let progressReportObj = null;
                 if (gasUrl && sheetName) {
@@ -1196,32 +1595,38 @@
 
                 let reportLines = [];
 
-                if (progressReportObj && progressReportObj.targetData) {
-                    let row16Text = progressReportObj.targetData;
-                    if (dateStr && /\[ngày\]/i.test(row16Text)) {
-                        row16Text = row16Text.replace(/\[ngày\]/ig, dateStr);
-                        reportLines.push(row16Text);
-                    } else {
-                        if (dateStr) reportLines.push(`Ngày: ${dateStr}`);
-                        reportLines.push(row16Text);
-                    }
-                    reportLines.push(`----------------------------------`);
-                } else if (dateStr) {
-                    reportLines.push(`Ngày báo cáo: ${dateStr}`);
-                    reportLines.push(`----------------------------------`);
-                }
+                // HEADER REPORT (CHỈ HIỂN THỊ DÒNG NÀO CÓ GIÁ TRỊ)
+                if (gameName) reportLines.push('Report for ' + gameName + (dateStr ? ' (' + dateStr + ')' : ''));
+                if (verGame) reportLines.push('Version game: ' + verGame);
+                if (verApp) reportLines.push('Version App: ' + verApp);
+                if (envText) reportLines.push('Env: ' + envText);
+                
+                // SECTION LINKS DẠNG CÂY BULLET (CHỈ HIỂN THỊ NẾU ĐƯỢC CHỌN & CÓ GIÁ TRỊ)
+                const hasSubLinks = (isIframeChecked && linkIframe) || (isPreprodChecked && linkPreprod) || (isWebappChecked && linkWebapp);
 
-                reportLines.push(`A. [SUMMARY]`);
-                reportLines.push(`- Scope of testing: ${scopeText}`);
-                reportLines.push(`- Testing Status: In-Testing`);
+                if (hasSubLinks) {
+                    reportLines.push('Link:');
+                    if (isIframeChecked && linkIframe) reportLines.push('  • Iframe: ' + linkIframe);
+                    if (isPreprodChecked && linkPreprod) reportLines.push('  • Preprod: ' + linkPreprod);
+                    if (isWebappChecked && linkWebapp) reportLines.push('  • Webapp: ' + linkWebapp);
+                }
+                
+                if (isJiraChecked && generatedJiraLink) reportLines.push('Link Jira: ' + generatedJiraLink);
+                if (isTestcaseChecked && testcaseLink) reportLines.push('Test case: ' + testcaseLink);
+                reportLines.push('---------------------------------------------');
+
+                // A. [SUMMARY]
+                reportLines.push('A. [SUMMARY]');
+                if (scopeText) reportLines.push('1. Scope of testing: ' + scopeText);
+                reportLines.push('2. Testing Status: In-testing');
                 reportLines.push(buildStatusStr);
-                reportLines.push(`----------------------------------`);
 
                 if (progressReportObj && progressReportObj.text) {
                     reportLines.push(progressReportObj.text);
-                    reportLines.push(`----------------------------------`);
                 }
+                reportLines.push('---------------------------------------------');
 
+                // B. [TICKETS]
                 const specialTagsList = ['improvement', 'question'];
                 const tagDataMap = {}; 
                 const tagOrder = [];
@@ -1245,7 +1650,12 @@
                             tagOrder.push(tag); 
                         }
                         tagDataMap[tag].counts[priority]++;
-                        tagDataMap[tag].tickets.push({ ticketNumber: getTicketNumber(key), cleanSummary: cleanTicketSummary(summary) });
+                        
+                        tagDataMap[tag].tickets.push({ 
+                            fullKey: getFullTicketKey(key), 
+                            cleanSummary: cleanTicketSummary(summary), 
+                            priority: priority 
+                        });
                     });
                 });
 
@@ -1257,7 +1667,6 @@
                 tagOrder.sort((a, b) => {
                     const indexA = predefinedOrder.indexOf(a.toLowerCase());
                     const indexB = predefinedOrder.indexOf(b.toLowerCase());
-
                     if (indexA !== -1 && indexB !== -1) return indexA - indexB; 
                     if (indexA !== -1) return -1; 
                     if (indexB !== -1) return 1;  
@@ -1266,17 +1675,42 @@
 
                 if (tagOrder.length > 0) {
                     reportLines.push('B. [TICKETS]');
-                    const toRoman = (num) => { const lookup = {M:1000,CM:900,D:500,CD:400,C:100,XC:90,L:50,XL:40,X:10,IX:9,V:5,IV:4,I:1}; let r = ''; for (let i in lookup) { while (num >= lookup[i]) { r += i; num -= lookup[i]; } } return r; };
+                    const toRoman = (num) => { 
+                        const lookup = {M:1000,CM:900,D:500,CD:400,C:100,XC:90,L:50,XL:40,X:10,IX:9,V:5,IV:4,I:1}; 
+                        let r = ''; 
+                        for (let i in lookup) { 
+                            while (num >= lookup[i]) { r += i; num -= lookup[i]; } 
+                        } 
+                        return r; 
+                    };
 
                     tagOrder.forEach((tag, index) => {
-                        reportLines.push(`${toRoman(index + 1)}. [${(tag || '').toUpperCase()}]`);
-                        if (specialTagsList.includes(tag.toLowerCase())) {
-                            tagDataMap[tag].tickets.forEach(t => reportLines.push(`- Ticket ${t.ticketNumber}: ${t.cleanSummary}`));
-                        } else {
-                            ['Highest', 'High', 'Medium', 'Low', 'Lowest', 'Unassigned'].forEach(p => {
-                                if (tagDataMap[tag].counts[p] > 0) reportLines.push(`- ${p}: ${tagDataMap[tag].counts[p]}`);
-                            });
-                        }
+                        reportLines.push(toRoman(index + 1) + '. [' + (tag || '').toUpperCase() + ']');
+                        const ticketsList = tagDataMap[tag].tickets;
+                        const totalTagTickets = ticketsList.length;
+
+                        const priorityGroups = {};
+                        ticketsList.forEach(t => {
+                            if (!priorityGroups[t.priority]) priorityGroups[t.priority] = [];
+                            priorityGroups[t.priority].push(t);
+                        });
+
+                        const shouldListAll = totalTagTickets < 5 || specialTagsList.includes(tag.toLowerCase());
+
+                        ['Highest', 'High', 'Medium', 'Low', 'Lowest', 'Unassigned'].forEach(p => {
+                            if (priorityGroups[p] && priorityGroups[p].length > 0) {
+                                reportLines.push('- ' + p + ': ' + priorityGroups[p].length);
+                                
+                                const isHighPriority = ['Highest', 'High'].includes(p);
+                                
+                                if (shouldListAll || isHighPriority) {
+                                    priorityGroups[p].forEach(t => {
+                                        reportLines.push('  + ' + t.fullKey + ': ' + t.cleanSummary);
+                                    });
+                                }
+                            }
+                        });
+
                         if (index < tagOrder.length - 1) reportLines.push('-----');
                     });
                 } else {
@@ -1284,28 +1718,36 @@
                     reportLines.push('- Không có ticket nào (0 Ticket).');
                 }
 
-                reportLines.push(`----------------------------------`);
-                reportLines.push(`C. [NOTES]`);
+                reportLines.push('---------------------------------------------');
                 
-                const totalUnverified = countDeployed + countInTesting;
-                if (totalUnverified > 0) {
-                    let cols = [];
-                    if (countDeployed > 0) cols.push("DEPLOYED");
-                    if (countInTesting > 0) cols.push("IN TESTING");
-                    
-                    const verb = totalUnverified > 1 ? "are" : "is";
-                    const ticketWord2 = totalUnverified > 1 ? "Tickets" : "Ticket";
-                    const colString = cols.join(" and ");
-                    const colWord = cols.length > 1 ? "columns" : "column";
-                    
-                    reportLines.push(`- There ${verb} ${totalUnverified} unverified ${ticketWord2} in the ${colString} ${colWord}`);
+                // C. [NOTES]
+                reportLines.push('C. [NOTES]');
+                if (customNotes) {
+                    customNotes.split('\n').forEach(line => {
+                        if (line.trim()) reportLines.push('- ' + line.trim());
+                    });
                 }
 
-                reportLines.push(`- QC: ${qcMembers}`);
+                const totalUnverified = countDeployed + countInTesting;
+                if (totalUnverified > 0) {
+                    reportLines.push('- ' + totalUnverified + ' bugs remain unverified in the "In-Testing" column');
+                }
+
+                if (qcMembers) {
+                    reportLines.push('- QC: ' + qcMembers);
+                }
+
+                if (metadataText) {
+                    reportLines.push('');
+                    reportLines.push('Meta Data:');
+                    metadataText.split('\n').forEach(line => {
+                        if (line.trim()) reportLines.push(line.trim());
+                    });
+                }
 
                 await navigator.clipboard.writeText(reportLines.join('\n'));
                 if (!skipTagFilter) closeTagModal();
-                showCustomAlert('Copy Thành Công!', 'Báo Cáo Daily đã được sao chép vào Clipboard.');
+                showCustomAlert('Copy Thành Công!', 'Báo Cáo Daily theo Mẫu Mới đã được sao chép vào Clipboard.');
 
             } catch (err) {
                 console.error('Lỗi khi copy:', err);
