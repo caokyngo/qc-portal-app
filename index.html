@@ -1586,7 +1586,7 @@
 
                 let statsString = statsArr.length > 0 ? ' (' + statsArr.join(' - ') + ')' : '';
                 let ticketWord = totalSelectedTickets > 1 ? "Tickets" : "Ticket";
-                let buildStatusStr = '3. Build status: ' + totalSelectedTickets + ' ' + ticketWord + statsString + ' / Total: ' + totalFileTickets + ' Tickets';
+                let buildStatusStr = '- Build status: ' + totalSelectedTickets + ' ' + ticketWord + statsString + ' / Total: ' + totalFileTickets + ' Tickets';
 
                 let progressReportObj = null;
                 if (gasUrl && sheetName) {
@@ -1617,8 +1617,8 @@
 
                 // A. [SUMMARY]
                 reportLines.push('A. [SUMMARY]');
-                if (scopeText) reportLines.push('1. Scope of testing: ' + scopeText);
-                reportLines.push('2. Testing Status: In-testing');
+                if (scopeText) reportLines.push('- Scope of testing: ' + scopeText);
+                reportLines.push('- Testing Status: In-testing');
                 reportLines.push(buildStatusStr);
 
                 if (progressReportObj && progressReportObj.text) {
@@ -1711,7 +1711,7 @@
                             }
                         });
 
-                        if (index < tagOrder.length - 1) reportLines.push('-----');
+                        if (index < tagOrder.length - 1) reportLines.push('----------');
                     });
                 } else {
                     reportLines.push('B. [TICKETS]');
