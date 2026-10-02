@@ -235,46 +235,48 @@
                                 <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
                                     <div>
                                         <label class="block text-[11px] font-bold text-slate-600 mb-1">ID & Game Name:</label>
-                                        <input type="text" id="reportGameNameInput" oninput="saveHeaderConfig()" placeholder="VD: 5980 - Gold Digger" class="w-full bg-slate-50 border border-slate-300 text-xs rounded-lg p-2 outline-none font-medium">
+                                        <input type="text" id="reportGameNameInput" oninput="saveHeaderConfig()" placeholder="VD: 5980 - Gold Digger" class="w-full h-[40px] px-3 py-2.5 bg-slate-50 border border-slate-300 text-xs rounded-lg outline-none font-medium shadow-sm transition focus:ring-2 focus:ring-indigo-500">
                                     </div>
                                     <div>
                                         <label class="block text-[11px] font-bold text-slate-600 mb-1">Version Game & Ngày build:</label>
-                                        <input type="text" id="reportVersionGameInput" oninput="saveHeaderConfig()" placeholder="VD: v1.0.0 (02/10/2026)" class="w-full bg-slate-50 border border-slate-300 text-xs rounded-lg p-2 outline-none font-medium">
+                                        <input type="text" id="reportVersionGameInput" oninput="saveHeaderConfig()" placeholder="VD: v1.0.0 (02/10/2026)" class="w-full h-[40px] px-3 py-2.5 bg-slate-50 border border-slate-300 text-xs rounded-lg outline-none font-medium shadow-sm transition focus:ring-2 focus:ring-indigo-500">
                                     </div>
                                     <div>
                                         <label class="block text-[11px] font-bold text-slate-600 mb-1">Version App:</label>
-                                        <input type="text" id="reportVersionAppInput" oninput="saveHeaderConfig()" placeholder="VD: v2.1.0" class="w-full bg-slate-50 border border-slate-300 text-xs rounded-lg p-2 outline-none font-medium">
+                                        <input type="text" id="reportVersionAppInput" oninput="saveHeaderConfig()" placeholder="VD: v2.1.0" class="w-full h-[40px] px-3 py-2.5 bg-slate-50 border border-slate-300 text-xs rounded-lg outline-none font-medium shadow-sm transition focus:ring-2 focus:ring-indigo-500">
                                     </div>
                                     <div>
                                         <label class="block text-[11px] font-bold text-slate-600 mb-1">Môi trường Test (Env):</label>
-                                        <textarea id="reportEnvInput" oninput="saveHeaderConfig()" rows="2" placeholder="VD: Iframe/App - Internal Staging" class="w-full bg-slate-50 border border-slate-300 text-xs rounded-lg p-2 outline-none font-medium custom-scrollbar"></textarea>
+                                        <textarea id="reportEnvInput" oninput="saveHeaderConfig()" placeholder="VD: Iframe/App - Internal Staging" class="w-full h-[40px] px-3 py-2 bg-slate-50 border border-slate-300 text-xs rounded-lg outline-none font-medium resize-none custom-scrollbar shadow-sm transition focus:ring-2 focus:ring-indigo-500 leading-relaxed"></textarea>
                                     </div>
                                 </div>
 
                                 <!-- DYNAMIC LINK SELECTOR & INPUTS -->
                                 <div class="border-t border-slate-100 pt-3">
+                                    <!-- CÁC Ô NHẬP LINK LÊN TRÊN -->
                                     <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 mb-4">
                                         <div id="fieldIframe">
                                             <label class="block text-[11px] font-bold text-slate-600 mb-1">Link Iframe (theo lang):</label>
-                                            <input type="text" id="reportLinkIframeInput" oninput="saveHeaderConfig()" placeholder="VD: https://iframe..." class="w-full bg-slate-50 border border-slate-300 text-xs rounded-lg p-2 outline-none font-medium">
+                                            <input type="text" id="reportLinkIframeInput" oninput="saveHeaderConfig()" placeholder="VD: https://iframe..." class="w-full h-[40px] px-3 py-2.5 bg-slate-50 border border-slate-300 text-xs rounded-lg outline-none font-medium shadow-sm transition focus:ring-2 focus:ring-indigo-500">
                                         </div>
                                         <div id="fieldPreprod" class="hidden">
                                             <label class="block text-[11px] font-bold text-slate-600 mb-1">Preprod Link (nếu có):</label>
-                                            <input type="text" id="reportLinkPreprodInput" oninput="saveHeaderConfig()" placeholder="VD: https://preprod..." class="w-full bg-slate-50 border border-slate-300 text-xs rounded-lg p-2 outline-none font-medium">
+                                            <input type="text" id="reportLinkPreprodInput" oninput="saveHeaderConfig()" placeholder="VD: https://preprod..." class="w-full h-[40px] px-3 py-2.5 bg-slate-50 border border-slate-300 text-xs rounded-lg outline-none font-medium shadow-sm transition focus:ring-2 focus:ring-indigo-500">
                                         </div>
                                         <div id="fieldWebapp" class="hidden">
                                             <label class="block text-[11px] font-bold text-slate-600 mb-1">Webapp Link:</label>
-                                            <input type="text" id="reportLinkWebappInput" oninput="saveHeaderConfig()" placeholder="VD: https://webapp..." class="w-full bg-slate-50 border border-slate-300 text-xs rounded-lg p-2 outline-none font-medium">
+                                            <input type="text" id="reportLinkWebappInput" oninput="saveHeaderConfig()" placeholder="VD: https://webapp..." class="w-full h-[40px] px-3 py-2.5 bg-slate-50 border border-slate-300 text-xs rounded-lg outline-none font-medium shadow-sm transition focus:ring-2 focus:ring-indigo-500">
                                         </div>
                                         <div id="fieldAppname" class="hidden">
                                             <label class="block text-[11px] font-bold text-slate-600 mb-1">App name:</label>
-                                            <input type="text" id="reportLinkAppnameInput" oninput="saveHeaderConfig()" placeholder="VD: Apptek12 / GoldDigger.apk" class="w-full bg-slate-50 border border-slate-300 text-xs rounded-lg p-2 outline-none font-medium">
+                                            <input type="text" id="reportLinkAppnameInput" oninput="saveHeaderConfig()" placeholder="VD: Apptek12 / GoldDigger.apk" class="w-full h-[40px] px-3 py-2.5 bg-slate-50 border border-slate-300 text-xs rounded-lg outline-none font-medium shadow-sm transition focus:ring-2 focus:ring-indigo-500">
                                         </div>
                                         
                                         <!-- Ô NHẬP LINK TESTCASE ẨN DÙNG CHO AUTO-FILL CLIPBOARD -->
                                         <input type="hidden" id="reportTestcaseInput" oninput="saveHeaderConfig()">
                                     </div>
 
+                                    <!-- CHECKBOX TÙY CHỌN XUỐNG DƯỚI -->
                                     <div class="flex items-center gap-3">
                                         <label class="block text-[11px] font-bold text-slate-500 uppercase tracking-wide">
                                             <i class="fa-solid fa-layer-group text-indigo-400 mr-1"></i> Tùy chọn hiển thị thêm:
@@ -582,7 +584,6 @@
             'Low': '#3B82F6', 'Lowest': '#10B981', 'Unassigned': '#64748B'
         };
 
-        // BẬT / ẨN Ô NHẬP THEO CHECKBOX LINK
         function toggleLinkInputs() {
             const linkConfigs = [
                 { cb: 'cbIframe', field: 'fieldIframe' },
@@ -604,7 +605,6 @@
             });
         }
 
-        // TỰ ĐỘNG CẬP NHẬT ENV KHI TÍCH VÀO CHECKBOX
         function updateEnvField() {
             const isIframe = document.getElementById('cbIframe')?.checked;
             const isWebapp = document.getElementById('cbWebapp')?.checked;
@@ -638,7 +638,6 @@
             }
         }
 
-        // TỰ ĐỘNG LƯU TOÀN BỘ CẤU HÌNH THÔNG TIN BÁO CÁO VÀO LOCALSTORAGE
         function saveHeaderConfig() {
             const config = {
                 gameName: document.getElementById('reportGameNameInput')?.value || '',
@@ -656,13 +655,11 @@
                 notes: document.getElementById('reportNotesInput')?.value || '',
                 metadata: document.getElementById('reportMetadataInput')?.value || '',
                 
-                // LƯU LẠI GIÁ TRỊ ẨN CỦA TESTCASE TỪ AUTO-FILL CLIPBOARD (NẾU CÓ)
                 linkTestcase: document.getElementById('reportTestcaseInput')?.value || ''
             };
             localStorage.setItem('jira_header_config', JSON.stringify(config));
         }
 
-        // KHÔI PHỤC TOÀN BỘ CẤU HÌNH BÁO CÁO TỪ LOCALSTORAGE KHI RELOAD TRANG
         function loadHeaderConfig() {
             const saved = localStorage.getItem('jira_header_config');
             if (!saved) return;
@@ -683,7 +680,6 @@
                 if (config.linkWebapp !== undefined && document.getElementById('reportLinkWebappInput')) document.getElementById('reportLinkWebappInput').value = config.linkWebapp;
                 if (config.linkAppname !== undefined && document.getElementById('reportLinkAppnameInput')) document.getElementById('reportLinkAppnameInput').value = config.linkAppname;
 
-                // KHÔI PHỤC GIÁ TRỊ ẨN CỦA TESTCASE TỪ AUTO-FILL CLIPBOARD (NẾU CÓ)
                 if (config.linkTestcase !== undefined && document.getElementById('reportTestcaseInput')) document.getElementById('reportTestcaseInput').value = config.linkTestcase;
 
                 if (config.notes !== undefined && document.getElementById('reportNotesInput')) document.getElementById('reportNotesInput').value = config.notes;
@@ -695,7 +691,6 @@
             }
         }
 
-        // HÀM CHUẨN HÓA & LÀM GỌN LINK JIRA CHO BÁO CÁO
         function cleanJiraUrlForReport(urlStr) {
             if (!urlStr) return '';
             try {
@@ -706,7 +701,6 @@
             }
         }
 
-        // HÀM AUTO-FILL BÁO CÁO CŨ TỪ CLIPBOARD
         async function pasteReportFromClipboard() {
             try {
                 const text = await navigator.clipboard.readText();
@@ -735,7 +729,6 @@
                     filledCount++;
                 }
 
-                // Cải tiến lấy Env dạng multi-line
                 const envMatch = text.match(/Env:\s*([\s\S]*?)(?=Link:)/i);
                 if (envMatch) {
                     if (document.getElementById('reportEnvInput')) document.getElementById('reportEnvInput').value = envMatch[1].trim();
@@ -776,12 +769,6 @@
                     filledCount++;
                 }
 
-                const jiraLinkMatch = text.match(/^Link Jira:\s*(.*)/im);
-                if (jiraLinkMatch) {
-                    filledCount++;
-                }
-
-                // VẪN GIỮ LOGIC BÓC TÁCH LINK TESTCASE TỪ CLIPBOARD ĐỂ LƯU VÀO Ô ẨN
                 const tcMatch = text.match(/^Test case:\s*(.*)/im);
                 if (tcMatch && document.getElementById('reportTestcaseInput')) {
                     document.getElementById('reportTestcaseInput').value = tcMatch[1].trim();
@@ -1568,7 +1555,7 @@
             });
         }
 
-        // GENERATE REPORT CHUẨN
+        // GENERATE REPORT CHUẨN: TỰ ĐỘNG SINH LINK JIRA TỪ PROJECT KEY VÀ BOARD ID
         async function confirmAndCopyReport(skipTagFilter = false) {
             let allowedTags = [];
             
@@ -1631,7 +1618,7 @@
                 const linkWebapp = document.getElementById('reportLinkWebappInput') ? document.getElementById('reportLinkWebappInput').value.trim() : '';
                 const linkAppname = document.getElementById('reportLinkAppnameInput') ? document.getElementById('reportLinkAppnameInput').value.trim() : '';
                 
-                // TỰ ĐỘNG SINH LINK JIRA THEO CHUẨN KHI TÍCH CHỌN "Link Jira"
+                // TỰ ĐỘNG SINH LINK JIRA THEO CHUẨN 
                 let generatedJiraLink = "";
                 if (currentProjectKey && currentJiraDomain) {
                     generatedJiraLink = `${currentJiraDomain}/jira/software/projects/${currentProjectKey}/boards`;
@@ -1719,6 +1706,7 @@
                     if (isAppnameChecked && linkAppname) reportLines.push('  • App name: ' + linkAppname);
                 }
                 
+                // LUÔN MẶC ĐỊNH HIỂN THỊ LINK JIRA VÀ LINK TESTCASE NẾU CÓ DATA
                 if (generatedJiraLink) reportLines.push('Link Jira: ' + generatedJiraLink);
                 if (testcaseLinkToUse) reportLines.push('Test case: ' + testcaseLinkToUse);
                 reportLines.push('---------------------------------------------');
