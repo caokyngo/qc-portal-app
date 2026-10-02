@@ -247,7 +247,7 @@
                                     </div>
                                     <div>
                                         <label class="block text-[11px] font-bold text-slate-600 mb-1">Môi trường Test (Env):</label>
-                                        <input type="text" id="reportEnvInput" oninput="saveHeaderConfig()" placeholder="VD: Iframe/App - Internal Staging" class="w-full bg-slate-50 border border-slate-300 text-xs rounded-lg p-2 outline-none font-medium">
+                                        <textarea id="reportEnvInput" oninput="saveHeaderConfig()" rows="2" placeholder="VD: Iframe/App - Internal Staging" class="w-full bg-slate-50 border border-slate-300 text-xs rounded-lg p-2 outline-none font-medium custom-scrollbar"></textarea>
                                     </div>
                                 </div>
 
@@ -281,19 +281,19 @@
                                         </label>
                                         <div class="flex flex-wrap gap-2 text-xs font-medium text-slate-700">
                                             <label class="inline-flex items-center gap-1.5 cursor-pointer bg-indigo-50/60 hover:bg-indigo-100 px-2 py-1 rounded-md border border-indigo-200 transition">
-                                                <input type="checkbox" id="cbIframe" checked onchange="toggleLinkInputs(); saveHeaderConfig();" class="rounded text-indigo-600 focus:ring-indigo-500 w-3.5 h-3.5">
+                                                <input type="checkbox" id="cbIframe" checked onchange="toggleLinkInputs(); updateEnvField(); saveHeaderConfig();" class="rounded text-indigo-600 focus:ring-indigo-500 w-3.5 h-3.5">
                                                 <span class="font-bold text-[11px] text-indigo-900">Iframe</span>
                                             </label>
                                             <label class="inline-flex items-center gap-1.5 cursor-pointer bg-slate-100 hover:bg-slate-200 px-2 py-1 rounded-md border border-slate-200 transition">
-                                                <input type="checkbox" id="cbPreprod" onchange="toggleLinkInputs(); saveHeaderConfig();" class="rounded text-indigo-600 focus:ring-indigo-500 w-3.5 h-3.5">
+                                                <input type="checkbox" id="cbPreprod" onchange="toggleLinkInputs(); updateEnvField(); saveHeaderConfig();" class="rounded text-indigo-600 focus:ring-indigo-500 w-3.5 h-3.5">
                                                 <span class="font-bold text-[11px] text-slate-700">Preprod</span>
                                             </label>
                                             <label class="inline-flex items-center gap-1.5 cursor-pointer bg-slate-100 hover:bg-slate-200 px-2 py-1 rounded-md border border-slate-200 transition">
-                                                <input type="checkbox" id="cbWebapp" onchange="toggleLinkInputs(); saveHeaderConfig();" class="rounded text-indigo-600 focus:ring-indigo-500 w-3.5 h-3.5">
+                                                <input type="checkbox" id="cbWebapp" onchange="toggleLinkInputs(); updateEnvField(); saveHeaderConfig();" class="rounded text-indigo-600 focus:ring-indigo-500 w-3.5 h-3.5">
                                                 <span class="font-bold text-[11px] text-slate-700">Webapp</span>
                                             </label>
                                             <label class="inline-flex items-center gap-1.5 cursor-pointer bg-slate-100 hover:bg-slate-200 px-2 py-1 rounded-md border border-slate-200 transition">
-                                                <input type="checkbox" id="cbAppname" onchange="toggleLinkInputs(); saveHeaderConfig();" class="rounded text-indigo-600 focus:ring-indigo-500 w-3.5 h-3.5">
+                                                <input type="checkbox" id="cbAppname" onchange="toggleLinkInputs(); updateEnvField(); saveHeaderConfig();" class="rounded text-indigo-600 focus:ring-indigo-500 w-3.5 h-3.5">
                                                 <span class="font-bold text-[11px] text-slate-700">App name</span>
                                             </label>
                                         </div>
@@ -582,6 +582,7 @@
             'Low': '#3B82F6', 'Lowest': '#10B981', 'Unassigned': '#64748B'
         };
 
+        // BẬT / ẨN Ô NHẬP THEO CHECKBOX LINK
         function toggleLinkInputs() {
             const linkConfigs = [
                 { cb: 'cbIframe', field: 'fieldIframe' },
@@ -603,6 +604,41 @@
             });
         }
 
+        // TỰ ĐỘNG CẬP NHẬT ENV KHI TÍCH VÀO CHECKBOX
+        function updateEnvField() {
+            const isIframe = document.getElementById('cbIframe')?.checked;
+            const isWebapp = document.getElementById('cbWebapp')?.checked;
+            const isAppname = document.getElementById('cbAppname')?.checked;
+            const isPreprod = document.getElementById('cbPreprod')?.checked;
+
+            let internalParts = [];
+            if (isIframe) internalParts.push("Iframe");
+            if (isAppname) internalParts.push("App");
+            if (isWebapp) internalParts.push("WebApp");
+
+            let envLines = [];
+            
+            if (internalParts.length > 0) {
+                envLines.push(internalParts.join('/') + " - Internal Staging");
+            }
+            
+            if (isPreprod) {
+                envLines.push("Preproduction - External Staging");
+            }
+
+            const envInput = document.getElementById('reportEnvInput');
+            if (envInput) {
+                if (envLines.length === 0) {
+                    envInput.value = "";
+                } else if (envLines.length === 1) {
+                    envInput.value = envLines[0];
+                } else {
+                    envInput.value = "- " + envLines.join("\n- ");
+                }
+            }
+        }
+
+        // TỰ ĐỘNG LƯU TOÀN BỘ CẤU HÌNH THÔNG TIN BÁO CÁO VÀO LOCALSTORAGE
         function saveHeaderConfig() {
             const config = {
                 gameName: document.getElementById('reportGameNameInput')?.value || '',
@@ -626,6 +662,7 @@
             localStorage.setItem('jira_header_config', JSON.stringify(config));
         }
 
+        // KHÔI PHỤC TOÀN BỘ CẤU HÌNH BÁO CÁO TỪ LOCALSTORAGE KHI RELOAD TRANG
         function loadHeaderConfig() {
             const saved = localStorage.getItem('jira_header_config');
             if (!saved) return;
@@ -658,6 +695,7 @@
             }
         }
 
+        // HÀM CHUẨN HÓA & LÀM GỌN LINK JIRA CHO BÁO CÁO
         function cleanJiraUrlForReport(urlStr) {
             if (!urlStr) return '';
             try {
@@ -668,6 +706,7 @@
             }
         }
 
+        // HÀM AUTO-FILL BÁO CÁO CŨ TỪ CLIPBOARD
         async function pasteReportFromClipboard() {
             try {
                 const text = await navigator.clipboard.readText();
@@ -696,10 +735,17 @@
                     filledCount++;
                 }
 
-                const envMatch = text.match(/Env:\s*(.*)/i);
+                // Cải tiến lấy Env dạng multi-line
+                const envMatch = text.match(/Env:\s*([\s\S]*?)(?=Link:)/i);
                 if (envMatch) {
                     if (document.getElementById('reportEnvInput')) document.getElementById('reportEnvInput').value = envMatch[1].trim();
                     filledCount++;
+                } else {
+                    const envMatchSingle = text.match(/Env:\s*(.*)/i);
+                    if (envMatchSingle) {
+                        if (document.getElementById('reportEnvInput')) document.getElementById('reportEnvInput').value = envMatchSingle[1].trim();
+                        filledCount++;
+                    }
                 }
 
                 const iframeMatch = text.match(/^\s*(?:[•\-\*]\s*)?Iframe:\s*(.*)/im);
@@ -1653,7 +1699,14 @@
                 if (gameName) reportLines.push('Report for ' + gameName + (dateStr ? ' (' + dateStr + ')' : ''));
                 if (verGame) reportLines.push('Version game: ' + verGame);
                 if (verApp) reportLines.push('Version App: ' + verApp);
-                if (envText) reportLines.push('Env: ' + envText);
+                
+                if (envText) {
+                    if (envText.includes('\n')) {
+                        reportLines.push('Env:\n' + envText);
+                    } else {
+                        reportLines.push('Env: ' + envText);
+                    }
+                }
                 
                 // SECTION LINKS DẠNG CÂY BULLET (CHỈ HIỂN THỊ NẾU ĐƯỢC CHỌN & CÓ GIÁ TRỊ)
                 const hasSubLinks = (isIframeChecked && linkIframe) || (isPreprodChecked && linkPreprod) || (isWebappChecked && linkWebapp) || (isAppnameChecked && linkAppname);
@@ -1766,7 +1819,7 @@
                             }
                         });
 
-                        if (index < tagOrder.length - 1) reportLines.push('----------');
+                        if (index < tagOrder.length - 1) reportLines.push('-----');
                     });
                 } else {
                     reportLines.push('B. [TICKETS]');
