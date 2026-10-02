@@ -102,6 +102,10 @@
                 <i class="fa-solid fa-circle-info w-5 text-center text-lg"></i> 
                 <span>Thông tin Device</span>
             </a>
+            <a href="log_off" class="whitespace-nowrap flex items-center gap-3 px-4 py-3.5 text-sm font-bold rounded-xl transition border border-white/15 bg-white/10 hover:bg-white/25 hover:border-white/40 text-white backdrop-blur-md shadow-sm">
+                <i class="fa-solid fa-calendar-minus w-5 text-center text-lg"></i> 
+                <span>Xin OFF / WFH</span>
+            </a>
         </nav>
     </aside>
 
@@ -295,11 +299,6 @@
                                         <div id="fieldAppname" class="hidden">
                                             <label class="block text-[11px] font-bold text-slate-600 mb-1">App name:</label>
                                             <input type="text" id="reportLinkAppnameInput" oninput="saveHeaderConfig()" placeholder="VD: Apptek12 / GoldDigger.apk" class="w-full bg-slate-50 border border-slate-300 text-xs rounded-lg p-2 outline-none font-medium">
-                                        </div>
-                                        
-                                        <!-- Ô NHẬP LINK TESTCASE ẨN DÙNG CHO AUTO-FILL CLIPBOARD -->
-                                        <div id="fieldTestcaseHidden" style="display:none;">
-                                            <input type="text" id="reportTestcaseInput" oninput="saveHeaderConfig()">
                                         </div>
                                     </div>
                                 </div>
@@ -586,6 +585,7 @@
             'Low': '#3B82F6', 'Lowest': '#10B981', 'Unassigned': '#64748B'
         };
 
+        // BẬT / ẨN Ô NHẬP THEO CHECKBOX LINK
         function toggleLinkInputs() {
             const linkConfigs = [
                 { cb: 'cbIframe', field: 'fieldIframe' },
@@ -607,6 +607,7 @@
             });
         }
 
+        // TỰ ĐỘNG LƯU TOÀN BỘ CẤU HÌNH THÔNG TIN BÁO CÁO VÀO LOCALSTORAGE
         function saveHeaderConfig() {
             const config = {
                 gameName: document.getElementById('reportGameNameInput')?.value || '',
@@ -623,14 +624,12 @@
                 linkWebapp: document.getElementById('reportLinkWebappInput')?.value || '',
                 linkAppname: document.getElementById('reportLinkAppnameInput')?.value || '',
                 notes: document.getElementById('reportNotesInput')?.value || '',
-                metadata: document.getElementById('reportMetadataInput')?.value || '',
-                
-                // LƯU LẠI GIÁ TRỊ ẨN CỦA TESTCASE TỪ AUTO-FILL CLIPBOARD (NẾU CÓ)
-                linkTestcase: document.getElementById('reportTestcaseInput')?.value || ''
+                metadata: document.getElementById('reportMetadataInput')?.value || ''
             };
             localStorage.setItem('jira_header_config', JSON.stringify(config));
         }
 
+        // KHÔI PHỦC TOÀN BỘ CẤU HÌNH BÁO CÁO TỪ LOCALSTORAGE KHI RELOAD TRANG
         function loadHeaderConfig() {
             const saved = localStorage.getItem('jira_header_config');
             if (!saved) return;
@@ -652,9 +651,6 @@
                 if (config.linkWebapp !== undefined && document.getElementById('reportLinkWebappInput')) document.getElementById('reportLinkWebappInput').value = config.linkWebapp;
                 if (config.linkAppname !== undefined && document.getElementById('reportLinkAppnameInput')) document.getElementById('reportLinkAppnameInput').value = config.linkAppname;
 
-                // KHÔI PHỤC GIÁ TRỊ ẨN CỦA TESTCASE TỪ AUTO-FILL CLIPBOARD (NẾU CÓ)
-                if (config.linkTestcase !== undefined && document.getElementById('reportTestcaseInput')) document.getElementById('reportTestcaseInput').value = config.linkTestcase;
-
                 if (config.notes !== undefined && document.getElementById('reportNotesInput')) document.getElementById('reportNotesInput').value = config.notes;
                 if (config.metadata !== undefined && document.getElementById('reportMetadataInput')) document.getElementById('reportMetadataInput').value = config.metadata;
 
@@ -664,6 +660,7 @@
             }
         }
 
+        // HÀM CHUẨN HÓA & LÀM GỌN LINK JIRA CHO BÁO CÁO
         function cleanJiraUrlForReport(urlStr) {
             if (!urlStr) return '';
             try {
@@ -674,6 +671,7 @@
             }
         }
 
+        // HÀM AUTO-FILL BÁO CÁO CŨ TỪ CLIPBOARD
         async function pasteReportFromClipboard() {
             try {
                 const text = await navigator.clipboard.readText();
@@ -742,14 +740,7 @@
                     filledCount++;
                 }
 
-                // VẪN GIỮ LOGIC BÓC TÁCH LINK TESTCASE TỪ CLIPBOARD ĐỂ LƯU VÀO Ô ẨN
-                const tcMatch = text.match(/^Test case:\s*(.*)/im);
-                if (tcMatch && document.getElementById('reportTestcaseInput')) {
-                    document.getElementById('reportTestcaseInput').value = tcMatch[1].trim();
-                    filledCount++;
-                }
-
-                const scopeMatch = text.match(/1\.\s*Scope of testing:\s*(.*)/i) || text.match(/-\s*Scope of testing:\s*(.*)/i);
+                const scopeMatch = text.match(/1\.\s*Scope of testing:\s*(.*)/i);
                 if (scopeMatch) {
                     if (document.getElementById('scopeOfTestingInput')) document.getElementById('scopeOfTestingInput').value = scopeMatch[1].trim();
                     saveScopeTesting();
@@ -1363,35 +1354,8 @@
         }
 
         function parseProgressDataFromMatrix(rows) {
-            // TÌM KIẾM MẠNH MẼ ĐỂ LẤY LINK TESTCASE TỪ SHEET
-            let testcaseLinkFromSheet = "";
-            if (rows && rows.length > 0) {
-                // Quét 10 dòng, 10 cột đầu tiên để bắt bằng được raw link drive/sheet
-                for (let i = 0; i < Math.min(rows.length, 10); i++) {
-                    if (!rows[i]) continue;
-                    for (let j = 0; j < Math.min(rows[i].length, 10); j++) {
-                        let cellVal = String(rows[i][j]).trim();
-                        // Dùng Regex lấy link có http/https
-                        let urlMatch = cellVal.match(/(https?:\/\/[^\s"'<>]+)/i);
-                        if (urlMatch) {
-                            let url = urlMatch[1];
-                            if (url.includes("drive.google.com") || url.includes("docs.google.com") || url.includes("spreadsheets")) {
-                                testcaseLinkFromSheet = url;
-                                break;
-                            }
-                        }
-                    }
-                    if (testcaseLinkFromSheet) break;
-                }
-                
-                // Fallback: Lấy chính xác ô A1 (rows[0][0]) nếu nó không rỗng và không phải header "STT"
-                if (!testcaseLinkFromSheet && rows[0] && rows[0][0]) {
-                    let a1 = String(rows[0][0]).trim();
-                    if (a1 && !a1.toLowerCase().includes("stt") && !a1.toLowerCase().includes("module")) {
-                        testcaseLinkFromSheet = a1;
-                    }
-                }
-            }
+            // LẤY TRỰC TIẾP LINK TESTCASE TỪ Ô A1 CỦA GOOGLE SHEET (rows[0][0])
+            let testcaseLinkFromA1 = (rows && rows[0] && rows[0][0]) ? String(rows[0][0]).trim() : "";
 
             let row16colI = "";
             if (rows.length > 15 && rows[15] && rows[15][8] !== undefined && rows[15][8] !== null) {
@@ -1485,7 +1449,7 @@
             return {
                 text: lines.join('\n'),
                 targetData: row16colI,
-                testcaseLink: testcaseLinkFromSheet
+                testcaseLink: testcaseLinkFromA1
             };
         }
 
@@ -1550,18 +1514,7 @@
                 const selectedStatusSet = getSelectedStatuses();
                 const tagMode = document.getElementById('tagModeSelect').value;
                 const gasUrl = URL_REPORT_API;
-                
-                // LẤY SHEET NAME HOẶC TỰ NHẬN DIỆN TỪ GAME NAME NẾU TRỐNG
-                let sheetName = document.getElementById('sheetNameInput') ? document.getElementById('sheetNameInput').value.trim() : '';
-                const gameName = document.getElementById('reportGameNameInput') ? document.getElementById('reportGameNameInput').value.trim() : '';
-                
-                if (!sheetName && gameName) {
-                    const match = gameName.match(/^(\d+)/);
-                    if (match) {
-                        sheetName = match[1];
-                    }
-                }
-                
+                const sheetName = document.getElementById('sheetNameInput') ? document.getElementById('sheetNameInput').value.trim() : '';
                 const scopeText = document.getElementById('scopeOfTestingInput') ? document.getElementById('scopeOfTestingInput').value.trim() : '';
                 const qcMembers = document.getElementById('qcMembersInput') ? document.getElementById('qcMembersInput').value.trim() : '';
                 
@@ -1573,6 +1526,7 @@
                 }
 
                 // Lấy thông tin Header
+                const gameName = document.getElementById('reportGameNameInput') ? document.getElementById('reportGameNameInput').value.trim() : '';
                 const verGame = document.getElementById('reportVersionGameInput') ? document.getElementById('reportVersionGameInput').value.trim() : '';
                 const verApp = document.getElementById('reportVersionAppInput') ? document.getElementById('reportVersionAppInput').value.trim() : '';
                 const envText = document.getElementById('reportEnvInput') ? document.getElementById('reportEnvInput').value.trim() : '';
@@ -1646,10 +1600,8 @@
                     progressReportObj = await fetchGSheetProgressReport(gasUrl, sheetName);
                 }
 
-                // ƯU TIÊN LẤY LINK TESTCASE TỪ GOOGLE SHEET TRƯỚC (NẾU CÓ), SAU ĐÓ MỚI ĐẾN CLIPBOARD
-                let sheetTestcase = (progressReportObj && progressReportObj.testcaseLink) ? progressReportObj.testcaseLink : '';
-                let clipboardTestcase = document.getElementById('reportTestcaseInput') ? document.getElementById('reportTestcaseInput').value.trim() : '';
-                let testcaseLinkToUse = sheetTestcase || clipboardTestcase;
+                // LẤY TỰ ĐỘNG LINK TESTCASE TỪ Ô A1 CỦA GOOGLE SHEET
+                let testcaseLink = (progressReportObj && progressReportObj.testcaseLink) ? progressReportObj.testcaseLink : '';
 
                 let reportLines = [];
 
@@ -1671,7 +1623,7 @@
                 }
                 
                 if (isJiraChecked && generatedJiraLink) reportLines.push('Link Jira: ' + generatedJiraLink);
-                if (testcaseLinkToUse) reportLines.push('Test case: ' + testcaseLinkToUse);
+                if (testcaseLink) reportLines.push('Test case: ' + testcaseLink);
                 reportLines.push('---------------------------------------------');
 
                 // A. [SUMMARY]
