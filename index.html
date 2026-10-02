@@ -624,6 +624,8 @@
                 linkAppname: document.getElementById('reportLinkAppnameInput')?.value || '',
                 notes: document.getElementById('reportNotesInput')?.value || '',
                 metadata: document.getElementById('reportMetadataInput')?.value || '',
+                
+                // LƯU LẠI GIÁ TRỊ ẨN CỦA TESTCASE TỪ AUTO-FILL CLIPBOARD (NẾU CÓ)
                 linkTestcase: document.getElementById('reportTestcaseInput')?.value || ''
             };
             localStorage.setItem('jira_header_config', JSON.stringify(config));
@@ -650,6 +652,7 @@
                 if (config.linkWebapp !== undefined && document.getElementById('reportLinkWebappInput')) document.getElementById('reportLinkWebappInput').value = config.linkWebapp;
                 if (config.linkAppname !== undefined && document.getElementById('reportLinkAppnameInput')) document.getElementById('reportLinkAppnameInput').value = config.linkAppname;
 
+                // KHÔI PHỤC GIÁ TRỊ ẨN CỦA TESTCASE TỪ AUTO-FILL CLIPBOARD (NẾU CÓ)
                 if (config.linkTestcase !== undefined && document.getElementById('reportTestcaseInput')) document.getElementById('reportTestcaseInput').value = config.linkTestcase;
 
                 if (config.notes !== undefined && document.getElementById('reportNotesInput')) document.getElementById('reportNotesInput').value = config.notes;
@@ -739,6 +742,7 @@
                     filledCount++;
                 }
 
+                // VẪN GIỮ LOGIC BÓC TÁCH LINK TESTCASE TỪ CLIPBOARD ĐỂ LƯU VÀO Ô ẨN
                 const tcMatch = text.match(/^Test case:\s*(.*)/im);
                 if (tcMatch && document.getElementById('reportTestcaseInput')) {
                     document.getElementById('reportTestcaseInput').value = tcMatch[1].trim();
@@ -1359,36 +1363,32 @@
         }
 
         function parseProgressDataFromMatrix(rows) {
-            // TÌM KIẾM MẠNH MẼ ĐỂ LẤY LINK TESTCASE TỪ SHEET (Dù ở A1 hay rải rác)
+            // TÌM KIẾM MẠNH MẼ ĐỂ LẤY LINK TESTCASE TỪ SHEET
             let testcaseLinkFromSheet = "";
             if (rows && rows.length > 0) {
-                // Quét 30 dòng, 10 cột đầu tiên để bắt bằng được raw link drive/sheet
-                outerLoop:
-                for (let i = 0; i < Math.min(rows.length, 30); i++) {
+                // Quét 10 dòng, 10 cột đầu tiên để bắt bằng được raw link drive/sheet
+                for (let i = 0; i < Math.min(rows.length, 10); i++) {
                     if (!rows[i]) continue;
                     for (let j = 0; j < Math.min(rows[i].length, 10); j++) {
                         let cellVal = String(rows[i][j]).trim();
-                        // Dùng Regex lấy link
-                        let urlMatch = cellVal.match(/https?:\/\/[^\s]+/i);
+                        // Dùng Regex lấy link có http/https
+                        let urlMatch = cellVal.match(/(https?:\/\/[^\s"'<>]+)/i);
                         if (urlMatch) {
-                            let url = urlMatch[0];
-                            if (url.includes("drive.google.com") || url.includes("docs.google.com")) {
+                            let url = urlMatch[1];
+                            if (url.includes("drive.google.com") || url.includes("docs.google.com") || url.includes("spreadsheets")) {
                                 testcaseLinkFromSheet = url;
-                                break outerLoop;
+                                break;
                             }
                         }
                     }
+                    if (testcaseLinkFromSheet) break;
                 }
                 
-                // Fallback nếu không chứa chữ drive/docs, nhưng có http ở dòng 1
-                if (!testcaseLinkFromSheet && rows[0]) {
-                    for (let j = 0; j < Math.min(rows[0].length, 10); j++) {
-                        let cellVal = String(rows[0][j]).trim();
-                        let urlMatch = cellVal.match(/https?:\/\/[^\s]+/i);
-                        if (urlMatch) {
-                            testcaseLinkFromSheet = urlMatch[0];
-                            break;
-                        }
+                // Fallback: Lấy chính xác ô A1 (rows[0][0]) nếu nó không rỗng và không phải header "STT"
+                if (!testcaseLinkFromSheet && rows[0] && rows[0][0]) {
+                    let a1 = String(rows[0][0]).trim();
+                    if (a1 && !a1.toLowerCase().includes("stt") && !a1.toLowerCase().includes("module")) {
+                        testcaseLinkFromSheet = a1;
                     }
                 }
             }
@@ -1552,11 +1552,14 @@
                 const gasUrl = URL_REPORT_API;
                 
                 // LẤY SHEET NAME HOẶC TỰ NHẬN DIỆN TỪ GAME NAME NẾU TRỐNG
-                const gameName = document.getElementById('reportGameNameInput') ? document.getElementById('reportGameNameInput').value.trim() : '';
                 let sheetName = document.getElementById('sheetNameInput') ? document.getElementById('sheetNameInput').value.trim() : '';
+                const gameName = document.getElementById('reportGameNameInput') ? document.getElementById('reportGameNameInput').value.trim() : '';
+                
                 if (!sheetName && gameName) {
                     const match = gameName.match(/^(\d+)/);
-                    if (match) sheetName = match[1];
+                    if (match) {
+                        sheetName = match[1];
+                    }
                 }
                 
                 const scopeText = document.getElementById('scopeOfTestingInput') ? document.getElementById('scopeOfTestingInput').value.trim() : '';
@@ -1569,6 +1572,7 @@
                     if (parts.length === 3) dateStr = parts[2] + '/' + parts[1] + '/' + parts[0];
                 }
 
+                // Lấy thông tin Header
                 const verGame = document.getElementById('reportVersionGameInput') ? document.getElementById('reportVersionGameInput').value.trim() : '';
                 const verApp = document.getElementById('reportVersionAppInput') ? document.getElementById('reportVersionAppInput').value.trim() : '';
                 const envText = document.getElementById('reportEnvInput') ? document.getElementById('reportEnvInput').value.trim() : '';
