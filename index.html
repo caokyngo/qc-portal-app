@@ -253,29 +253,7 @@
 
                                 <!-- DYNAMIC LINK SELECTOR & INPUTS -->
                                 <div class="border-t border-slate-100 pt-3">
-                                    <label class="block text-xs font-bold text-slate-700 mb-2">
-                                        <i class="fa-solid fa-link text-indigo-500 mr-1"></i> Chọn các loại Link bổ sung:
-                                    </label>
-                                    <div class="flex flex-wrap gap-3 text-xs font-medium text-slate-700 mb-3">
-                                        <label class="inline-flex items-center gap-1.5 cursor-pointer bg-indigo-50/60 hover:bg-indigo-100 px-2.5 py-1.5 rounded-lg border border-indigo-200 transition">
-                                            <input type="checkbox" id="cbIframe" checked onchange="toggleLinkInputs(); saveHeaderConfig();" class="rounded text-indigo-600 focus:ring-indigo-500">
-                                            <span class="font-bold text-indigo-900">Link Iframe</span>
-                                        </label>
-                                        <label class="inline-flex items-center gap-1.5 cursor-pointer bg-slate-100 hover:bg-slate-200 px-2.5 py-1.5 rounded-lg border border-slate-200 transition">
-                                            <input type="checkbox" id="cbPreprod" onchange="toggleLinkInputs(); saveHeaderConfig();" class="rounded text-indigo-600 focus:ring-indigo-500">
-                                            <span class="font-bold text-slate-700">Preprod</span>
-                                        </label>
-                                        <label class="inline-flex items-center gap-1.5 cursor-pointer bg-slate-100 hover:bg-slate-200 px-2.5 py-1.5 rounded-lg border border-slate-200 transition">
-                                            <input type="checkbox" id="cbWebapp" onchange="toggleLinkInputs(); saveHeaderConfig();" class="rounded text-indigo-600 focus:ring-indigo-500">
-                                            <span class="font-bold text-slate-700">Webapp</span>
-                                        </label>
-                                        <label class="inline-flex items-center gap-1.5 cursor-pointer bg-slate-100 hover:bg-slate-200 px-2.5 py-1.5 rounded-lg border border-slate-200 transition">
-                                            <input type="checkbox" id="cbAppname" onchange="toggleLinkInputs(); saveHeaderConfig();" class="rounded text-indigo-600 focus:ring-indigo-500">
-                                            <span class="font-bold text-slate-700">App name</span>
-                                        </label>
-                                    </div>
-
-                                    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+                                    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 mb-4">
                                         <div id="fieldIframe">
                                             <label class="block text-[11px] font-bold text-slate-600 mb-1">Link Iframe (theo lang):</label>
                                             <input type="text" id="reportLinkIframeInput" oninput="saveHeaderConfig()" placeholder="VD: https://iframe..." class="w-full bg-slate-50 border border-slate-300 text-xs rounded-lg p-2 outline-none font-medium">
@@ -295,6 +273,30 @@
                                         
                                         <!-- Ô NHẬP LINK TESTCASE ẨN DÙNG CHO AUTO-FILL CLIPBOARD -->
                                         <input type="hidden" id="reportTestcaseInput" oninput="saveHeaderConfig()">
+                                    </div>
+
+                                    <div class="flex items-center gap-3">
+                                        <label class="block text-[11px] font-bold text-slate-500 uppercase tracking-wide">
+                                            <i class="fa-solid fa-layer-group text-indigo-400 mr-1"></i> Tùy chọn hiển thị thêm:
+                                        </label>
+                                        <div class="flex flex-wrap gap-2 text-xs font-medium text-slate-700">
+                                            <label class="inline-flex items-center gap-1.5 cursor-pointer bg-indigo-50/60 hover:bg-indigo-100 px-2 py-1 rounded-md border border-indigo-200 transition">
+                                                <input type="checkbox" id="cbIframe" checked onchange="toggleLinkInputs(); saveHeaderConfig();" class="rounded text-indigo-600 focus:ring-indigo-500 w-3.5 h-3.5">
+                                                <span class="font-bold text-[11px] text-indigo-900">Iframe</span>
+                                            </label>
+                                            <label class="inline-flex items-center gap-1.5 cursor-pointer bg-slate-100 hover:bg-slate-200 px-2 py-1 rounded-md border border-slate-200 transition">
+                                                <input type="checkbox" id="cbPreprod" onchange="toggleLinkInputs(); saveHeaderConfig();" class="rounded text-indigo-600 focus:ring-indigo-500 w-3.5 h-3.5">
+                                                <span class="font-bold text-[11px] text-slate-700">Preprod</span>
+                                            </label>
+                                            <label class="inline-flex items-center gap-1.5 cursor-pointer bg-slate-100 hover:bg-slate-200 px-2 py-1 rounded-md border border-slate-200 transition">
+                                                <input type="checkbox" id="cbWebapp" onchange="toggleLinkInputs(); saveHeaderConfig();" class="rounded text-indigo-600 focus:ring-indigo-500 w-3.5 h-3.5">
+                                                <span class="font-bold text-[11px] text-slate-700">Webapp</span>
+                                            </label>
+                                            <label class="inline-flex items-center gap-1.5 cursor-pointer bg-slate-100 hover:bg-slate-200 px-2 py-1 rounded-md border border-slate-200 transition">
+                                                <input type="checkbox" id="cbAppname" onchange="toggleLinkInputs(); saveHeaderConfig();" class="rounded text-indigo-600 focus:ring-indigo-500 w-3.5 h-3.5">
+                                                <span class="font-bold text-[11px] text-slate-700">App name</span>
+                                            </label>
+                                        </div>
                                     </div>
                                 </div>
 
@@ -580,7 +582,6 @@
             'Low': '#3B82F6', 'Lowest': '#10B981', 'Unassigned': '#64748B'
         };
 
-        // BẬT / ẨN Ô NHẬP THEO CHECKBOX LINK
         function toggleLinkInputs() {
             const linkConfigs = [
                 { cb: 'cbIframe', field: 'fieldIframe' },
@@ -602,7 +603,6 @@
             });
         }
 
-        // TỰ ĐỘNG LƯU TOÀN BỘ CẤU HÌNH THÔNG TIN BÁO CÁO VÀO LOCALSTORAGE
         function saveHeaderConfig() {
             const config = {
                 gameName: document.getElementById('reportGameNameInput')?.value || '',
@@ -626,7 +626,6 @@
             localStorage.setItem('jira_header_config', JSON.stringify(config));
         }
 
-        // KHÔI PHỤC TOÀN BỘ CẤU HÌNH BÁO CÁO TỪ LOCALSTORAGE KHI RELOAD TRANG
         function loadHeaderConfig() {
             const saved = localStorage.getItem('jira_header_config');
             if (!saved) return;
@@ -659,7 +658,6 @@
             }
         }
 
-        // HÀM CHUẨN HÓA & LÀM GỌN LINK JIRA CHO BÁO CÁO
         function cleanJiraUrlForReport(urlStr) {
             if (!urlStr) return '';
             try {
@@ -670,7 +668,6 @@
             }
         }
 
-        // HÀM AUTO-FILL BÁO CÁO CŨ TỪ CLIPBOARD
         async function pasteReportFromClipboard() {
             try {
                 const text = await navigator.clipboard.readText();
@@ -1525,7 +1522,7 @@
             });
         }
 
-        // GENERATE REPORT CHUẨN: TỰ ĐỘNG SINH LINK JIRA TỪ PROJECT KEY VÀ BOARD ID
+        // GENERATE REPORT CHUẨN
         async function confirmAndCopyReport(skipTagFilter = false) {
             let allowedTags = [];
             
@@ -1669,8 +1666,8 @@
                     if (isAppnameChecked && linkAppname) reportLines.push('  • App name: ' + linkAppname);
                 }
                 
-                reportLines.push('Link Jira: ' + (generatedJiraLink || ''));
-                reportLines.push('Test case: ' + (testcaseLinkToUse || ''));
+                if (generatedJiraLink) reportLines.push('Link Jira: ' + generatedJiraLink);
+                if (testcaseLinkToUse) reportLines.push('Test case: ' + testcaseLinkToUse);
                 reportLines.push('---------------------------------------------');
 
                 // A. [SUMMARY]
