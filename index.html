@@ -170,7 +170,7 @@
             </div>
         </header>
 
-        <main class="flex-1 overflow-y-auto p-4 md:p-6 bg-slate-50">
+        <main class="flex-1 overflow-y-auto p-4 md:p-6 bg-slate-50 relative z-0">
             <div class="w-full mx-auto 2xl:max-w-[1600px] space-y-6">
                 
                 <!-- KHUNG NHẬP LINK JIRA -->
@@ -542,6 +542,7 @@
         </div>
     </div>
 
+    <!-- HÀM XỬ LÝ TOAST VÀ CÁC LOGIC KHÁC -->
     <script>
         const JIRA_PROXY_API_URL = "https://script.google.com/a/macros/enotion.io/s/AKfycbz948vll_3cMrDw3Vnj4CLVqbxyyfMPI87iUo9U_3HSQPralPZmySydiI0CXZ636FHl/exec";
         const URL_REPORT_API = "https://script.google.com/a/macros/enotion.io/s/AKfycbzynUh65kMWVtwRdYdg8x35-6LViA_JwMPrWhEoMdDXFDP7tpcheilYrReQSIrQ6zAtIQ/exec";
@@ -577,7 +578,6 @@
             }, 3500);
         }
 
-        // Tương thích ngược với các lệnh gọi Alert cũ
         function showCustomAlert(title, message, isError = false) {
             showToast(title, message, isError);
         }
@@ -623,7 +623,6 @@
             'Low': '#3B82F6', 'Lowest': '#10B981', 'Unassigned': '#64748B'
         };
 
-        // GIAO DIỆN CHIPS MÔI TRƯỜNG (ENV) THÔNG MINH
         function toggleEnvChip(btn) {
             btn.classList.toggle('bg-slate-100');
             btn.classList.toggle('text-slate-500');
@@ -661,7 +660,27 @@
             }
         }
 
-        // TỰ ĐỘNG LƯU LOCALSTORAGE CÓ LƯU THÊM TRẠNG THÁI CỦA CHIPS
+        function toggleLinkInputs() {
+            const linkConfigs = [
+                { cb: 'cbIframe', field: 'fieldIframe' },
+                { cb: 'cbPreprod', field: 'fieldPreprod' },
+                { cb: 'cbWebapp', field: 'fieldWebapp' },
+                { cb: 'cbAppname', field: 'fieldAppname' }
+            ];
+
+            linkConfigs.forEach(item => {
+                const cb = document.getElementById(item.cb);
+                const field = document.getElementById(item.field);
+                if (cb && field) {
+                    if (cb.checked) {
+                        field.classList.remove('hidden');
+                    } else {
+                        field.classList.add('hidden');
+                    }
+                }
+            });
+        }
+
         function saveHeaderConfig() {
             const container = document.getElementById('envChipContainer');
             const activeChips = container ? Array.from(container.querySelectorAll('.active-chip')).map(btn => btn.dataset.value) : [];
@@ -672,7 +691,7 @@
                 versionApp: document.getElementById('reportVersionAppInput')?.value || '',
                 env: document.getElementById('reportEnvInput')?.value || '',
                 envChips: activeChips,
-                
+
                 linkIframe: document.getElementById('reportLinkIframeInput')?.value || '',
                 linkPreprod: document.getElementById('reportLinkPreprodInput')?.value || '',
                 linkWebapp: document.getElementById('reportLinkWebappInput')?.value || '',
@@ -693,7 +712,7 @@
                 if (config.versionGame !== undefined && document.getElementById('reportVersionGameInput')) document.getElementById('reportVersionGameInput').value = config.versionGame;
                 if (config.versionApp !== undefined && document.getElementById('reportVersionAppInput')) document.getElementById('reportVersionAppInput').value = config.versionApp;
                 if (config.env !== undefined && document.getElementById('reportEnvInput')) document.getElementById('reportEnvInput').value = config.env;
-                
+
                 if (config.linkIframe !== undefined && document.getElementById('reportLinkIframeInput')) document.getElementById('reportLinkIframeInput').value = config.linkIframe;
                 if (config.linkPreprod !== undefined && document.getElementById('reportLinkPreprodInput')) document.getElementById('reportLinkPreprodInput').value = config.linkPreprod;
                 if (config.linkWebapp !== undefined && document.getElementById('reportLinkWebappInput')) document.getElementById('reportLinkWebappInput').value = config.linkWebapp;
@@ -703,7 +722,6 @@
                 if (config.notes !== undefined && document.getElementById('reportNotesInput')) document.getElementById('reportNotesInput').value = config.notes;
                 if (config.metadata !== undefined && document.getElementById('reportMetadataInput')) document.getElementById('reportMetadataInput').value = config.metadata;
 
-                // Khôi phục Chips Env
                 if (config.envChips && config.envChips.length > 0) {
                     const container = document.getElementById('envChipContainer');
                     if (container) {
@@ -757,6 +775,18 @@
                 if (verAppMatch) {
                     if (document.getElementById('reportVersionAppInput')) document.getElementById('reportVersionAppInput').value = verAppMatch[1].trim();
                     filledCount++;
+                }
+
+                const envMatch = text.match(/Env:\s*([\s\S]*?)(?=Link:)/i);
+                if (envMatch) {
+                    if (document.getElementById('reportEnvInput')) document.getElementById('reportEnvInput').value = envMatch[1].trim();
+                    filledCount++;
+                } else {
+                    const envMatchSingle = text.match(/Env:\s*(.*)/i);
+                    if (envMatchSingle) {
+                        if (document.getElementById('reportEnvInput')) document.getElementById('reportEnvInput').value = envMatchSingle[1].trim();
+                        filledCount++;
+                    }
                 }
 
                 const iframeMatch = text.match(/^\s*(?:[•\-\*]\s*)?Iframe:\s*(.*)/im);
@@ -1402,7 +1432,6 @@
         }
 
         function parseProgressDataFromMatrix(rows) {
-            // TÌM KIẾM MẠNH MẼ ĐỂ LẤY LINK TESTCASE TỪ SHEET (Dù ở A1 hay rải rác)
             let testcaseLinkFromSheet = "";
             if (rows && rows.length > 0) {
                 outerLoop:
@@ -1518,9 +1547,9 @@
             };
 
             const lines = [];
-            if (!isZeroPct(doneOverall) && doneRaw.length > 0) { lines.push('- DONE: ' + formatPctDisplayFixed(doneOverall)); lines.push(...consolidate(doneRaw)); }
-            if (!isZeroPct(inProgressOverall) && inProgressRaw.length > 0) { lines.push('- IN PROGRESS: ' + formatPctDisplayFixed(inProgressOverall)); lines.push(...consolidate(inProgressRaw)); }
-            if (!isZeroPct(remainingOverall) && remainingRaw.length > 0) { lines.push('- REMAINING: ' + formatPctDisplayFixed(remainingOverall)); lines.push(...consolidate(remainingRaw)); }
+            if (doneRaw.length > 0 || !isZeroPct(doneOverall)) { lines.push('- DONE: ' + formatPctDisplayFixed(doneOverall)); lines.push(...consolidate(doneRaw)); }
+            if (inProgressRaw.length > 0 || !isZeroPct(inProgressOverall)) { lines.push('- IN PROGRESS: ' + formatPctDisplayFixed(inProgressOverall)); lines.push(...consolidate(inProgressRaw)); }
+            if (remainingRaw.length > 0 || !isZeroPct(remainingOverall)) { lines.push('- REMAINING: ' + formatPctDisplayFixed(remainingOverall)); lines.push(...consolidate(remainingRaw)); }
 
             return {
                 text: lines.join('\n'),
@@ -1531,10 +1560,7 @@
 
         function fetchGSheetProgressReport(gasUrl, sheetName) {
             return new Promise((resolve) => {
-                if (!gasUrl.includes("script.google.com")) {
-                    showCustomAlert('Lỗi URL API', 'Đường link Google Apps Script không hợp lệ!', true);
-                    return resolve(null);
-                }
+                if (!gasUrl.includes("script.google.com")) return resolve(null);
 
                 const callbackName = 'jsonpCallback_' + Math.round(100000 * Math.random());
                 let fetchUrl = gasUrl;
@@ -1542,11 +1568,24 @@
                 fetchUrl += separator + 'callback=' + callbackName;
                 if (sheetName) fetchUrl += '&sheet=' + encodeURIComponent(sheetName);
 
+                let isResolved = false;
+                const timeoutId = setTimeout(() => {
+                    if (!isResolved) {
+                        isResolved = true;
+                        delete window[callbackName];
+                        console.warn('Lỗi Timeout API Sheet');
+                        resolve(null);
+                    }
+                }, 10000);
+
                 window[callbackName] = function(data) {
+                    if (isResolved) return;
+                    isResolved = true;
+                    clearTimeout(timeoutId);
                     delete window[callbackName];
                     document.body.removeChild(script);
                     if (data.success === false) {
-                        showToast('Cảnh báo từ Google Script', data.message || 'Không tìm thấy Sheet (Bỏ qua data sheet)', true);
+                        console.warn('Lỗi từ Google Script:', data.message);
                         resolve(null);
                     } else {
                         resolve(parseProgressDataFromMatrix(data.values));
@@ -1556,16 +1595,18 @@
                 const script = document.createElement('script');
                 script.src = fetchUrl;
                 script.onerror = function() {
+                    if (isResolved) return;
+                    isResolved = true;
+                    clearTimeout(timeoutId);
                     delete window[callbackName];
                     document.body.removeChild(script);
-                    showToast('Lỗi Kết Nối API', 'Không thể lấy dữ liệu từ Google Sheet.', true);
+                    console.warn('Lỗi Kết Nối API Google Sheet');
                     resolve(null);
                 };
                 document.body.appendChild(script);
             });
         }
 
-        // GENERATE REPORT CHUẨN
         async function confirmAndCopyReport(skipTagFilter = false) {
             let allowedTags = [];
             
@@ -1615,13 +1656,11 @@
                 const verApp = document.getElementById('reportVersionAppInput') ? document.getElementById('reportVersionAppInput').value.trim() : '';
                 const envText = document.getElementById('reportEnvInput') ? document.getElementById('reportEnvInput').value.trim() : '';
                 
-                // Lấy các Link (Chỉ những ô CÓ GIÁ TRỊ mới được lấy)
                 const linkIframe = document.getElementById('reportLinkIframeInput') ? document.getElementById('reportLinkIframeInput').value.trim() : '';
                 const linkPreprod = document.getElementById('reportLinkPreprodInput') ? document.getElementById('reportLinkPreprodInput').value.trim() : '';
                 const linkWebapp = document.getElementById('reportLinkWebappInput') ? document.getElementById('reportLinkWebappInput').value.trim() : '';
                 const linkAppname = document.getElementById('reportLinkAppnameInput') ? document.getElementById('reportLinkAppnameInput').value.trim() : '';
                 
-                // TỰ ĐỘNG SINH LINK JIRA THEO CHUẨN 
                 let generatedJiraLink = "";
                 if (currentProjectKey && currentJiraDomain) {
                     generatedJiraLink = `${currentJiraDomain}/jira/software/projects/${currentProjectKey}/boards`;
@@ -1674,11 +1713,17 @@
                 let buildStatusStr = '- Build status: ' + totalSelectedTickets + ' ' + ticketWord + statsString + ' / Total: ' + totalFileTickets + ' Tickets';
 
                 let progressReportObj = null;
+                let isSheetError = false;
+
                 if (gasUrl && sheetName) {
                     progressReportObj = await fetchGSheetProgressReport(gasUrl, sheetName);
+                    if (!progressReportObj) {
+                        isSheetError = true;
+                    }
+                } else {
+                    isSheetError = true;
                 }
 
-                // ƯU TIÊN LẤY LINK TESTCASE TỪ GOOGLE SHEET TRƯỚC (NẾU CÓ), SAU ĐÓ MỚI ĐẾN CLIPBOARD
                 let sheetTestcase = (progressReportObj && progressReportObj.testcaseLink) ? progressReportObj.testcaseLink : '';
                 let clipboardTestcase = document.getElementById('reportTestcaseInput') ? document.getElementById('reportTestcaseInput').value.trim() : '';
                 let testcaseLinkToUse = sheetTestcase || clipboardTestcase;
@@ -1698,7 +1743,7 @@
                     }
                 }
                 
-                // SECTION LINKS DẠNG CÂY BULLET (Tự động hiển thị các Link có giá trị)
+                // SECTION LINKS
                 const hasSubLinks = linkIframe || linkPreprod || linkWebapp || linkAppname;
 
                 if (hasSubLinks) {
@@ -1721,6 +1766,8 @@
 
                 if (progressReportObj && progressReportObj.text) {
                     reportLines.push(progressReportObj.text);
+                } else if (sheetName) {
+                    reportLines.push('- Tiến độ: [Lỗi API] Không lấy được dữ liệu từ Sheet (Hoặc do sai ID/URL)');
                 }
                 reportLines.push('---------------------------------------------');
 
@@ -1782,10 +1829,12 @@
                         return r; 
                     };
 
+                    // LOGIC MỚI: Kiểm tra tổng số bug tất cả các tag
+                    const isTotalLessThan5 = totalSelectedTickets < 5;
+
                     tagOrder.forEach((tag, index) => {
                         reportLines.push(toRoman(index + 1) + '. [' + (tag || '').toUpperCase() + ']');
                         const ticketsList = tagDataMap[tag].tickets;
-                        const totalTagTickets = ticketsList.length;
 
                         const priorityGroups = {};
                         ticketsList.forEach(t => {
@@ -1793,15 +1842,16 @@
                             priorityGroups[t.priority].push(t);
                         });
 
-                        const shouldListAll = totalTagTickets < 5 || specialTagsList.includes(tag.toLowerCase());
+                        const isSpecialTag = specialTagsList.includes(tag.toLowerCase());
 
                         ['Highest', 'High', 'Medium', 'Low', 'Lowest', 'Unassigned'].forEach(p => {
                             if (priorityGroups[p] && priorityGroups[p].length > 0) {
                                 reportLines.push('- ' + p + ': ' + priorityGroups[p].length);
                                 
-                                const isHighPriority = ['Highest', 'High'].includes(p);
+                                const isMajorPriority = ['Highest', 'High'].includes(p);
                                 
-                                if (shouldListAll || isHighPriority) {
+                                // Nếu Tổng < 5 HOẶC là bug Major HOẶC thuộc tag Special (Improvement, Question) -> List chi tiết
+                                if (isTotalLessThan5 || isMajorPriority || isSpecialTag) {
                                     priorityGroups[p].forEach(t => {
                                         reportLines.push('  + ' + t.fullKey + ': ' + t.cleanSummary);
                                     });
@@ -1845,7 +1895,12 @@
 
                 await navigator.clipboard.writeText(reportLines.join('\n'));
                 if (!skipTagFilter) closeTagModal();
-                showToast('Copy Thành Công!', 'Báo Cáo Daily theo Mẫu Mới đã được sao chép vào Clipboard.');
+                
+                if (isSheetError && sheetName) {
+                    showToast('Cảnh báo Báo Cáo', 'Đã copy Báo cáo nhưng bị thiếu phần dữ liệu Google Sheet do lỗi mạng/API.', true);
+                } else {
+                    showToast('Copy Thành Công!', 'Báo Cáo Daily theo Mẫu Mới đã được sao chép vào Clipboard.');
+                }
 
             } catch (err) {
                 console.error('Lỗi khi copy:', err);
