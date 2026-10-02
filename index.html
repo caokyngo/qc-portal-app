@@ -8,12 +8,25 @@
     <meta http-equiv="Expires" content="0">
     <title>QC Portal - Báo Cáo Daily</title>
     
+    <!-- Cấu hình Tailwind Dark Mode theo class -->
+    <script>
+        tailwind = { config: { darkMode: 'class' } };
+    </script>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#312e81">
+
+    <!-- Anti-flicker Script cho Dark Mode -->
+    <script>
+        if (localStorage.getItem('qc_portal_theme') === 'dark' || (!('qc_portal_theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+            document.documentElement.classList.add('dark');
+        } else {
+            document.documentElement.classList.remove('dark');
+        }
+    </script>
 
     <script>
         let loggedInUser = null;
@@ -38,6 +51,25 @@
     </script>
     <script src="https://accounts.google.com/gsi/client" async defer></script>
 
+    <!-- Script PWA Auto Update -->
+    <script>
+      if ('serviceWorker' in navigator) {
+        window.addEventListener('load', () => {
+          navigator.serviceWorker.register('./sw.js').then(reg => {
+            reg.update();
+            reg.onupdatefound = () => {
+              const installingWorker = reg.installing;
+              installingWorker.onstatechange = () => {
+                if (installingWorker.state === 'installed' && navigator.serviceWorker.controller) {
+                  window.location.reload();
+                }
+              };
+            };
+          }).catch(err => console.log('SW error:', err));
+        });
+      }
+    </script>
+
     <style>
         .travel-marquee { width: 100%; max-width: 460px; overflow: hidden; mask-image: linear-gradient(to right, transparent, black 8%, black 92%, transparent); -webkit-mask-image: linear-gradient(to right, transparent, black 8%, black 92%, transparent); }
         .travel-marquee-track { display: flex; width: max-content; animation: travel-marquee-scroll 18s linear infinite; will-change: transform; }
@@ -48,19 +80,17 @@
         @keyframes travel-marquee-scroll { to { transform: translateX(-50%); } }
         @keyframes travel-blink { 0%, 100% { opacity: 1; filter: drop-shadow(0 0 1px rgba(234, 88, 12, 0.4)); } 50% { opacity: 0.45; filter: drop-shadow(0 0 5px rgba(234, 88, 12, 0.7)); } }
         
-        /* Hiệu ứng Toast trượt từ phải vào */
         @keyframes slideInRight {
             from { transform: translateX(100%); opacity: 0; }
             to { transform: translateX(0); opacity: 1; }
         }
         .toast-enter { animation: slideInRight 0.3s ease-out forwards; }
         
-        /* Ẩn scrollbar nhưng vẫn scroll được */
         .no-scrollbar::-webkit-scrollbar { display: none; }
         .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
     </style>
 </head>
-<body class="bg-slate-50 text-slate-800 font-sans h-screen w-full flex flex-col md:flex-row overflow-hidden relative">
+<body class="bg-slate-50 dark:bg-slate-950 text-slate-800 dark:text-slate-100 font-sans h-screen w-full flex flex-col md:flex-row overflow-hidden relative transition-colors duration-200">
 
     <!-- KHUNG CHỨA TOAST NOTIFICATION -->
     <div id="toast-container" class="fixed top-5 right-5 z-[100] flex flex-col gap-3 pointer-events-none"></div>
@@ -100,18 +130,18 @@
         </nav>
     </aside>
 
-    <div class="flex-1 flex flex-col h-full overflow-hidden bg-slate-50 relative">
-        <header class="bg-white text-slate-800 shadow-sm border-b border-slate-200 z-10 p-3 px-4 md:px-6 flex justify-between items-center min-h-[72px]">
+    <div class="flex-1 flex flex-col h-full overflow-hidden bg-slate-50 dark:bg-slate-950 relative">
+        <header class="bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100 shadow-sm border-b border-slate-200 dark:border-slate-800 z-10 p-3 px-4 md:px-6 flex justify-between items-center min-h-[72px] transition-colors duration-200">
             <div class="flex items-center gap-3 flex-1 shrink-0">
-                <button onclick="toggleSidebar()" class="md:hidden text-slate-500 hover:text-indigo-600 focus:outline-none p-1 transition">
+                <button onclick="toggleSidebar()" class="md:hidden text-slate-500 dark:text-slate-400 hover:text-indigo-600 focus:outline-none p-1 transition">
                     <i class="fa-solid fa-bars text-xl"></i>
                 </button>
-                <h2 class="text-xl font-bold text-slate-800 hidden sm:block">Báo Cáo Daily (Jira Auto-Auth)</h2>
-                <h2 class="text-lg font-bold text-slate-800 sm:hidden">Báo Cáo Daily</h2>
+                <h2 class="text-xl font-bold text-slate-800 dark:text-slate-100 hidden sm:block">Báo Cáo Daily (Jira Auto-Auth)</h2>
+                <h2 class="text-lg font-bold text-slate-800 dark:text-slate-100 sm:hidden">Báo Cáo Daily</h2>
             </div>
             
             <div class="hidden lg:flex flex-1 min-w-0 justify-center items-center">
-                <div class="w-full max-w-[460px] px-4 py-2 rounded-full bg-slate-50/90 border border-slate-200 shadow-sm cursor-default">
+                <div class="w-full max-w-[460px] px-4 py-2 rounded-full bg-slate-50/90 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 shadow-sm cursor-default">
                     <div class="travel-marquee">
                         <div class="travel-marquee-track">
                             <div class="travel-marquee-group">
@@ -139,9 +169,14 @@
                 </div>
             </div>
 
-            <div class="flex-1 flex justify-end items-center gap-4">
-                <div id="fileInfo" class="hidden flex items-center gap-3 bg-indigo-50 px-4 py-2 rounded-xl border border-indigo-100 text-xs shadow-sm">
-                    <div><span class="text-indigo-400 font-medium">Jira Project:</span> <strong id="jiraProjectName" class="text-indigo-800 font-bold">---</strong></div>
+            <div class="flex-1 flex justify-end items-center gap-3">
+                <!-- NÚT TOGGLE DARK MODE -->
+                <button type="button" onclick="toggleDarkMode()" title="Bật/Tắt Chế độ Tối" class="w-10 h-10 rounded-xl bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-amber-400 hover:bg-slate-200 dark:hover:bg-slate-700 transition flex items-center justify-center shadow-sm">
+                    <i id="darkModeIcon" class="fa-solid fa-moon text-lg"></i>
+                </button>
+
+                <div id="fileInfo" class="hidden flex items-center gap-3 bg-indigo-50 dark:bg-indigo-950/60 px-4 py-2 rounded-xl border border-indigo-100 dark:border-indigo-900 text-xs shadow-sm">
+                    <div><span class="text-indigo-400 font-medium">Jira Project:</span> <strong id="jiraProjectName" class="text-indigo-800 dark:text-indigo-300 font-bold">---</strong></div>
                     <button onclick="changeJiraProject()" class="px-2.5 py-1.5 bg-indigo-600 hover:bg-indigo-500 text-white text-[11px] font-bold rounded-lg transition flex items-center gap-1.5 shadow-sm">
                         <i class="fa-solid fa-arrows-rotate"></i> Đổi Link Jira
                     </button>
@@ -149,19 +184,19 @@
                 
                 <div id="authSection" class="relative flex items-center min-h-[40px]">
                     <div id="g_id_onload" data-client_id="149310433677-uvpoilv41na98qdjlj58cpmfl8u9946e.apps.googleusercontent.com" data-callback="handleCredentialResponse" data-auto_prompt="false"></div>
-                    <div id="loginOption" class="relative cursor-pointer flex items-center gap-2.5 px-3 py-1.5 bg-slate-100 hover:bg-slate-200 rounded-xl border border-slate-200 transition overflow-hidden">
+                    <div id="loginOption" class="relative cursor-pointer flex items-center gap-2.5 px-3 py-1.5 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 rounded-xl border border-slate-200 dark:border-slate-700 transition overflow-hidden">
                         <img src="https://cdn-icons-png.flaticon.com/512/149/149071.png" class="w-8 h-8 rounded-full border border-slate-300 bg-white object-cover" alt="Guest">
-                        <span class="text-slate-700 font-bold text-sm hidden sm:block">Đăng nhập</span>
+                        <span class="text-slate-700 dark:text-slate-200 font-bold text-sm hidden sm:block">Đăng nhập</span>
                         <div class="absolute inset-0 z-10 opacity-[0.01] flex items-center justify-center cursor-pointer">
                             <div class="g_id_signin" data-type="standard" data-size="large" data-theme="outline" data-text="sign_in_with" data-shape="rectangular" data-logo_alignment="left"></div>
                         </div>
                     </div>
-                    <div id="userProfileBtn" class="hidden relative cursor-pointer flex items-center gap-2.5 px-3 py-1.5 bg-slate-100 hover:bg-slate-200 rounded-xl border border-slate-200 transition" onclick="document.getElementById('userDropdown').classList.toggle('hidden')">
+                    <div id="userProfileBtn" class="hidden relative cursor-pointer flex items-center gap-2.5 px-3 py-1.5 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 rounded-xl border border-slate-200 dark:border-slate-700 transition" onclick="document.getElementById('userDropdown').classList.toggle('hidden')">
                         <img id="userAvatar" src="" class="w-8 h-8 rounded-full border border-slate-300 bg-white object-cover" alt="Avatar">
-                        <span id="userNameDisplay" class="text-slate-700 font-bold text-sm hidden sm:block"></span>
+                        <span id="userNameDisplay" class="text-slate-700 dark:text-slate-200 font-bold text-sm hidden sm:block"></span>
                         <i class="fa-solid fa-caret-down text-slate-500 ml-1 text-xs"></i>
-                        <div id="userDropdown" class="hidden absolute right-0 top-full mt-2 w-48 bg-white rounded-xl shadow-xl border border-slate-200 overflow-hidden z-50">
-                            <button onclick="handleLogout()" class="w-full flex items-center gap-3 px-4 py-3.5 text-left text-rose-600 hover:bg-rose-50 text-sm font-bold transition">
+                        <div id="userDropdown" class="hidden absolute right-0 top-full mt-2 w-48 bg-white dark:bg-slate-900 rounded-xl shadow-xl border border-slate-200 dark:border-slate-800 overflow-hidden z-50">
+                            <button onclick="handleLogout()" class="w-full flex items-center gap-3 px-4 py-3.5 text-left text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/30 text-sm font-bold transition">
                                 <i class="fa-solid fa-arrow-right-from-bracket"></i> Đăng xuất
                             </button>
                         </div>
@@ -170,33 +205,33 @@
             </div>
         </header>
 
-        <main class="flex-1 overflow-y-auto p-4 md:p-6 bg-slate-50 relative z-0">
+        <main class="flex-1 overflow-y-auto p-4 md:p-6 bg-slate-50 dark:bg-slate-950 transition-colors duration-200">
             <div class="w-full mx-auto 2xl:max-w-[1600px] space-y-6">
                 
                 <!-- KHUNG NHẬP LINK JIRA -->
-                <section id="jiraUrlSection" class="bg-white rounded-2xl shadow-sm border border-slate-200 p-6 sm:p-8 w-full max-w-4xl mx-auto mt-4 space-y-6">
+                <section id="jiraUrlSection" class="bg-white dark:bg-slate-900 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-800 p-6 sm:p-8 w-full max-w-4xl mx-auto mt-4 space-y-6 transition-colors duration-200">
                     <div class="text-center space-y-2">
-                        <div class="w-16 h-16 bg-indigo-100 text-indigo-600 rounded-2xl flex items-center justify-center mx-auto text-3xl shadow-inner">
+                        <div class="w-16 h-16 bg-indigo-100 dark:bg-indigo-950/60 text-indigo-600 dark:text-indigo-400 rounded-2xl flex items-center justify-center mx-auto text-3xl shadow-inner">
                             <i class="fa-brands fa-jira"></i>
                         </div>
-                        <h2 class="text-xl font-bold text-slate-800">Tải Dữ Liệu Báo Cáo Từ Jira</h2>
-                        <p class="text-xs text-slate-500 max-w-md mx-auto">Dán đường link dự án hoặc Filter Jira (yêu cầu đăng nhập tài khoản Google có quyền truy cập Jira).</p>
+                        <h2 class="text-xl font-bold text-slate-800 dark:text-slate-100">Tải Dữ Liệu Báo Cáo Từ Jira</h2>
+                        <p class="text-xs text-slate-500 dark:text-slate-400 max-w-md mx-auto">Dán đường link dự án hoặc Filter Jira (yêu cầu đăng nhập tài khoản Google có quyền truy cập Jira).</p>
                     </div>
 
                     <div class="space-y-4">
                         <div>
                             <div class="flex justify-between items-center mb-1.5">
-                                <label class="block text-xs font-bold text-slate-700"><i class="fa-solid fa-link text-indigo-500 mr-1"></i> Link Jira List / Project / Filter URL <span class="text-rose-500">*</span></label>
-                                <button type="button" onclick="pasteReportFromClipboard()" class="text-xs text-indigo-600 hover:text-indigo-800 font-bold flex items-center gap-1 transition">
+                                <label class="block text-xs font-bold text-slate-700 dark:text-slate-300"><i class="fa-solid fa-link text-indigo-500 mr-1"></i> Link Jira List / Project / Filter URL <span class="text-rose-500">*</span></label>
+                                <button type="button" onclick="pasteReportFromClipboard()" class="text-xs text-indigo-600 dark:text-indigo-400 hover:underline font-bold flex items-center gap-1 transition">
                                     <i class="fa-solid fa-paste"></i> Dán từ Clipboard (Auto-fill)
                                 </button>
                             </div>
-                            <input type="url" id="jiraUrlInput" placeholder="VD: https://enotion.atlassian.net/jira/software/c/projects/KTFMLMC/issues" class="w-full h-12 bg-slate-50 border border-slate-300 text-slate-800 text-sm font-medium rounded-xl px-4 focus:ring-2 focus:ring-indigo-500 focus:bg-white outline-none transition shadow-sm">
+                            <input type="url" id="jiraUrlInput" placeholder="VD: https://enotion.atlassian.net/jira/software/c/projects/KTFMLMC/issues" class="w-full h-12 bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 text-slate-800 dark:text-slate-100 text-sm font-medium rounded-xl px-4 focus:ring-2 focus:ring-indigo-500 dark:focus:bg-slate-800 outline-none transition shadow-sm">
                         </div>
 
                         <!-- THÔNG BÁO XÁC THỰC -->
-                        <div class="flex items-center gap-2 text-xs text-slate-500 bg-slate-50 p-3 rounded-xl border border-slate-200">
-                            <i class="fa-solid fa-shield-halved text-emerald-600 text-sm"></i>
+                        <div class="flex items-center gap-2 text-xs text-slate-500 dark:text-slate-400 bg-slate-50 dark:bg-slate-800/50 p-3 rounded-xl border border-slate-200 dark:border-slate-700">
+                            <i class="fa-solid fa-shield-halved text-emerald-600 dark:text-emerald-400 text-sm"></i>
                             <span>Hệ thống tự động xác thực bằng tài khoản Google đã đăng nhập.</span>
                         </div>
 
@@ -210,13 +245,13 @@
                     <div id="mainDashboardView" class="space-y-6">
                         
                         <!-- ================= GIAO DIỆN FORM CẤU HÌNH HIỆN ĐẠI ================= -->
-                        <section class="bg-white rounded-2xl shadow-sm border border-slate-200 w-full overflow-hidden">
+                        <section class="bg-white dark:bg-slate-900 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-800 w-full overflow-hidden transition-colors duration-200">
                             <!-- Header của Form -->
-                            <div class="flex flex-col sm:flex-row sm:items-center justify-between border-b border-slate-100 px-5 py-4 bg-slate-50/50">
-                                <h3 class="text-base font-bold text-slate-800 flex items-center gap-2 mb-3 sm:mb-0">
-                                    <i class="fa-solid fa-file-signature text-indigo-600"></i> Thông tin Báo Cáo
+                            <div class="flex flex-col sm:flex-row sm:items-center justify-between border-b border-slate-100 dark:border-slate-800 px-5 py-4 bg-slate-50/50 dark:bg-slate-800/30">
+                                <h3 class="text-base font-bold text-slate-800 dark:text-slate-100 flex items-center gap-2 mb-3 sm:mb-0">
+                                    <i class="fa-solid fa-file-signature text-indigo-600 dark:text-indigo-400"></i> Thông tin Báo Cáo
                                 </h3>
-                                <button type="button" onclick="pasteReportFromClipboard()" class="inline-flex items-center justify-center gap-2 px-4 py-2 bg-indigo-50 hover:bg-indigo-600 hover:text-white text-indigo-700 text-xs font-bold rounded-lg border border-indigo-200 hover:border-indigo-600 transition-all shadow-sm">
+                                <button type="button" onclick="pasteReportFromClipboard()" class="inline-flex items-center justify-center gap-2 px-4 py-2 bg-indigo-50 dark:bg-indigo-950/60 hover:bg-indigo-600 hover:text-white dark:hover:bg-indigo-600 text-indigo-700 dark:text-indigo-300 text-xs font-bold rounded-lg border border-indigo-200 dark:border-indigo-800 hover:border-indigo-600 transition-all shadow-sm">
                                     <i class="fa-solid fa-wand-magic-sparkles"></i> Dán từ Clipboard (Auto-fill)
                                 </button>
                             </div>
@@ -224,127 +259,123 @@
                             <div class="p-5 space-y-6">
                                 <!-- Card 1: Thông tin chung -->
                                 <div>
-                                    <h4 class="text-[11px] font-bold text-slate-400 uppercase tracking-widest mb-3 border-b border-slate-100 pb-1">1. Thông tin chung</h4>
+                                    <h4 class="text-[11px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-3 border-b border-slate-100 dark:border-slate-800 pb-1">1. Thông tin chung</h4>
                                     <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
                                         <!-- Smart Input: Floating Label -->
                                         <div class="relative group">
-                                            <input type="text" id="reportGameNameInput" oninput="saveHeaderConfig()" class="block w-full h-[48px] px-3.5 pt-5 pb-1.5 text-sm text-slate-900 bg-slate-50/50 border border-slate-300 rounded-xl appearance-none focus:outline-none focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 peer transition-all shadow-sm" placeholder=" " />
-                                            <label class="absolute text-xs font-bold text-slate-400 duration-300 transform -translate-y-3 scale-75 top-3.5 z-10 origin-[0] left-3.5 peer-focus:text-indigo-600 peer-placeholder-shown:scale-100 peer-placeholder-shown:translate-y-0 peer-placeholder-shown:font-medium peer-focus:scale-75 peer-focus:-translate-y-3 pointer-events-none">
+                                            <input type="text" id="reportGameNameInput" oninput="saveHeaderConfig()" class="block w-full h-[48px] px-3.5 pt-5 pb-1.5 text-sm text-slate-900 dark:text-slate-100 bg-slate-50/50 dark:bg-slate-800/50 border border-slate-300 dark:border-slate-700 rounded-xl appearance-none focus:outline-none focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 peer transition-all shadow-sm" placeholder=" " />
+                                            <label class="absolute text-xs font-bold text-slate-400 dark:text-slate-500 duration-300 transform -translate-y-3 scale-75 top-3.5 z-10 origin-[0] left-3.5 peer-focus:text-indigo-600 dark peer-focus:text-indigo-400 peer-placeholder-shown:scale-100 peer-placeholder-shown:translate-y-0 peer-placeholder-shown:font-medium peer-focus:scale-75 peer-focus:-translate-y-3 pointer-events-none">
                                                 ID & Game Name
                                             </label>
                                         </div>
                                         <div class="relative group">
-                                            <input type="text" id="reportVersionGameInput" oninput="saveHeaderConfig()" class="block w-full h-[48px] px-3.5 pt-5 pb-1.5 text-sm text-slate-900 bg-slate-50/50 border border-slate-300 rounded-xl appearance-none focus:outline-none focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 peer transition-all shadow-sm" placeholder=" " />
-                                            <label class="absolute text-xs font-bold text-slate-400 duration-300 transform -translate-y-3 scale-75 top-3.5 z-10 origin-[0] left-3.5 peer-focus:text-indigo-600 peer-placeholder-shown:scale-100 peer-placeholder-shown:translate-y-0 peer-placeholder-shown:font-medium peer-focus:scale-75 peer-focus:-translate-y-3 pointer-events-none">
+                                            <input type="text" id="reportVersionGameInput" oninput="saveHeaderConfig()" class="block w-full h-[48px] px-3.5 pt-5 pb-1.5 text-sm text-slate-900 dark:text-slate-100 bg-slate-50/50 dark:bg-slate-800/50 border border-slate-300 dark:border-slate-700 rounded-xl appearance-none focus:outline-none focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 peer transition-all shadow-sm" placeholder=" " />
+                                            <label class="absolute text-xs font-bold text-slate-400 dark:text-slate-500 duration-300 transform -translate-y-3 scale-75 top-3.5 z-10 origin-[0] left-3.5 peer-focus:text-indigo-600 dark peer-focus:text-indigo-400 peer-placeholder-shown:scale-100 peer-placeholder-shown:translate-y-0 peer-placeholder-shown:font-medium peer-focus:scale-75 peer-focus:-translate-y-3 pointer-events-none">
                                                 Version Game & Build
                                             </label>
                                         </div>
                                         <div class="relative group">
-                                            <input type="text" id="reportVersionAppInput" oninput="saveHeaderConfig()" class="block w-full h-[48px] px-3.5 pt-5 pb-1.5 text-sm text-slate-900 bg-slate-50/50 border border-slate-300 rounded-xl appearance-none focus:outline-none focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 peer transition-all shadow-sm" placeholder=" " />
-                                            <label class="absolute text-xs font-bold text-slate-400 duration-300 transform -translate-y-3 scale-75 top-3.5 z-10 origin-[0] left-3.5 peer-focus:text-indigo-600 peer-placeholder-shown:scale-100 peer-placeholder-shown:translate-y-0 peer-placeholder-shown:font-medium peer-focus:scale-75 peer-focus:-translate-y-3 pointer-events-none">
+                                            <input type="text" id="reportVersionAppInput" oninput="saveHeaderConfig()" class="block w-full h-[48px] px-3.5 pt-5 pb-1.5 text-sm text-slate-900 dark:text-slate-100 bg-slate-50/50 dark:bg-slate-800/50 border border-slate-300 dark:border-slate-700 rounded-xl appearance-none focus:outline-none focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 peer transition-all shadow-sm" placeholder=" " />
+                                            <label class="absolute text-xs font-bold text-slate-400 dark:text-slate-500 duration-300 transform -translate-y-3 scale-75 top-3.5 z-10 origin-[0] left-3.5 peer-focus:text-indigo-600 dark peer-focus:text-indigo-400 peer-placeholder-shown:scale-100 peer-placeholder-shown:translate-y-0 peer-placeholder-shown:font-medium peer-focus:scale-75 peer-focus:-translate-y-3 pointer-events-none">
                                                 Version App
                                             </label>
                                         </div>
                                     </div>
                                 </div>
 
-                                <!-- Card 2: Environment Chips (Thay thế Textarea) -->
+                                <!-- Card 2: Environment Chips -->
                                 <div>
-                                    <h4 class="text-[11px] font-bold text-slate-400 uppercase tracking-widest mb-3 border-b border-slate-100 pb-1">2. Môi trường Test (Env)</h4>
+                                    <h4 class="text-[11px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-3 border-b border-slate-100 dark:border-slate-800 pb-1">2. Môi trường Test (Env)</h4>
                                     <div class="flex flex-wrap gap-2.5" id="envChipContainer">
-                                        <!-- Các nút Chips -->
-                                        <button type="button" onclick="toggleEnvChip(this)" data-value="Iframe" class="env-chip px-4 py-2 rounded-xl text-xs font-bold border transition-all duration-200 bg-slate-100 text-slate-500 border-slate-200 hover:bg-slate-200">Iframe</button>
-                                        <button type="button" onclick="toggleEnvChip(this)" data-value="App" class="env-chip px-4 py-2 rounded-xl text-xs font-bold border transition-all duration-200 bg-slate-100 text-slate-500 border-slate-200 hover:bg-slate-200">App</button>
-                                        <button type="button" onclick="toggleEnvChip(this)" data-value="WebApp" class="env-chip px-4 py-2 rounded-xl text-xs font-bold border transition-all duration-200 bg-slate-100 text-slate-500 border-slate-200 hover:bg-slate-200">WebApp</button>
-                                        <button type="button" onclick="toggleEnvChip(this)" data-value="Preprod" class="env-chip px-4 py-2 rounded-xl text-xs font-bold border transition-all duration-200 bg-slate-100 text-slate-500 border-slate-200 hover:bg-slate-200">Preprod</button>
+                                        <button type="button" onclick="toggleEnvChip(this)" data-value="Iframe" class="env-chip px-4 py-2 rounded-xl text-xs font-bold border transition-all duration-200 bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 border-slate-200 dark:border-slate-700 hover:bg-slate-200 dark:hover:bg-slate-700">Iframe</button>
+                                        <button type="button" onclick="toggleEnvChip(this)" data-value="App" class="env-chip px-4 py-2 rounded-xl text-xs font-bold border transition-all duration-200 bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 border-slate-200 dark:border-slate-700 hover:bg-slate-200 dark:hover:bg-slate-700">App</button>
+                                        <button type="button" onclick="toggleEnvChip(this)" data-value="WebApp" class="env-chip px-4 py-2 rounded-xl text-xs font-bold border transition-all duration-200 bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 border-slate-200 dark:border-slate-700 hover:bg-slate-200 dark:hover:bg-slate-700">WebApp</button>
+                                        <button type="button" onclick="toggleEnvChip(this)" data-value="Preprod" class="env-chip px-4 py-2 rounded-xl text-xs font-bold border transition-all duration-200 bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 border-slate-200 dark:border-slate-700 hover:bg-slate-200 dark:hover:bg-slate-700">Preprod</button>
                                     </div>
-                                    <!-- Ô lưu trữ logic ngầm -->
                                     <input type="hidden" id="reportEnvInput">
                                 </div>
 
                                 <!-- Card 3: Cấu hình Link (Smart Inputs) -->
                                 <div>
-                                    <div class="flex justify-between items-center mb-3 border-b border-slate-100 pb-1">
-                                        <h4 class="text-[11px] font-bold text-slate-400 uppercase tracking-widest">3. Liên kết (Links)</h4>
-                                        <span class="text-[10px] text-indigo-400 font-medium italic"><i class="fa-solid fa-circle-info"></i> Để trống nếu không muốn hiện trong report</span>
+                                    <div class="flex justify-between items-center mb-3 border-b border-slate-100 dark:border-slate-800 pb-1">
+                                        <h4 class="text-[11px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest">3. Liên kết (Links)</h4>
+                                        <span class="text-[10px] text-indigo-500 dark:text-indigo-400 font-medium italic"><i class="fa-solid fa-circle-info"></i> Để trống nếu không muốn hiện trong report</span>
                                     </div>
                                     
                                     <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                                        <!-- Smart Input có Icon -->
                                         <div class="relative group">
                                             <div class="absolute inset-y-0 left-0 flex items-center pl-3.5 pointer-events-none">
-                                                <i class="fa-solid fa-earth-americas text-slate-400 group-focus-within:text-indigo-500 transition-colors"></i>
+                                                <i class="fa-solid fa-earth-americas text-slate-400 dark:text-slate-500 group-focus-within:text-indigo-500 transition-colors"></i>
                                             </div>
-                                            <input type="text" id="reportLinkIframeInput" oninput="saveHeaderConfig()" class="block w-full h-[48px] pl-10 pr-3.5 pt-5 pb-1.5 text-sm text-slate-900 bg-slate-50/50 border border-slate-300 rounded-xl appearance-none focus:outline-none focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 peer transition-all shadow-sm" placeholder=" " />
-                                            <label class="absolute text-xs font-bold text-slate-400 duration-300 transform -translate-y-3 scale-75 top-3.5 z-10 origin-[0] left-10 peer-focus:text-indigo-600 peer-placeholder-shown:scale-100 peer-placeholder-shown:translate-y-0 peer-placeholder-shown:font-medium peer-focus:scale-75 peer-focus:-translate-y-3 pointer-events-none">
+                                            <input type="text" id="reportLinkIframeInput" oninput="saveHeaderConfig()" class="block w-full h-[48px] pl-10 pr-3.5 pt-5 pb-1.5 text-sm text-slate-900 dark:text-slate-100 bg-slate-50/50 dark:bg-slate-800/50 border border-slate-300 dark:border-slate-700 rounded-xl appearance-none focus:outline-none focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 peer transition-all shadow-sm" placeholder=" " />
+                                            <label class="absolute text-xs font-bold text-slate-400 dark:text-slate-500 duration-300 transform -translate-y-3 scale-75 top-3.5 z-10 origin-[0] left-10 peer-focus:text-indigo-600 dark:peer-focus:text-indigo-400 peer-placeholder-shown:scale-100 peer-placeholder-shown:translate-y-0 peer-placeholder-shown:font-medium peer-focus:scale-75 peer-focus:-translate-y-3 pointer-events-none">
                                                 Link Iframe
                                             </label>
                                         </div>
 
                                         <div class="relative group">
                                             <div class="absolute inset-y-0 left-0 flex items-center pl-3.5 pointer-events-none">
-                                                <i class="fa-solid fa-server text-slate-400 group-focus-within:text-indigo-500 transition-colors"></i>
+                                                <i class="fa-solid fa-server text-slate-400 dark:text-slate-500 group-focus-within:text-indigo-500 transition-colors"></i>
                                             </div>
-                                            <input type="text" id="reportLinkPreprodInput" oninput="saveHeaderConfig()" class="block w-full h-[48px] pl-10 pr-3.5 pt-5 pb-1.5 text-sm text-slate-900 bg-slate-50/50 border border-slate-300 rounded-xl appearance-none focus:outline-none focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 peer transition-all shadow-sm" placeholder=" " />
-                                            <label class="absolute text-xs font-bold text-slate-400 duration-300 transform -translate-y-3 scale-75 top-3.5 z-10 origin-[0] left-10 peer-focus:text-indigo-600 peer-placeholder-shown:scale-100 peer-placeholder-shown:translate-y-0 peer-placeholder-shown:font-medium peer-focus:scale-75 peer-focus:-translate-y-3 pointer-events-none">
+                                            <input type="text" id="reportLinkPreprodInput" oninput="saveHeaderConfig()" class="block w-full h-[48px] pl-10 pr-3.5 pt-5 pb-1.5 text-sm text-slate-900 dark:text-slate-100 bg-slate-50/50 dark:bg-slate-800/50 border border-slate-300 dark:border-slate-700 rounded-xl appearance-none focus:outline-none focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 peer transition-all shadow-sm" placeholder=" " />
+                                            <label class="absolute text-xs font-bold text-slate-400 dark:text-slate-500 duration-300 transform -translate-y-3 scale-75 top-3.5 z-10 origin-[0] left-10 peer-focus:text-indigo-600 dark:peer-focus:text-indigo-400 peer-placeholder-shown:scale-100 peer-placeholder-shown:translate-y-0 peer-placeholder-shown:font-medium peer-focus:scale-75 peer-focus:-translate-y-3 pointer-events-none">
                                                 Preprod Link
                                             </label>
                                         </div>
 
                                         <div class="relative group">
                                             <div class="absolute inset-y-0 left-0 flex items-center pl-3.5 pointer-events-none">
-                                                <i class="fa-solid fa-laptop-code text-slate-400 group-focus-within:text-indigo-500 transition-colors"></i>
+                                                <i class="fa-solid fa-laptop-code text-slate-400 dark:text-slate-500 group-focus-within:text-indigo-500 transition-colors"></i>
                                             </div>
-                                            <input type="text" id="reportLinkWebappInput" oninput="saveHeaderConfig()" class="block w-full h-[48px] pl-10 pr-3.5 pt-5 pb-1.5 text-sm text-slate-900 bg-slate-50/50 border border-slate-300 rounded-xl appearance-none focus:outline-none focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 peer transition-all shadow-sm" placeholder=" " />
-                                            <label class="absolute text-xs font-bold text-slate-400 duration-300 transform -translate-y-3 scale-75 top-3.5 z-10 origin-[0] left-10 peer-focus:text-indigo-600 peer-placeholder-shown:scale-100 peer-placeholder-shown:translate-y-0 peer-placeholder-shown:font-medium peer-focus:scale-75 peer-focus:-translate-y-3 pointer-events-none">
+                                            <input type="text" id="reportLinkWebappInput" oninput="saveHeaderConfig()" class="block w-full h-[48px] pl-10 pr-3.5 pt-5 pb-1.5 text-sm text-slate-900 dark:text-slate-100 bg-slate-50/50 dark:bg-slate-800/50 border border-slate-300 dark:border-slate-700 rounded-xl appearance-none focus:outline-none focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 peer transition-all shadow-sm" placeholder=" " />
+                                            <label class="absolute text-xs font-bold text-slate-400 dark:text-slate-500 duration-300 transform -translate-y-3 scale-75 top-3.5 z-10 origin-[0] left-10 peer-focus:text-indigo-600 dark:peer-focus:text-indigo-400 peer-placeholder-shown:scale-100 peer-placeholder-shown:translate-y-0 peer-placeholder-shown:font-medium peer-focus:scale-75 peer-focus:-translate-y-3 pointer-events-none">
                                                 Webapp Link
                                             </label>
                                         </div>
 
                                         <div class="relative group">
                                             <div class="absolute inset-y-0 left-0 flex items-center pl-3.5 pointer-events-none">
-                                                <i class="fa-brands fa-google-play text-slate-400 group-focus-within:text-indigo-500 transition-colors"></i>
+                                                <i class="fa-brands fa-google-play text-slate-400 dark:text-slate-500 group-focus-within:text-indigo-500 transition-colors"></i>
                                             </div>
-                                            <input type="text" id="reportLinkAppnameInput" oninput="saveHeaderConfig()" class="block w-full h-[48px] pl-10 pr-3.5 pt-5 pb-1.5 text-sm text-slate-900 bg-slate-50/50 border border-slate-300 rounded-xl appearance-none focus:outline-none focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 peer transition-all shadow-sm" placeholder=" " />
-                                            <label class="absolute text-xs font-bold text-slate-400 duration-300 transform -translate-y-3 scale-75 top-3.5 z-10 origin-[0] left-10 peer-focus:text-indigo-600 peer-placeholder-shown:scale-100 peer-placeholder-shown:translate-y-0 peer-placeholder-shown:font-medium peer-focus:scale-75 peer-focus:-translate-y-3 pointer-events-none">
+                                            <input type="text" id="reportLinkAppnameInput" oninput="saveHeaderConfig()" class="block w-full h-[48px] pl-10 pr-3.5 pt-5 pb-1.5 text-sm text-slate-900 dark:text-slate-100 bg-slate-50/50 dark:bg-slate-800/50 border border-slate-300 dark:border-slate-700 rounded-xl appearance-none focus:outline-none focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 peer transition-all shadow-sm" placeholder=" " />
+                                            <label class="absolute text-xs font-bold text-slate-400 dark:text-slate-500 duration-300 transform -translate-y-3 scale-75 top-3.5 z-10 origin-[0] left-10 peer-focus:text-indigo-600 dark:peer-focus:text-indigo-400 peer-placeholder-shown:scale-100 peer-placeholder-shown:translate-y-0 peer-placeholder-shown:font-medium peer-focus:scale-75 peer-focus:-translate-y-3 pointer-events-none">
                                                 App Name
                                             </label>
                                         </div>
                                     </div>
-                                    <!-- Ô ẨN để chứa Testcase (từ clipboard/sheet) cho logic không bị đứt -->
                                     <input type="hidden" id="reportTestcaseInput" oninput="saveHeaderConfig()">
                                 </div>
 
                                 <!-- Card 4: Accordion Ghi chú & Meta -->
-                                <details class="bg-slate-50/50 rounded-xl border border-slate-200 overflow-hidden group">
-                                    <summary class="p-3.5 px-4 cursor-pointer font-bold text-sm text-slate-700 flex justify-between items-center hover:bg-slate-100 transition-colors select-none">
+                                <details class="bg-slate-50/50 dark:bg-slate-800/30 rounded-xl border border-slate-200 dark:border-slate-800 overflow-hidden group">
+                                    <summary class="p-3.5 px-4 cursor-pointer font-bold text-sm text-slate-700 dark:text-slate-300 flex justify-between items-center hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors select-none">
                                         <span class="flex items-center gap-2"><i class="fa-solid fa-feather-pointed text-amber-500"></i> Thêm Ghi chú & Metadata (Section C)</span>
                                         <i class="fa-solid fa-chevron-down group-open:rotate-180 transition-transform text-slate-400"></i>
                                     </summary>
-                                    <div class="p-4 grid grid-cols-1 md:grid-cols-2 gap-4 border-t border-slate-200 bg-white">
+                                    <div class="p-4 grid grid-cols-1 md:grid-cols-2 gap-4 border-t border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900">
                                         <div>
-                                            <label class="block text-[11px] font-bold text-slate-400 uppercase tracking-widest mb-1">Ghi chú bổ sung</label>
-                                            <textarea id="reportNotesInput" oninput="saveHeaderConfig()" rows="3" placeholder="Nhập mỗi ghi chú trên 1 dòng..." class="w-full bg-slate-50 border border-slate-300 text-xs rounded-xl p-3 outline-none font-medium custom-scrollbar focus:ring-1 focus:ring-amber-500 focus:border-amber-500 transition-all"></textarea>
+                                            <label class="block text-[11px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-1">Ghi chú bổ sung</label>
+                                            <textarea id="reportNotesInput" oninput="saveHeaderConfig()" rows="3" placeholder="Nhập mỗi ghi chú trên 1 dòng..." class="w-full bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 text-xs rounded-xl p-3 outline-none font-medium custom-scrollbar text-slate-900 dark:text-slate-100 focus:ring-1 focus:ring-amber-500 focus:border-amber-500 transition-all"></textarea>
                                         </div>
                                         <div>
-                                            <label class="block text-[11px] font-bold text-slate-400 uppercase tracking-widest mb-1">Metadata Game</label>
-                                            <textarea id="reportMetadataInput" oninput="saveHeaderConfig()" rows="3" placeholder="VD: Transferred: 53.2 MB&#10;Request network: 193 requests" class="w-full bg-slate-50 border border-slate-300 text-xs rounded-xl p-3 outline-none font-medium custom-scrollbar focus:ring-1 focus:ring-purple-500 focus:border-purple-500 transition-all"></textarea>
+                                            <label class="block text-[11px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-1">Metadata Game</label>
+                                            <textarea id="reportMetadataInput" oninput="saveHeaderConfig()" rows="3" placeholder="VD: Transferred: 53.2 MB&#10;Request network: 193 requests" class="w-full bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 text-xs rounded-xl p-3 outline-none font-medium custom-scrollbar text-slate-900 dark:text-slate-100 focus:ring-1 focus:ring-purple-500 focus:border-purple-500 transition-all"></textarea>
                                         </div>
                                     </div>
                                 </details>
                             </div>
                         </section>
 
-                        <section class="bg-white rounded-xl shadow-sm border border-slate-200 p-4 sm:p-5 space-y-4 w-full">
-                            <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-slate-100 pb-4">
+                        <section class="bg-white dark:bg-slate-900 rounded-xl shadow-sm border border-slate-200 dark:border-slate-800 p-4 sm:p-5 space-y-4 w-full transition-colors duration-200">
+                            <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-slate-100 dark:border-slate-800 pb-4">
                                 <div class="flex items-center gap-2">
-                                    <i class="fa-solid fa-filter text-indigo-600 text-lg"></i>
-                                    <h2 class="text-base font-bold text-slate-800">Bộ lọc & Cấu hình Báo cáo</h2>
+                                    <i class="fa-solid fa-filter text-indigo-600 dark:text-indigo-400 text-lg"></i>
+                                    <h2 class="text-base font-bold text-slate-800 dark:text-slate-100">Bộ lọc & Cấu hình Báo cáo</h2>
                                 </div>
                                 <div class="flex flex-col sm:flex-row flex-wrap items-stretch sm:items-center gap-3">
                                     <div class="flex items-center gap-2">
-                                        <label class="text-xs font-semibold text-slate-600 whitespace-nowrap">Chế độ nhóm Tag:</label>
-                                        <select id="tagModeSelect" onchange="processData()" class="w-full sm:w-auto bg-slate-100 border border-slate-300 text-slate-700 text-xs rounded-lg p-2 focus:ring-2 focus:ring-indigo-500 outline-none font-medium">
+                                        <label class="text-xs font-semibold text-slate-600 dark:text-slate-400 whitespace-nowrap">Chế độ nhóm Tag:</label>
+                                        <select id="tagModeSelect" onchange="processData()" class="w-full sm:w-auto bg-slate-100 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 text-slate-700 dark:text-slate-200 text-xs rounded-lg p-2 focus:ring-2 focus:ring-indigo-500 outline-none font-medium">
                                             <option value="primary">Chỉ lấy Tag chính đầu tiên [Tag 1]</option>
                                             <option value="all">Đếm tất cả Tag trong Ticket</option>
                                         </select>
@@ -355,105 +386,105 @@
                                 </div>
                             </div>
                             
-                            <div class="bg-indigo-50/50 border border-indigo-100 rounded-lg p-3 grid grid-cols-1 sm:grid-cols-3 gap-4">
+                            <div class="bg-indigo-50/50 dark:bg-indigo-950/30 border border-indigo-100 dark:border-indigo-900 rounded-lg p-3 grid grid-cols-1 sm:grid-cols-3 gap-4">
                                 <div>
-                                    <label class="block text-xs font-bold text-indigo-900 mb-1">
+                                    <label class="block text-xs font-bold text-indigo-900 dark:text-indigo-300 mb-1">
                                         <i class="fa-solid fa-bullseye text-indigo-500 mr-1"></i> Scope:
                                     </label>
-                                    <input type="text" id="scopeOfTestingInput" oninput="saveScopeTesting()" placeholder="VD: Logic UI..." class="w-full bg-white border border-slate-300 text-slate-700 text-xs font-medium rounded-lg p-2 outline-none">
+                                    <input type="text" id="scopeOfTestingInput" oninput="saveScopeTesting()" placeholder="VD: Logic UI..." class="w-full bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 text-slate-700 dark:text-slate-200 text-xs font-medium rounded-lg p-2 outline-none">
                                 </div>
                                 <div>
-                                    <label class="block text-xs font-bold text-indigo-900 mb-1">
+                                    <label class="block text-xs font-bold text-indigo-900 dark:text-indigo-300 mb-1">
                                         <i class="fa-regular fa-calendar text-indigo-500 mr-1"></i> Ngày:
                                     </label>
-                                    <input type="date" id="reportDateInput" class="w-full bg-white border border-slate-300 text-slate-700 text-xs font-medium rounded-lg p-2 outline-none">
+                                    <input type="date" id="reportDateInput" class="w-full bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 text-slate-700 dark:text-slate-200 text-xs font-medium rounded-lg p-2 outline-none">
                                 </div>
                                 <div>
-                                    <label class="block text-xs font-bold text-indigo-900 mb-1">
+                                    <label class="block text-xs font-bold text-indigo-900 dark:text-indigo-300 mb-1">
                                         <i class="fa-solid fa-users text-indigo-500 mr-1"></i> QC:
                                     </label>
-                                    <input type="text" id="qcMembersInput" oninput="saveQCMembers()" placeholder="VD: Kenz,..." class="w-full bg-white border border-slate-300 text-slate-700 text-xs font-medium rounded-lg p-2 outline-none">
+                                    <input type="text" id="qcMembersInput" oninput="saveQCMembers()" placeholder="VD: Kenz,..." class="w-full bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 text-slate-700 dark:text-slate-200 text-xs font-medium rounded-lg p-2 outline-none">
                                 </div>
                             </div>
 
-                            <div class="bg-slate-50 border border-slate-200 rounded-lg p-3 sm:p-4 flex flex-col sm:flex-row sm:items-center gap-3">
-                                <label class="text-xs font-bold text-slate-700 flex items-center gap-1.5 whitespace-nowrap">
-                                    <i class="fa-solid fa-table text-indigo-600"></i> Nguồn dữ liệu Tiến Độ Sheet (API):
+                            <div class="bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-lg p-3 sm:p-4 flex flex-col sm:flex-row sm:items-center gap-3">
+                                <label class="text-xs font-bold text-slate-700 dark:text-slate-300 flex items-center gap-1.5 whitespace-nowrap">
+                                    <i class="fa-solid fa-table text-indigo-600 dark:text-indigo-400"></i> Nguồn dữ liệu Tiến Độ Sheet (API):
                                 </label>
-                                <input type="text" id="sheetNameInput" oninput="saveGSheetApiData()" placeholder="VD: 9684" class="w-full sm:w-[200px] bg-white border border-slate-300 text-slate-700 text-xs font-medium rounded-lg p-2 outline-none">
+                                <input type="text" id="sheetNameInput" oninput="saveGSheetApiData()" placeholder="VD: 9684" class="w-full sm:w-[200px] bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 text-slate-700 dark:text-slate-200 text-xs font-medium rounded-lg p-2 outline-none">
                             </div>
 
                             <div>
                                 <div class="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-2 mb-2">
-                                    <label class="text-xs font-bold text-slate-700">Chọn Trạng thái (Status) cần hiển thị:</label>
+                                    <label class="text-xs font-bold text-slate-700 dark:text-slate-300">Chọn Trạng thái (Status) cần hiển thị:</label>
                                     <div class="space-x-2 text-xs">
-                                        <button onclick="toggleAllStatuses(true)" class="text-indigo-600 hover:underline font-bold">Chọn tất cả</button>
-                                        <span class="text-slate-300">|</span>
-                                        <button onclick="toggleAllStatuses(false)" class="text-slate-500 hover:underline font-bold">Bỏ chọn tất cả</button>
+                                        <button onclick="toggleAllStatuses(true)" class="text-indigo-600 dark:text-indigo-400 hover:underline font-bold">Chọn tất cả</button>
+                                        <span class="text-slate-300 dark:text-slate-600">|</span>
+                                        <button onclick="toggleAllStatuses(false)" class="text-slate-500 dark:text-slate-400 hover:underline font-bold">Bỏ chọn tất cả</button>
                                     </div>
                                 </div>
-                                <div id="dynamicStatusContainer" class="flex flex-wrap gap-2 text-xs font-medium text-slate-700"></div>
+                                <div id="dynamicStatusContainer" class="flex flex-wrap gap-2 text-xs font-medium text-slate-700 dark:text-slate-300"></div>
                             </div>
                         </section>
 
                         <!-- KPI Cards -->
                         <section class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 w-full">
-                            <div class="bg-white p-5 rounded-xl shadow-sm border border-slate-200 flex items-center gap-4">
-                                <div class="p-3 bg-indigo-100 text-indigo-600 rounded-lg text-xl"><i class="fa-solid fa-list-check"></i></div>
+                            <div class="bg-white dark:bg-slate-900 p-5 rounded-xl shadow-sm border border-slate-200 dark:border-slate-800 flex items-center gap-4 transition-colors duration-200">
+                                <div class="p-3 bg-indigo-100 dark:bg-indigo-950 text-indigo-600 dark:text-indigo-400 rounded-lg text-xl"><i class="fa-solid fa-list-check"></i></div>
                                 <div>
-                                    <p class="text-[11px] uppercase tracking-wider font-bold text-slate-500">Ticket Được Chọn</p>
-                                    <p id="kpiTotal" class="text-2xl font-black text-slate-800">0</p>
+                                    <p class="text-[11px] uppercase tracking-wider font-bold text-slate-500 dark:text-slate-400">Ticket Được Chọn</p>
+                                    <p id="kpiTotal" class="text-2xl font-black text-slate-800 dark:text-slate-100">0</p>
                                 </div>
                             </div>
-                            <div class="bg-white p-5 rounded-xl shadow-sm border border-slate-200 flex items-center gap-4">
-                                <div class="p-3 bg-purple-100 text-purple-600 rounded-lg text-xl"><i class="fa-solid fa-tags"></i></div>
+                            <div class="bg-white dark:bg-slate-900 p-5 rounded-xl shadow-sm border border-slate-200 dark:border-slate-800 flex items-center gap-4 transition-colors duration-200">
+                                <div class="p-3 bg-purple-100 dark:bg-purple-950 text-purple-600 dark:text-purple-400 rounded-lg text-xl"><i class="fa-solid fa-tags"></i></div>
                                 <div>
-                                    <p class="text-[11px] uppercase tracking-wider font-bold text-slate-500">Tổng Số Loại Tag</p>
-                                    <p id="kpiTags" class="text-2xl font-black text-slate-800">0</p>
+                                    <p class="text-[11px] uppercase tracking-wider font-bold text-slate-500 dark:text-slate-400">Tổng Số Loại Tag</p>
+                                    <p id="kpiTags" class="text-2xl font-black text-slate-800 dark:text-slate-100">0</p>
                                 </div>
                             </div>
-                            <div class="bg-white p-5 rounded-xl shadow-sm border border-slate-200 flex items-center gap-4">
-                                <div class="p-3 bg-red-100 text-red-600 rounded-lg text-xl"><i class="fa-solid fa-triangle-exclamation"></i></div>
+                            <div class="bg-white dark:bg-slate-900 p-5 rounded-xl shadow-sm border border-slate-200 dark:border-slate-800 flex items-center gap-4 transition-colors duration-200">
+                                <div class="p-3 bg-red-100 dark:bg-red-950 text-red-600 dark:text-red-400 rounded-lg text-xl"><i class="fa-solid fa-triangle-exclamation"></i></div>
                                 <div>
-                                    <p class="text-[11px] uppercase tracking-wider font-bold text-slate-500">Highest/High</p>
-                                    <p id="kpiHighPriority" class="text-2xl font-black text-red-600">0</p>
+                                    <p class="text-[11px] uppercase tracking-wider font-bold text-slate-500 dark:text-slate-400">Highest/High</p>
+                                    <p id="kpiHighPriority" class="text-2xl font-black text-red-600 dark:text-red-400">0</p>
                                 </div>
                             </div>
-                            <div class="bg-white p-5 rounded-xl shadow-sm border border-slate-200 flex items-center gap-4">
-                                <div class="p-3 bg-emerald-100 text-emerald-600 rounded-lg text-xl"><i class="fa-solid fa-file-circle-check"></i></div>
+                            <div class="bg-white dark:bg-slate-900 p-5 rounded-xl shadow-sm border border-slate-200 dark:border-slate-800 flex items-center gap-4 transition-colors duration-200">
+                                <div class="p-3 bg-emerald-100 dark:bg-emerald-950 text-emerald-600 dark:text-emerald-400 rounded-lg text-xl"><i class="fa-solid fa-file-circle-check"></i></div>
                                 <div>
-                                    <p class="text-[11px] uppercase tracking-wider font-bold text-slate-500">Số Status Đang Lọc</p>
-                                    <p id="kpiActiveStatuses" class="text-2xl font-black text-emerald-600">0</p>
+                                    <p class="text-[11px] uppercase tracking-wider font-bold text-slate-500 dark:text-slate-400">Số Status Đang Lọc</p>
+                                    <p id="kpiActiveStatuses" class="text-2xl font-black text-emerald-600 dark:text-emerald-400">0</p>
                                 </div>
                             </div>
                         </section>
 
                         <section class="grid grid-cols-1 lg:grid-cols-3 gap-6 w-full">
-                            <div class="lg:col-span-2 bg-white p-4 sm:p-5 rounded-xl shadow-sm border border-slate-200 flex flex-col">
-                                <h3 class="text-base font-bold text-slate-800 mb-2"><i class="fa-solid fa-chart-bar text-indigo-600 mr-2"></i>Biểu đồ Tag & Priority</h3>
+                            <div class="lg:col-span-2 bg-white dark:bg-slate-900 p-4 sm:p-5 rounded-xl shadow-sm border border-slate-200 dark:border-slate-800 flex flex-col transition-colors duration-200">
+                                <h3 class="text-base font-bold text-slate-800 dark:text-slate-100 mb-2"><i class="fa-solid fa-chart-bar text-indigo-600 dark:text-indigo-400 mr-2"></i>Biểu đồ Tag & Priority</h3>
                                 <div class="relative flex-1 min-h-[300px] sm:min-h-[360px] w-full"><canvas id="tagPriorityStackedChart"></canvas></div>
                             </div>
-                            <div class="bg-white p-4 sm:p-5 rounded-xl shadow-sm border border-slate-200 flex flex-col">
-                                <h3 class="text-base font-bold text-slate-800 mb-2"><i class="fa-solid fa-chart-pie text-indigo-600 mr-2"></i>Tỷ lệ Priority</h3>
+                            <div class="bg-white dark:bg-slate-900 p-4 sm:p-5 rounded-xl shadow-sm border border-slate-200 dark:border-slate-800 flex flex-col transition-colors duration-200">
+                                <h3 class="text-base font-bold text-slate-800 dark:text-slate-100 mb-2"><i class="fa-solid fa-chart-pie text-indigo-600 dark:text-indigo-400 mr-2"></i>Tỷ lệ Priority</h3>
                                 <div class="relative flex-1 min-h-[300px] sm:min-h-[360px] w-full flex items-center justify-center"><canvas id="priorityDoughnutChart"></canvas></div>
                             </div>
                         </section>
 
-                        <section class="bg-white p-4 sm:p-5 rounded-xl shadow-sm border border-slate-200 w-full">
-                            <h3 class="text-base font-bold text-slate-800 mb-4"><i class="fa-solid fa-cubes text-indigo-600 mr-2"></i>Thống kê Chi tiết theo Tag</h3>
+                        <section class="bg-white dark:bg-slate-900 p-4 sm:p-5 rounded-xl shadow-sm border border-slate-200 dark:border-slate-800 w-full transition-colors duration-200">
+                            <h3 class="text-base font-bold text-slate-800 dark:text-slate-100 mb-4"><i class="fa-solid fa-cubes text-indigo-600 dark:text-indigo-400 mr-2"></i>Thống kê Chi tiết theo Tag</h3>
                             <div id="tagBreakdownContainer" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4"></div>
                         </section>
 
-                        <section class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden w-full">
-                            <div class="p-4 sm:p-5 border-b border-slate-200 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-                                <h3 class="text-base font-bold text-slate-800 flex items-center gap-2">
-                                    <i class="fa-solid fa-table text-indigo-600"></i> Danh sách Ticket
+                        <section class="bg-white dark:bg-slate-900 rounded-xl shadow-sm border border-slate-200 dark:border-slate-800 overflow-hidden w-full transition-colors duration-200">
+                            <div class="p-4 sm:p-5 border-b border-slate-200 dark:border-slate-800 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                                <h3 class="text-base font-bold text-slate-800 dark:text-slate-100 flex items-center gap-2">
+                                    <i class="fa-solid fa-table text-indigo-600 dark:text-indigo-400"></i> Danh sách Ticket
                                 </h3>
-                                <input type="text" id="searchInput" onkeyup="filterMainTable()" placeholder="Tìm kiếm Key, Summary..." class="w-full sm:w-64 bg-slate-100 border border-slate-300 text-slate-700 text-xs font-medium rounded-lg p-2.5 focus:ring-2 focus:ring-indigo-500 outline-none">
+                                <input type="text" id="searchInput" onkeyup="filterMainTable()" placeholder="Tìm kiếm Key, Summary..." class="w-full sm:w-64 bg-slate-100 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 text-slate-700 dark:text-slate-200 text-xs font-medium rounded-lg p-2.5 focus:ring-2 focus:ring-indigo-500 outline-none">
                             </div>
                             <div class="overflow-x-auto max-h-[500px]">
-                                <table class="w-full text-xs text-left text-slate-600 min-w-[800px]">
-                                    <thead class="text-slate-700 uppercase bg-slate-100 sticky top-0 border-b border-slate-200">
+                                <table class="w-full text-xs text-left text-slate-600 dark:text-slate-400 min-w-[800px]">
+                                    <thead class="text-slate-700 dark:text-slate-300 uppercase bg-slate-100 dark:bg-slate-800 sticky top-0 border-b border-slate-200 dark:border-slate-700">
                                         <tr>
                                             <th class="px-4 py-3 font-bold">Issue Key</th>
                                             <th class="px-4 py-3 font-bold">Loại Tag</th>
@@ -463,33 +494,33 @@
                                             <th class="px-4 py-3 font-bold">Người xử lý</th>
                                         </tr>
                                     </thead>
-                                    <tbody id="ticketTableBody" class="divide-y divide-slate-200"></tbody>
+                                    <tbody id="ticketTableBody" class="divide-y divide-slate-200 dark:divide-slate-800"></tbody>
                                 </table>
                             </div>
                         </section>
                     </div>
 
                     <div id="detailView" class="hidden space-y-6 w-full">
-                        <section class="bg-white rounded-xl shadow-sm border border-slate-200 p-4 sm:p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                        <section class="bg-white dark:bg-slate-900 rounded-xl shadow-sm border border-slate-200 dark:border-slate-800 p-4 sm:p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                             <div class="flex flex-col sm:flex-row items-start sm:items-center gap-4">
-                                <button onclick="closeDetailView()" class="w-full sm:w-auto inline-flex justify-center items-center gap-2 px-4 py-2.5 bg-slate-100 hover:bg-indigo-50 text-indigo-700 text-xs font-bold rounded-lg border border-slate-300 hover:border-indigo-300 transition shadow-sm">
+                                <button onclick="closeDetailView()" class="w-full sm:w-auto inline-flex justify-center items-center gap-2 px-4 py-2.5 bg-slate-100 dark:bg-slate-800 hover:bg-indigo-50 text-indigo-700 dark:text-indigo-300 text-xs font-bold rounded-lg border border-slate-300 dark:border-slate-700 hover:border-indigo-300 transition shadow-sm">
                                     <i class="fa-solid fa-arrow-left"></i> Quay lại Dashboard
                                 </button>
                                 <div>
-                                    <span class="text-[10px] text-slate-500 font-bold uppercase tracking-wider">Trang Xem Chi Tiết</span>
-                                    <h2 id="detailViewTitle" class="text-lg font-bold text-slate-800">Chi tiết Ticket</h2>
+                                    <span class="text-[10px] text-slate-500 dark:text-slate-400 font-bold uppercase tracking-wider">Trang Xem Chi Tiết</span>
+                                    <h2 id="detailViewTitle" class="text-lg font-bold text-slate-800 dark:text-slate-100">Chi tiết Ticket</h2>
                                 </div>
                             </div>
                             <div class="flex items-center gap-3">
-                                <div class="bg-indigo-50 border border-indigo-200 px-3 py-1.5 rounded-lg text-xs font-bold text-indigo-800 w-full sm:w-auto text-center">
-                                    Tổng số: <span id="detailCountBadge" class="text-indigo-600 text-sm">0</span> ticket
+                                <div class="bg-indigo-50 dark:bg-indigo-950/60 border border-indigo-200 dark:border-indigo-900 px-3 py-1.5 rounded-lg text-xs font-bold text-indigo-800 dark:text-indigo-300 w-full sm:w-auto text-center">
+                                    Tổng số: <span id="detailCountBadge" class="text-indigo-600 dark:text-indigo-400 text-sm">0</span> ticket
                                 </div>
                             </div>
                         </section>
-                        <section class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+                        <section class="bg-white dark:bg-slate-900 rounded-xl shadow-sm border border-slate-200 dark:border-slate-800 overflow-hidden">
                             <div class="overflow-x-auto min-h-[300px] max-h-[600px]">
-                                <table class="w-full text-xs text-left text-slate-600 min-w-[800px]">
-                                    <thead class="text-slate-700 uppercase bg-slate-100 sticky top-0 border-b border-slate-200">
+                                <table class="w-full text-xs text-left text-slate-600 dark:text-slate-400 min-w-[800px]">
+                                    <thead class="text-slate-700 dark:text-slate-300 uppercase bg-slate-100 dark:bg-slate-800 sticky top-0 border-b border-slate-200 dark:border-slate-700">
                                         <tr>
                                             <th class="px-4 py-3 font-bold">Issue Key</th>
                                             <th class="px-4 py-3 font-bold">Loại Tag</th>
@@ -499,7 +530,7 @@
                                             <th class="px-4 py-3 font-bold">Người xử lý</th>
                                         </tr>
                                     </thead>
-                                    <tbody id="detailTicketTableBody" class="divide-y divide-slate-200"></tbody>
+                                    <tbody id="detailTicketTableBody" class="divide-y divide-slate-200 dark:divide-slate-800"></tbody>
                                 </table>
                             </div>
                         </section>
@@ -511,10 +542,10 @@
 
     <!-- MODAL LỰA CHỌN TAG -->
     <div id="tagSelectionModal" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4">
-        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden flex flex-col transform transition-all">
-            <div class="px-4 sm:px-6 py-4 border-b border-slate-200 flex justify-between items-center bg-slate-50">
-                <h3 class="text-base sm:text-lg font-bold text-indigo-900 flex items-center gap-2">
-                    <i class="fa-solid fa-tags text-indigo-600"></i> Chọn Tag Cho Báo Cáo
+        <div class="bg-white dark:bg-slate-900 rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden flex flex-col transform transition-all border border-slate-200 dark:border-slate-800">
+            <div class="px-4 sm:px-6 py-4 border-b border-slate-200 dark:border-slate-800 flex justify-between items-center bg-slate-50 dark:bg-slate-800/50">
+                <h3 class="text-base sm:text-lg font-bold text-indigo-900 dark:text-indigo-300 flex items-center gap-2">
+                    <i class="fa-solid fa-tags text-indigo-600 dark:text-indigo-400"></i> Chọn Tag Cho Báo Cáo
                 </h3>
                 <button onclick="closeTagModal()" class="text-slate-400 hover:text-rose-500 transition outline-none">
                     <i class="fa-solid fa-xmark text-xl"></i>
@@ -522,19 +553,19 @@
             </div>
             
             <div class="p-4 sm:p-6">
-                <p class="text-xs text-slate-500 mb-4 font-medium">Hệ thống đã quét được các loại Tag dưới đây từ dữ liệu Ticket hiện tại. Hãy bỏ tích những Tag bạn KHÔNG MUỐN hiển thị trong Báo Cáo Daily.</p>
+                <p class="text-xs text-slate-500 dark:text-slate-400 mb-4 font-medium">Hệ thống đã quét được các loại Tag dưới đây từ dữ liệu Ticket hiện tại. Hãy bỏ tích những Tag bạn KHÔNG MUỐN hiển thị trong Báo Cáo Daily.</p>
                 
-                <div class="flex gap-2 mb-4 text-xs font-bold border-b border-slate-100 pb-3">
-                    <button onclick="toggleAllTags(true)" class="text-indigo-600 hover:text-indigo-800 transition">Chọn tất cả</button>
-                    <span class="text-slate-300">|</span>
-                    <button onclick="toggleAllTags(false)" class="text-slate-500 hover:text-slate-700 transition">Bỏ chọn tất cả</button>
+                <div class="flex gap-2 mb-4 text-xs font-bold border-b border-slate-100 dark:border-slate-800 pb-3">
+                    <button onclick="toggleAllTags(true)" class="text-indigo-600 dark:text-indigo-400 hover:underline transition">Chọn tất cả</button>
+                    <span class="text-slate-300 dark:text-slate-700">|</span>
+                    <button onclick="toggleAllTags(false)" class="text-slate-500 dark:text-slate-400 hover:underline transition">Bỏ chọn tất cả</button>
                 </div>
 
-                <div id="tagCheckboxContainer" class="flex flex-wrap gap-2 text-sm font-medium text-slate-700 max-h-[40vh] overflow-y-auto custom-scrollbar"></div>
+                <div id="tagCheckboxContainer" class="flex flex-wrap gap-2 text-sm font-medium text-slate-700 dark:text-slate-300 max-h-[40vh] overflow-y-auto custom-scrollbar"></div>
             </div>
 
-            <div class="px-4 sm:px-6 py-4 border-t border-slate-100 bg-slate-50 flex flex-col sm:flex-row justify-end gap-3">
-                <button onclick="closeTagModal()" class="w-full sm:w-auto px-5 py-2.5 bg-white border border-slate-300 hover:bg-slate-100 text-slate-700 text-xs font-bold rounded-xl transition shadow-sm">Hủy</button>
+            <div class="px-4 sm:px-6 py-4 border-t border-slate-100 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/50 flex flex-col sm:flex-row justify-end gap-3">
+                <button onclick="closeTagModal()" class="w-full sm:w-auto px-5 py-2.5 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 text-xs font-bold rounded-xl transition shadow-sm">Hủy</button>
                 <button id="btnConfirmCopy" onclick="confirmAndCopyReport(false)" class="w-full sm:w-auto px-5 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-xl transition shadow-sm flex justify-center items-center gap-2">
                     <i class="fa-solid fa-copy"></i> Xác nhận & Copy
                 </button>
@@ -551,25 +582,43 @@
         let currentProjectKey = null;
         let currentJiraDomain = null;
 
-        // HÀM HIỂN THỊ TOAST THÔNG BÁO HIỆN ĐẠI (THAY THẾ MODAL)
+        // BẬT / TẮT DARK MODE
+        function toggleDarkMode() {
+            const isDark = document.documentElement.classList.toggle('dark');
+            localStorage.setItem('qc_portal_theme', isDark ? 'dark' : 'light');
+            updateDarkModeIcon();
+        }
+
+        function updateDarkModeIcon() {
+            const icon = document.getElementById('darkModeIcon');
+            if (icon) {
+                if (document.documentElement.classList.contains('dark')) {
+                    icon.className = 'fa-solid fa-sun text-amber-400 text-lg';
+                } else {
+                    icon.className = 'fa-solid fa-moon text-slate-600 text-lg';
+                }
+            }
+        }
+
+        // HÀM HIỂN THỊ TOAST THÔNG BÁO HIỆN ĐẠI
         function showToast(title, message, isError = false) {
             const container = document.getElementById('toast-container');
             if (!container) return;
 
             const toast = document.createElement('div');
-            toast.className = `toast-enter flex items-start gap-3 p-4 bg-white rounded-xl shadow-[0_8px_30px_rgb(0,0,0,0.12)] border-l-4 ${isError ? 'border-rose-500' : 'border-emerald-500'} pointer-events-auto min-w-[300px] max-w-sm`;
+            toast.className = `toast-enter flex items-start gap-3 p-4 bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100 rounded-xl shadow-[0_8px_30px_rgb(0,0,0,0.12)] border-l-4 ${isError ? 'border-rose-500' : 'border-emerald-500'} pointer-events-auto min-w-[300px] max-w-sm border border-slate-100 dark:border-slate-800`;
             
             const iconHtml = isError 
-                ? '<div class="mt-0.5 text-rose-500 bg-rose-100 rounded-full w-6 h-6 flex items-center justify-center flex-shrink-0"><i class="fa-solid fa-triangle-exclamation text-xs"></i></div>'
-                : '<div class="mt-0.5 text-emerald-500 bg-emerald-100 rounded-full w-6 h-6 flex items-center justify-center flex-shrink-0"><i class="fa-solid fa-check text-xs"></i></div>';
+                ? '<div class="mt-0.5 text-rose-500 bg-rose-100 dark:bg-rose-950/60 rounded-full w-6 h-6 flex items-center justify-center flex-shrink-0"><i class="fa-solid fa-triangle-exclamation text-xs"></i></div>'
+                : '<div class="mt-0.5 text-emerald-500 bg-emerald-100 dark:bg-emerald-950/60 rounded-full w-6 h-6 flex items-center justify-center flex-shrink-0"><i class="fa-solid fa-check text-xs"></i></div>';
 
             toast.innerHTML = `
                 ${iconHtml}
                 <div class="flex-1">
-                    <h4 class="text-sm font-bold text-slate-800">${title}</h4>
-                    <p class="text-xs text-slate-500 mt-1">${message}</p>
+                    <h4 class="text-sm font-bold text-slate-800 dark:text-slate-100">${title}</h4>
+                    <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">${message}</p>
                 </div>
-                <button onclick="this.parentElement.remove()" class="text-slate-400 hover:text-slate-600 transition focus:outline-none"><i class="fa-solid fa-xmark"></i></button>
+                <button onclick="this.parentElement.remove()" class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition focus:outline-none"><i class="fa-solid fa-xmark"></i></button>
             `;
 
             container.appendChild(toast);
@@ -618,15 +667,13 @@
         let tagPriorityChartInstance = null;
         let priorityDoughnutChartInstance = null;
 
-        const priorityColors = {
-            'Highest': '#DC2626', 'High': '#F97316', 'Medium': '#F59E0B',
-            'Low': '#3B82F6', 'Lowest': '#10B981', 'Unassigned': '#64748B'
-        };
-
         function toggleEnvChip(btn) {
             btn.classList.toggle('bg-slate-100');
+            btn.classList.toggle('dark:bg-slate-800');
             btn.classList.toggle('text-slate-500');
+            btn.classList.toggle('dark:text-slate-400');
             btn.classList.toggle('border-slate-200');
+            btn.classList.toggle('dark:border-slate-700');
             
             btn.classList.toggle('bg-indigo-600');
             btn.classList.toggle('text-white');
@@ -728,7 +775,7 @@
                         const buttons = container.querySelectorAll('.env-chip');
                         buttons.forEach(btn => {
                             if (config.envChips.includes(btn.dataset.value)) {
-                                btn.classList.remove('bg-slate-100', 'text-slate-500', 'border-slate-200');
+                                btn.classList.remove('bg-slate-100', 'text-slate-500', 'border-slate-200', 'dark:bg-slate-800', 'dark:text-slate-400', 'dark:border-slate-700');
                                 btn.classList.add('bg-indigo-600', 'text-white', 'border-indigo-600', 'active-chip');
                             }
                         });
@@ -1033,6 +1080,7 @@
             updateAuthUI();
             calculateMondaysLeft();
             loadHeaderConfig();
+            updateDarkModeIcon();
             
             const savedJiraUrl = localStorage.getItem('jira_last_url') || '';
             if (savedJiraUrl && document.getElementById('jiraUrlInput')) document.getElementById('jiraUrlInput').value = savedJiraUrl;
@@ -1104,7 +1152,7 @@
             container.innerHTML = '';
             availableStatuses.forEach(status => {
                 const label = document.createElement('label');
-                label.className = 'flex items-center gap-2 cursor-pointer bg-slate-50 hover:bg-slate-100 px-3 py-1.5 rounded-lg border border-slate-200 transition font-semibold text-slate-700';
+                label.className = 'flex items-center gap-2 cursor-pointer bg-slate-50 dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 px-3 py-1.5 rounded-lg border border-slate-200 dark:border-slate-700 transition font-semibold text-slate-700 dark:text-slate-300';
                 label.innerHTML = '<input type="checkbox" class="status-dynamic-cb text-indigo-600 rounded" value="' + status + '" checked onchange="processData()"><span>' + status + '</span>';
                 container.appendChild(label);
             });
@@ -1209,7 +1257,7 @@
             Object.keys(tagTotalCounts).sort((a, b) => tagTotalCounts[b] - tagTotalCounts[a]).forEach(tag => {
                 const total = tagTotalCounts[tag]; const pMap = tagPriorityMap[tag] || {};
                 const card = document.createElement('div');
-                card.className = 'bg-white border border-slate-200 rounded-xl p-4 shadow-sm hover:border-indigo-400 hover:shadow-md transition cursor-pointer';
+                card.className = 'bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-4 shadow-sm hover:border-indigo-400 dark:hover:border-indigo-500 hover:shadow-md transition cursor-pointer';
                 card.onclick = (e) => { if (e.target.tagName !== 'SPAN') openDetailView({ tag: tag }); };
 
                 let priorityBadgesHtml = '';
@@ -1217,7 +1265,7 @@
                     if (pMap[p]) priorityBadgesHtml += '<span onclick="event.stopPropagation(); openDetailView({ tag: \'' + tag + '\', priority: \'' + p + '\' })" class="inline-flex items-center gap-1 text-[11px] font-bold px-2 py-0.5 rounded-md text-white hover:opacity-80 transition cursor-pointer" style="background-color: ' + (priorityColors[p] || '#64748B') + '" title="Click xem ticket Tag [' + tag + '] - Priority ' + p + '">' + p + ': ' + pMap[p] + '</span>';
                 });
 
-                card.innerHTML = '<div class="flex justify-between items-center mb-3"><strong class="text-sm text-indigo-700 font-bold">[' + tag + ']</strong><span class="text-xs bg-indigo-100 text-indigo-800 font-bold px-2.5 py-1 rounded-full hover:bg-indigo-200 transition">' + total + ' ticket</span></div><div class="flex flex-wrap gap-1.5 mt-2">' + priorityBadgesHtml + '</div>';
+                card.innerHTML = '<div class="flex justify-between items-center mb-3"><strong class="text-sm text-indigo-700 dark:text-indigo-400 font-bold">[' + tag + ']</strong><span class="text-xs bg-indigo-100 dark:bg-indigo-950 text-indigo-800 dark:text-indigo-300 font-bold px-2.5 py-1 rounded-full hover:bg-indigo-200 transition">' + total + ' ticket</span></div><div class="flex flex-wrap gap-1.5 mt-2">' + priorityBadgesHtml + '</div>';
                 container.appendChild(card);
             });
         }
@@ -1227,16 +1275,16 @@
             tbody.innerHTML = '';
             rows.forEach(row => {
                 const tr = document.createElement('tr');
-                tr.className = 'hover:bg-indigo-50/50 transition border-b border-slate-100';
-                let statusClass = 'bg-slate-100 text-slate-700';
+                tr.className = 'hover:bg-indigo-50/50 dark:hover:bg-indigo-950/30 transition border-b border-slate-100 dark:border-slate-800';
+                let statusClass = 'bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300';
                 const sUpper = row.status.toUpperCase();
-                if (['CLOSED', 'DONE', 'RESOLVED', 'FIXED'].includes(sUpper)) statusClass = 'bg-emerald-100 text-emerald-800';
-                else if (['DEPLOYED'].includes(sUpper)) statusClass = 'bg-blue-100 text-blue-800';
-                else if (['IN PROGRESS', 'IN-PROGRESS'].includes(sUpper)) statusClass = 'bg-amber-100 text-amber-800';
-                else if (['WONT FIX', 'WON\'T FIX'].includes(sUpper)) statusClass = 'bg-rose-100 text-rose-800';
+                if (['CLOSED', 'DONE', 'RESOLVED', 'FIXED'].includes(sUpper)) statusClass = 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300';
+                else if (['DEPLOYED'].includes(sUpper)) statusClass = 'bg-blue-100 text-blue-800 dark:bg-blue-950 dark:text-blue-300';
+                else if (['IN PROGRESS', 'IN-PROGRESS'].includes(sUpper)) statusClass = 'bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300';
+                else if (['WONT FIX', 'WON\'T FIX'].includes(sUpper)) statusClass = 'bg-rose-100 text-rose-800 dark:bg-rose-950 dark:text-rose-300';
                 const pColor = priorityColors[row.priority] || '#64748B';
 
-                tr.innerHTML = '<td class="px-4 py-3 font-bold text-indigo-600 whitespace-nowrap">' + (row.key || 'N/A') + '</td><td class="px-4 py-3 whitespace-nowrap"><span class="bg-indigo-50 text-indigo-700 border border-indigo-200 px-2 py-0.5 rounded text-[11px] font-bold">[' + row.tags + ']</span></td><td class="px-4 py-3 max-w-md truncate font-medium text-slate-700" title="' + row.summary + '">' + row.summary + '</td><td class="px-4 py-3 whitespace-nowrap"><span class="text-white text-[10px] font-bold px-2 py-1 rounded" style="background-color: ' + pColor + '">' + row.priority + '</span></td><td class="px-4 py-3 whitespace-nowrap"><span class="px-2.5 py-1 rounded-full text-[11px] font-bold ' + statusClass + '">' + row.status + '</span></td><td class="px-4 py-3 whitespace-nowrap font-medium text-slate-600">' + row.assignee + '</td>';
+                tr.innerHTML = '<td class="px-4 py-3 font-bold text-indigo-600 dark:text-indigo-400 whitespace-nowrap">' + (row.key || 'N/A') + '</td><td class="px-4 py-3 whitespace-nowrap"><span class="bg-indigo-50 dark:bg-indigo-950/60 text-indigo-700 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-900 px-2 py-0.5 rounded text-[11px] font-bold">[' + row.tags + ']</span></td><td class="px-4 py-3 max-w-md truncate font-medium text-slate-700 dark:text-slate-300" title="' + row.summary + '">' + row.summary + '</td><td class="px-4 py-3 whitespace-nowrap"><span class="text-white text-[10px] font-bold px-2 py-1 rounded" style="background-color: ' + pColor + '">' + row.priority + '</span></td><td class="px-4 py-3 whitespace-nowrap"><span class="px-2.5 py-1 rounded-full text-[11px] font-bold ' + statusClass + '">' + row.status + '</span></td><td class="px-4 py-3 whitespace-nowrap font-medium text-slate-600 dark:text-slate-400">' + row.assignee + '</td>';
                 tbody.appendChild(tr);
             });
         }
@@ -1263,8 +1311,8 @@
             });
 
             let titleParts = [];
-            if (filterContext.tag) titleParts.push('Loại Tag: <span class="text-indigo-600">[' + filterContext.tag + ']</span>');
-            if (filterContext.priority) titleParts.push('Priority: <span class="text-indigo-600">' + filterContext.priority + '</span>');
+            if (filterContext.tag) titleParts.push('Loại Tag: <span class="text-indigo-600 dark:text-indigo-400">[' + filterContext.tag + ']</span>');
+            if (filterContext.priority) titleParts.push('Priority: <span class="text-indigo-600 dark:text-indigo-400">' + filterContext.priority + '</span>');
             
             document.getElementById('detailViewTitle').innerHTML = 'Chi tiết Ticket • ' + titleParts.join(' & ');
             document.getElementById('detailCountBadge').innerText = detailRows.length;
@@ -1274,16 +1322,16 @@
             if (detailRows.length > 0) {
                 detailRows.forEach(row => {
                     const tr = document.createElement('tr');
-                    tr.className = 'hover:bg-slate-50 transition border-b border-slate-100';
+                    tr.className = 'hover:bg-slate-50 dark:hover:bg-slate-800 transition border-b border-slate-100 dark:border-slate-800';
                     const pColor = priorityColors[row.priority] || '#64748B';
-                    let statusClass = 'bg-slate-100 text-slate-700';
+                    let statusClass = 'bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300';
                     const sUpper = row.status.toUpperCase();
-                    if (['CLOSED', 'DONE', 'RESOLVED', 'FIXED'].includes(sUpper)) statusClass = 'bg-emerald-100 text-emerald-800';
-                    else if (['DEPLOYED'].includes(sUpper)) statusClass = 'bg-blue-100 text-blue-800';
-                    else if (['IN PROGRESS', 'IN-PROGRESS'].includes(sUpper)) statusClass = 'bg-amber-100 text-amber-800';
-                    else if (['WONT FIX', 'WON\'T FIX'].includes(sUpper)) statusClass = 'bg-rose-100 text-rose-800';
+                    if (['CLOSED', 'DONE', 'RESOLVED', 'FIXED'].includes(sUpper)) statusClass = 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300';
+                    else if (['DEPLOYED'].includes(sUpper)) statusClass = 'bg-blue-100 text-blue-800 dark:bg-blue-950 dark:text-blue-300';
+                    else if (['IN PROGRESS', 'IN-PROGRESS'].includes(sUpper)) statusClass = 'bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300';
+                    else if (['WONT FIX', 'WON\'T FIX'].includes(sUpper)) statusClass = 'bg-rose-100 text-rose-800 dark:bg-rose-950 dark:text-rose-300';
 
-                    tr.innerHTML = '<td class="px-4 py-3 font-bold text-indigo-600 whitespace-nowrap">' + (row.key || 'N/A') + '</td><td class="px-4 py-3 whitespace-nowrap"><span class="bg-indigo-50 text-indigo-700 border border-indigo-200 px-2 py-0.5 rounded text-[11px] font-bold">[' + row.tags + ']</span></td><td class="px-4 py-3 max-w-md truncate font-medium">' + row.summary + '</td><td class="px-4 py-3 whitespace-nowrap"><span class="text-white text-[10px] font-bold px-2 py-1 rounded" style="background-color: ' + pColor + '">' + row.priority + '</span></td><td class="px-4 py-3 whitespace-nowrap"><span class="px-2.5 py-1 rounded-full text-[11px] font-bold ' + statusClass + '">' + row.status + '</span></td><td class="px-4 py-3 whitespace-nowrap font-medium text-slate-600">' + row.assignee + '</td>';
+                    tr.innerHTML = '<td class="px-4 py-3 font-bold text-indigo-600 dark:text-indigo-400 whitespace-nowrap">' + (row.key || 'N/A') + '</td><td class="px-4 py-3 whitespace-nowrap"><span class="bg-indigo-50 dark:bg-indigo-950/60 text-indigo-700 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-900 px-2 py-0.5 rounded text-[11px] font-bold">[' + row.tags + ']</span></td><td class="px-4 py-3 max-w-md truncate font-medium text-slate-700 dark:text-slate-300">' + row.summary + '</td><td class="px-4 py-3 whitespace-nowrap"><span class="text-white text-[10px] font-bold px-2 py-1 rounded" style="background-color: ' + pColor + '">' + row.priority + '</span></td><td class="px-4 py-3 whitespace-nowrap"><span class="px-2.5 py-1 rounded-full text-[11px] font-bold ' + statusClass + '">' + row.status + '</span></td><td class="px-4 py-3 whitespace-nowrap font-medium text-slate-600 dark:text-slate-400">' + row.assignee + '</td>';
                     detailTbody.appendChild(tr);
                 });
             } else {
@@ -1339,12 +1387,12 @@
             container.innerHTML = '';
 
             if (foundTags.size === 0) {
-                container.innerHTML = '<div class="w-full text-center py-6 bg-slate-100 rounded-xl border border-slate-200"><i class="fa-solid fa-check-circle text-emerald-500 text-3xl mb-2"></i><p class="text-sm font-bold text-slate-700">Tất cả ticket đều đã Closed!</p><p class="text-xs text-slate-500 mt-1">Báo cáo sẽ được tạo với trạng thái 0 Ticket.</p></div>';
+                container.innerHTML = '<div class="w-full text-center py-6 bg-slate-100 dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700"><i class="fa-solid fa-check-circle text-emerald-500 text-3xl mb-2"></i><p class="text-sm font-bold text-slate-700 dark:text-slate-200">Tất cả ticket đều đã Closed!</p><p class="text-xs text-slate-500 dark:text-slate-400 mt-1">Báo cáo sẽ được tạo với trạng thái 0 Ticket.</p></div>';
             } else {
                 Array.from(foundTags).sort().forEach(tag => {
                     const label = document.createElement('label');
-                    label.className = 'flex items-center gap-2 cursor-pointer bg-indigo-50/50 hover:bg-indigo-50 border border-indigo-100 px-3 py-2 rounded-lg transition';
-                    label.innerHTML = '<input type="checkbox" class="tag-select-cb text-indigo-600 rounded" value="' + tag + '" checked><span class="font-bold text-indigo-900">[' + tag + ']</span>';
+                    label.className = 'flex items-center gap-2 cursor-pointer bg-indigo-50/50 dark:bg-indigo-950/40 hover:bg-indigo-50 border border-indigo-100 dark:border-indigo-900 px-3 py-2 rounded-lg transition';
+                    label.innerHTML = '<input type="checkbox" class="tag-select-cb text-indigo-600 rounded" value="' + tag + '" checked><span class="font-bold text-indigo-900 dark:text-indigo-300">[' + tag + ']</span>';
                     container.appendChild(label);
                 });
             }
@@ -1829,7 +1877,7 @@
                         return r; 
                     };
 
-                    // LOGIC MỚI: Kiểm tra tổng số bug tất cả các tag
+                    // LOGIC MỚI: Kiểm tra tổng số bug tất cả các tag có < 5 không
                     const isTotalLessThan5 = totalSelectedTickets < 5;
 
                     tagOrder.forEach((tag, index) => {
@@ -1850,7 +1898,7 @@
                                 
                                 const isMajorPriority = ['Highest', 'High'].includes(p);
                                 
-                                // Nếu Tổng < 5 HOẶC là bug Major HOẶC thuộc tag Special (Improvement, Question) -> List chi tiết
+                                // Nếu Tổng < 5 HOẶC là bug Major (Highest/High) HOẶC thuộc tag Special (Improvement, Question) -> List chi tiết
                                 if (isTotalLessThan5 || isMajorPriority || isSpecialTag) {
                                     priorityGroups[p].forEach(t => {
                                         reportLines.push('  + ' + t.fullKey + ': ' + t.cleanSummary);
