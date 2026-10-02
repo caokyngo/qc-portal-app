@@ -170,7 +170,7 @@
             </div>
         </header>
 
-        <main class="flex-1 overflow-y-auto p-4 md:p-6 bg-slate-50">
+        <main class="flex-1 overflow-y-auto p-4 md:p-6 bg-slate-50 relative z-0">
             <div class="w-full mx-auto 2xl:max-w-[1600px] space-y-6">
                 
                 <!-- KHUNG NHẬP LINK JIRA -->
@@ -542,6 +542,20 @@
         </div>
     </div>
 
+    <!-- Modal Loading -->
+    <div id="loadingModal" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4">
+        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-xs overflow-hidden p-8 text-center space-y-4">
+            <div class="w-16 h-16 bg-indigo-100 text-indigo-600 rounded-full flex items-center justify-center mx-auto text-3xl shadow-inner">
+                <i class="fa-solid fa-spinner fa-spin"></i>
+            </div>
+            <div>
+                <h3 class="text-lg font-bold text-slate-800">Đang tải dữ liệu...</h3>
+                <p class="text-xs text-slate-500 mt-1">Vui lòng chờ trong giây lát</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- HÀM XỬ LÝ TOAST VÀ CÁC LOGIC KHÁC -->
     <script>
         const JIRA_PROXY_API_URL = "https://script.google.com/a/macros/enotion.io/s/AKfycbz948vll_3cMrDw3Vnj4CLVqbxyyfMPI87iUo9U_3HSQPralPZmySydiI0CXZ636FHl/exec";
         const URL_REPORT_API = "https://script.google.com/macros/s/AKfycbzynUh65kMWVtwRdYdg8x35-6LViA_JwMPrWhEoMdDXFDP7tpcheilYrReQSIrQ6zAtIQ/exec";
@@ -661,6 +675,28 @@
             }
         }
 
+        // BẬT / ẨN Ô NHẬP THEO CHECKBOX LINK
+        function toggleLinkInputs() {
+            const linkConfigs = [
+                { cb: 'cbIframe', field: 'fieldIframe' },
+                { cb: 'cbPreprod', field: 'fieldPreprod' },
+                { cb: 'cbWebapp', field: 'fieldWebapp' },
+                { cb: 'cbAppname', field: 'fieldAppname' }
+            ];
+
+            linkConfigs.forEach(item => {
+                const cb = document.getElementById(item.cb);
+                const field = document.getElementById(item.field);
+                if (cb && field) {
+                    if (cb.checked) {
+                        field.classList.remove('hidden');
+                    } else {
+                        field.classList.add('hidden');
+                    }
+                }
+            });
+        }
+
         // TỰ ĐỘNG LƯU LOCALSTORAGE CÓ LƯU THÊM TRẠNG THÁI CỦA CHIPS
         function saveHeaderConfig() {
             const container = document.getElementById('envChipContainer');
@@ -673,6 +709,11 @@
                 env: document.getElementById('reportEnvInput')?.value || '',
                 envChips: activeChips,
                 
+                cbIframe: document.getElementById('cbIframe')?.checked || false,
+                cbPreprod: document.getElementById('cbPreprod')?.checked || false,
+                cbWebapp: document.getElementById('cbWebapp')?.checked || false,
+                cbAppname: document.getElementById('cbAppname')?.checked || false,
+
                 linkIframe: document.getElementById('reportLinkIframeInput')?.value || '',
                 linkPreprod: document.getElementById('reportLinkPreprodInput')?.value || '',
                 linkWebapp: document.getElementById('reportLinkWebappInput')?.value || '',
@@ -694,6 +735,11 @@
                 if (config.versionApp !== undefined && document.getElementById('reportVersionAppInput')) document.getElementById('reportVersionAppInput').value = config.versionApp;
                 if (config.env !== undefined && document.getElementById('reportEnvInput')) document.getElementById('reportEnvInput').value = config.env;
                 
+                if (config.cbIframe !== undefined && document.getElementById('cbIframe')) document.getElementById('cbIframe').checked = config.cbIframe;
+                if (config.cbPreprod !== undefined && document.getElementById('cbPreprod')) document.getElementById('cbPreprod').checked = config.cbPreprod;
+                if (config.cbWebapp !== undefined && document.getElementById('cbWebapp')) document.getElementById('cbWebapp').checked = config.cbWebapp;
+                if (config.cbAppname !== undefined && document.getElementById('cbAppname')) document.getElementById('cbAppname').checked = config.cbAppname;
+
                 if (config.linkIframe !== undefined && document.getElementById('reportLinkIframeInput')) document.getElementById('reportLinkIframeInput').value = config.linkIframe;
                 if (config.linkPreprod !== undefined && document.getElementById('reportLinkPreprodInput')) document.getElementById('reportLinkPreprodInput').value = config.linkPreprod;
                 if (config.linkWebapp !== undefined && document.getElementById('reportLinkWebappInput')) document.getElementById('reportLinkWebappInput').value = config.linkWebapp;
@@ -716,6 +762,8 @@
                         });
                     }
                 }
+                
+                toggleLinkInputs();
             } catch(e) {
                 console.error("Lỗi khôi phục cấu hình từ localStorage:", e);
             }
@@ -759,27 +807,48 @@
                     filledCount++;
                 }
 
+                const envMatch = text.match(/Env:\s*([\s\S]*?)(?=Link:)/i);
+                if (envMatch) {
+                    if (document.getElementById('reportEnvInput')) document.getElementById('reportEnvInput').value = envMatch[1].trim();
+                    filledCount++;
+                } else {
+                    const envMatchSingle = text.match(/Env:\s*(.*)/i);
+                    if (envMatchSingle) {
+                        if (document.getElementById('reportEnvInput')) document.getElementById('reportEnvInput').value = envMatchSingle[1].trim();
+                        filledCount++;
+                    }
+                }
+
                 const iframeMatch = text.match(/^\s*(?:[•\-\*]\s*)?Iframe:\s*(.*)/im);
                 if (iframeMatch && iframeMatch[1].trim()) {
                     if (document.getElementById('reportLinkIframeInput')) document.getElementById('reportLinkIframeInput').value = iframeMatch[1].trim();
+                    if (document.getElementById('cbIframe')) document.getElementById('cbIframe').checked = true;
                     filledCount++;
                 }
 
                 const preprodMatch = text.match(/^\s*(?:[•\-\*]\s*)?Preprod:\s*(.*)/im);
                 if (preprodMatch && preprodMatch[1].trim()) {
                     if (document.getElementById('reportLinkPreprodInput')) document.getElementById('reportLinkPreprodInput').value = preprodMatch[1].trim();
+                    if (document.getElementById('cbPreprod')) document.getElementById('cbPreprod').checked = true;
                     filledCount++;
                 }
 
                 const webappMatch = text.match(/^\s*(?:[•\-\*]\s*)?Webapp:\s*(.*)/im);
                 if (webappMatch && webappMatch[1].trim()) {
                     if (document.getElementById('reportLinkWebappInput')) document.getElementById('reportLinkWebappInput').value = webappMatch[1].trim();
+                    if (document.getElementById('cbWebapp')) document.getElementById('cbWebapp').checked = true;
                     filledCount++;
                 }
 
                 const appnameMatch = text.match(/^\s*(?:[•\-\*]\s*)?App name:\s*(.*)/im);
                 if (appnameMatch && appnameMatch[1].trim()) {
                     if (document.getElementById('reportLinkAppnameInput')) document.getElementById('reportLinkAppnameInput').value = appnameMatch[1].trim();
+                    if (document.getElementById('cbAppname')) document.getElementById('cbAppname').checked = true;
+                    filledCount++;
+                }
+
+                const jiraLinkMatch = text.match(/^Link Jira:\s*(.*)/im);
+                if (jiraLinkMatch) {
                     filledCount++;
                 }
 
@@ -803,6 +872,7 @@
                     filledCount++;
                 }
 
+                toggleLinkInputs();
                 saveHeaderConfig();
 
                 if (filledCount > 0) {
@@ -1402,7 +1472,6 @@
         }
 
         function parseProgressDataFromMatrix(rows) {
-            // TÌM KIẾM MẠNH MẼ ĐỂ LẤY LINK TESTCASE TỪ SHEET (Dù ở A1 hay rải rác)
             let testcaseLinkFromSheet = "";
             if (rows && rows.length > 0) {
                 outerLoop:
@@ -1518,9 +1587,13 @@
             };
 
             const lines = [];
-            if (!isZeroPct(doneOverall) && doneRaw.length > 0) { lines.push('- DONE: ' + formatPctDisplayFixed(doneOverall)); lines.push(...consolidate(doneRaw)); }
-            if (!isZeroPct(inProgressOverall) && inProgressRaw.length > 0) { lines.push('- IN PROGRESS: ' + formatPctDisplayFixed(inProgressOverall)); lines.push(...consolidate(inProgressRaw)); }
-            if (!isZeroPct(remainingOverall) && remainingRaw.length > 0) { lines.push('- REMAINING: ' + formatPctDisplayFixed(remainingOverall)); lines.push(...consolidate(remainingRaw)); }
+            if (doneRaw.length > 0 || (!isZeroPct(doneOverall) && doneOverall !== "0%")) { lines.push('- DONE: ' + formatPctDisplayFixed(doneOverall)); lines.push(...consolidate(doneRaw)); }
+            if (inProgressRaw.length > 0 || (!isZeroPct(inProgressOverall) && inProgressOverall !== "0%")) { lines.push('- IN PROGRESS: ' + formatPctDisplayFixed(inProgressOverall)); lines.push(...consolidate(inProgressRaw)); }
+            if (remainingRaw.length > 0 || (!isZeroPct(remainingOverall) && remainingOverall !== "0%")) { lines.push('- REMAINING: ' + formatPctDisplayFixed(remainingOverall)); lines.push(...consolidate(remainingRaw)); }
+
+            if (lines.length === 0) {
+                lines.push('- Tiến độ: Chưa cập nhật (Hoặc sai định dạng) trong Sheet');
+            }
 
             return {
                 text: lines.join('\n'),
@@ -1531,10 +1604,7 @@
 
         function fetchGSheetProgressReport(gasUrl, sheetName) {
             return new Promise((resolve) => {
-                if (!gasUrl.includes("script.google.com")) {
-                    showCustomAlert('Lỗi URL API', 'Đường link Google Apps Script không hợp lệ!', true);
-                    return resolve(null);
-                }
+                if (!gasUrl.includes("script.google.com")) return resolve(null);
 
                 const callbackName = 'jsonpCallback_' + Math.round(100000 * Math.random());
                 let fetchUrl = gasUrl;
@@ -1542,11 +1612,24 @@
                 fetchUrl += separator + 'callback=' + callbackName;
                 if (sheetName) fetchUrl += '&sheet=' + encodeURIComponent(sheetName);
 
+                let isResolved = false;
+                const timeoutId = setTimeout(() => {
+                    if (!isResolved) {
+                        isResolved = true;
+                        delete window[callbackName];
+                        console.warn('Lỗi Timeout: Hết thời gian chờ phản hồi từ API Google Sheet.');
+                        resolve(null);
+                    }
+                }, 10000);
+
                 window[callbackName] = function(data) {
+                    if (isResolved) return;
+                    isResolved = true;
+                    clearTimeout(timeoutId);
                     delete window[callbackName];
                     document.body.removeChild(script);
                     if (data.success === false) {
-                        showToast('Cảnh báo từ Google Script', data.message || 'Không tìm thấy Sheet (Bỏ qua data sheet)', true);
+                        console.warn('Lỗi từ Google Script:', data.message || 'Không tìm thấy Sheet!');
                         resolve(null);
                     } else {
                         resolve(parseProgressDataFromMatrix(data.values));
@@ -1556,16 +1639,18 @@
                 const script = document.createElement('script');
                 script.src = fetchUrl;
                 script.onerror = function() {
+                    if (isResolved) return;
+                    isResolved = true;
+                    clearTimeout(timeoutId);
                     delete window[callbackName];
                     document.body.removeChild(script);
-                    showToast('Lỗi Kết Nối API', 'Không thể lấy dữ liệu từ Google Sheet.', true);
+                    console.warn('Lỗi Kết Nối API: Không thể tải dữ liệu từ Google Sheet.');
                     resolve(null);
                 };
                 document.body.appendChild(script);
             });
         }
 
-        // GENERATE REPORT CHUẨN
         async function confirmAndCopyReport(skipTagFilter = false) {
             let allowedTags = [];
             
@@ -1615,13 +1700,16 @@
                 const verApp = document.getElementById('reportVersionAppInput') ? document.getElementById('reportVersionAppInput').value.trim() : '';
                 const envText = document.getElementById('reportEnvInput') ? document.getElementById('reportEnvInput').value.trim() : '';
                 
-                // Lấy các Link (Chỉ những ô CÓ GIÁ TRỊ mới được lấy)
+                const isIframeChecked = document.getElementById('cbIframe') ? document.getElementById('cbIframe').checked : false;
+                const isPreprodChecked = document.getElementById('cbPreprod') ? document.getElementById('cbPreprod').checked : false;
+                const isWebappChecked = document.getElementById('cbWebapp') ? document.getElementById('cbWebapp').checked : false;
+                const isAppnameChecked = document.getElementById('cbAppname') ? document.getElementById('cbAppname').checked : false;
+
                 const linkIframe = document.getElementById('reportLinkIframeInput') ? document.getElementById('reportLinkIframeInput').value.trim() : '';
                 const linkPreprod = document.getElementById('reportLinkPreprodInput') ? document.getElementById('reportLinkPreprodInput').value.trim() : '';
                 const linkWebapp = document.getElementById('reportLinkWebappInput') ? document.getElementById('reportLinkWebappInput').value.trim() : '';
                 const linkAppname = document.getElementById('reportLinkAppnameInput') ? document.getElementById('reportLinkAppnameInput').value.trim() : '';
                 
-                // TỰ ĐỘNG SINH LINK JIRA THEO CHUẨN 
                 let generatedJiraLink = "";
                 if (currentProjectKey && currentJiraDomain) {
                     generatedJiraLink = `${currentJiraDomain}/jira/software/projects/${currentProjectKey}/boards`;
@@ -1674,11 +1762,17 @@
                 let buildStatusStr = '- Build status: ' + totalSelectedTickets + ' ' + ticketWord + statsString + ' / Total: ' + totalFileTickets + ' Tickets';
 
                 let progressReportObj = null;
+                let isSheetError = false;
+
                 if (gasUrl && sheetName) {
                     progressReportObj = await fetchGSheetProgressReport(gasUrl, sheetName);
+                    if (!progressReportObj) {
+                        isSheetError = true;
+                    }
+                } else {
+                    isSheetError = true;
                 }
 
-                // ƯU TIÊN LẤY LINK TESTCASE TỪ GOOGLE SHEET TRƯỚC (NẾU CÓ), SAU ĐÓ MỚI ĐẾN CLIPBOARD
                 let sheetTestcase = (progressReportObj && progressReportObj.testcaseLink) ? progressReportObj.testcaseLink : '';
                 let clipboardTestcase = document.getElementById('reportTestcaseInput') ? document.getElementById('reportTestcaseInput').value.trim() : '';
                 let testcaseLinkToUse = sheetTestcase || clipboardTestcase;
@@ -1698,15 +1792,15 @@
                     }
                 }
                 
-                // SECTION LINKS DẠNG CÂY BULLET (Tự động hiển thị các Link có giá trị)
-                const hasSubLinks = linkIframe || linkPreprod || linkWebapp || linkAppname;
+                // SECTION LINKS
+                const hasSubLinks = (isIframeChecked && linkIframe) || (isPreprodChecked && linkPreprod) || (isWebappChecked && linkWebapp) || (isAppnameChecked && linkAppname);
 
                 if (hasSubLinks) {
                     reportLines.push('Link:');
-                    if (linkIframe) reportLines.push('  • Iframe: ' + linkIframe);
-                    if (linkPreprod) reportLines.push('  • Preprod: ' + linkPreprod);
-                    if (linkWebapp) reportLines.push('  • Webapp: ' + linkWebapp);
-                    if (linkAppname) reportLines.push('  • App name: ' + linkAppname);
+                    if (isIframeChecked && linkIframe) reportLines.push('  • Iframe: ' + linkIframe);
+                    if (isPreprodChecked && linkPreprod) reportLines.push('  • Preprod: ' + linkPreprod);
+                    if (isWebappChecked && linkWebapp) reportLines.push('  • Webapp: ' + linkWebapp);
+                    if (isAppnameChecked && linkAppname) reportLines.push('  • App name: ' + linkAppname);
                 }
                 
                 if (generatedJiraLink) reportLines.push('Link Jira: ' + generatedJiraLink);
@@ -1721,6 +1815,8 @@
 
                 if (progressReportObj && progressReportObj.text) {
                     reportLines.push(progressReportObj.text);
+                } else if (sheetName) {
+                    reportLines.push('- Tiến độ: [Lỗi API] Không lấy được dữ liệu từ Sheet (Hoặc do sai ID/URL)');
                 }
                 reportLines.push('---------------------------------------------');
 
@@ -1793,7 +1889,7 @@
                             priorityGroups[t.priority].push(t);
                         });
 
-                        const shouldListAll = totalTagTickets < 5 || specialTagsList.includes(tag.toLowerCase());
+                        const shouldListAll = totalSelectedTickets < 5 || specialTagsList.includes(tag.toLowerCase());
 
                         ['Highest', 'High', 'Medium', 'Low', 'Lowest', 'Unassigned'].forEach(p => {
                             if (priorityGroups[p] && priorityGroups[p].length > 0) {
@@ -1845,7 +1941,13 @@
 
                 await navigator.clipboard.writeText(reportLines.join('\n'));
                 if (!skipTagFilter) closeTagModal();
-                showToast('Copy Thành Công!', 'Báo Cáo Daily theo Mẫu Mới đã được sao chép vào Clipboard.');
+                
+                // HIỂN THỊ TOAST TỔNG HỢP DUY NHẤT LÚC COPY
+                if (isSheetError && sheetName) {
+                    showToast('Cảnh báo Báo Cáo', 'Đã copy Báo cáo nhưng bị thiếu phần dữ liệu Google Sheet do lỗi mạng/API.', true);
+                } else {
+                    showToast('Copy Thành Công!', 'Báo Cáo Daily theo Mẫu Mới đã được sao chép vào Clipboard.');
+                }
 
             } catch (err) {
                 console.error('Lỗi khi copy:', err);
