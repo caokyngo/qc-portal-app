@@ -70,7 +70,8 @@
         .soft-text { letter-spacing: 0.1px; }
     </style>
 </head>
-<body class="bg-slate-50 text-slate-800 font-sans h-screen w-full flex overflow-hidden">
+<body class="text-slate-800 font-sans h-screen w-full flex overflow-hidden bg-cover bg-center bg-no-repeat bg-fixed"
+      style="background-image: linear-gradient(to bottom, rgba(15, 23, 42, 0.45), rgba(30, 27, 75, 0.55)), url('./trungkhanh.jpg');">
 
     <!-- OVERLAY ĐEN CHO MOBILE KHI MỞ MENU -->
     <div id="sidebarOverlay" onclick="toggleSidebar()" class="fixed inset-0 bg-slate-900/60 z-40 hidden md:hidden backdrop-blur-sm transition-opacity opacity-0"></div>
@@ -106,9 +107,10 @@
         </nav>
     </aside>
 
-    <!-- ================= MAIN CONTENT ================= -->
-    <div class="flex-1 flex flex-col h-full overflow-hidden bg-slate-50 relative">
-        <header class="bg-white text-slate-800 shadow-sm border-b border-slate-200 z-10 p-3 px-4 md:px-6 flex justify-between items-center min-h-[72px]">
+    <!-- ================= MAIN CONTENT TRONG SUỐT ================= -->
+    <div class="flex-1 flex flex-col h-full overflow-hidden bg-transparent relative">
+        <!-- ĐÃ FIX Z-INDEX THÀNH z-50 Ở ĐÂY ĐỂ TRÁNH BỊ CHE MENU -->
+        <header class="bg-white/80 backdrop-blur-md text-slate-800 shadow-sm border-b border-white/30 z-50 p-3 px-4 md:px-6 flex justify-between items-center min-h-[72px] relative">
             <div class="flex items-center gap-3 flex-1 shrink-0">
                 <button onclick="toggleSidebar()" class="md:hidden text-slate-500 hover:text-indigo-600 focus:outline-none p-1 transition"><i class="fa-solid fa-bars text-xl"></i></button>
                 <h2 class="text-xl font-bold text-slate-800 hidden sm:block">Mượn/Trả Thiết Bị</h2>
@@ -117,7 +119,7 @@
 
             <!-- Thông báo đếm ngược -->
             <div class="hidden lg:flex flex-1 min-w-0 justify-center items-center">
-                <div class="w-full max-w-[460px] px-4 py-2 rounded-full bg-slate-50/90 border border-slate-200 shadow-sm cursor-default">
+                <div class="w-full max-w-[460px] px-4 py-2 rounded-full bg-white/70 backdrop-blur-md border border-white/40 shadow-sm cursor-default">
                     <div class="travel-marquee">
                         <div class="travel-marquee-track">
                             <div class="travel-marquee-group">
@@ -136,14 +138,14 @@
             <div class="flex-1 flex justify-end items-center gap-4">
                 <div id="authSection" class="relative flex items-center min-h-[40px]">
                     <div id="g_id_onload" data-client_id="149310433677-uvpoilv41na98qdjlj58cpmfl8u9946e.apps.googleusercontent.com" data-callback="handleCredentialResponse" data-auto_prompt="false"></div>
-                    <div id="loginOption" class="relative cursor-pointer flex items-center gap-2.5 px-3 py-1.5 bg-slate-100 hover:bg-slate-200 rounded-xl border border-slate-200 transition overflow-hidden">
+                    <div id="loginOption" class="relative cursor-pointer flex items-center gap-2.5 px-3 py-1.5 bg-white/80 hover:bg-white backdrop-blur-md rounded-xl border border-white/40 transition overflow-hidden">
                         <img src="https://cdn-icons-png.flaticon.com/512/149/149071.png" class="w-8 h-8 rounded-full border border-slate-300 bg-white object-cover" alt="Guest">
                         <span class="text-slate-700 font-bold text-sm hidden sm:block">Đăng nhập</span>
                         <div class="absolute inset-0 z-10 opacity-[0.01] flex items-center justify-center cursor-pointer">
                             <div class="g_id_signin" data-type="standard" data-size="large" data-theme="outline" data-text="sign_in_with" data-shape="rectangular" data-logo_alignment="left"></div>
                         </div>
                     </div>
-                    <div id="userProfileBtn" class="hidden relative cursor-pointer flex items-center gap-2.5 px-3 py-1.5 bg-slate-100 hover:bg-slate-200 rounded-xl border border-slate-200 transition" onclick="document.getElementById('userDropdown').classList.toggle('hidden')">
+                    <div id="userProfileBtn" class="hidden relative cursor-pointer flex items-center gap-2.5 px-3 py-1.5 bg-white/80 hover:bg-white backdrop-blur-md rounded-xl border border-white/40 transition" onclick="document.getElementById('userDropdown').classList.toggle('hidden')">
                         <img id="userAvatar" src="" class="w-8 h-8 rounded-full border border-slate-300 bg-white object-cover" alt="Avatar">
                         <span id="userNameDisplay" class="text-slate-700 font-bold text-sm hidden sm:block"></span>
                         <i class="fa-solid fa-caret-down text-slate-500 ml-1 text-xs"></i>
@@ -157,11 +159,11 @@
             </div>
         </header>
 
-        <main class="flex-1 overflow-y-auto p-4 md:p-6 bg-cover bg-center bg-no-repeat bg-fixed relative" style="background-image: linear-gradient(to bottom, rgba(248, 250, 252, 0.85), rgba(248, 250, 252, 0.95)), url('./bg-chongqing.jpg');">
+        <main class="flex-1 overflow-y-auto p-4 md:p-6 bg-transparent relative z-0">
             <div class="w-full mx-auto 2xl:max-w-[1600px] space-y-6">
-                <!-- KHẮC PHỤC LỖI ĐÈ GIAO DIỆN DROPDOWN: Đã thêm z-20 và relative -->
-                <section class="relative z-20 bg-white/90 backdrop-blur-md rounded-xl shadow-sm border border-slate-200 p-5 sm:p-6 space-y-5 w-full">
-                    <div class="flex items-center justify-between border-b border-slate-100 pb-3">
+                <!-- KHUNG ĐĂNG KÍ MƯỢN THIẾT BỊ TRONG SUỐT -->
+                <section class="relative bg-white/80 backdrop-blur-md rounded-2xl shadow-xl border border-white/50 p-5 sm:p-6 space-y-5 w-full">
+                    <div class="flex items-center justify-between border-b border-slate-200/60 pb-3">
                         <div class="flex items-center gap-2">
                             <i class="fa-solid fa-hand-holding-hand text-indigo-600 text-xl"></i>
                             <h2 class="text-lg font-bold text-slate-800">Đăng Ký Mượn Thiết Bị</h2>
@@ -171,13 +173,13 @@
                     <div class="grid grid-cols-1 md:grid-cols-4 gap-5 items-start">
                         <div>
                             <div class="h-5 mb-1.5 flex items-center"><label class="text-xs font-bold text-slate-700">Tên Người Mượn <span class="text-red-500">*</span></label></div>
-                            <input type="text" id="borrowerNameInput" placeholder="VD: Tuan - Dev..." class="w-full h-[42px] bg-white border border-slate-300 text-slate-800 font-bold text-xs rounded-lg px-3 focus:ring-2 focus:ring-indigo-500 outline-none transition shadow-sm">
-                            <p class="text-[10px] text-slate-500 mt-1.5 italic"><i class="fa-solid fa-pen mr-1"></i>Sửa thành tên của Dev nếu log hộ</p>
+                            <input type="text" id="borrowerNameInput" placeholder="VD: Tuan - Dev..." class="w-full h-[42px] bg-white/90 border border-slate-300 text-slate-800 font-bold text-xs rounded-lg px-3 focus:ring-2 focus:ring-indigo-500 outline-none transition shadow-sm">
+                            <p class="text-[10px] text-slate-600 mt-1.5 italic font-medium"><i class="fa-solid fa-pen mr-1"></i>Sửa thành tên của Dev nếu log hộ</p>
                         </div>
 
                         <div>
                             <div class="h-5 mb-1.5 flex items-center"><label class="text-xs font-bold text-slate-700">Phân Loại Device</label></div>
-                            <select id="deviceTypeSelect" onchange="filterDeviceDropdown()" class="w-full h-[42px] bg-white border border-slate-300 text-slate-800 font-medium text-xs rounded-lg px-3 focus:ring-2 focus:ring-indigo-500 outline-none cursor-pointer">
+                            <select id="deviceTypeSelect" onchange="filterDeviceDropdown()" class="w-full h-[42px] bg-white/90 border border-slate-300 text-slate-800 font-medium text-xs rounded-lg px-3 focus:ring-2 focus:ring-indigo-500 outline-none cursor-pointer shadow-sm">
                                 <option value="ALL">-- Tất cả loại --</option>
                             </select>
                         </div>
@@ -188,7 +190,7 @@
                                 <button onclick="loadDeviceData(true)" class="text-[11px] font-bold text-indigo-600 hover:underline flex items-center"><i class="fa-solid fa-rotate mr-1"></i>Làm mới</button>
                             </div>
                             <div class="relative">
-                                <input type="text" id="deviceSearchInput" onfocus="openDeviceDropdown()" oninput="filterDeviceListUI()" autocomplete="off" placeholder="-- Đang tải danh sách... --" class="w-full h-[42px] bg-white border border-slate-300 text-slate-800 font-medium text-xs rounded-lg px-3 pr-8 focus:ring-2 focus:ring-indigo-500 outline-none transition cursor-text shadow-sm">
+                                <input type="text" id="deviceSearchInput" onfocus="openDeviceDropdown()" oninput="filterDeviceListUI()" autocomplete="off" placeholder="-- Đang tải danh sách... --" class="w-full h-[42px] bg-white/90 border border-slate-300 text-slate-800 font-medium text-xs rounded-lg px-3 pr-8 focus:ring-2 focus:ring-indigo-500 outline-none transition cursor-text shadow-sm">
                                 <i class="fa-solid fa-chevron-down absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 text-xs pointer-events-none"></i>
                             </div>
                             <div id="deviceDropdownContainer" class="hidden absolute z-50 w-full mt-1 bg-white border border-slate-200 rounded-lg shadow-xl max-h-48 overflow-y-auto custom-scrollbar">
@@ -205,32 +207,32 @@
                     </div>
                 </section>
 
-                <!-- Lưới Danh Sách Thiết Bị Mượn Trong Ngày -->
-                <section class="bg-white/90 backdrop-blur-md rounded-xl shadow-sm border border-slate-200 overflow-hidden w-full">
-                    <div class="p-4 sm:p-5 border-b border-slate-200 flex flex-col justify-between gap-4 bg-slate-50/80">
+                <!-- KHUNG NHẬT KÝ MƯỢN TRẢ TRONG SUỐT -->
+                <section class="bg-white/80 backdrop-blur-md rounded-2xl shadow-xl border border-white/50 overflow-hidden w-full">
+                    <div class="p-4 sm:p-5 border-b border-white/30 flex flex-col justify-between gap-4 bg-white/30 backdrop-blur-sm">
                         <div class="flex items-center gap-2">
                             <i class="fa-solid fa-list-check text-indigo-600 text-lg"></i>
                             <h3 class="text-base font-bold text-slate-800">Nhật Ký Mượn Trả</h3>
-                            <span id="logCountBadge" class="text-xs bg-indigo-100 text-indigo-700 font-bold px-2.5 py-0.5 rounded-full ml-1">0 lượt</span>
+                            <span id="logCountBadge" class="text-xs bg-indigo-100/90 text-indigo-800 font-bold px-2.5 py-0.5 rounded-full ml-1">0 lượt</span>
                         </div>
                         
-                        <div class="flex flex-col md:flex-row justify-between items-center gap-3 bg-white p-3 rounded-xl border border-slate-200 shadow-sm w-full">
+                        <div class="flex flex-col md:flex-row justify-between items-center gap-3 bg-white/70 backdrop-blur-md p-3 rounded-xl border border-white/50 shadow-sm w-full">
                             <div class="relative w-full md:w-96">
                                 <i class="fa-solid fa-magnifying-glass absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 text-xs"></i>
-                                <input type="text" id="logSearchInput" oninput="handleLogSearch()" placeholder="Tìm Tên, Thiết bị, Thời gian..." class="w-full pl-9 pr-4 py-2 bg-slate-50 border border-slate-300 text-slate-700 text-xs font-medium rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none transition">
+                                <input type="text" id="logSearchInput" oninput="handleLogSearch()" placeholder="Tìm Tên, Thiết bị, Thời gian..." class="w-full pl-9 pr-4 py-2 bg-white/90 border border-slate-300 text-slate-700 text-xs font-medium rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none transition shadow-sm">
                             </div>
 
                             <div class="flex flex-wrap md:flex-nowrap items-center gap-2 w-full md:w-auto">
                                 <button onclick="exportDeviceLogsToExcel()" class="flex-1 md:flex-none inline-flex items-center justify-center gap-1.5 px-3 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-lg shadow-sm transition"><i class="fa-solid fa-file-excel"></i> <span class="hidden sm:inline">Xuất Excel</span></button>
-                                <button id="btnFilterUnreturned" onclick="toggleUnreturnedFilter()" class="flex-1 md:flex-none inline-flex items-center justify-center gap-1.5 px-3 py-2 bg-white border border-slate-300 hover:border-amber-400 text-slate-700 text-xs font-bold rounded-lg shadow-sm transition"><i class="fa-solid fa-filter text-amber-500"></i> <span id="filterUnreturnedText">Chỉ xem Chưa Trả</span></button>
+                                <button id="btnFilterUnreturned" onclick="toggleUnreturnedFilter()" class="flex-1 md:flex-none inline-flex items-center justify-center gap-1.5 px-3 py-2 bg-white/90 border border-slate-300 hover:border-amber-400 text-slate-700 text-xs font-bold rounded-lg shadow-sm transition"><i class="fa-solid fa-filter text-amber-500"></i> <span id="filterUnreturnedText">Chỉ xem Chưa Trả</span></button>
                                 <button onclick="loadDeviceData(true)" class="flex-1 md:flex-none inline-flex items-center justify-center gap-1.5 px-3 py-2 bg-indigo-50 hover:bg-indigo-100 border border-indigo-200 text-indigo-700 text-xs font-bold rounded-lg transition shadow-sm" title="Làm mới dữ liệu nhật ký"><i class="fa-solid fa-rotate"></i> <span class="sm:hidden">Làm Mới</span></button>
                             </div>
                         </div>
                     </div>
 
                     <div class="overflow-x-auto min-h-[400px]">
-                        <table class="w-full text-xs text-left text-slate-600 min-w-[700px]">
-                            <thead class="text-slate-700 uppercase bg-slate-100 sticky top-0 border-b border-slate-200 font-bold">
+                        <table class="w-full text-xs text-left text-slate-700 min-w-[700px]">
+                            <thead class="text-slate-800 uppercase bg-slate-100/80 backdrop-blur-md sticky top-0 border-b border-white/40 font-bold">
                                 <tr>
                                     <th class="px-5 py-3.5">Thời Gian Mượn</th>
                                     <th class="px-5 py-3.5">Tên Người Mượn</th>
@@ -240,21 +242,21 @@
                                     <th class="px-5 py-3.5 text-right">Thao Tác</th>
                                 </tr>
                             </thead>
-                            <tbody id="deviceLogTableBody" class="divide-y divide-slate-200 font-medium">
-                                <tr><td colspan="6" class="text-center py-10 text-slate-400 font-medium text-sm">Đang tải dữ liệu mượn thiết bị...</td></tr>
+                            <tbody id="deviceLogTableBody" class="divide-y divide-slate-200/60 font-medium">
+                                <tr><td colspan="6" class="text-center py-10 text-slate-500 font-medium text-sm">Đang tải dữ liệu mượn thiết bị...</td></tr>
                             </tbody>
                         </table>
                     </div>
 
-                    <!-- Pagination -->
-                    <div class="p-4 bg-slate-50 border-t border-slate-200 flex flex-col sm:flex-row justify-between items-center gap-4 text-xs">
-                        <div class="text-slate-500 font-medium">
-                            Hiển thị <span id="pageRangeText" class="font-bold text-slate-700">0 - 0</span> / <span id="totalLogsText" class="font-bold text-slate-700">0</span> lượt
+                    <!-- Pagination trong suốt -->
+                    <div class="p-4 bg-white/40 backdrop-blur-md border-t border-white/30 flex flex-col sm:flex-row justify-between items-center gap-4 text-xs">
+                        <div class="text-slate-700 font-medium">
+                            Hiển thị <span id="pageRangeText" class="font-bold text-indigo-900">0 - 0</span> / <span id="totalLogsText" class="font-bold text-indigo-900">0</span> lượt
                         </div>
                         <div class="flex items-center gap-2">
-                            <button id="btnPrevPage" onclick="changeDevicePage(-1)" class="px-3 py-1.5 bg-white border border-slate-300 rounded-lg font-bold text-slate-600 hover:bg-slate-100 disabled:opacity-40 transition"><i class="fa-solid fa-chevron-left mr-1"></i> Trước</button>
-                            <span class="font-bold text-indigo-700 bg-indigo-50 border border-indigo-200 px-3 py-1.5 rounded-lg"><span id="currentPageText">1</span> / <span id="totalPagesText">1</span></span>
-                            <button id="btnNextPage" onclick="changeDevicePage(1)" class="px-3 py-1.5 bg-white border border-slate-300 rounded-lg font-bold text-slate-600 hover:bg-slate-100 disabled:opacity-40 transition">Sau <i class="fa-solid fa-chevron-right ml-1"></i></button>
+                            <button id="btnPrevPage" onclick="changeDevicePage(-1)" class="px-3 py-1.5 bg-white/80 border border-slate-300 rounded-lg font-bold text-slate-700 hover:bg-white disabled:opacity-40 transition shadow-sm"><i class="fa-solid fa-chevron-left mr-1"></i> Trước</button>
+                            <span class="font-bold text-indigo-800 bg-white/80 border border-indigo-200 px-3 py-1.5 rounded-lg shadow-sm"><span id="currentPageText">1</span> / <span id="totalPagesText">1</span></span>
+                            <button id="btnNextPage" onclick="changeDevicePage(1)" class="px-3 py-1.5 bg-white/80 border border-slate-300 rounded-lg font-bold text-slate-700 hover:bg-white disabled:opacity-40 transition shadow-sm">Sau <i class="fa-solid fa-chevron-right ml-1"></i></button>
                         </div>
                     </div>
                 </section>
@@ -487,13 +489,12 @@
                 btn.className = "flex-1 md:flex-none inline-flex items-center justify-center gap-1.5 px-3 py-2 bg-amber-500 border border-amber-600 text-white text-xs font-bold rounded-lg shadow-sm transition";
                 textSpan.innerText = "Đang Lọc: Chưa Trả";
             } else {
-                btn.className = "flex-1 md:flex-none inline-flex items-center justify-center gap-1.5 px-3 py-2 bg-white border border-slate-300 hover:border-amber-400 text-slate-700 text-xs font-bold rounded-lg shadow-sm transition";
+                btn.className = "flex-1 md:flex-none inline-flex items-center justify-center gap-1.5 px-3 py-2 bg-white/90 border border-slate-300 hover:border-amber-400 text-slate-700 text-xs font-bold rounded-lg shadow-sm transition";
                 textSpan.innerText = "Chỉ xem Chưa Trả";
             }
             currentDevicePage = 1; renderPaginatedDeviceLogs();
         }
 
-        // KHẮC PHỤC LỖI TẤT CẢ CÁC BACKTICKS 
         function renderPaginatedDeviceLogs() {
             const tbody = document.getElementById('deviceLogTableBody'); if (!tbody) return;
             tbody.innerHTML = '';
@@ -512,7 +513,7 @@
             if (document.getElementById('totalLogsText')) document.getElementById('totalLogsText').innerText = totalLogs;
 
             if (totalLogs === 0) {
-                tbody.innerHTML = '<tr><td colspan="6" class="text-center py-10 text-slate-400 font-medium text-sm">Không tìm thấy nhật ký phù hợp với bộ lọc!</td></tr>';
+                tbody.innerHTML = '<tr><td colspan="6" class="text-center py-10 text-slate-500 font-medium text-sm">Không tìm thấy nhật ký phù hợp với bộ lọc!</td></tr>';
                 if (document.getElementById('pageRangeText')) document.getElementById('pageRangeText').innerText = '0 - 0';
                 if (document.getElementById('currentPageText')) document.getElementById('currentPageText').innerText = '1';
                 if (document.getElementById('totalPagesText')) document.getElementById('totalPagesText').innerText = '1';
@@ -531,7 +532,7 @@
 
             pageData.forEach(r => {
                 const tr = document.createElement('tr');
-                tr.className = "hover:bg-slate-50/80 transition border-b border-slate-100";
+                tr.className = "hover:bg-white/40 transition border-b border-slate-200/60";
                 const isReturned = String(r.trangThai || '').toLowerCase().includes('đã trả');
                 const currentUserName = loggedInUser ? loggedInUser.name : '';
                 const isOwner = (currentUserName === r.nguoiMuon) || (currentUserName === r.nguoiThaoTac);
@@ -541,20 +542,20 @@
 
                 if (isReturned) {
                     statusBadge = '<span class="bg-emerald-100 text-emerald-800 px-2.5 py-1 rounded-md text-[11px] font-bold shadow-sm">Đã Trả</span>';
-                    actionButton = '<span class="text-slate-400 text-[11px] italic font-medium"><i class="fa-solid fa-check mr-1"></i>Hoàn tất</span>';
+                    actionButton = '<span class="text-slate-500 text-[11px] italic font-medium"><i class="fa-solid fa-check mr-1"></i>Hoàn tất</span>';
                 } else {
                     if (isOwner) {
                         const safeId = escapeSingleQuotes(r.id); const safeDevice = escapeSingleQuotes(r.thietBi); const safeBorrower = escapeSingleQuotes(r.nguoiMuon);
                         actionButton = '<button onclick="submitReturnDevice(\'' + safeId + '\', \'' + safeDevice + '\', \'' + safeBorrower + '\')" class="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white text-[11px] font-bold rounded-md shadow-sm transition inline-flex items-center gap-1.5"><i class="fa-solid fa-rotate-left"></i> Trả Device</button>';
                     } else {
-                        actionButton = '<button disabled class="px-3 py-1.5 bg-slate-200 text-slate-400 text-[11px] font-bold rounded-md shadow-sm inline-flex items-center gap-1.5 cursor-not-allowed" title="Chỉ tài khoản mượn mới được phép trả thiết bị"><i class="fa-solid fa-lock"></i> Trả Device</button>';
+                        actionButton = '<button disabled class="px-3 py-1.5 bg-slate-200/80 text-slate-400 text-[11px] font-bold rounded-md shadow-sm inline-flex items-center gap-1.5 cursor-not-allowed" title="Chỉ tài khoản mượn mới được phép trả thiết bị"><i class="fa-solid fa-lock"></i> Trả Device</button>';
                     }
                 }
-                tr.innerHTML = '<td class="px-5 py-3.5 font-mono text-indigo-600 font-bold whitespace-nowrap">' + (r.thoiGian || '') + '</td>' +
+                tr.innerHTML = '<td class="px-5 py-3.5 font-mono text-indigo-700 font-bold whitespace-nowrap">' + (r.thoiGian || '') + '</td>' +
                                '<td class="px-5 py-3.5 font-bold text-slate-800 whitespace-nowrap">' + (r.nguoiMuon || '') + '</td>' +
-                               '<td class="px-5 py-3.5 text-emerald-700 font-bold max-w-xs truncate" title="' + (r.thietBi || '') + '">' + (r.thietBi || '') + '</td>' +
+                               '<td class="px-5 py-3.5 text-emerald-800 font-bold max-w-xs truncate" title="' + (r.thietBi || '') + '">' + (r.thietBi || '') + '</td>' +
                                '<td class="px-5 py-3.5 whitespace-nowrap">' + statusBadge + '</td>' +
-                               '<td class="px-5 py-3.5 text-slate-500 font-mono text-[11px] font-bold whitespace-nowrap">' + (r.gioTra || '') + '</td>' +
+                               '<td class="px-5 py-3.5 text-slate-600 font-mono text-[11px] font-bold whitespace-nowrap">' + (r.gioTra || '') + '</td>' +
                                '<td class="px-5 py-3.5 whitespace-nowrap text-right">' + actionButton + '</td>';
                 tbody.appendChild(tr);
             });
