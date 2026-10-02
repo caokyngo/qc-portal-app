@@ -258,20 +258,12 @@
                                 <!-- DYNAMIC LINK SELECTOR & INPUTS -->
                                 <div class="border-t border-slate-100 pt-3">
                                     <label class="block text-xs font-bold text-slate-700 mb-2">
-                                        <i class="fa-solid fa-link text-indigo-500 mr-1"></i> Chọn các loại Link hiển thị trong Báo Cáo:
+                                        <i class="fa-solid fa-link text-indigo-500 mr-1"></i> Chọn các loại Link bổ sung:
                                     </label>
                                     <div class="flex flex-wrap gap-3 text-xs font-medium text-slate-700 mb-3">
                                         <label class="inline-flex items-center gap-1.5 cursor-pointer bg-indigo-50/60 hover:bg-indigo-100 px-2.5 py-1.5 rounded-lg border border-indigo-200 transition">
                                             <input type="checkbox" id="cbIframe" checked onchange="toggleLinkInputs(); saveHeaderConfig();" class="rounded text-indigo-600 focus:ring-indigo-500">
                                             <span class="font-bold text-indigo-900">Link Iframe</span>
-                                        </label>
-                                        <label class="inline-flex items-center gap-1.5 cursor-pointer bg-indigo-50/60 hover:bg-indigo-100 px-2.5 py-1.5 rounded-lg border border-indigo-200 transition">
-                                            <input type="checkbox" id="cbJira" checked onchange="saveHeaderConfig();" class="rounded text-indigo-600 focus:ring-indigo-500">
-                                            <span class="font-bold text-indigo-900">Link Jira</span>
-                                        </label>
-                                        <label class="inline-flex items-center gap-1.5 cursor-pointer bg-indigo-50/60 hover:bg-indigo-100 px-2.5 py-1.5 rounded-lg border border-indigo-200 transition">
-                                            <input type="checkbox" id="cbTestcase" checked onchange="toggleLinkInputs(); saveHeaderConfig();" class="rounded text-indigo-600 focus:ring-indigo-500">
-                                            <span class="font-bold text-indigo-900">Link Testcase</span>
                                         </label>
                                         <label class="inline-flex items-center gap-1.5 cursor-pointer bg-slate-100 hover:bg-slate-200 px-2.5 py-1.5 rounded-lg border border-slate-200 transition">
                                             <input type="checkbox" id="cbPreprod" onchange="toggleLinkInputs(); saveHeaderConfig();" class="rounded text-indigo-600 focus:ring-indigo-500">
@@ -279,27 +271,34 @@
                                         </label>
                                         <label class="inline-flex items-center gap-1.5 cursor-pointer bg-slate-100 hover:bg-slate-200 px-2.5 py-1.5 rounded-lg border border-slate-200 transition">
                                             <input type="checkbox" id="cbWebapp" onchange="toggleLinkInputs(); saveHeaderConfig();" class="rounded text-indigo-600 focus:ring-indigo-500">
-                                            <span class="font-bold text-slate-700">Webapp / App name</span>
+                                            <span class="font-bold text-slate-700">Webapp</span>
+                                        </label>
+                                        <label class="inline-flex items-center gap-1.5 cursor-pointer bg-slate-100 hover:bg-slate-200 px-2.5 py-1.5 rounded-lg border border-slate-200 transition">
+                                            <input type="checkbox" id="cbAppname" onchange="toggleLinkInputs(); saveHeaderConfig();" class="rounded text-indigo-600 focus:ring-indigo-500">
+                                            <span class="font-bold text-slate-700">App name</span>
                                         </label>
                                     </div>
 
-                                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
                                         <div id="fieldIframe">
                                             <label class="block text-[11px] font-bold text-slate-600 mb-1">Link Iframe (theo lang):</label>
                                             <input type="text" id="reportLinkIframeInput" oninput="saveHeaderConfig()" placeholder="VD: https://iframe..." class="w-full bg-slate-50 border border-slate-300 text-xs rounded-lg p-2 outline-none font-medium">
-                                        </div>
-                                        <div id="fieldTestcase">
-                                            <label class="block text-[11px] font-bold text-slate-600 mb-1">Testcase Link:</label>
-                                            <input type="text" id="reportTestcaseInput" oninput="saveHeaderConfig()" placeholder="VD: https://docs.google.com/spreadsheets/d/..." class="w-full bg-slate-50 border border-slate-300 text-xs rounded-lg p-2 outline-none font-medium">
                                         </div>
                                         <div id="fieldPreprod" class="hidden">
                                             <label class="block text-[11px] font-bold text-slate-600 mb-1">Preprod Link (nếu có):</label>
                                             <input type="text" id="reportLinkPreprodInput" oninput="saveHeaderConfig()" placeholder="VD: https://preprod..." class="w-full bg-slate-50 border border-slate-300 text-xs rounded-lg p-2 outline-none font-medium">
                                         </div>
                                         <div id="fieldWebapp" class="hidden">
-                                            <label class="block text-[11px] font-bold text-slate-600 mb-1">Webapp Link / App Name:</label>
-                                            <input type="text" id="reportLinkWebappInput" oninput="saveHeaderConfig()" placeholder="VD: Webapp - Apptek12" class="w-full bg-slate-50 border border-slate-300 text-xs rounded-lg p-2 outline-none font-medium">
+                                            <label class="block text-[11px] font-bold text-slate-600 mb-1">Webapp Link:</label>
+                                            <input type="text" id="reportLinkWebappInput" oninput="saveHeaderConfig()" placeholder="VD: https://webapp..." class="w-full bg-slate-50 border border-slate-300 text-xs rounded-lg p-2 outline-none font-medium">
                                         </div>
+                                        <div id="fieldAppname" class="hidden">
+                                            <label class="block text-[11px] font-bold text-slate-600 mb-1">App name:</label>
+                                            <input type="text" id="reportLinkAppnameInput" oninput="saveHeaderConfig()" placeholder="VD: Apptek12 / GoldDigger.apk" class="w-full bg-slate-50 border border-slate-300 text-xs rounded-lg p-2 outline-none font-medium">
+                                        </div>
+                                        
+                                        <!-- Ô NHẬP LINK TESTCASE ẨN DÙNG CHO AUTO-FILL CLIPBOARD -->
+                                        <input type="hidden" id="reportTestcaseInput" oninput="saveHeaderConfig()">
                                     </div>
                                 </div>
 
@@ -589,9 +588,9 @@
         function toggleLinkInputs() {
             const linkConfigs = [
                 { cb: 'cbIframe', field: 'fieldIframe' },
-                { cb: 'cbTestcase', field: 'fieldTestcase' },
                 { cb: 'cbPreprod', field: 'fieldPreprod' },
-                { cb: 'cbWebapp', field: 'fieldWebapp' }
+                { cb: 'cbWebapp', field: 'fieldWebapp' },
+                { cb: 'cbAppname', field: 'fieldAppname' }
             ];
 
             linkConfigs.forEach(item => {
@@ -615,21 +614,23 @@
                 versionApp: document.getElementById('reportVersionAppInput')?.value || '',
                 env: document.getElementById('reportEnvInput')?.value || '',
                 cbIframe: document.getElementById('cbIframe')?.checked || false,
-                cbJira: document.getElementById('cbJira')?.checked || false,
-                cbTestcase: document.getElementById('cbTestcase')?.checked || false,
                 cbPreprod: document.getElementById('cbPreprod')?.checked || false,
                 cbWebapp: document.getElementById('cbWebapp')?.checked || false,
+                cbAppname: document.getElementById('cbAppname')?.checked || false,
                 linkIframe: document.getElementById('reportLinkIframeInput')?.value || '',
-                linkTestcase: document.getElementById('reportTestcaseInput')?.value || '',
                 linkPreprod: document.getElementById('reportLinkPreprodInput')?.value || '',
                 linkWebapp: document.getElementById('reportLinkWebappInput')?.value || '',
+                linkAppname: document.getElementById('reportLinkAppnameInput')?.value || '',
                 notes: document.getElementById('reportNotesInput')?.value || '',
-                metadata: document.getElementById('reportMetadataInput')?.value || ''
+                metadata: document.getElementById('reportMetadataInput')?.value || '',
+                
+                // LƯU LẠI GIÁ TRỊ ẨN CỦA TESTCASE TỪ AUTO-FILL CLIPBOARD (NẾU CÓ)
+                linkTestcase: document.getElementById('reportTestcaseInput')?.value || ''
             };
             localStorage.setItem('jira_header_config', JSON.stringify(config));
         }
 
-        // KHÔI PHỦC TOÀN BỘ CẤU HÌNH BÁO CÁO TỪ LOCALSTORAGE KHI RELOAD TRANG
+        // KHÔI PHỤC TOÀN BỘ CẤU HÌNH BÁO CÁO TỪ LOCALSTORAGE KHI RELOAD TRANG
         function loadHeaderConfig() {
             const saved = localStorage.getItem('jira_header_config');
             if (!saved) return;
@@ -641,15 +642,17 @@
                 if (config.env !== undefined && document.getElementById('reportEnvInput')) document.getElementById('reportEnvInput').value = config.env;
                 
                 if (config.cbIframe !== undefined && document.getElementById('cbIframe')) document.getElementById('cbIframe').checked = config.cbIframe;
-                if (config.cbJira !== undefined && document.getElementById('cbJira')) document.getElementById('cbJira').checked = config.cbJira;
-                if (config.cbTestcase !== undefined && document.getElementById('cbTestcase')) document.getElementById('cbTestcase').checked = config.cbTestcase;
                 if (config.cbPreprod !== undefined && document.getElementById('cbPreprod')) document.getElementById('cbPreprod').checked = config.cbPreprod;
                 if (config.cbWebapp !== undefined && document.getElementById('cbWebapp')) document.getElementById('cbWebapp').checked = config.cbWebapp;
+                if (config.cbAppname !== undefined && document.getElementById('cbAppname')) document.getElementById('cbAppname').checked = config.cbAppname;
 
                 if (config.linkIframe !== undefined && document.getElementById('reportLinkIframeInput')) document.getElementById('reportLinkIframeInput').value = config.linkIframe;
-                if (config.linkTestcase !== undefined && document.getElementById('reportTestcaseInput')) document.getElementById('reportTestcaseInput').value = config.linkTestcase;
                 if (config.linkPreprod !== undefined && document.getElementById('reportLinkPreprodInput')) document.getElementById('reportLinkPreprodInput').value = config.linkPreprod;
                 if (config.linkWebapp !== undefined && document.getElementById('reportLinkWebappInput')) document.getElementById('reportLinkWebappInput').value = config.linkWebapp;
+                if (config.linkAppname !== undefined && document.getElementById('reportLinkAppnameInput')) document.getElementById('reportLinkAppnameInput').value = config.linkAppname;
+
+                // KHÔI PHỤC GIÁ TRỊ ẨN CỦA TESTCASE TỪ AUTO-FILL CLIPBOARD (NẾU CÓ)
+                if (config.linkTestcase !== undefined && document.getElementById('reportTestcaseInput')) document.getElementById('reportTestcaseInput').value = config.linkTestcase;
 
                 if (config.notes !== undefined && document.getElementById('reportNotesInput')) document.getElementById('reportNotesInput').value = config.notes;
                 if (config.metadata !== undefined && document.getElementById('reportMetadataInput')) document.getElementById('reportMetadataInput').value = config.metadata;
@@ -720,27 +723,33 @@
                     filledCount++;
                 }
 
-                const webappMatch = text.match(/^\s*(?:[•\-\*]\s*)?(?:Webapp|App name|Webapp\/App name):\s*(.*)/im);
+                const webappMatch = text.match(/^\s*(?:[•\-\*]\s*)?Webapp:\s*(.*)/im);
                 if (webappMatch && webappMatch[1].trim()) {
                     if (document.getElementById('reportLinkWebappInput')) document.getElementById('reportLinkWebappInput').value = webappMatch[1].trim();
                     if (document.getElementById('cbWebapp')) document.getElementById('cbWebapp').checked = true;
                     filledCount++;
                 }
 
+                const appnameMatch = text.match(/^\s*(?:[•\-\*]\s*)?App name:\s*(.*)/im);
+                if (appnameMatch && appnameMatch[1].trim()) {
+                    if (document.getElementById('reportLinkAppnameInput')) document.getElementById('reportLinkAppnameInput').value = appnameMatch[1].trim();
+                    if (document.getElementById('cbAppname')) document.getElementById('cbAppname').checked = true;
+                    filledCount++;
+                }
+
                 const jiraLinkMatch = text.match(/^Link Jira:\s*(.*)/im);
                 if (jiraLinkMatch) {
-                    if (document.getElementById('cbJira')) document.getElementById('cbJira').checked = true;
                     filledCount++;
                 }
 
+                // VẪN GIỮ LOGIC BÓC TÁCH LINK TESTCASE TỪ CLIPBOARD ĐỂ LƯU VÀO Ô ẨN
                 const tcMatch = text.match(/^Test case:\s*(.*)/im);
-                if (tcMatch) {
-                    if (document.getElementById('reportTestcaseInput')) document.getElementById('reportTestcaseInput').value = tcMatch[1].trim();
-                    if (document.getElementById('cbTestcase')) document.getElementById('cbTestcase').checked = true;
+                if (tcMatch && document.getElementById('reportTestcaseInput')) {
+                    document.getElementById('reportTestcaseInput').value = tcMatch[1].trim();
                     filledCount++;
                 }
 
-                const scopeMatch = text.match(/1\.\s*Scope of testing:\s*(.*)/i);
+                const scopeMatch = text.match(/1\.\s*Scope of testing:\s*(.*)/i) || text.match(/-\s*Scope of testing:\s*(.*)/i);
                 if (scopeMatch) {
                     if (document.getElementById('scopeOfTestingInput')) document.getElementById('scopeOfTestingInput').value = scopeMatch[1].trim();
                     saveScopeTesting();
@@ -755,7 +764,7 @@
                 }
 
                 toggleLinkInputs();
-                saveHeaderConfig(); // LƯU VÀO LOCALSTORAGE SAU KHU AUTO-FILL
+                saveHeaderConfig();
 
                 if (filledCount > 0) {
                     showCustomAlert("Tự Động Điền Thành Công!", "Đã bóc tách và điền tự động " + filledCount + " trường dữ liệu từ Báo cáo Clipboard.");
@@ -954,7 +963,7 @@
         document.addEventListener('DOMContentLoaded', () => {
             updateAuthUI();
             calculateMondaysLeft();
-            loadHeaderConfig(); // KHÔI PHỦC DỮ LIỆU CẤU HÌNH KHI RELOAD TRANG
+            loadHeaderConfig();
             
             const savedJiraUrl = localStorage.getItem('jira_last_url') || '';
             if (savedJiraUrl && document.getElementById('jiraUrlInput')) document.getElementById('jiraUrlInput').value = savedJiraUrl;
@@ -1354,6 +1363,40 @@
         }
 
         function parseProgressDataFromMatrix(rows) {
+            // TÌM KIẾM MẠNH MẼ ĐỂ LẤY LINK TESTCASE TỪ SHEET (Dù ở A1 hay rải rác)
+            let testcaseLinkFromSheet = "";
+            if (rows && rows.length > 0) {
+                // Quét 30 dòng, 10 cột đầu tiên để bắt bằng được raw link drive/sheet
+                outerLoop:
+                for (let i = 0; i < Math.min(rows.length, 30); i++) {
+                    if (!rows[i]) continue;
+                    for (let j = 0; j < Math.min(rows[i].length, 10); j++) {
+                        let cellVal = String(rows[i][j]).trim();
+                        // Dùng Regex lấy link
+                        let urlMatch = cellVal.match(/https?:\/\/[^\s]+/i);
+                        if (urlMatch) {
+                            let url = urlMatch[0];
+                            if (url.includes("drive.google.com") || url.includes("docs.google.com")) {
+                                testcaseLinkFromSheet = url;
+                                break outerLoop;
+                            }
+                        }
+                    }
+                }
+                
+                // Fallback nếu không chứa chữ drive/docs, nhưng có http ở dòng 1
+                if (!testcaseLinkFromSheet && rows[0]) {
+                    for (let j = 0; j < Math.min(rows[0].length, 10); j++) {
+                        let cellVal = String(rows[0][j]).trim();
+                        let urlMatch = cellVal.match(/https?:\/\/[^\s]+/i);
+                        if (urlMatch) {
+                            testcaseLinkFromSheet = urlMatch[0];
+                            break;
+                        }
+                    }
+                }
+            }
+
             let row16colI = "";
             if (rows.length > 15 && rows[15] && rows[15][8] !== undefined && rows[15][8] !== null) {
                 row16colI = String(rows[15][8]).trim();
@@ -1445,7 +1488,8 @@
 
             return {
                 text: lines.join('\n'),
-                targetData: row16colI
+                targetData: row16colI,
+                testcaseLink: testcaseLinkFromSheet
             };
         }
 
@@ -1510,7 +1554,18 @@
                 const selectedStatusSet = getSelectedStatuses();
                 const tagMode = document.getElementById('tagModeSelect').value;
                 const gasUrl = URL_REPORT_API;
-                const sheetName = document.getElementById('sheetNameInput') ? document.getElementById('sheetNameInput').value.trim() : '';
+                
+                // LẤY SHEET NAME HOẶC TỰ NHẬN DIỆN TỪ GAME NAME NẾU TRỐNG
+                let sheetName = document.getElementById('sheetNameInput') ? document.getElementById('sheetNameInput').value.trim() : '';
+                const gameName = document.getElementById('reportGameNameInput') ? document.getElementById('reportGameNameInput').value.trim() : '';
+                
+                if (!sheetName && gameName) {
+                    const match = gameName.match(/^(\d+)/);
+                    if (match) {
+                        sheetName = match[1];
+                    }
+                }
+                
                 const scopeText = document.getElementById('scopeOfTestingInput') ? document.getElementById('scopeOfTestingInput').value.trim() : '';
                 const qcMembers = document.getElementById('qcMembersInput') ? document.getElementById('qcMembersInput').value.trim() : '';
                 
@@ -1522,22 +1577,20 @@
                 }
 
                 // Lấy thông tin Header
-                const gameName = document.getElementById('reportGameNameInput') ? document.getElementById('reportGameNameInput').value.trim() : '';
                 const verGame = document.getElementById('reportVersionGameInput') ? document.getElementById('reportVersionGameInput').value.trim() : '';
                 const verApp = document.getElementById('reportVersionAppInput') ? document.getElementById('reportVersionAppInput').value.trim() : '';
                 const envText = document.getElementById('reportEnvInput') ? document.getElementById('reportEnvInput').value.trim() : '';
                 
                 // Lấy trạng thái Checkbox & Links
                 const isIframeChecked = document.getElementById('cbIframe') ? document.getElementById('cbIframe').checked : false;
-                const isJiraChecked = document.getElementById('cbJira') ? document.getElementById('cbJira').checked : false;
-                const isTestcaseChecked = document.getElementById('cbTestcase') ? document.getElementById('cbTestcase').checked : false;
                 const isPreprodChecked = document.getElementById('cbPreprod') ? document.getElementById('cbPreprod').checked : false;
                 const isWebappChecked = document.getElementById('cbWebapp') ? document.getElementById('cbWebapp').checked : false;
+                const isAppnameChecked = document.getElementById('cbAppname') ? document.getElementById('cbAppname').checked : false;
 
                 const linkIframe = document.getElementById('reportLinkIframeInput') ? document.getElementById('reportLinkIframeInput').value.trim() : '';
                 const linkPreprod = document.getElementById('reportLinkPreprodInput') ? document.getElementById('reportLinkPreprodInput').value.trim() : '';
                 const linkWebapp = document.getElementById('reportLinkWebappInput') ? document.getElementById('reportLinkWebappInput').value.trim() : '';
-                const testcaseLink = document.getElementById('reportTestcaseInput') ? document.getElementById('reportTestcaseInput').value.trim() : '';
+                const linkAppname = document.getElementById('reportLinkAppnameInput') ? document.getElementById('reportLinkAppnameInput').value.trim() : '';
                 
                 // TỰ ĐỘNG SINH LINK JIRA THEO CHUẨN KHI TÍCH CHỌN "Link Jira"
                 let generatedJiraLink = "";
@@ -1589,12 +1642,17 @@
 
                 let statsString = statsArr.length > 0 ? ' (' + statsArr.join(' - ') + ')' : '';
                 let ticketWord = totalSelectedTickets > 1 ? "Tickets" : "Ticket";
-                let buildStatusStr = '3. Build status: ' + totalSelectedTickets + ' ' + ticketWord + statsString + ' / Total: ' + totalFileTickets + ' Tickets';
+                let buildStatusStr = '- Build status: ' + totalSelectedTickets + ' ' + ticketWord + statsString + ' / Total: ' + totalFileTickets + ' Tickets';
 
                 let progressReportObj = null;
                 if (gasUrl && sheetName) {
                     progressReportObj = await fetchGSheetProgressReport(gasUrl, sheetName);
                 }
+
+                // ƯU TIÊN LẤY LINK TESTCASE TỪ GOOGLE SHEET TRƯỚC (NẾU CÓ), SAU ĐÓ MỚI ĐẾN CLIPBOARD
+                let sheetTestcase = (progressReportObj && progressReportObj.testcaseLink) ? progressReportObj.testcaseLink : '';
+                let clipboardTestcase = document.getElementById('reportTestcaseInput') ? document.getElementById('reportTestcaseInput').value.trim() : '';
+                let testcaseLinkToUse = sheetTestcase || clipboardTestcase;
 
                 let reportLines = [];
 
@@ -1605,23 +1663,24 @@
                 if (envText) reportLines.push('Env: ' + envText);
                 
                 // SECTION LINKS DẠNG CÂY BULLET (CHỈ HIỂN THỊ NẾU ĐƯỢC CHỌN & CÓ GIÁ TRỊ)
-                const hasSubLinks = (isIframeChecked && linkIframe) || (isPreprodChecked && linkPreprod) || (isWebappChecked && linkWebapp);
+                const hasSubLinks = (isIframeChecked && linkIframe) || (isPreprodChecked && linkPreprod) || (isWebappChecked && linkWebapp) || (isAppnameChecked && linkAppname);
 
                 if (hasSubLinks) {
                     reportLines.push('Link:');
                     if (isIframeChecked && linkIframe) reportLines.push('  • Iframe: ' + linkIframe);
                     if (isPreprodChecked && linkPreprod) reportLines.push('  • Preprod: ' + linkPreprod);
                     if (isWebappChecked && linkWebapp) reportLines.push('  • Webapp: ' + linkWebapp);
+                    if (isAppnameChecked && linkAppname) reportLines.push('  • App name: ' + linkAppname);
                 }
                 
-                if (isJiraChecked && generatedJiraLink) reportLines.push('Link Jira: ' + generatedJiraLink);
-                if (isTestcaseChecked && testcaseLink) reportLines.push('Test case: ' + testcaseLink);
+                reportLines.push('Link Jira: ' + (generatedJiraLink || ''));
+                reportLines.push('Test case: ' + (testcaseLinkToUse || ''));
                 reportLines.push('---------------------------------------------');
 
                 // A. [SUMMARY]
                 reportLines.push('A. [SUMMARY]');
-                if (scopeText) reportLines.push('1. Scope of testing: ' + scopeText);
-                reportLines.push('2. Testing Status: In-testing');
+                if (scopeText) reportLines.push('- Scope of testing: ' + scopeText);
+                reportLines.push('- Testing Status: In-testing');
                 reportLines.push(buildStatusStr);
 
                 if (progressReportObj && progressReportObj.text) {
