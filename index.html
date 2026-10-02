@@ -253,6 +253,7 @@
 
                                 <!-- DYNAMIC LINK SELECTOR & INPUTS -->
                                 <div class="border-t border-slate-100 pt-3">
+                                    <!-- CÁC Ô NHẬP LINK LÊN TRÊN -->
                                     <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 mb-4">
                                         <div id="fieldIframe">
                                             <label class="block text-[11px] font-bold text-slate-600 mb-1">Link Iframe (theo lang):</label>
@@ -275,6 +276,7 @@
                                         <input type="hidden" id="reportTestcaseInput" oninput="saveHeaderConfig()">
                                     </div>
 
+                                    <!-- CHECKBOX TÙY CHỌN XUỐNG DƯỚI -->
                                     <div class="flex items-center gap-3">
                                         <label class="block text-[11px] font-bold text-slate-500 uppercase tracking-wide">
                                             <i class="fa-solid fa-layer-group text-indigo-400 mr-1"></i> Tùy chọn hiển thị thêm:
@@ -1616,7 +1618,7 @@
                 const linkWebapp = document.getElementById('reportLinkWebappInput') ? document.getElementById('reportLinkWebappInput').value.trim() : '';
                 const linkAppname = document.getElementById('reportLinkAppnameInput') ? document.getElementById('reportLinkAppnameInput').value.trim() : '';
                 
-                // TỰ ĐỘNG SINH LINK JIRA THEO CHUẨN KHI TÍCH CHỌN "Link Jira"
+                // TỰ ĐỘNG SINH LINK JIRA THEO CHUẨN 
                 let generatedJiraLink = "";
                 if (currentProjectKey && currentJiraDomain) {
                     generatedJiraLink = `${currentJiraDomain}/jira/software/projects/${currentProjectKey}/boards`;
@@ -1704,6 +1706,7 @@
                     if (isAppnameChecked && linkAppname) reportLines.push('  • App name: ' + linkAppname);
                 }
                 
+                // LUÔN MẶC ĐỊNH HIỂN THỊ LINK JIRA VÀ LINK TESTCASE NẾU CÓ DATA
                 if (generatedJiraLink) reportLines.push('Link Jira: ' + generatedJiraLink);
                 if (testcaseLinkToUse) reportLines.push('Test case: ' + testcaseLinkToUse);
                 reportLines.push('---------------------------------------------');
@@ -1788,7 +1791,7 @@
                             priorityGroups[t.priority].push(t);
                         });
 
-                        const shouldListAll = totalSelectedTickets < 5 || specialTagsList.includes(tag.toLowerCase());
+                        const shouldListAll = totalTagTickets < 5 || specialTagsList.includes(tag.toLowerCase());
 
                         ['Highest', 'High', 'Medium', 'Low', 'Lowest', 'Unassigned'].forEach(p => {
                             if (priorityGroups[p] && priorityGroups[p].length > 0) {
