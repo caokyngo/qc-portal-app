@@ -38,6 +38,25 @@
     </script>
     <script src="https://accounts.google.com/gsi/client" async defer></script>
 
+    <!-- Script PWA Auto Update -->
+    <script>
+      if ('serviceWorker' in navigator) {
+        window.addEventListener('load', () => {
+          navigator.serviceWorker.register('./sw.js').then(reg => {
+            reg.update();
+            reg.onupdatefound = () => {
+              const installingWorker = reg.installing;
+              installingWorker.onstatechange = () => {
+                if (installingWorker.state === 'installed' && navigator.serviceWorker.controller) {
+                  window.location.reload();
+                }
+              };
+            };
+          }).catch(err => console.log('SW error:', err));
+        });
+      }
+    </script>
+
     <style>
         .travel-marquee { width: 100%; max-width: 460px; overflow: hidden; mask-image: linear-gradient(to right, transparent, black 8%, black 92%, transparent); -webkit-mask-image: linear-gradient(to right, transparent, black 8%, black 92%, transparent); }
         .travel-marquee-track { display: flex; width: max-content; animation: travel-marquee-scroll 18s linear infinite; will-change: transform; }
@@ -47,23 +66,9 @@
         .travel-marquee-count { font-size: 17px; font-weight: 900; background: linear-gradient(90deg, #c2410c 0%, #ea580c 100%); -webkit-background-clip: text; background-clip: text; color: transparent; padding: 0 2px; }
         @keyframes travel-marquee-scroll { to { transform: translateX(-50%); } }
         @keyframes travel-blink { 0%, 100% { opacity: 1; filter: drop-shadow(0 0 1px rgba(234, 88, 12, 0.4)); } 50% { opacity: 0.45; filter: drop-shadow(0 0 5px rgba(234, 88, 12, 0.7)); } }
-        
-        /* Hiệu ứng Toast trượt từ phải vào */
-        @keyframes slideInRight {
-            from { transform: translateX(100%); opacity: 0; }
-            to { transform: translateX(0); opacity: 1; }
-        }
-        .toast-enter { animation: slideInRight 0.3s ease-out forwards; }
-        
-        /* Ẩn scrollbar nhưng vẫn scroll được */
-        .no-scrollbar::-webkit-scrollbar { display: none; }
-        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
     </style>
 </head>
-<body class="bg-slate-50 text-slate-800 font-sans h-screen w-full flex flex-col md:flex-row overflow-hidden relative">
-
-    <!-- KHUNG CHỨA TOAST NOTIFICATION -->
-    <div id="toast-container" class="fixed top-5 right-5 z-[100] flex flex-col gap-3 pointer-events-none"></div>
+<body class="bg-slate-50 text-slate-800 font-sans h-screen w-full flex flex-col md:flex-row overflow-hidden">
 
     <div id="sidebarOverlay" onclick="toggleSidebar()" class="fixed inset-0 bg-slate-900/60 z-40 hidden md:hidden backdrop-blur-sm transition-opacity opacity-0"></div>
 
@@ -170,7 +175,7 @@
             </div>
         </header>
 
-        <main class="flex-1 overflow-y-auto p-4 md:p-6 bg-slate-50 relative z-0">
+        <main class="flex-1 overflow-y-auto p-4 md:p-6 bg-slate-50">
             <div class="w-full mx-auto 2xl:max-w-[1600px] space-y-6">
                 
                 <!-- KHUNG NHẬP LINK JIRA -->
@@ -209,129 +214,103 @@
                 <div id="reportDashboard" class="hidden space-y-6">
                     <div id="mainDashboardView" class="space-y-6">
                         
-                        <!-- ================= GIAO DIỆN FORM CẤU HÌNH HIỆN ĐẠI ================= -->
-                        <section class="bg-white rounded-2xl shadow-sm border border-slate-200 w-full overflow-hidden">
-                            <!-- Header của Form -->
-                            <div class="flex flex-col sm:flex-row sm:items-center justify-between border-b border-slate-100 px-5 py-4 bg-slate-50/50">
-                                <h3 class="text-base font-bold text-slate-800 flex items-center gap-2 mb-3 sm:mb-0">
-                                    <i class="fa-solid fa-file-signature text-indigo-600"></i> Thông tin Báo Cáo
+                        <!-- CẤU HÌNH THÔNG TIN BÁO CÁO HEADER & FOOTER -->
+                        <section class="bg-white rounded-xl shadow-sm border border-slate-200 p-4 sm:p-5 space-y-4 w-full">
+                            <div class="flex items-center justify-between border-b border-slate-100 pb-3">
+                                <h3 class="text-base font-bold text-slate-800 flex items-center gap-2">
+                                    <i class="fa-solid fa-file-signature text-indigo-600"></i> Cấu hình Thông tin Báo Cáo Daily
                                 </h3>
-                                <button type="button" onclick="pasteReportFromClipboard()" class="inline-flex items-center justify-center gap-2 px-4 py-2 bg-indigo-50 hover:bg-indigo-600 hover:text-white text-indigo-700 text-xs font-bold rounded-lg border border-indigo-200 hover:border-indigo-600 transition-all shadow-sm">
-                                    <i class="fa-solid fa-wand-magic-sparkles"></i> Dán từ Clipboard (Auto-fill)
-                                </button>
+                                <div class="flex items-center gap-3">
+                                    <button type="button" onclick="pasteReportFromClipboard()" class="text-xs bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-200 px-3 py-1.5 rounded-lg font-bold flex items-center gap-1.5 transition shadow-sm">
+                                        <i class="fa-solid fa-paste"></i> Dán từ Clipboard (Auto-fill)
+                                    </button>
+                                    <button type="button" onclick="document.getElementById('reportHeaderConfigBody').classList.toggle('hidden')" class="text-xs text-indigo-600 font-bold hover:underline">
+                                        Ẩn/Hiện Cấu hình
+                                    </button>
+                                </div>
                             </div>
 
-                            <div class="p-5 space-y-6">
-                                <!-- Card 1: Thông tin chung -->
-                                <div>
-                                    <h4 class="text-[11px] font-bold text-slate-400 uppercase tracking-widest mb-3 border-b border-slate-100 pb-1">1. Thông tin chung</h4>
-                                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-                                        <!-- Smart Input: Floating Label -->
-                                        <div class="relative group">
-                                            <input type="text" id="reportGameNameInput" oninput="saveHeaderConfig()" class="block w-full h-[48px] px-3.5 pt-5 pb-1.5 text-sm text-slate-900 bg-slate-50/50 border border-slate-300 rounded-xl appearance-none focus:outline-none focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 peer transition-all shadow-sm" placeholder=" " />
-                                            <label class="absolute text-xs font-bold text-slate-400 duration-300 transform -translate-y-3 scale-75 top-3.5 z-10 origin-[0] left-3.5 peer-focus:text-indigo-600 peer-placeholder-shown:scale-100 peer-placeholder-shown:translate-y-0 peer-placeholder-shown:font-medium peer-focus:scale-75 peer-focus:-translate-y-3 pointer-events-none">
-                                                ID & Game Name
-                                            </label>
+                            <div id="reportHeaderConfigBody" class="space-y-4">
+                                <!-- HEADER REPORT PARAMS (THÔNG TIN CHUNG) -->
+                                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+                                    <div>
+                                        <label class="block text-[11px] font-bold text-slate-600 mb-1">ID & Game Name:</label>
+                                        <input type="text" id="reportGameNameInput" oninput="saveHeaderConfig()" placeholder="VD: 5980 - Gold Digger" class="w-full h-[40px] px-3 py-2.5 bg-slate-50 border border-slate-300 text-xs rounded-lg outline-none font-medium shadow-sm transition focus:ring-2 focus:ring-indigo-500">
+                                    </div>
+                                    <div>
+                                        <label class="block text-[11px] font-bold text-slate-600 mb-1">Version Game & Ngày build:</label>
+                                        <input type="text" id="reportVersionGameInput" oninput="saveHeaderConfig()" placeholder="VD: v1.0.0 (02/10/2026)" class="w-full h-[40px] px-3 py-2.5 bg-slate-50 border border-slate-300 text-xs rounded-lg outline-none font-medium shadow-sm transition focus:ring-2 focus:ring-indigo-500">
+                                    </div>
+                                    <div>
+                                        <label class="block text-[11px] font-bold text-slate-600 mb-1">Version App:</label>
+                                        <input type="text" id="reportVersionAppInput" oninput="saveHeaderConfig()" placeholder="VD: v2.1.0" class="w-full h-[40px] px-3 py-2.5 bg-slate-50 border border-slate-300 text-xs rounded-lg outline-none font-medium shadow-sm transition focus:ring-2 focus:ring-indigo-500">
+                                    </div>
+                                    <div>
+                                        <label class="block text-[11px] font-bold text-slate-600 mb-1">Môi trường Test (Env):</label>
+                                        <textarea id="reportEnvInput" oninput="saveHeaderConfig()" placeholder="VD: Iframe/App - Internal Staging" class="w-full h-[40px] px-3 py-2 bg-slate-50 border border-slate-300 text-xs rounded-lg outline-none font-medium resize-none custom-scrollbar shadow-sm transition focus:ring-2 focus:ring-indigo-500 leading-relaxed"></textarea>
+                                    </div>
+                                </div>
+
+                                <!-- DYNAMIC LINK SELECTOR & INPUTS -->
+                                <div class="border-t border-slate-100 pt-3">
+                                    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 mb-4">
+                                        <div id="fieldIframe">
+                                            <label class="block text-[11px] font-bold text-slate-600 mb-1">Link Iframe (theo lang):</label>
+                                            <input type="text" id="reportLinkIframeInput" oninput="saveHeaderConfig()" placeholder="VD: https://iframe..." class="w-full h-[40px] px-3 py-2.5 bg-slate-50 border border-slate-300 text-xs rounded-lg outline-none font-medium shadow-sm transition focus:ring-2 focus:ring-indigo-500">
                                         </div>
-                                        <div class="relative group">
-                                            <input type="text" id="reportVersionGameInput" oninput="saveHeaderConfig()" class="block w-full h-[48px] px-3.5 pt-5 pb-1.5 text-sm text-slate-900 bg-slate-50/50 border border-slate-300 rounded-xl appearance-none focus:outline-none focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 peer transition-all shadow-sm" placeholder=" " />
-                                            <label class="absolute text-xs font-bold text-slate-400 duration-300 transform -translate-y-3 scale-75 top-3.5 z-10 origin-[0] left-3.5 peer-focus:text-indigo-600 peer-placeholder-shown:scale-100 peer-placeholder-shown:translate-y-0 peer-placeholder-shown:font-medium peer-focus:scale-75 peer-focus:-translate-y-3 pointer-events-none">
-                                                Version Game & Build
-                                            </label>
+                                        <div id="fieldPreprod" class="hidden">
+                                            <label class="block text-[11px] font-bold text-slate-600 mb-1">Preprod Link (nếu có):</label>
+                                            <input type="text" id="reportLinkPreprodInput" oninput="saveHeaderConfig()" placeholder="VD: https://preprod..." class="w-full h-[40px] px-3 py-2.5 bg-slate-50 border border-slate-300 text-xs rounded-lg outline-none font-medium shadow-sm transition focus:ring-2 focus:ring-indigo-500">
                                         </div>
-                                        <div class="relative group">
-                                            <input type="text" id="reportVersionAppInput" oninput="saveHeaderConfig()" class="block w-full h-[48px] px-3.5 pt-5 pb-1.5 text-sm text-slate-900 bg-slate-50/50 border border-slate-300 rounded-xl appearance-none focus:outline-none focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 peer transition-all shadow-sm" placeholder=" " />
-                                            <label class="absolute text-xs font-bold text-slate-400 duration-300 transform -translate-y-3 scale-75 top-3.5 z-10 origin-[0] left-3.5 peer-focus:text-indigo-600 peer-placeholder-shown:scale-100 peer-placeholder-shown:translate-y-0 peer-placeholder-shown:font-medium peer-focus:scale-75 peer-focus:-translate-y-3 pointer-events-none">
-                                                Version App
+                                        <div id="fieldWebapp" class="hidden">
+                                            <label class="block text-[11px] font-bold text-slate-600 mb-1">Webapp Link:</label>
+                                            <input type="text" id="reportLinkWebappInput" oninput="saveHeaderConfig()" placeholder="VD: https://webapp..." class="w-full h-[40px] px-3 py-2.5 bg-slate-50 border border-slate-300 text-xs rounded-lg outline-none font-medium shadow-sm transition focus:ring-2 focus:ring-indigo-500">
+                                        </div>
+                                        <div id="fieldAppname" class="hidden">
+                                            <label class="block text-[11px] font-bold text-slate-600 mb-1">App name:</label>
+                                            <input type="text" id="reportLinkAppnameInput" oninput="saveHeaderConfig()" placeholder="VD: Apptek12 / GoldDigger.apk" class="w-full h-[40px] px-3 py-2.5 bg-slate-50 border border-slate-300 text-xs rounded-lg outline-none font-medium shadow-sm transition focus:ring-2 focus:ring-indigo-500">
+                                        </div>
+                                        
+                                        <!-- Ô NHẬP LINK TESTCASE ẨN DÙNG CHO AUTO-FILL CLIPBOARD -->
+                                        <input type="hidden" id="reportTestcaseInput" oninput="saveHeaderConfig()">
+                                    </div>
+
+                                    <div class="flex items-center gap-3">
+                                        <label class="block text-[11px] font-bold text-slate-500 uppercase tracking-wide">
+                                            <i class="fa-solid fa-layer-group text-indigo-400 mr-1"></i> Tùy chọn hiển thị thêm:
+                                        </label>
+                                        <div class="flex flex-wrap gap-2 text-xs font-medium text-slate-700">
+                                            <label class="inline-flex items-center gap-1.5 cursor-pointer bg-indigo-50/60 hover:bg-indigo-100 px-2 py-1 rounded-md border border-indigo-200 transition">
+                                                <input type="checkbox" id="cbIframe" checked onchange="toggleLinkInputs(); updateEnvField(); saveHeaderConfig();" class="rounded text-indigo-600 focus:ring-indigo-500 w-3.5 h-3.5">
+                                                <span class="font-bold text-[11px] text-indigo-900">Iframe</span>
+                                            </label>
+                                            <label class="inline-flex items-center gap-1.5 cursor-pointer bg-slate-100 hover:bg-slate-200 px-2 py-1 rounded-md border border-slate-200 transition">
+                                                <input type="checkbox" id="cbPreprod" onchange="toggleLinkInputs(); updateEnvField(); saveHeaderConfig();" class="rounded text-indigo-600 focus:ring-indigo-500 w-3.5 h-3.5">
+                                                <span class="font-bold text-[11px] text-slate-700">Preprod</span>
+                                            </label>
+                                            <label class="inline-flex items-center gap-1.5 cursor-pointer bg-slate-100 hover:bg-slate-200 px-2 py-1 rounded-md border border-slate-200 transition">
+                                                <input type="checkbox" id="cbWebapp" onchange="toggleLinkInputs(); updateEnvField(); saveHeaderConfig();" class="rounded text-indigo-600 focus:ring-indigo-500 w-3.5 h-3.5">
+                                                <span class="font-bold text-[11px] text-slate-700">Webapp</span>
+                                            </label>
+                                            <label class="inline-flex items-center gap-1.5 cursor-pointer bg-slate-100 hover:bg-slate-200 px-2 py-1 rounded-md border border-slate-200 transition">
+                                                <input type="checkbox" id="cbAppname" onchange="toggleLinkInputs(); updateEnvField(); saveHeaderConfig();" class="rounded text-indigo-600 focus:ring-indigo-500 w-3.5 h-3.5">
+                                                <span class="font-bold text-[11px] text-slate-700">App name</span>
                                             </label>
                                         </div>
                                     </div>
                                 </div>
 
-                                <!-- Card 2: Environment Chips (Thay thế Textarea) -->
-                                <div>
-                                    <h4 class="text-[11px] font-bold text-slate-400 uppercase tracking-widest mb-3 border-b border-slate-100 pb-1">2. Môi trường Test (Env)</h4>
-                                    <div class="flex flex-wrap gap-2.5" id="envChipContainer">
-                                        <!-- Các nút Chips -->
-                                        <button type="button" onclick="toggleEnvChip(this)" data-value="Iframe" class="env-chip px-4 py-2 rounded-xl text-xs font-bold border transition-all duration-200 bg-slate-100 text-slate-500 border-slate-200 hover:bg-slate-200">Iframe</button>
-                                        <button type="button" onclick="toggleEnvChip(this)" data-value="App" class="env-chip px-4 py-2 rounded-xl text-xs font-bold border transition-all duration-200 bg-slate-100 text-slate-500 border-slate-200 hover:bg-slate-200">App</button>
-                                        <button type="button" onclick="toggleEnvChip(this)" data-value="WebApp" class="env-chip px-4 py-2 rounded-xl text-xs font-bold border transition-all duration-200 bg-slate-100 text-slate-500 border-slate-200 hover:bg-slate-200">WebApp</button>
-                                        <button type="button" onclick="toggleEnvChip(this)" data-value="Preprod" class="env-chip px-4 py-2 rounded-xl text-xs font-bold border transition-all duration-200 bg-slate-100 text-slate-500 border-slate-200 hover:bg-slate-200">Preprod</button>
+                                <!-- FOOTER & NOTES PARAMS -->
+                                <div class="grid grid-cols-1 md:grid-cols-2 gap-3 border-t border-slate-100 pt-3">
+                                    <div>
+                                        <label class="block text-[11px] font-bold text-slate-600 mb-1"><i class="fa-solid fa-note-sticky text-amber-500 mr-1"></i> Ghi chú bổ sung (Section C - Notes):</label>
+                                        <textarea id="reportNotesInput" oninput="saveHeaderConfig()" rows="3" placeholder="Nhập mỗi ghi chú trên 1 dòng..." class="w-full bg-slate-50 border border-slate-300 text-xs rounded-lg p-2 outline-none font-medium custom-scrollbar"></textarea>
                                     </div>
-                                    <!-- Ô lưu trữ logic ngầm -->
-                                    <input type="hidden" id="reportEnvInput">
+                                    <div>
+                                        <label class="block text-[11px] font-bold text-slate-600 mb-1"><i class="fa-solid fa-database text-purple-500 mr-1"></i> Metadata Game (Cuối Report):</label>
+                                        <textarea id="reportMetadataInput" oninput="saveHeaderConfig()" rows="3" placeholder="VD: Transferred: 53.2 MB&#10;Request network: 193 requests&#10;Resource: 67.4 MB&#10;Draw call: 32~65" class="w-full bg-slate-50 border border-slate-300 text-xs rounded-lg p-2 outline-none font-medium custom-scrollbar"></textarea>
+                                    </div>
                                 </div>
-
-                                <!-- Card 3: Cấu hình Link (Smart Inputs) -->
-                                <div>
-                                    <div class="flex justify-between items-center mb-3 border-b border-slate-100 pb-1">
-                                        <h4 class="text-[11px] font-bold text-slate-400 uppercase tracking-widest">3. Liên kết (Links)</h4>
-                                        <span class="text-[10px] text-indigo-400 font-medium italic"><i class="fa-solid fa-circle-info"></i> Để trống nếu không muốn hiện trong report</span>
-                                    </div>
-                                    
-                                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                                        <!-- Smart Input có Icon -->
-                                        <div class="relative group">
-                                            <div class="absolute inset-y-0 left-0 flex items-center pl-3.5 pointer-events-none">
-                                                <i class="fa-solid fa-earth-americas text-slate-400 group-focus-within:text-indigo-500 transition-colors"></i>
-                                            </div>
-                                            <input type="text" id="reportLinkIframeInput" oninput="saveHeaderConfig()" class="block w-full h-[48px] pl-10 pr-3.5 pt-5 pb-1.5 text-sm text-slate-900 bg-slate-50/50 border border-slate-300 rounded-xl appearance-none focus:outline-none focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 peer transition-all shadow-sm" placeholder=" " />
-                                            <label class="absolute text-xs font-bold text-slate-400 duration-300 transform -translate-y-3 scale-75 top-3.5 z-10 origin-[0] left-10 peer-focus:text-indigo-600 peer-placeholder-shown:scale-100 peer-placeholder-shown:translate-y-0 peer-placeholder-shown:font-medium peer-focus:scale-75 peer-focus:-translate-y-3 pointer-events-none">
-                                                Link Iframe
-                                            </label>
-                                        </div>
-
-                                        <div class="relative group">
-                                            <div class="absolute inset-y-0 left-0 flex items-center pl-3.5 pointer-events-none">
-                                                <i class="fa-solid fa-server text-slate-400 group-focus-within:text-indigo-500 transition-colors"></i>
-                                            </div>
-                                            <input type="text" id="reportLinkPreprodInput" oninput="saveHeaderConfig()" class="block w-full h-[48px] pl-10 pr-3.5 pt-5 pb-1.5 text-sm text-slate-900 bg-slate-50/50 border border-slate-300 rounded-xl appearance-none focus:outline-none focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 peer transition-all shadow-sm" placeholder=" " />
-                                            <label class="absolute text-xs font-bold text-slate-400 duration-300 transform -translate-y-3 scale-75 top-3.5 z-10 origin-[0] left-10 peer-focus:text-indigo-600 peer-placeholder-shown:scale-100 peer-placeholder-shown:translate-y-0 peer-placeholder-shown:font-medium peer-focus:scale-75 peer-focus:-translate-y-3 pointer-events-none">
-                                                Preprod Link
-                                            </label>
-                                        </div>
-
-                                        <div class="relative group">
-                                            <div class="absolute inset-y-0 left-0 flex items-center pl-3.5 pointer-events-none">
-                                                <i class="fa-solid fa-laptop-code text-slate-400 group-focus-within:text-indigo-500 transition-colors"></i>
-                                            </div>
-                                            <input type="text" id="reportLinkWebappInput" oninput="saveHeaderConfig()" class="block w-full h-[48px] pl-10 pr-3.5 pt-5 pb-1.5 text-sm text-slate-900 bg-slate-50/50 border border-slate-300 rounded-xl appearance-none focus:outline-none focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 peer transition-all shadow-sm" placeholder=" " />
-                                            <label class="absolute text-xs font-bold text-slate-400 duration-300 transform -translate-y-3 scale-75 top-3.5 z-10 origin-[0] left-10 peer-focus:text-indigo-600 peer-placeholder-shown:scale-100 peer-placeholder-shown:translate-y-0 peer-placeholder-shown:font-medium peer-focus:scale-75 peer-focus:-translate-y-3 pointer-events-none">
-                                                Webapp Link
-                                            </label>
-                                        </div>
-
-                                        <div class="relative group">
-                                            <div class="absolute inset-y-0 left-0 flex items-center pl-3.5 pointer-events-none">
-                                                <i class="fa-brands fa-google-play text-slate-400 group-focus-within:text-indigo-500 transition-colors"></i>
-                                            </div>
-                                            <input type="text" id="reportLinkAppnameInput" oninput="saveHeaderConfig()" class="block w-full h-[48px] pl-10 pr-3.5 pt-5 pb-1.5 text-sm text-slate-900 bg-slate-50/50 border border-slate-300 rounded-xl appearance-none focus:outline-none focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 peer transition-all shadow-sm" placeholder=" " />
-                                            <label class="absolute text-xs font-bold text-slate-400 duration-300 transform -translate-y-3 scale-75 top-3.5 z-10 origin-[0] left-10 peer-focus:text-indigo-600 peer-placeholder-shown:scale-100 peer-placeholder-shown:translate-y-0 peer-placeholder-shown:font-medium peer-focus:scale-75 peer-focus:-translate-y-3 pointer-events-none">
-                                                App Name
-                                            </label>
-                                        </div>
-                                    </div>
-                                    <!-- Ô ẨN để chứa Testcase (từ clipboard/sheet) cho logic không bị đứt -->
-                                    <input type="hidden" id="reportTestcaseInput" oninput="saveHeaderConfig()">
-                                </div>
-
-                                <!-- Card 4: Accordion Ghi chú & Meta -->
-                                <details class="bg-slate-50/50 rounded-xl border border-slate-200 overflow-hidden group">
-                                    <summary class="p-3.5 px-4 cursor-pointer font-bold text-sm text-slate-700 flex justify-between items-center hover:bg-slate-100 transition-colors select-none">
-                                        <span class="flex items-center gap-2"><i class="fa-solid fa-feather-pointed text-amber-500"></i> Thêm Ghi chú & Metadata (Section C)</span>
-                                        <i class="fa-solid fa-chevron-down group-open:rotate-180 transition-transform text-slate-400"></i>
-                                    </summary>
-                                    <div class="p-4 grid grid-cols-1 md:grid-cols-2 gap-4 border-t border-slate-200 bg-white">
-                                        <div>
-                                            <label class="block text-[11px] font-bold text-slate-400 uppercase tracking-widest mb-1">Ghi chú bổ sung</label>
-                                            <textarea id="reportNotesInput" oninput="saveHeaderConfig()" rows="3" placeholder="Nhập mỗi ghi chú trên 1 dòng..." class="w-full bg-slate-50 border border-slate-300 text-xs rounded-xl p-3 outline-none font-medium custom-scrollbar focus:ring-1 focus:ring-amber-500 focus:border-amber-500 transition-all"></textarea>
-                                        </div>
-                                        <div>
-                                            <label class="block text-[11px] font-bold text-slate-400 uppercase tracking-widest mb-1">Metadata Game</label>
-                                            <textarea id="reportMetadataInput" oninput="saveHeaderConfig()" rows="3" placeholder="VD: Transferred: 53.2 MB&#10;Request network: 193 requests" class="w-full bg-slate-50 border border-slate-300 text-xs rounded-xl p-3 outline-none font-medium custom-scrollbar focus:ring-1 focus:ring-purple-500 focus:border-purple-500 transition-all"></textarea>
-                                        </div>
-                                    </div>
-                                </details>
                             </div>
                         </section>
 
@@ -349,8 +328,8 @@
                                             <option value="all">Đếm tất cả Tag trong Ticket</option>
                                         </select>
                                     </div>
-                                    <button id="copyBtn" onclick="openTagSelectionModal()" class="w-full sm:w-auto inline-flex justify-center items-center gap-2 px-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-xl shadow-md hover:shadow-lg transform hover:-translate-y-0.5 transition-all">
-                                        <i class="fa-solid fa-copy text-sm"></i> Xuất Báo Cáo
+                                    <button id="copyBtn" onclick="openTagSelectionModal()" class="w-full sm:w-auto inline-flex justify-center items-center gap-2 px-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-lg transition shadow-sm">
+                                        <i class="fa-solid fa-copy text-sm"></i> Copy Báo Cáo Daily
                                     </button>
                                 </div>
                             </div>
@@ -542,59 +521,25 @@
         </div>
     </div>
 
-    <!-- Modal Loading -->
-    <div id="loadingModal" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4">
-        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-xs overflow-hidden p-8 text-center space-y-4">
-            <div class="w-16 h-16 bg-indigo-100 text-indigo-600 rounded-full flex items-center justify-center mx-auto text-3xl shadow-inner">
-                <i class="fa-solid fa-spinner fa-spin"></i>
+    <!-- Modal Alert -->
+    <div id="customAlertModal" class="hidden fixed inset-0 z-[70] flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4">
+        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-sm overflow-hidden p-8 text-center space-y-4">
+            <div id="customAlertIcon" class="w-20 h-20 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center mx-auto text-4xl shadow-inner">
+                <i class="fa-solid fa-circle-check"></i>
             </div>
-            <div>
-                <h3 class="text-lg font-bold text-slate-800">Đang tải dữ liệu...</h3>
-                <p class="text-xs text-slate-500 mt-1">Vui lòng chờ trong giây lát</p>
-            </div>
+            <h3 class="text-xl font-bold text-slate-800" id="customAlertTitle">Thành công!</h3>
+            <p class="text-sm text-slate-600 font-medium" id="customAlertMessage">Đã thực hiện xong thao tác.</p>
+            <button onclick="closeCustomAlert()" class="w-full px-4 py-3 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl shadow-sm transition mt-2">OK</button>
         </div>
     </div>
 
-    <!-- HÀM XỬ LÝ TOAST VÀ CÁC LOGIC KHÁC -->
     <script>
-        const JIRA_PROXY_API_URL = "https://script.google.com/a/macros/enotion.io/s/AKfycbz948vll_3cMrDw3Vnj4CLVqbxyyfMPI87iUo9U_3HSQPralPZmySydiI0CXZ636FHl/exec";
+        const JIRA_PROXY_API_URL = "https://script.google.com/a/macros/enotion.io/s/AKfycbzD67muRo3IiVFd8tMTXaS7awEs0T3jV2VHCd6MfWu8Hyy4sZBc5dt7LdX6utG6rPP6/exec";
         const URL_REPORT_API = "https://script.google.com/macros/s/AKfycbzynUh65kMWVtwRdYdg8x35-6LViA_JwMPrWhEoMdDXFDP7tpcheilYrReQSIrQ6zAtIQ/exec";
 
         let currentBoardId = null;
         let currentProjectKey = null;
         let currentJiraDomain = null;
-
-        // HÀM HIỂN THỊ TOAST THÔNG BÁO HIỆN ĐẠI (THAY THẾ MODAL)
-        function showToast(title, message, isError = false) {
-            const container = document.getElementById('toast-container');
-            if (!container) return;
-
-            const toast = document.createElement('div');
-            toast.className = `toast-enter flex items-start gap-3 p-4 bg-white rounded-xl shadow-[0_8px_30px_rgb(0,0,0,0.12)] border-l-4 ${isError ? 'border-rose-500' : 'border-emerald-500'} pointer-events-auto min-w-[300px] max-w-sm`;
-            
-            const iconHtml = isError 
-                ? '<div class="mt-0.5 text-rose-500 bg-rose-100 rounded-full w-6 h-6 flex items-center justify-center flex-shrink-0"><i class="fa-solid fa-triangle-exclamation text-xs"></i></div>'
-                : '<div class="mt-0.5 text-emerald-500 bg-emerald-100 rounded-full w-6 h-6 flex items-center justify-center flex-shrink-0"><i class="fa-solid fa-check text-xs"></i></div>';
-
-            toast.innerHTML = `
-                ${iconHtml}
-                <div class="flex-1">
-                    <h4 class="text-sm font-bold text-slate-800">${title}</h4>
-                    <p class="text-xs text-slate-500 mt-1">${message}</p>
-                </div>
-                <button onclick="this.parentElement.remove()" class="text-slate-400 hover:text-slate-600 transition focus:outline-none"><i class="fa-solid fa-xmark"></i></button>
-            `;
-
-            container.appendChild(toast);
-            setTimeout(() => {
-                if (toast.parentElement) toast.remove();
-            }, 3500);
-        }
-
-        // Tương thích ngược với các lệnh gọi Alert cũ
-        function showCustomAlert(title, message, isError = false) {
-            showToast(title, message, isError);
-        }
 
         function toggleSidebar() {
             const sidebar = document.getElementById('mainSidebar');
@@ -637,45 +582,6 @@
             'Low': '#3B82F6', 'Lowest': '#10B981', 'Unassigned': '#64748B'
         };
 
-        // GIAO DIỆN CHIPS MÔI TRƯỜNG (ENV) THÔNG MINH
-        function toggleEnvChip(btn) {
-            btn.classList.toggle('bg-slate-100');
-            btn.classList.toggle('text-slate-500');
-            btn.classList.toggle('border-slate-200');
-            
-            btn.classList.toggle('bg-indigo-600');
-            btn.classList.toggle('text-white');
-            btn.classList.toggle('border-indigo-600');
-            btn.classList.toggle('active-chip');
-            
-            updateEnvField();
-            saveHeaderConfig();
-        }
-
-        function updateEnvField() {
-            const container = document.getElementById('envChipContainer');
-            if (!container) return;
-            
-            const activeChips = Array.from(container.querySelectorAll('.active-chip')).map(btn => btn.dataset.value);
-            
-            let internalParts = [];
-            if (activeChips.includes("Iframe")) internalParts.push("Iframe");
-            if (activeChips.includes("App")) internalParts.push("App");
-            if (activeChips.includes("WebApp")) internalParts.push("WebApp");
-
-            let envLines = [];
-            if (internalParts.length > 0) envLines.push(internalParts.join('/') + " - Internal Staging");
-            if (activeChips.includes("Preprod")) envLines.push("Preproduction - External Staging");
-
-            const envInput = document.getElementById('reportEnvInput');
-            if (envInput) {
-                if (envLines.length === 0) envInput.value = "";
-                else if (envLines.length === 1) envInput.value = envLines[0];
-                else envInput.value = "- " + envLines.join("\n- ");
-            }
-        }
-
-        // BẬT / ẨN Ô NHẬP THEO CHECKBOX LINK
         function toggleLinkInputs() {
             const linkConfigs = [
                 { cb: 'cbIframe', field: 'fieldIframe' },
@@ -697,29 +603,56 @@
             });
         }
 
-        // TỰ ĐỘNG LƯU LOCALSTORAGE CÓ LƯU THÊM TRẠNG THÁI CỦA CHIPS
-        function saveHeaderConfig() {
-            const container = document.getElementById('envChipContainer');
-            const activeChips = container ? Array.from(container.querySelectorAll('.active-chip')).map(btn => btn.dataset.value) : [];
+        function updateEnvField() {
+            const isIframe = document.getElementById('cbIframe')?.checked;
+            const isWebapp = document.getElementById('cbWebapp')?.checked;
+            const isAppname = document.getElementById('cbAppname')?.checked;
+            const isPreprod = document.getElementById('cbPreprod')?.checked;
 
+            let internalParts = [];
+            if (isIframe) internalParts.push("Iframe");
+            if (isAppname) internalParts.push("App");
+            if (isWebapp) internalParts.push("WebApp");
+
+            let envLines = [];
+            
+            if (internalParts.length > 0) {
+                envLines.push(internalParts.join('/') + " - Internal Staging");
+            }
+            
+            if (isPreprod) {
+                envLines.push("Preproduction - External Staging");
+            }
+
+            const envInput = document.getElementById('reportEnvInput');
+            if (envInput) {
+                if (envLines.length === 0) {
+                    envInput.value = "";
+                } else if (envLines.length === 1) {
+                    envInput.value = envLines[0];
+                } else {
+                    envInput.value = "- " + envLines.join("\n- ");
+                }
+            }
+        }
+
+        function saveHeaderConfig() {
             const config = {
                 gameName: document.getElementById('reportGameNameInput')?.value || '',
                 versionGame: document.getElementById('reportVersionGameInput')?.value || '',
                 versionApp: document.getElementById('reportVersionAppInput')?.value || '',
                 env: document.getElementById('reportEnvInput')?.value || '',
-                envChips: activeChips,
-                
                 cbIframe: document.getElementById('cbIframe')?.checked || false,
                 cbPreprod: document.getElementById('cbPreprod')?.checked || false,
                 cbWebapp: document.getElementById('cbWebapp')?.checked || false,
                 cbAppname: document.getElementById('cbAppname')?.checked || false,
-
                 linkIframe: document.getElementById('reportLinkIframeInput')?.value || '',
                 linkPreprod: document.getElementById('reportLinkPreprodInput')?.value || '',
                 linkWebapp: document.getElementById('reportLinkWebappInput')?.value || '',
                 linkAppname: document.getElementById('reportLinkAppnameInput')?.value || '',
                 notes: document.getElementById('reportNotesInput')?.value || '',
                 metadata: document.getElementById('reportMetadataInput')?.value || '',
+                
                 linkTestcase: document.getElementById('reportTestcaseInput')?.value || ''
             };
             localStorage.setItem('jira_header_config', JSON.stringify(config));
@@ -746,23 +679,10 @@
                 if (config.linkAppname !== undefined && document.getElementById('reportLinkAppnameInput')) document.getElementById('reportLinkAppnameInput').value = config.linkAppname;
 
                 if (config.linkTestcase !== undefined && document.getElementById('reportTestcaseInput')) document.getElementById('reportTestcaseInput').value = config.linkTestcase;
+
                 if (config.notes !== undefined && document.getElementById('reportNotesInput')) document.getElementById('reportNotesInput').value = config.notes;
                 if (config.metadata !== undefined && document.getElementById('reportMetadataInput')) document.getElementById('reportMetadataInput').value = config.metadata;
 
-                // Khôi phục Chips Env
-                if (config.envChips && config.envChips.length > 0) {
-                    const container = document.getElementById('envChipContainer');
-                    if (container) {
-                        const buttons = container.querySelectorAll('.env-chip');
-                        buttons.forEach(btn => {
-                            if (config.envChips.includes(btn.dataset.value)) {
-                                btn.classList.remove('bg-slate-100', 'text-slate-500', 'border-slate-200');
-                                btn.classList.add('bg-indigo-600', 'text-white', 'border-indigo-600', 'active-chip');
-                            }
-                        });
-                    }
-                }
-                
                 toggleLinkInputs();
             } catch(e) {
                 console.error("Lỗi khôi phục cấu hình từ localStorage:", e);
@@ -783,7 +703,7 @@
             try {
                 const text = await navigator.clipboard.readText();
                 if (!text || !text.trim()) {
-                    showToast("Cảnh báo", "Clipboard của bạn đang trống!", true);
+                    showCustomAlert("Cảnh báo", "Clipboard của bạn đang trống!", true);
                     return;
                 }
 
@@ -847,11 +767,6 @@
                     filledCount++;
                 }
 
-                const jiraLinkMatch = text.match(/^Link Jira:\s*(.*)/im);
-                if (jiraLinkMatch) {
-                    filledCount++;
-                }
-
                 const tcMatch = text.match(/^Test case:\s*(.*)/im);
                 if (tcMatch && document.getElementById('reportTestcaseInput')) {
                     document.getElementById('reportTestcaseInput').value = tcMatch[1].trim();
@@ -876,14 +791,14 @@
                 saveHeaderConfig();
 
                 if (filledCount > 0) {
-                    showToast("Tự động điền thành công", `Đã trích xuất ${filledCount} trường dữ liệu từ Clipboard.`);
+                    showCustomAlert("Tự Động Điền Thành Công!", "Đã bóc tách và điền tự động " + filledCount + " trường dữ liệu từ Báo cáo Clipboard.");
                 } else {
-                    showToast("Cảnh báo", "Không nhận diện được định dạng Báo cáo trong Clipboard.", true);
+                    showCustomAlert("Thông báo", "Không nhận diện được định dạng Báo cáo trong Clipboard. Vui lòng kiểm tra lại văn bản copy!", true);
                 }
 
             } catch (err) {
                 console.error("Lỗi đọc Clipboard:", err);
-                showToast("Lỗi Quyền Truy Cập", "Không thể đọc dữ liệu từ Clipboard. Vui lòng cấp quyền!", true);
+                showCustomAlert("Lỗi Quyền Truy Cập", "Không thể đọc dữ liệu từ Clipboard. Vui lòng cấp quyền Clipboard cho trang web!", true);
             }
         }
 
@@ -918,19 +833,19 @@
 
         function fetchJiraDataFromUrl() {
             if (!loggedInUser) {
-                showToast("Yêu cầu đăng nhập", "Vui lòng Đăng nhập tài khoản Google trước khi tải dữ liệu!", true);
+                showCustomAlert("Yêu cầu đăng nhập", "Vui lòng Đăng nhập tài khoản Google trước khi tải dữ liệu!", true);
                 return;
             }
 
             const rawUrl = document.getElementById('jiraUrlInput').value.trim();
             if (!rawUrl) {
-                showToast("Cảnh báo", "Vui lòng dán đường link Jira của dự án!", true);
+                showCustomAlert("Cảnh báo", "Vui lòng dán đường link Jira của dự án!", true);
                 return;
             }
 
             const parsed = parseJiraUrl(rawUrl);
             if (!parsed || !parsed.domain) {
-                showToast("Lỗi Link Jira", "Đường link Jira không đúng định dạng. Vui lòng kiểm tra lại!", true);
+                showCustomAlert("Lỗi Link Jira", "Đường link Jira không đúng định dạng. Vui lòng kiểm tra lại!", true);
                 return;
             }
 
@@ -952,7 +867,7 @@
                     const scriptEl = document.getElementById('jiraJsonpScript');
                     if (scriptEl) scriptEl.remove();
 
-                    showToast("Thời gian chờ quá lâu", "Không nhận được phản hồi từ Proxy. Vui lòng thử lại!", true);
+                    showCustomAlert("Thời gian chờ quá lâu (Timeout)", "Hệ thống không nhận được phản hồi từ Google Apps Script Proxy. Vui lòng thử lại!", true);
                 }
             }, 30000);
 
@@ -968,12 +883,12 @@
                 if (scriptEl) scriptEl.remove();
 
                 if (!json) {
-                    showToast("Lỗi Dữ Liệu", "Google Script trả về dữ liệu rỗng!", true);
+                    showCustomAlert("Lỗi Dữ Liệu", "Google Script trả về dữ liệu rỗng!", true);
                     return;
                 }
 
                 if (json.error) {
-                    showToast("Lỗi tải dữ liệu Jira", json.error, true);
+                    showCustomAlert("Lỗi tải dữ liệu Jira", json.error, true);
                     return;
                 }
 
@@ -983,7 +898,7 @@
 
                 const issues = json.issues || [];
                 if (issues.length === 0) {
-                    showToast("Thông báo", "Không tìm thấy ticket nào từ đường link Jira này!", true);
+                    showCustomAlert("Thông báo", "Không tìm thấy ticket nào từ đường link Jira này!", true);
                     return;
                 }
 
@@ -1006,7 +921,7 @@
                 buildDynamicStatusFilters();
                 processData();
 
-                showToast("Tải Thành Công", `Đã tải thành công ${rawJiraData.length} ticket từ Jira.`);
+                showCustomAlert("Thành công!", "Đã tải thành công " + rawJiraData.length + " ticket từ Jira!");
             };
 
             const existingScript = document.getElementById('jiraJsonpScript');
@@ -1025,7 +940,7 @@
                 btn.disabled = false;
                 btn.innerHTML = origBtnHtml;
                 script.remove();
-                showToast("Lỗi Kết Nối", "Không thể tải Script từ Proxy. Vui lòng kiểm tra lại quyền đăng nhập!", true);
+                showCustomAlert("Lỗi Kết Nối", "Không thể tải Script từ App Script Proxy. Vui lòng kiểm tra lại quyền đăng nhập tài khoản!", true);
             };
 
             document.body.appendChild(script);
@@ -1056,7 +971,7 @@
             google.accounts.id.disableAutoSelect();
             localStorage.removeItem('jira_google_user');
             updateAuthUI();
-            showToast('Đăng xuất', 'Bạn đã đăng xuất tài khoản Google thành công.');
+            showCustomAlert('Đăng xuất', 'Bạn đã đăng xuất tài khoản Google thành công.');
         }
 
         function getFullTicketKey(key) {
@@ -1472,13 +1387,16 @@
         }
 
         function parseProgressDataFromMatrix(rows) {
+            // TÌM KIẾM MẠNH MẼ ĐỂ LẤY LINK TESTCASE TỪ SHEET (Dù ở A1 hay rải rác)
             let testcaseLinkFromSheet = "";
             if (rows && rows.length > 0) {
+                // Quét 30 dòng, 10 cột đầu tiên để bắt bằng được raw link drive/sheet
                 outerLoop:
                 for (let i = 0; i < Math.min(rows.length, 30); i++) {
                     if (!rows[i]) continue;
                     for (let j = 0; j < Math.min(rows[i].length, 10); j++) {
                         let cellVal = String(rows[i][j]).trim();
+                        // Dùng Regex lấy link
                         let urlMatch = cellVal.match(/https?:\/\/[^\s]+/i);
                         if (urlMatch) {
                             let url = urlMatch[0];
@@ -1490,6 +1408,7 @@
                     }
                 }
                 
+                // Fallback nếu không chứa chữ drive/docs, nhưng có http ở dòng 1
                 if (!testcaseLinkFromSheet && rows[0]) {
                     for (let j = 0; j < Math.min(rows[0].length, 10); j++) {
                         let cellVal = String(rows[0][j]).trim();
@@ -1587,13 +1506,9 @@
             };
 
             const lines = [];
-            if (doneRaw.length > 0 || (!isZeroPct(doneOverall) && doneOverall !== "0%")) { lines.push('- DONE: ' + formatPctDisplayFixed(doneOverall)); lines.push(...consolidate(doneRaw)); }
-            if (inProgressRaw.length > 0 || (!isZeroPct(inProgressOverall) && inProgressOverall !== "0%")) { lines.push('- IN PROGRESS: ' + formatPctDisplayFixed(inProgressOverall)); lines.push(...consolidate(inProgressRaw)); }
-            if (remainingRaw.length > 0 || (!isZeroPct(remainingOverall) && remainingOverall !== "0%")) { lines.push('- REMAINING: ' + formatPctDisplayFixed(remainingOverall)); lines.push(...consolidate(remainingRaw)); }
-
-            if (lines.length === 0) {
-                lines.push('- Tiến độ: Chưa cập nhật (Hoặc sai định dạng) trong Sheet');
-            }
+            if (!isZeroPct(doneOverall) && doneRaw.length > 0) { lines.push('- DONE: ' + formatPctDisplayFixed(doneOverall)); lines.push(...consolidate(doneRaw)); }
+            if (!isZeroPct(inProgressOverall) && inProgressRaw.length > 0) { lines.push('- IN PROGRESS: ' + formatPctDisplayFixed(inProgressOverall)); lines.push(...consolidate(inProgressRaw)); }
+            if (!isZeroPct(remainingOverall) && remainingRaw.length > 0) { lines.push('- REMAINING: ' + formatPctDisplayFixed(remainingOverall)); lines.push(...consolidate(remainingRaw)); }
 
             return {
                 text: lines.join('\n'),
@@ -1604,7 +1519,10 @@
 
         function fetchGSheetProgressReport(gasUrl, sheetName) {
             return new Promise((resolve) => {
-                if (!gasUrl.includes("script.google.com")) return resolve(null);
+                if (!gasUrl.includes("script.google.com")) {
+                    showCustomAlert('Lỗi URL API', 'Đường link Google Apps Script không hợp lệ!', true);
+                    return resolve(null);
+                }
 
                 const callbackName = 'jsonpCallback_' + Math.round(100000 * Math.random());
                 let fetchUrl = gasUrl;
@@ -1612,24 +1530,11 @@
                 fetchUrl += separator + 'callback=' + callbackName;
                 if (sheetName) fetchUrl += '&sheet=' + encodeURIComponent(sheetName);
 
-                let isResolved = false;
-                const timeoutId = setTimeout(() => {
-                    if (!isResolved) {
-                        isResolved = true;
-                        delete window[callbackName];
-                        console.warn('Lỗi Timeout: Hết thời gian chờ phản hồi từ API Google Sheet.');
-                        resolve(null);
-                    }
-                }, 10000);
-
                 window[callbackName] = function(data) {
-                    if (isResolved) return;
-                    isResolved = true;
-                    clearTimeout(timeoutId);
                     delete window[callbackName];
                     document.body.removeChild(script);
                     if (data.success === false) {
-                        console.warn('Lỗi từ Google Script:', data.message || 'Không tìm thấy Sheet!');
+                        showCustomAlert('Lỗi từ Google Script', data.message || 'Không tìm thấy Sheet!', true);
                         resolve(null);
                     } else {
                         resolve(parseProgressDataFromMatrix(data.values));
@@ -1639,18 +1544,16 @@
                 const script = document.createElement('script');
                 script.src = fetchUrl;
                 script.onerror = function() {
-                    if (isResolved) return;
-                    isResolved = true;
-                    clearTimeout(timeoutId);
                     delete window[callbackName];
                     document.body.removeChild(script);
-                    console.warn('Lỗi Kết Nối API: Không thể tải dữ liệu từ Google Sheet.');
+                    showCustomAlert('Lỗi Kết Nối API', 'Không thể lấy dữ liệu từ Google Sheet.', true);
                     resolve(null);
                 };
                 document.body.appendChild(script);
             });
         }
 
+        // GENERATE REPORT CHUẨN: TỰ ĐỘNG SINH LINK JIRA TỪ PROJECT KEY VÀ BOARD ID
         async function confirmAndCopyReport(skipTagFilter = false) {
             let allowedTags = [];
             
@@ -1676,6 +1579,7 @@
                 const tagMode = document.getElementById('tagModeSelect').value;
                 const gasUrl = URL_REPORT_API;
                 
+                // LẤY SHEET NAME HOẶC TỰ NHẬN DIỆN TỪ GAME NAME NẾU TRỐNG
                 let sheetName = document.getElementById('sheetNameInput') ? document.getElementById('sheetNameInput').value.trim() : '';
                 const gameName = document.getElementById('reportGameNameInput') ? document.getElementById('reportGameNameInput').value.trim() : '';
                 
@@ -1696,10 +1600,12 @@
                     if (parts.length === 3) dateStr = parts[2] + '/' + parts[1] + '/' + parts[0];
                 }
 
+                // Lấy thông tin Header
                 const verGame = document.getElementById('reportVersionGameInput') ? document.getElementById('reportVersionGameInput').value.trim() : '';
                 const verApp = document.getElementById('reportVersionAppInput') ? document.getElementById('reportVersionAppInput').value.trim() : '';
                 const envText = document.getElementById('reportEnvInput') ? document.getElementById('reportEnvInput').value.trim() : '';
                 
+                // Lấy trạng thái Checkbox & Links
                 const isIframeChecked = document.getElementById('cbIframe') ? document.getElementById('cbIframe').checked : false;
                 const isPreprodChecked = document.getElementById('cbPreprod') ? document.getElementById('cbPreprod').checked : false;
                 const isWebappChecked = document.getElementById('cbWebapp') ? document.getElementById('cbWebapp').checked : false;
@@ -1710,6 +1616,7 @@
                 const linkWebapp = document.getElementById('reportLinkWebappInput') ? document.getElementById('reportLinkWebappInput').value.trim() : '';
                 const linkAppname = document.getElementById('reportLinkAppnameInput') ? document.getElementById('reportLinkAppnameInput').value.trim() : '';
                 
+                // TỰ ĐỘNG SINH LINK JIRA THEO CHUẨN KHI TÍCH CHỌN "Link Jira"
                 let generatedJiraLink = "";
                 if (currentProjectKey && currentJiraDomain) {
                     generatedJiraLink = `${currentJiraDomain}/jira/software/projects/${currentProjectKey}/boards`;
@@ -1762,24 +1669,18 @@
                 let buildStatusStr = '- Build status: ' + totalSelectedTickets + ' ' + ticketWord + statsString + ' / Total: ' + totalFileTickets + ' Tickets';
 
                 let progressReportObj = null;
-                let isSheetError = false;
-
                 if (gasUrl && sheetName) {
                     progressReportObj = await fetchGSheetProgressReport(gasUrl, sheetName);
-                    if (!progressReportObj) {
-                        isSheetError = true;
-                    }
-                } else {
-                    isSheetError = true;
                 }
 
+                // ƯU TIÊN LẤY LINK TESTCASE TỪ GOOGLE SHEET TRƯỚC (NẾU CÓ), SAU ĐÓ MỚI ĐẾN CLIPBOARD
                 let sheetTestcase = (progressReportObj && progressReportObj.testcaseLink) ? progressReportObj.testcaseLink : '';
                 let clipboardTestcase = document.getElementById('reportTestcaseInput') ? document.getElementById('reportTestcaseInput').value.trim() : '';
                 let testcaseLinkToUse = sheetTestcase || clipboardTestcase;
 
                 let reportLines = [];
 
-                // HEADER REPORT
+                // HEADER REPORT (CHỈ HIỂN THỊ DÒNG NÀO CÓ GIÁ TRỊ)
                 if (gameName) reportLines.push('Report for ' + gameName + (dateStr ? ' (' + dateStr + ')' : ''));
                 if (verGame) reportLines.push('Version game: ' + verGame);
                 if (verApp) reportLines.push('Version App: ' + verApp);
@@ -1792,7 +1693,7 @@
                     }
                 }
                 
-                // SECTION LINKS
+                // SECTION LINKS DẠNG CÂY BULLET (CHỈ HIỂN THỊ NẾU ĐƯỢC CHỌN & CÓ GIÁ TRỊ)
                 const hasSubLinks = (isIframeChecked && linkIframe) || (isPreprodChecked && linkPreprod) || (isWebappChecked && linkWebapp) || (isAppnameChecked && linkAppname);
 
                 if (hasSubLinks) {
@@ -1815,8 +1716,6 @@
 
                 if (progressReportObj && progressReportObj.text) {
                     reportLines.push(progressReportObj.text);
-                } else if (sheetName) {
-                    reportLines.push('- Tiến độ: [Lỗi API] Không lấy được dữ liệu từ Sheet (Hoặc do sai ID/URL)');
                 }
                 reportLines.push('---------------------------------------------');
 
@@ -1941,22 +1840,45 @@
 
                 await navigator.clipboard.writeText(reportLines.join('\n'));
                 if (!skipTagFilter) closeTagModal();
-                
-                // HIỂN THỊ TOAST TỔNG HỢP DUY NHẤT LÚC COPY
-                if (isSheetError && sheetName) {
-                    showToast('Cảnh báo Báo Cáo', 'Đã copy Báo cáo nhưng bị thiếu phần dữ liệu Google Sheet do lỗi mạng/API.', true);
-                } else {
-                    showToast('Copy Thành Công!', 'Báo Cáo Daily theo Mẫu Mới đã được sao chép vào Clipboard.');
-                }
+                showCustomAlert('Copy Thành Công!', 'Báo Cáo Daily theo Mẫu Mới đã được sao chép vào Clipboard.');
 
             } catch (err) {
                 console.error('Lỗi khi copy:', err);
-                showToast('Có lỗi xảy ra', 'Không thể tự động copy, vui lòng kiểm tra lại quyền truy cập Clipboard.', true);
+                showCustomAlert('Có lỗi xảy ra', 'Không thể tự động copy, vui lòng kiểm tra lại quyền truy cập Clipboard.', true);
             } finally {
                 copyBtn.disabled = false;
                 copyBtn.innerHTML = originalBtnHtml;
             }
         }
+
+        function showCustomAlert(title, message, isError = false) {
+            const modal = document.getElementById('customAlertModal');
+            document.getElementById('customAlertTitle').innerText = title;
+            document.getElementById('customAlertMessage').innerText = message;
+            const iconContainer = document.getElementById('customAlertIcon');
+
+            if (isError) {
+                iconContainer.className = "w-20 h-20 bg-rose-100 text-rose-600 rounded-full flex items-center justify-center mx-auto text-4xl shadow-inner";
+                iconContainer.innerHTML = '<i class="fa-solid fa-triangle-exclamation"></i>';
+            } else {
+                iconContainer.className = "w-20 h-20 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center mx-auto text-4xl shadow-inner";
+                iconContainer.innerHTML = '<i class="fa-solid fa-circle-check"></i>';
+            }
+            modal.classList.remove('hidden');
+        }
+
+        function closeModal(modalId) {
+            const modal = document.getElementById(modalId);
+            if (modal) modal.classList.add('hidden');
+        }
+
+        function closeCustomAlert() {
+            closeModal('customAlertModal');
+        }
+
+        function saveScopeTesting() { localStorage.setItem('jira_scope_testing', document.getElementById('scopeOfTestingInput').value); }
+        function saveQCMembers() { localStorage.setItem('jira_qc_members', document.getElementById('qcMembersInput').value); }
+        function saveGSheetApiData() { localStorage.setItem('jira_sheet_name', document.getElementById('sheetNameInput').value.trim()); }
     </script>
 </body>
 </html>
