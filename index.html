@@ -578,6 +578,7 @@
             }, 3500);
         }
 
+        // Tương thích ngược với các lệnh gọi Alert cũ
         function showCustomAlert(title, message, isError = false) {
             showToast(title, message, isError);
         }
@@ -792,24 +793,33 @@
                 const iframeMatch = text.match(/^\s*(?:[•\-\*]\s*)?Iframe:\s*(.*)/im);
                 if (iframeMatch && iframeMatch[1].trim()) {
                     if (document.getElementById('reportLinkIframeInput')) document.getElementById('reportLinkIframeInput').value = iframeMatch[1].trim();
+                    if (document.getElementById('cbIframe')) document.getElementById('cbIframe').checked = true;
                     filledCount++;
                 }
 
                 const preprodMatch = text.match(/^\s*(?:[•\-\*]\s*)?Preprod:\s*(.*)/im);
                 if (preprodMatch && preprodMatch[1].trim()) {
                     if (document.getElementById('reportLinkPreprodInput')) document.getElementById('reportLinkPreprodInput').value = preprodMatch[1].trim();
+                    if (document.getElementById('cbPreprod')) document.getElementById('cbPreprod').checked = true;
                     filledCount++;
                 }
 
                 const webappMatch = text.match(/^\s*(?:[•\-\*]\s*)?Webapp:\s*(.*)/im);
                 if (webappMatch && webappMatch[1].trim()) {
                     if (document.getElementById('reportLinkWebappInput')) document.getElementById('reportLinkWebappInput').value = webappMatch[1].trim();
+                    if (document.getElementById('cbWebapp')) document.getElementById('cbWebapp').checked = true;
                     filledCount++;
                 }
 
                 const appnameMatch = text.match(/^\s*(?:[•\-\*]\s*)?App name:\s*(.*)/im);
                 if (appnameMatch && appnameMatch[1].trim()) {
                     if (document.getElementById('reportLinkAppnameInput')) document.getElementById('reportLinkAppnameInput').value = appnameMatch[1].trim();
+                    if (document.getElementById('cbAppname')) document.getElementById('cbAppname').checked = true;
+                    filledCount++;
+                }
+
+                const jiraLinkMatch = text.match(/^Link Jira:\s*(.*)/im);
+                if (jiraLinkMatch) {
                     filledCount++;
                 }
 
@@ -833,6 +843,7 @@
                     filledCount++;
                 }
 
+                toggleLinkInputs();
                 saveHeaderConfig();
 
                 if (filledCount > 0) {
@@ -1520,7 +1531,11 @@
                     doneRaw.push({ name: item.name, val: "Passed", status: item.colG });
                 }
                 else if ((item.pctNum !== null && item.pctNum > 0 && item.pctNum < 100) || isInProgressStatus) {
-                    inProgressRaw.push({ name: item.name, val: formatPctDisplayFixed(valToUse), status: item.colG });
+                    let displayVal = formatPctDisplayFixed(valToUse);
+                    if (item.pctNum !== null && item.pctNum > 0 && item.pctNum < 100) {
+                        displayVal = "remain " + displayVal;
+                    }
+                    inProgressRaw.push({ name: item.name, val: displayVal, status: item.colG });
                 }
                 else if (isHundred || ['100%','1','100'].includes(String(item.colE).trim())) {
                     remainingRaw.push({ name: item.name, val: formatPctDisplayFixed(valToUse), status: item.colG });
@@ -1547,9 +1562,13 @@
             };
 
             const lines = [];
-            if (doneRaw.length > 0 || !isZeroPct(doneOverall)) { lines.push('- DONE: ' + formatPctDisplayFixed(doneOverall)); lines.push(...consolidate(doneRaw)); }
-            if (inProgressRaw.length > 0 || !isZeroPct(inProgressOverall)) { lines.push('- IN PROGRESS: ' + formatPctDisplayFixed(inProgressOverall)); lines.push(...consolidate(inProgressRaw)); }
-            if (remainingRaw.length > 0 || !isZeroPct(remainingOverall)) { lines.push('- REMAINING: ' + formatPctDisplayFixed(remainingOverall)); lines.push(...consolidate(remainingRaw)); }
+            if (doneRaw.length > 0 || (!isZeroPct(doneOverall) && doneOverall !== "0%")) { lines.push('- DONE: ' + formatPctDisplayFixed(doneOverall)); lines.push(...consolidate(doneRaw)); }
+            if (inProgressRaw.length > 0 || (!isZeroPct(inProgressOverall) && inProgressOverall !== "0%")) { lines.push('- IN PROGRESS: ' + formatPctDisplayFixed(inProgressOverall)); lines.push(...consolidate(inProgressRaw)); }
+            if (remainingRaw.length > 0 || (!isZeroPct(remainingOverall) && remainingOverall !== "0%")) { lines.push('- REMAINING: ' + formatPctDisplayFixed(remainingOverall)); lines.push(...consolidate(remainingRaw)); }
+
+            if (lines.length === 0) {
+                lines.push('- Tiến độ: Chưa cập nhật (Hoặc sai định dạng) trong Sheet');
+            }
 
             return {
                 text: lines.join('\n'),
@@ -1829,7 +1848,6 @@
                         return r; 
                     };
 
-                    // LOGIC MỚI: Kiểm tra tổng số bug tất cả các tag
                     const isTotalLessThan5 = totalSelectedTickets < 5;
 
                     tagOrder.forEach((tag, index) => {
@@ -1850,7 +1868,6 @@
                                 
                                 const isMajorPriority = ['Highest', 'High'].includes(p);
                                 
-                                // Nếu Tổng < 5 HOẶC là bug Major HOẶC thuộc tag Special (Improvement, Question) -> List chi tiết
                                 if (isTotalLessThan5 || isMajorPriority || isSpecialTag) {
                                     priorityGroups[p].forEach(t => {
                                         reportLines.push('  + ' + t.fullKey + ': ' + t.cleanSummary);
