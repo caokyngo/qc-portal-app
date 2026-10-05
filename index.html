@@ -228,7 +228,7 @@
                                     <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
                                         <!-- Smart Input: Floating Label -->
                                         <div class="relative group">
-                                            <input type="text" id="reportGameNameInput" oninput="saveHeaderConfig()" class="block w-full h-[48px] px-3.5 pt-5 pb-1.5 text-sm text-slate-900 bg-slate-50/50 border border-slate-300 rounded-xl appearance-none focus:outline-none focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 peer transition-all shadow-sm" placeholder=" " />
+                                            <input type="text" id="reportGameNameInput" oninput="saveHeaderConfig(); autoUpdateSheetName();" class="block w-full h-[48px] px-3.5 pt-5 pb-1.5 text-sm text-slate-900 bg-slate-50/50 border border-slate-300 rounded-xl appearance-none focus:outline-none focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 peer transition-all shadow-sm" placeholder=" " />
                                             <label class="absolute text-xs font-bold text-slate-400 duration-300 transform -translate-y-3 scale-75 top-3.5 z-10 origin-[0] left-3.5 peer-focus:text-indigo-600 peer-placeholder-shown:scale-100 peer-placeholder-shown:translate-y-0 peer-placeholder-shown:font-medium peer-focus:scale-75 peer-focus:-translate-y-3 pointer-events-none">
                                                 ID & Game Name
                                             </label>
@@ -682,6 +682,18 @@
             });
         }
 
+        function autoUpdateSheetName() {
+            const gameName = document.getElementById('reportGameNameInput')?.value.trim();
+            const sheetInput = document.getElementById('sheetNameInput');
+            if (gameName && sheetInput) {
+                const match = gameName.match(/^(\d+)/);
+                if (match) {
+                    sheetInput.value = match[1];
+                    saveGSheetApiData();
+                }
+            }
+        }
+
         function saveHeaderConfig() {
             const container = document.getElementById('envChipContainer');
             const activeChips = container ? Array.from(container.querySelectorAll('.active-chip')).map(btn => btn.dataset.value) : [];
@@ -762,7 +774,10 @@
 
                 const reportForMatch = text.match(/Report for\s+(.*?)\s*\((.*?)\)/i);
                 if (reportForMatch) {
-                    if (document.getElementById('reportGameNameInput')) document.getElementById('reportGameNameInput').value = reportForMatch[1].trim();
+                    if (document.getElementById('reportGameNameInput')) {
+                        document.getElementById('reportGameNameInput').value = reportForMatch[1].trim();
+                        autoUpdateSheetName();
+                    }
                     filledCount++;
                 }
 
@@ -793,33 +808,24 @@
                 const iframeMatch = text.match(/^\s*(?:[•\-\*]\s*)?Iframe:\s*(.*)/im);
                 if (iframeMatch && iframeMatch[1].trim()) {
                     if (document.getElementById('reportLinkIframeInput')) document.getElementById('reportLinkIframeInput').value = iframeMatch[1].trim();
-                    if (document.getElementById('cbIframe')) document.getElementById('cbIframe').checked = true;
                     filledCount++;
                 }
 
                 const preprodMatch = text.match(/^\s*(?:[•\-\*]\s*)?Preprod:\s*(.*)/im);
                 if (preprodMatch && preprodMatch[1].trim()) {
                     if (document.getElementById('reportLinkPreprodInput')) document.getElementById('reportLinkPreprodInput').value = preprodMatch[1].trim();
-                    if (document.getElementById('cbPreprod')) document.getElementById('cbPreprod').checked = true;
                     filledCount++;
                 }
 
                 const webappMatch = text.match(/^\s*(?:[•\-\*]\s*)?Webapp:\s*(.*)/im);
                 if (webappMatch && webappMatch[1].trim()) {
                     if (document.getElementById('reportLinkWebappInput')) document.getElementById('reportLinkWebappInput').value = webappMatch[1].trim();
-                    if (document.getElementById('cbWebapp')) document.getElementById('cbWebapp').checked = true;
                     filledCount++;
                 }
 
                 const appnameMatch = text.match(/^\s*(?:[•\-\*]\s*)?App name:\s*(.*)/im);
                 if (appnameMatch && appnameMatch[1].trim()) {
                     if (document.getElementById('reportLinkAppnameInput')) document.getElementById('reportLinkAppnameInput').value = appnameMatch[1].trim();
-                    if (document.getElementById('cbAppname')) document.getElementById('cbAppname').checked = true;
-                    filledCount++;
-                }
-
-                const jiraLinkMatch = text.match(/^Link Jira:\s*(.*)/im);
-                if (jiraLinkMatch) {
                     filledCount++;
                 }
 
@@ -843,7 +849,6 @@
                     filledCount++;
                 }
 
-                toggleLinkInputs();
                 saveHeaderConfig();
 
                 if (filledCount > 0) {
@@ -1442,6 +1447,10 @@
             } else return { val: null, unrolled: allUnrolled };
         }
 
+        function saveGSheetApiData() { 
+            localStorage.setItem('jira_sheet_name', document.getElementById('sheetNameInput').value.trim()); 
+        }
+
         function parseProgressDataFromMatrix(rows) {
             let testcaseLinkFromSheet = "";
             if (rows && rows.length > 0) {
@@ -1542,7 +1551,7 @@
                 }
             });
 
-            const consolidate = (rawItems) => {
+            const consolidate = (rawItems, hideValue = false) => {
                 let blocks = [], currentBlock = null, lines = [];
                 rawItems.forEach(item => {
                     let parsed = parseItemName(item.name); parsed.val = item.val;
@@ -1556,15 +1565,21 @@
                         if (!localTree[item.platform||''][item.os||'']) localTree[item.platform||''][item.os||''] = {};
                         localTree[item.platform||''][item.os||''][item.browser||''] = { val: item.val, orig: item.orig };
                     });
-                    rollupTree(localTree, globalTree[block.base], [block.base]).unrolled.forEach(u => lines.push('  + ' + u.name + ': ' + u.val));
+                    rollupTree(localTree, globalTree[block.base], [block.base]).unrolled.forEach(u => {
+                        if (hideValue) {
+                            lines.push('  + ' + u.name);
+                        } else {
+                            lines.push('  + ' + u.name + ': ' + u.val);
+                        }
+                    });
                 });
                 return lines;
             };
 
             const lines = [];
-            if (doneRaw.length > 0 || (!isZeroPct(doneOverall) && doneOverall !== "0%")) { lines.push('- DONE: ' + formatPctDisplayFixed(doneOverall)); lines.push(...consolidate(doneRaw)); }
-            if (inProgressRaw.length > 0 || (!isZeroPct(inProgressOverall) && inProgressOverall !== "0%")) { lines.push('- IN PROGRESS: ' + formatPctDisplayFixed(inProgressOverall)); lines.push(...consolidate(inProgressRaw)); }
-            if (remainingRaw.length > 0 || (!isZeroPct(remainingOverall) && remainingOverall !== "0%")) { lines.push('- REMAINING: ' + formatPctDisplayFixed(remainingOverall)); lines.push(...consolidate(remainingRaw)); }
+            if (doneRaw.length > 0 || (!isZeroPct(doneOverall) && doneOverall !== "0%")) { lines.push('- DONE: ' + formatPctDisplayFixed(doneOverall)); lines.push(...consolidate(doneRaw, true)); }
+            if (inProgressRaw.length > 0 || (!isZeroPct(inProgressOverall) && inProgressOverall !== "0%")) { lines.push('- IN PROGRESS: ' + formatPctDisplayFixed(inProgressOverall)); lines.push(...consolidate(inProgressRaw, false)); }
+            if (remainingRaw.length > 0 || (!isZeroPct(remainingOverall) && remainingOverall !== "0%")) { lines.push('- REMAINING: ' + formatPctDisplayFixed(remainingOverall)); lines.push(...consolidate(remainingRaw, true)); }
 
             if (lines.length === 0) {
                 lines.push('- Tiến độ: Chưa cập nhật (Hoặc sai định dạng) trong Sheet');
