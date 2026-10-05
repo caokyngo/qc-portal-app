@@ -1579,7 +1579,7 @@
             const lines = [];
             if (doneRaw.length > 0 || (!isZeroPct(doneOverall) && doneOverall !== "0%")) { lines.push('- DONE: ' + formatPctDisplayFixed(doneOverall)); lines.push(...consolidate(doneRaw, true)); }
             if (inProgressRaw.length > 0 || (!isZeroPct(inProgressOverall) && inProgressOverall !== "0%")) { lines.push('- IN PROGRESS: ' + formatPctDisplayFixed(inProgressOverall)); lines.push(...consolidate(inProgressRaw, false)); }
-            if (remainingRaw.length > 0 || (!isZeroPct(remainingOverall) && remainingOverall !== "0%")) { lines.push('- REMAINING: ' + formatPctDisplayFixed(remainingOverall)); lines.push(...consolidate(remainingRaw, true)); }
+            if (remainingRaw.length > 0 || (!isZeroPct(remainingOverall) && remainingOverall !== "0%")) { lines.push('- REMAINS: ' + formatPctDisplayFixed(remainingOverall)); lines.push(...consolidate(remainingRaw, true)); }
 
             if (lines.length === 0) {
                 lines.push('- Tiến độ: Chưa cập nhật (Hoặc sai định dạng) trong Sheet');
@@ -1722,8 +1722,11 @@
                     const status = (getColumnValue(row, ['Status', 'Trạng thái']) || 'N/A').toString().trim();
                     const sUpper = status.toUpperCase();
                     
-                    if (sUpper.includes('DEPLOYED')) countDeployed++;
-                    else if (sUpper.includes('TESTING') || sUpper === 'IN TEST' || sUpper === 'IN-TEST') countInTesting++;
+                    if (sUpper.includes('DEPLOYED')) {
+                        countDeployed++;
+                    } else if (sUpper.includes('TESTING') || sUpper.includes('PROGRESS') || sUpper.includes('TEST')) {
+                        countInTesting++;
+                    }
 
                     if (!selectedStatusSet.has(status)) return;
 
@@ -1891,7 +1894,7 @@
                             }
                         });
 
-                        if (index < tagOrder.length - 1) reportLines.push('-----');
+                        if (index < tagOrder.length - 1) reportLines.push('----------');
                     });
                 } else {
                     reportLines.push('B. [TICKETS]');
@@ -1910,7 +1913,20 @@
 
                 const totalUnverified = countDeployed + countInTesting;
                 if (totalUnverified > 0) {
-                    reportLines.push('- ' + totalUnverified + ' bugs remain unverified in the "In-Testing" column');
+                    const unverifiedCols = [];
+                    if (countDeployed > 0) unverifiedCols.push('"Deployed"');
+                    if (countInTesting > 0) unverifiedCols.push('"In-Testing"');
+
+                    let colWording = '';
+                    if (unverifiedCols.length === 1) {
+                        colWording = unverifiedCols[0] + ' column';
+                    } else if (unverifiedCols.length > 1) {
+                        colWording = unverifiedCols.join(' and ') + ' columns';
+                    } else {
+                        colWording = 'column';
+                    }
+
+                    reportLines.push('- ' + totalUnverified + ' bugs remain unverified in the ' + colWording);
                 }
 
                 if (qcMembers) {
