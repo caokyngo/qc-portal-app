@@ -1376,6 +1376,7 @@
             document.querySelectorAll('.tag-select-cb').forEach(cb => cb.checked = checked);
         }
 
+        // HÀM FORMAT GIỮ NGUYÊN % TỪ GOOGLE SHEET (KHÔNG LÀM TRÒN)
         function formatPctDisplayFixed(val) {
             if (val === null || val === undefined || val === '') return '0%';
             let s = String(val).trim();
@@ -1383,8 +1384,11 @@
             if (s.endsWith('%')) return s;
             let num = parseFloat(s);
             if (!isNaN(num)) {
-                if (num > 0 && num <= 1) return Math.round(num * 100) + '%';
-                return Math.round(num) + '%';
+                if (num > 0 && num <= 1) {
+                    let pct = Math.round(num * 10000) / 100;
+                    return pct + '%';
+                }
+                return s + '%';
             }
             return s;
         }
@@ -1579,7 +1583,7 @@
             const lines = [];
             if (doneRaw.length > 0 || (!isZeroPct(doneOverall) && doneOverall !== "0%")) { lines.push('- DONE: ' + formatPctDisplayFixed(doneOverall)); lines.push(...consolidate(doneRaw, true)); }
             if (inProgressRaw.length > 0 || (!isZeroPct(inProgressOverall) && inProgressOverall !== "0%")) { lines.push('- IN PROGRESS: ' + formatPctDisplayFixed(inProgressOverall)); lines.push(...consolidate(inProgressRaw, false)); }
-            if (remainingRaw.length > 0 || (!isZeroPct(remainingOverall) && remainingOverall !== "0%")) { lines.push('- REMAINS: ' + formatPctDisplayFixed(remainingOverall)); lines.push(...consolidate(remainingRaw, true)); }
+            if (remainingRaw.length > 0 || (!isZeroPct(remainingOverall) && remainingOverall !== "0%")) { lines.push('- REMAINING: ' + formatPctDisplayFixed(remainingOverall)); lines.push(...consolidate(remainingRaw, true)); }
 
             if (lines.length === 0) {
                 lines.push('- Tiến độ: Chưa cập nhật (Hoặc sai định dạng) trong Sheet');
@@ -1724,7 +1728,7 @@
                     
                     if (sUpper.includes('DEPLOYED')) {
                         countDeployed++;
-                    } else if (sUpper.includes('TESTING') || sUpper.includes('PROGRESS') || sUpper.includes('TEST')) {
+                    } else if (sUpper.includes('TESTING') || sUpper.includes('IN TEST') || sUpper.includes('IN-TEST')) {
                         countInTesting++;
                     }
 
@@ -1911,6 +1915,7 @@
                     });
                 }
 
+                // LOGIC NOTE CỘT DEPLOYED & IN-TESTING LINH HOẠT
                 const totalUnverified = countDeployed + countInTesting;
                 if (totalUnverified > 0) {
                     const unverifiedCols = [];
