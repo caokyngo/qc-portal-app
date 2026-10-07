@@ -275,7 +275,7 @@
                                 <!-- Card 1: Thông tin chung -->
                                 <div>
                                     <h4 class="text-[11px] font-bold text-slate-400 uppercase tracking-widest mb-3 border-b border-slate-100 pb-1">1. Thông tin chung</h4>
-                                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                         <!-- Smart Input: Floating Label -->
                                         <div class="relative group">
                                             <input type="text" id="reportGameNameInput" oninput="saveHeaderConfig(); autoUpdateSheetName();" class="block w-full h-[48px] px-3.5 pt-5 pb-1.5 text-sm text-slate-900 bg-slate-50/50 border border-slate-300 rounded-xl appearance-none focus:outline-none focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 peer transition-all shadow-sm" placeholder=" " />
@@ -288,6 +288,15 @@
                                             <label class="absolute text-xs font-bold text-slate-400 duration-300 transform -translate-y-3 scale-75 top-3.5 z-10 origin-[0] left-3.5 peer-focus:text-indigo-600 peer-placeholder-shown:scale-100 peer-placeholder-shown:translate-y-0 peer-placeholder-shown:font-medium peer-focus:scale-75 peer-focus:-translate-y-3 pointer-events-none">
                                                 Version Game & Build
                                             </label>
+                                        </div>
+                                        <div class="relative group">
+                                            <select id="reportTestingStatusInput" onchange="saveHeaderConfig()" class="block w-full h-[48px] px-3.5 pt-5 pb-1.5 text-sm text-slate-900 bg-slate-50/50 border border-slate-300 rounded-xl appearance-none focus:outline-none focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 shadow-sm">
+                                                <option value="In-testing">In-testing</option>
+                                                <option value="failed">failed</option>
+                                                <option value="passed">passed</option>
+                                                <option value="pending">pending</option>
+                                            </select>
+                                            <label for="reportTestingStatusInput" class="absolute text-xs font-bold text-slate-400 top-1.5 left-3.5 pointer-events-none">Testing Status</label>
                                         </div>
                                         <div class="relative group">
                                             <input type="text" id="reportVersionAppInput" oninput="saveHeaderConfig()" class="block w-full h-[48px] px-3.5 pt-5 pb-1.5 text-sm text-slate-900 bg-slate-50/50 border border-slate-300 rounded-xl appearance-none focus:outline-none focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 peer transition-all shadow-sm" placeholder=" " />
@@ -791,6 +800,7 @@
                 gameName: document.getElementById('reportGameNameInput')?.value || '',
                 versionGame: document.getElementById('reportVersionGameInput')?.value || '',
                 versionApp: document.getElementById('reportVersionAppInput')?.value || '',
+                testingStatus: document.getElementById('reportTestingStatusInput')?.value || 'In-testing',
                 env: document.getElementById('reportEnvInput')?.value || '',
                 envChips: activeChips,
 
@@ -813,6 +823,7 @@
                 if (config.gameName !== undefined && document.getElementById('reportGameNameInput')) document.getElementById('reportGameNameInput').value = config.gameName;
                 if (config.versionGame !== undefined && document.getElementById('reportVersionGameInput')) document.getElementById('reportVersionGameInput').value = config.versionGame;
                 if (config.versionApp !== undefined && document.getElementById('reportVersionAppInput')) document.getElementById('reportVersionAppInput').value = config.versionApp;
+                if (config.testingStatus && document.getElementById('reportTestingStatusInput')) document.getElementById('reportTestingStatusInput').value = config.testingStatus;
                 if (config.env !== undefined && document.getElementById('reportEnvInput')) document.getElementById('reportEnvInput').value = config.env;
 
                 if (config.linkIframe !== undefined && document.getElementById('reportLinkIframeInput')) document.getElementById('reportLinkIframeInput').value = config.linkIframe;
@@ -874,6 +885,13 @@
                 if (verGameMatch) {
                     if (document.getElementById('reportVersionGameInput')) document.getElementById('reportVersionGameInput').value = verGameMatch[1].trim();
                     filledCount++;
+                }
+
+                const statusMatch = text.match(/Testing Status:\s*(In-testing|failed|passed|pending)/i);
+                if (statusMatch && document.getElementById('reportTestingStatusInput')) {
+                    const select = document.getElementById('reportTestingStatusInput');
+                    const matched = Array.from(select.options).find(option => option.value.toLowerCase() === statusMatch[1].toLowerCase());
+                    if (matched) { select.value = matched.value; saveHeaderConfig(); filledCount++; }
                 }
 
                 const verAppMatch = text.match(/Version App:\s*(.*)/i);
@@ -2217,6 +2235,7 @@
 
                 const verGame = document.getElementById('reportVersionGameInput') ? document.getElementById('reportVersionGameInput').value.trim() : '';
                 const verApp = document.getElementById('reportVersionAppInput') ? document.getElementById('reportVersionAppInput').value.trim() : '';
+                const testingStatus = document.getElementById('reportTestingStatusInput')?.value || 'In-testing';
                 const envText = document.getElementById('reportEnvInput') ? document.getElementById('reportEnvInput').value.trim() : '';
                 
                 const linkIframe = document.getElementById('reportLinkIframeInput') ? document.getElementById('reportLinkIframeInput').value.trim() : '';
@@ -2325,7 +2344,7 @@
                 // A. [SUMMARY]
                 reportLines.push('A. [SUMMARY]');
                 if (scopeText) reportLines.push('- Scope of testing: ' + scopeText);
-                reportLines.push('- Testing Status: In-testing');
+                reportLines.push('- Testing Status: ' + testingStatus);
                 reportLines.push(buildStatusStr);
 
                 if (progressReportObj && progressReportObj.text) {
