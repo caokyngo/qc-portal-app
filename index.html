@@ -249,9 +249,9 @@
                 <div id="reportDashboard" class="hidden space-y-6">
                     <div id="mainDashboardView" class="space-y-6">
                         
-                        <div id="reportSetupGrid" class="grid grid-cols-1 xl:grid-cols-2 gap-6 items-start">
+                        <div id="reportSetupGrid" class="grid grid-cols-1 xl:grid-cols-2 gap-6 items-stretch">
                         <!-- ================= GIAO DIỆN FORM CẤU HÌNH HIỆN ĐẠI ================= -->
-                        <section class="bg-white rounded-2xl shadow-sm border border-slate-200 w-full overflow-hidden">
+                        <section id="reportInfoCard" class="bg-white rounded-2xl shadow-sm border border-slate-200 w-full h-full flex flex-col overflow-hidden">
                             <!-- Header của Form -->
                             <div class="flex flex-col sm:flex-row sm:items-center justify-between border-b border-slate-100 px-5 py-4 bg-slate-50/50">
                                 <h3 class="text-base font-bold text-slate-800 flex items-center gap-2 mb-3 sm:mb-0">
@@ -262,7 +262,7 @@
                                 </button>
                             </div>
 
-                            <div class="p-5 space-y-6">
+                            <div class="p-5 space-y-6 flex-1">
                                 <!-- Card 1: Thông tin chung -->
                                 <div>
                                     <h4 class="text-[11px] font-bold text-slate-400 uppercase tracking-widest mb-3 border-b border-slate-100 pb-1">1. Thông tin chung</h4>
@@ -376,26 +376,26 @@
                             </div>
                         </section>
 
-                        <section class="bg-white rounded-xl shadow-sm border border-slate-200 p-4 sm:p-5 space-y-4 w-full">
-                            <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-slate-100 pb-4">
-                                <div class="flex items-center gap-2">
-                                    <i class="fa-solid fa-filter text-indigo-600 text-lg"></i>
-                                    <h2 class="text-base font-bold text-slate-800">Bộ lọc & Cấu hình Báo cáo</h2>
-                                </div>
-                                <div class="flex flex-col sm:flex-row flex-wrap items-stretch sm:items-center gap-3">
-                                    <div class="flex items-center gap-2">
-                                        <label class="text-xs font-semibold text-slate-600 whitespace-nowrap">Chế độ nhóm Tag:</label>
-                                        <select id="tagModeSelect" onchange="processData()" class="w-full sm:w-auto bg-slate-100 border border-slate-300 text-slate-700 text-xs rounded-lg p-2 focus:ring-2 focus:ring-indigo-500 outline-none font-medium">
-                                            <option value="primary">Chỉ lấy Tag chính đầu tiên [Tag 1]</option>
-                                            <option value="all">Đếm tất cả Tag trong Ticket</option>
-                                        </select>
+                        <section id="reportConfigCard" class="bg-white rounded-xl shadow-sm border border-slate-200 p-4 sm:p-5 space-y-4 w-full h-full flex flex-col">
+                            <div class="border-b border-slate-100 pb-4 space-y-3">
+                                <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                                    <div class="flex items-center gap-2 min-w-0">
+                                        <i class="fa-solid fa-filter text-indigo-600 text-lg"></i>
+                                        <h2 class="text-base font-bold text-slate-800">Bộ lọc & Cấu hình Báo cáo</h2>
                                     </div>
-                                    <button id="copyBtn" onclick="openTagSelectionModal()" class="w-full sm:w-auto inline-flex justify-center items-center gap-2 px-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-xl shadow-md hover:shadow-lg transform hover:-translate-y-0.5 transition-all">
+                                    <button id="copyBtn" onclick="openTagSelectionModal()" class="shrink-0 inline-flex justify-center items-center gap-2 px-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-xl shadow-md hover:shadow-lg transition-all">
                                         <i class="fa-solid fa-copy text-sm"></i> Xuất Báo Cáo
                                     </button>
                                 </div>
+                                <div class="flex flex-col sm:flex-row sm:items-center gap-2">
+                                    <label for="tagModeSelect" class="text-xs font-semibold text-slate-600 whitespace-nowrap">Chế độ nhóm Tag:</label>
+                                    <select id="tagModeSelect" onchange="processData()" class="w-full sm:flex-1 bg-slate-100 border border-slate-300 text-slate-700 text-xs rounded-lg p-2.5 focus:ring-2 focus:ring-indigo-500 outline-none font-medium">
+                                        <option value="primary">Chỉ lấy Tag chính đầu tiên [Tag 1]</option>
+                                        <option value="all">Đếm tất cả Tag trong Ticket</option>
+                                    </select>
+                                </div>
                             </div>
-                            
+
                             <div class="bg-indigo-50/50 border border-indigo-100 rounded-lg p-3 grid grid-cols-1 sm:grid-cols-2 gap-4">
                                 <div>
                                     <label class="block text-xs font-bold text-indigo-900 mb-1">
@@ -1174,6 +1174,8 @@
                 let projectName = "";
                 const filterPathMatch = url.pathname.match(/\/filters?\/(\d+)/i);
                 const filterId = url.searchParams.get('filter') || (filterPathMatch ? filterPathMatch[1] : '');
+                const boardPathMatch = url.pathname.match(/\/boards\/(\d+)(?:\/|$)/i);
+                const boardId = url.searchParams.get('rapidView') || url.searchParams.get('boardId') || (boardPathMatch ? boardPathMatch[1] : '');
 
                 if (url.searchParams.has('jql')) {
                     jql = url.searchParams.get('jql').replace(/[\r\n]+/g, ' ').trim();
@@ -1186,7 +1188,7 @@
                         jql = 'project = "' + projectName + '" ORDER BY created DESC';
                     }
                 }
-                return { domain, jql, filterId, projectName: projectName || "Jira Filter" };
+                return { domain, jql, filterId, boardId, projectName: projectName || "Jira Filter" };
             } catch (e) { return null; }
         }
 
@@ -1268,7 +1270,8 @@
                     return;
                 }
 
-                currentBoardId = json.boardId || null;
+                // Ưu tiên boardId có sẵn trong URL người dùng dán để giữ đúng board; nếu không có thì dùng boardId từ Apps Script.
+                currentBoardId = parsed.boardId || json.boardId || null;
                 currentProjectKey = json.projectKey || (parsed.projectName !== "Jira Filter" ? parsed.projectName : null);
                 currentJiraDomain = parsed.domain;
 
@@ -1554,18 +1557,28 @@
         }
 
         function buildDynamicStatusFilters() {
-            availableStatuses = [...new Set(rawJiraData.map(row => String(getColumnValue(row, ['Status', 'Trạng thái']) || '').trim()).filter(Boolean))].sort();
+            availableStatuses = [...new Set(rawJiraData.map(row => {
+                const value = getColumnValue(row, ['Status', 'Trạng thái']);
+                return value && value.toString().trim() ? value.toString().trim() : 'N/A';
+            }))].sort((a, b) => a.localeCompare(b));
+
             const container = document.getElementById('dynamicStatusContainer');
             container.innerHTML = '';
-            Object.entries(STATUS_GROUPS).forEach(([key, group]) => {
+            availableStatuses.forEach(status => {
                 const label = document.createElement('label');
-                label.className = 'flex items-center gap-2 cursor-pointer bg-slate-50 hover:bg-slate-100 px-3 py-1.5 rounded-lg border border-slate-200 transition font-semibold text-slate-700';
+                label.className = 'inline-flex items-center gap-2 cursor-pointer bg-slate-50 hover:bg-slate-100 px-3 py-1.5 rounded-lg border border-slate-200 transition font-semibold text-slate-700';
                 const checkbox = document.createElement('input');
-                checkbox.type = 'checkbox'; checkbox.className = 'status-dynamic-cb text-indigo-600 rounded';
-                checkbox.value = key; checkbox.checked = true; checkbox.onchange = () => processData();
-                const caption = document.createElement('span'); caption.textContent = group.label;
-                caption.title = availableStatuses.filter(status => getStatusGroup(status) === key).join(', ') || 'Không có ticket thuộc trạng thái này';
-                label.append(checkbox, caption); container.appendChild(label);
+                checkbox.type = 'checkbox';
+                checkbox.className = 'status-dynamic-cb text-indigo-600 rounded';
+                checkbox.value = status;
+                // Chỉ bật mặc định những status thuộc 3 nhóm yêu cầu và thực sự xuất hiện trong ticket.
+                checkbox.checked = Boolean(getStatusGroup(status));
+                checkbox.onchange = () => processData();
+                const caption = document.createElement('span');
+                caption.textContent = status;
+                caption.title = status;
+                label.append(checkbox, caption);
+                container.appendChild(label);
             });
         }
 
@@ -1575,8 +1588,7 @@
         }
 
         function getSelectedStatuses() {
-            const selectedGroups = new Set(Array.from(document.querySelectorAll('.status-dynamic-cb:checked')).map(cb => cb.value));
-            return new Set(availableStatuses.filter(status => selectedGroups.has(getStatusGroup(status))));
+            return new Set(Array.from(document.querySelectorAll('.status-dynamic-cb:checked')).map(cb => cb.value));
         }
 
         function processData() {
@@ -1990,7 +2002,7 @@
                 else if ((item.pctNum !== null && item.pctNum > 0 && item.pctNum < 100) || isInProgressStatus) {
                     let displayVal = formatPctDisplayFixed(valToUse);
                     if (item.pctNum !== null && item.pctNum > 0 && item.pctNum < 100) {
-                        displayVal = "remain " + displayVal;
+                        displayVal = "Remain " + displayVal;
                     }
                     inProgressRaw.push({ name: item.name, val: displayVal, status: item.colG });
                 }
@@ -2201,12 +2213,10 @@
                 const linkAppname = document.getElementById('reportLinkAppnameInput') ? document.getElementById('reportLinkAppnameInput').value.trim() : '';
                 
                 let generatedJiraLink = "";
-                if (currentProjectKey && currentJiraDomain) {
-                    generatedJiraLink = `${currentJiraDomain}/jira/software/projects/${currentProjectKey}/boards`;
-                    if (currentBoardId) {
-                        generatedJiraLink += `/${currentBoardId}`;
-                    }
+                if (currentProjectKey && currentJiraDomain && currentBoardId) {
+                    generatedJiraLink = `${currentJiraDomain}/jira/software/projects/${currentProjectKey}/boards/${currentBoardId}`;
                 } else {
+                    // Nếu không có boardId thì giữ URL gốc, tránh tạo link board bị thiếu ID ở cuối.
                     generatedJiraLink = document.getElementById('jiraUrlInput') ? document.getElementById('jiraUrlInput').value.trim() : '';
                 }
                 
