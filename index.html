@@ -55,6 +55,7 @@
         #loginOption, #userProfileBtn { height: 48px; min-width: 0; flex-wrap: nowrap; }
         #userProfileBtn { max-width: 190px; }
         #userNameDisplay { max-width: 104px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .app-header-change-link { flex: 0 0 auto; min-width: 78px; justify-content: center; white-space: nowrap; }
         @media (max-width: 1279px) {
             .app-header { grid-template-columns: minmax(0, 1fr) auto; }
             .app-header-center { display: none !important; }
@@ -66,6 +67,8 @@
             .app-header-actions { max-width: 48vw; gap: 8px; }
             .app-header-project { max-width: 48vw; gap: 6px; padding: 6px 8px; }
             .app-header-project-name { max-width: 100px; }
+            .app-header-change-link { min-width: 36px; padding-left: 8px; padding-right: 8px; }
+            .app-header-change-link-label { display: none; }
         }
         .travel-marquee { width: 100%; max-width: 460px; overflow: hidden; mask-image: linear-gradient(to right, transparent, black 8%, black 92%, transparent); -webkit-mask-image: linear-gradient(to right, transparent, black 8%, black 92%, transparent); }
         .travel-marquee-track { display: flex; width: max-content; animation: travel-marquee-scroll 18s linear infinite; will-change: transform; }
@@ -170,8 +173,8 @@
             <div class="app-header-actions flex justify-end items-center gap-4">
                 <div id="fileInfo" class="app-header-project hidden flex items-center gap-3 bg-indigo-50 px-4 py-2 rounded-xl border border-indigo-100 text-xs shadow-sm">
                     <div class="app-header-project-copy"><span class="text-indigo-400 font-medium">Jira Project:</span> <strong id="jiraProjectName" class="app-header-project-name text-indigo-800 font-bold">---</strong></div>
-                    <button onclick="changeJiraProject()" class="px-2.5 py-1.5 bg-indigo-600 hover:bg-indigo-500 text-white text-[11px] font-bold rounded-lg transition flex items-center gap-1.5 shadow-sm">
-                        <i class="fa-solid fa-arrows-rotate"></i> Đổi Link Jira
+                    <button type="button" onclick="changeJiraProject()" title="Đổi link Jira" aria-label="Đổi link Jira" class="app-header-change-link px-2.5 py-1.5 bg-indigo-600 hover:bg-indigo-500 text-white text-[11px] font-bold rounded-lg transition flex items-center gap-1.5 shadow-sm">
+                        <i class="fa-solid fa-arrows-rotate" aria-hidden="true"></i><span class="app-header-change-link-label">Đổi link</span>
                     </button>
                 </div>
                 
@@ -1555,9 +1558,9 @@
         }
 
         const STATUS_GROUPS = {
-            inProgress: { label: 'In progress', matches: value => /in[ -]?progress|doing|in development/i.test(value) },
-            todo: { label: 'Todo', matches: value => /^(to ?do|todo|backlog|open)$/i.test(value.trim()) },
-            done: { label: 'Fixed/Done', matches: value => /fixed|done|closed|resolved|complete/i.test(value) }
+            inProgress: { label: 'In progress', matches: value => /^(in progress|doing|in development)$/i.test(value.trim().replace(/[_-]+/g, ' ').replace(/\s+/g, ' ')) },
+            todo: { label: 'Todo', matches: value => /^(to do|todo)$/i.test(value.trim().replace(/[_-]+/g, ' ').replace(/\s+/g, ' ')) },
+            done: { label: 'Fixed/Done', matches: value => /^(fixed|done|fixed\s*\/\s*done)$/i.test(value.trim()) }
         };
 
         function getStatusGroup(status) {
