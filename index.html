@@ -39,6 +39,28 @@
     <script src="https://accounts.google.com/gsi/client" async defer></script>
 
     <style>
+        /* Giữ các vùng header ổn định khi tên Jira project dài */
+        .app-header { display: grid; grid-template-columns: minmax(0, 1fr) minmax(220px, 460px) minmax(0, 1fr); column-gap: 16px; }
+        .app-header-title, .app-header-center, .app-header-actions { min-width: 0; }
+        .app-header-title { overflow: hidden; }
+        .app-header-heading { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .app-header-project { min-width: 0; max-width: min(34vw, 390px); }
+        .app-header-project-copy { min-width: 0; flex: 1 1 auto; overflow: hidden; }
+        .app-header-project-name { display: inline-block; max-width: 210px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; vertical-align: bottom; }
+        .app-header-actions { justify-self: end; }
+        .app-header-center > div { min-width: 0; }
+        @media (max-width: 1279px) {
+            .app-header { grid-template-columns: minmax(0, 1fr) auto; }
+            .app-header-center { display: none !important; }
+            .app-header-actions { max-width: 55vw; }
+            .app-header-project { max-width: min(34vw, 340px); }
+        }
+        @media (max-width: 767px) {
+            .app-header { grid-template-columns: minmax(0, 1fr) auto; column-gap: 8px; }
+            .app-header-actions { max-width: 48vw; gap: 8px; }
+            .app-header-project { max-width: 48vw; gap: 6px; padding: 6px 8px; }
+            .app-header-project-name { max-width: 100px; }
+        }
         .travel-marquee { width: 100%; max-width: 460px; overflow: hidden; mask-image: linear-gradient(to right, transparent, black 8%, black 92%, transparent); -webkit-mask-image: linear-gradient(to right, transparent, black 8%, black 92%, transparent); }
         .travel-marquee-track { display: flex; width: max-content; animation: travel-marquee-scroll 18s linear infinite; will-change: transform; }
         .travel-marquee-group { display: flex; flex: 0 0 auto; align-items: center; padding-right: 2.5rem; gap: 2.5rem; }
@@ -101,16 +123,16 @@
     </aside>
 
     <div class="flex-1 flex flex-col h-full overflow-hidden bg-slate-50 relative">
-        <header class="bg-white text-slate-800 shadow-sm border-b border-slate-200 z-10 p-3 px-4 md:px-6 flex justify-between items-center min-h-[72px]">
-            <div class="flex items-center gap-3 flex-1 shrink-0">
+        <header class="app-header bg-white text-slate-800 shadow-sm border-b border-slate-200 z-10 p-3 px-4 md:px-6 items-center min-h-[72px]">
+            <div class="app-header-title flex items-center gap-3 min-w-0">
                 <button onclick="toggleSidebar()" class="md:hidden text-slate-500 hover:text-indigo-600 focus:outline-none p-1 transition">
                     <i class="fa-solid fa-bars text-xl"></i>
                 </button>
-                <h2 class="text-xl font-bold text-slate-800 hidden sm:block">Báo Cáo Daily (Jira Auto-Auth)</h2>
-                <h2 class="text-lg font-bold text-slate-800 sm:hidden">Báo Cáo Daily</h2>
+                <h2 class="app-header-heading text-xl font-bold text-slate-800 hidden sm:block">Báo Cáo Daily (Jira Auto-Auth)</h2>
+                <h2 class="app-header-heading text-lg font-bold text-slate-800 sm:hidden">Báo Cáo Daily</h2>
             </div>
             
-            <div class="hidden lg:flex flex-1 min-w-0 justify-center items-center">
+            <div class="app-header-center hidden lg:flex min-w-0 justify-center items-center">
                 <div class="w-full max-w-[460px] px-4 py-2 rounded-full bg-slate-50/90 border border-slate-200 shadow-sm cursor-default">
                     <div class="travel-marquee">
                         <div class="travel-marquee-track">
@@ -139,9 +161,9 @@
                 </div>
             </div>
 
-            <div class="flex-1 flex justify-end items-center gap-4">
-                <div id="fileInfo" class="hidden flex items-center gap-3 bg-indigo-50 px-4 py-2 rounded-xl border border-indigo-100 text-xs shadow-sm">
-                    <div><span class="text-indigo-400 font-medium">Jira Project:</span> <strong id="jiraProjectName" class="text-indigo-800 font-bold">---</strong></div>
+            <div class="app-header-actions flex justify-end items-center gap-4">
+                <div id="fileInfo" class="app-header-project hidden flex items-center gap-3 bg-indigo-50 px-4 py-2 rounded-xl border border-indigo-100 text-xs shadow-sm">
+                    <div class="app-header-project-copy"><span class="text-indigo-400 font-medium">Jira Project:</span> <strong id="jiraProjectName" class="app-header-project-name text-indigo-800 font-bold">---</strong></div>
                     <button onclick="changeJiraProject()" class="px-2.5 py-1.5 bg-indigo-600 hover:bg-indigo-500 text-white text-[11px] font-bold rounded-lg transition flex items-center gap-1.5 shadow-sm">
                         <i class="fa-solid fa-arrows-rotate"></i> Đổi Link Jira
                     </button>
@@ -227,6 +249,7 @@
                 <div id="reportDashboard" class="hidden space-y-6">
                     <div id="mainDashboardView" class="space-y-6">
                         
+                        <div id="reportSetupGrid" class="grid grid-cols-1 xl:grid-cols-2 gap-6 items-start">
                         <!-- ================= GIAO DIỆN FORM CẤU HÌNH HIỆN ĐẠI ================= -->
                         <section class="bg-white rounded-2xl shadow-sm border border-slate-200 w-full overflow-hidden">
                             <!-- Header của Form -->
@@ -373,18 +396,16 @@
                                 </div>
                             </div>
                             
-                            <div class="bg-indigo-50/50 border border-indigo-100 rounded-lg p-3 grid grid-cols-1 sm:grid-cols-3 gap-4">
+                            <div class="bg-indigo-50/50 border border-indigo-100 rounded-lg p-3 grid grid-cols-1 sm:grid-cols-2 gap-4">
                                 <div>
                                     <label class="block text-xs font-bold text-indigo-900 mb-1">
                                         <i class="fa-solid fa-bullseye text-indigo-500 mr-1"></i> Scope:
                                     </label>
-                                    <input type="text" id="scopeOfTestingInput" oninput="saveScopeTesting()" placeholder="VD: Logic UI..." class="w-full bg-white border border-slate-300 text-slate-700 text-xs font-medium rounded-lg p-2 outline-none">
-                                </div>
-                                <div>
-                                    <label class="block text-xs font-bold text-indigo-900 mb-1">
-                                        <i class="fa-regular fa-calendar text-indigo-500 mr-1"></i> Ngày:
-                                    </label>
-                                    <input type="date" id="reportDateInput" class="w-full bg-white border border-slate-300 text-slate-700 text-xs font-medium rounded-lg p-2 outline-none">
+                                    <input type="hidden" id="scopeOfTestingInput">
+                                    <button type="button" id="scopePickerButton" onclick="openScopeModal()" class="w-full min-h-[38px] flex items-center justify-between gap-3 bg-white border border-slate-300 text-slate-700 text-xs font-medium rounded-lg px-3 py-2 text-left hover:border-indigo-400 focus:outline-none focus:ring-2 focus:ring-indigo-200">
+                                        <span id="scopePickerLabel" class="min-w-0 flex-1 truncate">Chọn scope</span>
+                                        <i class="fa-solid fa-chevron-down text-slate-400"></i>
+                                    </button>
                                 </div>
                                 <div>
                                     <label class="block text-xs font-bold text-indigo-900 mb-1">
@@ -414,6 +435,9 @@
                             </div>
                         </section>
 
+                        </div>
+
+                        <!-- KPI, biểu đồ và dữ liệu chi tiết luôn nằm toàn chiều ngang bên dưới cấu hình -->
                         <!-- KPI Cards -->
                         <section class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 w-full">
                             <div class="bg-white p-5 rounded-xl shadow-sm border border-slate-200 flex items-center gap-4">
@@ -525,6 +549,21 @@
                 </div>
             </div>
         </main>
+    </div>
+
+    <!-- MODAL LỰA CHỌN SCOPE -->
+    <div id="scopeSelectionModal" class="hidden fixed inset-0 z-[60] flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4" role="dialog" aria-modal="true" aria-labelledby="scopeModalTitle">
+        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden">
+            <div class="px-5 py-4 border-b border-slate-200 bg-slate-50 flex justify-between items-center">
+                <div><h3 id="scopeModalTitle" class="text-base font-bold text-slate-800"><i class="fa-solid fa-bullseye text-indigo-600 mr-2"></i>Chọn Scope kiểm thử</h3><p class="text-xs text-slate-500 mt-1">Scope mới sẽ được lưu trên trình duyệt để dùng ở lần sau.</p></div>
+                <button type="button" onclick="closeScopeModal()" class="text-slate-400 hover:text-rose-500"><i class="fa-solid fa-xmark text-xl"></i></button>
+            </div>
+            <div class="p-5">
+                <div id="scopeOptionsContainer" class="flex flex-wrap gap-2 max-h-56 overflow-y-auto custom-scrollbar"></div>
+                <form class="mt-4 flex gap-2" onsubmit="addScopeOption(event)"><input id="newScopeInput" type="text" maxlength="80" placeholder="Nhập scope mới, ví dụ: Logic UI" class="min-w-0 flex-1 rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-indigo-200"><button type="submit" class="shrink-0 rounded-lg bg-indigo-600 px-4 py-2 text-xs font-bold text-white hover:bg-indigo-700"><i class="fa-solid fa-plus mr-1"></i>Thêm</button></form>
+            </div>
+            <div class="px-5 py-4 border-t border-slate-100 bg-slate-50 flex justify-end gap-2"><button type="button" onclick="closeScopeModal()" class="px-4 py-2 rounded-lg border border-slate-300 bg-white text-xs font-bold text-slate-700">Hủy</button><button type="button" onclick="saveSelectedScopes()" class="px-4 py-2 rounded-lg bg-indigo-600 text-xs font-bold text-white hover:bg-indigo-700">Lưu lựa chọn</button></div>
+        </div>
     </div>
 
     <!-- MODAL LỰA CHỌN TAG -->
@@ -878,8 +917,7 @@
 
                 const scopeMatch = text.match(/1\.\s*Scope of testing:\s*(.*)/i) || text.match(/-\s*Scope of testing:\s*(.*)/i);
                 if (scopeMatch) {
-                    if (document.getElementById('scopeOfTestingInput')) document.getElementById('scopeOfTestingInput').value = scopeMatch[1].trim();
-                    saveScopeTesting();
+                    setSelectedScopes(scopeMatch[1].split(',').map(item => item.trim()).filter(Boolean), true);
                     filledCount++;
                 }
 
@@ -1251,7 +1289,10 @@
                     };
                 });
 
-                document.getElementById('jiraProjectName').innerText = currentProjectKey || "Jira Filter";
+                const projectName = currentProjectKey || "Jira Filter";
+                const projectNameElement = document.getElementById('jiraProjectName');
+                projectNameElement.textContent = projectName;
+                projectNameElement.title = projectName;
                 document.getElementById('fileInfo').classList.remove('hidden');
                 document.getElementById('jiraUrlSection').classList.add('hidden');
                 document.getElementById('reportDashboard').classList.remove('hidden');
@@ -1347,20 +1388,13 @@
             const savedJiraUrl = localStorage.getItem('jira_last_url') || '';
             if (savedJiraUrl && document.getElementById('jiraUrlInput')) document.getElementById('jiraUrlInput').value = savedJiraUrl;
 
-            const savedScope = localStorage.getItem('jira_scope_testing');
-            if (savedScope && document.getElementById('scopeOfTestingInput')) document.getElementById('scopeOfTestingInput').value = savedScope;
-            
+            initializeScopePicker();
+
             const savedSheetName = localStorage.getItem('jira_sheet_name');
             if (savedSheetName && document.getElementById('sheetNameInput')) document.getElementById('sheetNameInput').value = savedSheetName;
             
             const savedQC = localStorage.getItem('jira_qc_members');
             if (savedQC && document.getElementById('qcMembersInput')) document.getElementById('qcMembersInput').value = savedQC;
-
-            const dateInput = document.getElementById('reportDateInput');
-            if (dateInput) {
-                const today = new Date();
-                dateInput.value = today.getFullYear() + '-' + String(today.getMonth() + 1).padStart(2, '0') + '-' + String(today.getDate()).padStart(2, '0');
-            }
 
             document.addEventListener('click', function(event) {
                 const userProfileBtn = document.getElementById('userProfileBtn');
@@ -1411,6 +1445,92 @@
             return matches.map(m => m.replace(/^\[|\]$/g, '').trim()).filter(t => t.length > 0);
         }
 
+        const DEFAULT_SCOPE_OPTIONS = ['Logic UI', 'Interruption'];
+        let scopeOptions = [...DEFAULT_SCOPE_OPTIONS];
+        let selectedScopes = [...DEFAULT_SCOPE_OPTIONS];
+
+        function initializeScopePicker() {
+            try {
+                const storedOptions = JSON.parse(localStorage.getItem('jira_scope_options') || 'null');
+                const storedSelected = JSON.parse(localStorage.getItem('jira_scope_selected') || 'null');
+                if (Array.isArray(storedOptions)) scopeOptions = [...new Set([...DEFAULT_SCOPE_OPTIONS, ...storedOptions].filter(Boolean))];
+                if (Array.isArray(storedSelected)) selectedScopes = storedSelected.filter(scope => scopeOptions.includes(scope));
+                else {
+                    const legacyScope = localStorage.getItem('jira_scope_testing');
+                    if (legacyScope) {
+                        selectedScopes = legacyScope.split(',').map(value => value.trim()).filter(Boolean);
+                        selectedScopes.forEach(scope => { if (!scopeOptions.includes(scope)) scopeOptions.push(scope); });
+                    }
+                }
+            } catch (error) { console.warn('Không thể đọc danh sách scope đã lưu:', error); }
+            renderScopeOptions(); updateScopePickerValue();
+        }
+
+        function renderScopeOptions() {
+            const container = document.getElementById('scopeOptionsContainer');
+            if (!container) return;
+            container.innerHTML = '';
+            scopeOptions.forEach((scope, index) => {
+                const label = document.createElement('label');
+                label.className = 'inline-flex items-center gap-2 rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-700 cursor-pointer';
+                const checkbox = document.createElement('input'); checkbox.type = 'checkbox'; checkbox.className = 'scope-option-cb rounded text-indigo-600';
+                checkbox.value = scope; checkbox.checked = selectedScopes.includes(scope);
+                const text = document.createElement('span'); text.textContent = scope; label.append(checkbox, text);
+                if (index >= DEFAULT_SCOPE_OPTIONS.length) {
+                    const remove = document.createElement('button'); remove.type = 'button'; remove.className = 'ml-1 text-slate-400 hover:text-rose-600'; remove.title = 'Xóa scope này';
+                    remove.innerHTML = '<i class="fa-solid fa-xmark"></i>';
+                    remove.onclick = event => { event.preventDefault(); event.stopPropagation(); deleteScopeOption(scope); };
+                    label.appendChild(remove);
+                }
+                container.appendChild(label);
+            });
+        }
+
+        function updateScopePickerValue() {
+            const input = document.getElementById('scopeOfTestingInput'); const label = document.getElementById('scopePickerLabel');
+            if (input) input.value = selectedScopes.join(', ');
+            if (label) { label.textContent = selectedScopes.length ? selectedScopes.join(', ') : 'Chọn scope'; label.title = selectedScopes.join(', '); }
+        }
+        function openScopeModal() { renderScopeOptions(); document.getElementById('scopeSelectionModal').classList.remove('hidden'); }
+        function closeScopeModal() { document.getElementById('scopeSelectionModal').classList.add('hidden'); }
+        function saveSelectedScopes() {
+            selectedScopes = Array.from(document.querySelectorAll('.scope-option-cb:checked')).map(cb => cb.value);
+            localStorage.setItem('jira_scope_selected', JSON.stringify(selectedScopes));
+            localStorage.setItem('jira_scope_testing', selectedScopes.join(', '));
+            updateScopePickerValue(); closeScopeModal();
+        }
+        function setSelectedScopes(scopes, save = false) {
+            const normalized = [...new Set((scopes || []).map(value => String(value).trim()).filter(Boolean))];
+            normalized.forEach(scope => { if (!scopeOptions.includes(scope)) scopeOptions.push(scope); });
+            selectedScopes = normalized;
+            if (save) {
+                localStorage.setItem('jira_scope_options', JSON.stringify(scopeOptions));
+                localStorage.setItem('jira_scope_selected', JSON.stringify(selectedScopes));
+                localStorage.setItem('jira_scope_testing', selectedScopes.join(', '));
+            }
+            renderScopeOptions(); updateScopePickerValue();
+        }
+        function addScopeOption(event) {
+            event.preventDefault();
+            const checkedDraft = Array.from(document.querySelectorAll('.scope-option-cb:checked')).map(cb => cb.value);
+            const input = document.getElementById('newScopeInput'); const scope = input.value.trim();
+            if (!scope) return;
+            if (!scopeOptions.some(item => item.toLowerCase() === scope.toLowerCase())) scopeOptions.push(scope);
+            const added = scopeOptions.find(item => item.toLowerCase() === scope.toLowerCase());
+            selectedScopes = [...new Set([...checkedDraft, added])];
+            localStorage.setItem('jira_scope_options', JSON.stringify(scopeOptions));
+            localStorage.setItem('jira_scope_selected', JSON.stringify(selectedScopes));
+            localStorage.setItem('jira_scope_testing', selectedScopes.join(', '));
+            input.value = ''; renderScopeOptions(); updateScopePickerValue();
+        }
+        function deleteScopeOption(scope) {
+            scopeOptions = scopeOptions.filter(item => item !== scope); selectedScopes = selectedScopes.filter(item => item !== scope);
+            localStorage.setItem('jira_scope_options', JSON.stringify(scopeOptions));
+            localStorage.setItem('jira_scope_selected', JSON.stringify(selectedScopes));
+            localStorage.setItem('jira_scope_testing', selectedScopes.join(', '));
+            renderScopeOptions(); updateScopePickerValue();
+        }
+
         function normalizePriority(p) {
             if (!p || typeof p !== 'string' || !p.trim()) return 'Unassigned';
             const val = p.trim();
@@ -1422,21 +1542,30 @@
             return val;
         }
 
+        const STATUS_GROUPS = {
+            inProgress: { label: 'In progress', matches: value => /in[ -]?progress|doing|in development/i.test(value) },
+            todo: { label: 'Todo', matches: value => /^(to ?do|todo|backlog|open)$/i.test(value.trim()) },
+            done: { label: 'Fixed/Done', matches: value => /fixed|done|closed|resolved|complete/i.test(value) }
+        };
+
+        function getStatusGroup(status) {
+            for (const [key, group] of Object.entries(STATUS_GROUPS)) if (group.matches(status || '')) return key;
+            return null;
+        }
+
         function buildDynamicStatusFilters() {
-            const statusSet = new Set();
-            rawJiraData.forEach(row => {
-                const s = getColumnValue(row, ['Status', 'Trạng thái']);
-                if (s && s.toString().trim() !== "") statusSet.add(s.toString().trim());
-                else statusSet.add('N/A');
-            });
-            availableStatuses = Array.from(statusSet).sort();
+            availableStatuses = [...new Set(rawJiraData.map(row => String(getColumnValue(row, ['Status', 'Trạng thái']) || '').trim()).filter(Boolean))].sort();
             const container = document.getElementById('dynamicStatusContainer');
             container.innerHTML = '';
-            availableStatuses.forEach(status => {
+            Object.entries(STATUS_GROUPS).forEach(([key, group]) => {
                 const label = document.createElement('label');
                 label.className = 'flex items-center gap-2 cursor-pointer bg-slate-50 hover:bg-slate-100 px-3 py-1.5 rounded-lg border border-slate-200 transition font-semibold text-slate-700';
-                label.innerHTML = '<input type="checkbox" class="status-dynamic-cb text-indigo-600 rounded" value="' + status + '" checked onchange="processData()"><span>' + status + '</span>';
-                container.appendChild(label);
+                const checkbox = document.createElement('input');
+                checkbox.type = 'checkbox'; checkbox.className = 'status-dynamic-cb text-indigo-600 rounded';
+                checkbox.value = key; checkbox.checked = true; checkbox.onchange = () => processData();
+                const caption = document.createElement('span'); caption.textContent = group.label;
+                caption.title = availableStatuses.filter(status => getStatusGroup(status) === key).join(', ') || 'Không có ticket thuộc trạng thái này';
+                label.append(checkbox, caption); container.appendChild(label);
             });
         }
 
@@ -1446,7 +1575,8 @@
         }
 
         function getSelectedStatuses() {
-            return new Set(Array.from(document.querySelectorAll('.status-dynamic-cb:checked')).map(cb => cb.value));
+            const selectedGroups = new Set(Array.from(document.querySelectorAll('.status-dynamic-cb:checked')).map(cb => cb.value));
+            return new Set(availableStatuses.filter(status => selectedGroups.has(getStatusGroup(status))));
         }
 
         function processData() {
@@ -2058,13 +2188,8 @@
                 
                 const scopeText = document.getElementById('scopeOfTestingInput') ? document.getElementById('scopeOfTestingInput').value.trim() : '';
                 const qcMembers = document.getElementById('qcMembersInput') ? document.getElementById('qcMembersInput').value.trim() : '';
-                
-                const dateVal = document.getElementById('reportDateInput') ? document.getElementById('reportDateInput').value : '';
-                let dateStr = '';
-                if (dateVal) {
-                    const parts = dateVal.split('-');
-                    if (parts.length === 3) dateStr = parts[2] + '/' + parts[1] + '/' + parts[0];
-                }
+                const today = new Date();
+                const dateStr = String(today.getDate()).padStart(2, '0') + '/' + String(today.getMonth() + 1).padStart(2, '0') + '/' + today.getFullYear();
 
                 const verGame = document.getElementById('reportVersionGameInput') ? document.getElementById('reportVersionGameInput').value.trim() : '';
                 const verApp = document.getElementById('reportVersionAppInput') ? document.getElementById('reportVersionAppInput').value.trim() : '';
