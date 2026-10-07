@@ -338,7 +338,7 @@
           plugins: { legend: { display: false }, tooltip: { callbacks: { label: context => { const task = tasks[context.dataIndex]; return isDoneStatus(task.status) ? `${task.remaining} case còn / ${task.total} tổng · 100% hoàn tất · ${task.status}` : `${task.remaining} case còn / ${task.total} tổng · ${task.percent.toFixed(2)}% còn lại · ${task.status}`; } } } },
           scales: {
             x: { beginAtZero: true, max: 100, title: { display: true, text: '% hiển thị', font: { size: 13, weight: '600' } }, ticks: { callback: value => `${value}%`, color: document.documentElement.classList.contains('dark-mode') ? '#cbd5e1' : '#475569', font: { size: 12 } }, grid: { color: document.documentElement.classList.contains('dark-mode') ? '#334155' : '#e8edf4' } },
-            y: { reverse: true, ticks: { autoSkip: false, color: document.documentElement.classList.contains('dark-mode') ? '#cbd5e1' : '#475569', font: { size: 13, weight: '600' } }, grid: { display: false } }
+            y: { reverse: false, ticks: { autoSkip: false, color: document.documentElement.classList.contains('dark-mode') ? '#cbd5e1' : '#475569', font: { size: 13, weight: '600' } }, grid: { display: false } }
           }
         },
         plugins: [valueLabelPlugin]
