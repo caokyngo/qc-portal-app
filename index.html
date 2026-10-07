@@ -194,22 +194,34 @@
                             <input type="url" id="jiraUrlInput" placeholder="VD: https://enotion.atlassian.net/jira/software/c/projects/KTFMLMC/issues" class="w-full h-12 bg-slate-50 border border-slate-300 text-slate-800 text-sm font-medium rounded-xl px-4 focus:ring-2 focus:ring-indigo-500 focus:bg-white outline-none transition shadow-sm">
                         </div>
 
-                        <!-- THÔNG BÁO XÁC THỰC -->
-                        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs text-slate-600 bg-slate-50 p-3 rounded-xl border border-slate-200">
-                            <div class="flex items-center gap-2">
-                                <i class="fa-solid fa-shield-halved text-emerald-600 text-sm"></i>
-                                <div>
-                                    <div class="font-bold text-slate-700">Kết nối Jira bằng Atlassian OAuth</div>
-                                    <div id="jiraOAuthStatus" class="text-slate-500 mt-0.5">Chưa kiểm tra kết nối Jira</div>
+                        <!-- KẾT NỐI / NGẮT KẾT NỐI JIRA -->
+                        <div class="rounded-xl border border-slate-200 bg-slate-50 overflow-hidden">
+                            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-4 text-xs text-slate-600">
+                                <div class="flex items-center gap-3">
+                                    <span id="jiraOAuthShield" class="w-9 h-9 rounded-full bg-emerald-50 text-emerald-600 flex items-center justify-center flex-shrink-0">
+                                        <i class="fa-solid fa-shield-halved text-sm"></i>
+                                    </span>
+                                    <div>
+                                        <div class="font-bold text-slate-800">Tài khoản Atlassian</div>
+                                        <div id="jiraOAuthStatus" class="text-slate-500 mt-0.5">Đang kiểm tra kết nối Jira...</div>
+                                    </div>
+                                </div>
+                                <div class="flex items-center gap-2 self-end sm:self-auto">
+                                    <span id="jiraToggleLabel" class="font-semibold text-slate-500">Ngắt kết nối</span>
+                                    <button type="button" id="jiraConnectionToggle" role="switch" aria-checked="false" aria-label="Kết nối Jira" onclick="toggleJiraConnection()" class="relative inline-flex h-7 w-12 items-center rounded-full bg-slate-300 transition-colors focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2" title="Bật để kết nối Jira">
+                                        <span id="jiraConnectionToggleThumb" class="inline-block h-5 w-5 transform rounded-full bg-white shadow transition-transform translate-x-1"></span>
+                                    </button>
+                                    <button type="button" onclick="checkJiraConnection()" class="w-9 h-9 bg-white hover:bg-slate-100 text-slate-600 rounded-lg border border-slate-200 transition" title="Làm mới trạng thái Jira" aria-label="Làm mới trạng thái Jira">
+                                        <i class="fa-solid fa-rotate"></i>
+                                    </button>
                                 </div>
                             </div>
-                            <div class="flex items-center gap-2">
-                                <button type="button" id="btnConnectJira" onclick="connectJiraAccount()" class="px-3 py-2 bg-white hover:bg-indigo-50 text-indigo-700 font-bold rounded-lg border border-indigo-200 transition whitespace-nowrap">
-                                    <i class="fa-brands fa-jira mr-1"></i> Kết nối Jira
-                                </button>
-                                <button type="button" onclick="checkJiraConnection()" class="px-3 py-2 bg-white hover:bg-slate-100 text-slate-600 font-bold rounded-lg border border-slate-200 transition whitespace-nowrap" title="Kiểm tra trạng thái Jira">
-                                    <i class="fa-solid fa-rotate"></i>
-                                </button>
+                            <div id="jiraConnectedSitesPanel" class="hidden border-t border-slate-200 px-4 py-3 bg-white">
+                                <label for="jiraSiteSelect" class="block text-[11px] font-bold text-slate-700 mb-1.5">Site Jira được cấp quyền</label>
+                                <select id="jiraSiteSelect" onchange="saveSelectedJiraSite()" class="w-full h-10 bg-white border border-slate-300 text-slate-700 text-xs rounded-lg px-3 focus:ring-2 focus:ring-indigo-500 outline-none">
+                                    <option value="">Tự nhận diện site theo link Jira</option>
+                                </select>
+                                <p id="jiraSitesHelp" class="text-[11px] text-slate-500 mt-1.5">Link Jira cần thuộc một site đã được cấp quyền.</p>
                             </div>
                         </div>
 
@@ -557,14 +569,18 @@
 
     <!-- HÀM XỬ LÝ TOAST VÀ CÁC LOGIC KHÁC -->
     <script>
-        const JIRA_PROXY_API_URL = "https://script.google.com/a/macros/enotion.io/s/AKfycbwsjm9uO59mD-Ad6EUoo2WPxMql-ObwERoCPOcRXvcKx8XkYBZ_pkxBFDr0u95_6tec/exec";
+       const JIRA_PROXY_API_URL = "https://script.google.com/a/macros/enotion.io/s/AKfycbwsjm9uO59mD-Ad6EUoo2WPxMql-ObwERoCPOcRXvcKx8XkYBZ_pkxBFDr0u95_6tec/exec";
         // If OAuth Code.gs is deployed from a different Apps Script project, replace the URL above with its Web app /exec URL.
-        const URL_REPORT_API = "https://script.google.com/a/macros/enotion.io/s/AKfycbzynUh65kMWVtwRdYdg8x35-6LViA_JwMPrWhEoMdDXFDP7tpcheilYrReQSIrQ6zAtIQ/exec";
-
+        const URL_REPORT_API = "https://script.google.com/a/macros/enotion.io/s/AKfycbzynUh65kMWVtwRdYdg8x35-6LViA_JwMPrWhEoMdDXFDP7tpcheilYrReQSIrQ6zAtIQ/exec"; 
         let currentBoardId = null;
         let currentProjectKey = null;
         let currentJiraDomain = null;
         let jiraOAuthConnected = false;
+        let jiraOAuthPopup = null;
+        let jiraConnectedSites = [];
+        let jiraConnectionPending = false;
+        let jiraOAuthMessageReceived = false;
+        let jiraOAuthPopupCheckTimer = null;
 
         // HÀM HIỂN THỊ TOAST THÔNG BÁO HIỆN ĐẠI (THAY THẾ MODAL)
         function showToast(title, message, isError = false) {
@@ -885,56 +901,195 @@
             rawJiraData = [];
         }
 
+        function toggleJiraConnection() {
+            if (jiraConnectionPending) return;
+            if (jiraOAuthConnected) disconnectJiraAccount();
+            else connectJiraAccount();
+        }
+
+        function setJiraConnectionUI(connected, message) {
+            jiraOAuthConnected = Boolean(connected);
+            const toggle = document.getElementById('jiraConnectionToggle');
+            const thumb = document.getElementById('jiraConnectionToggleThumb');
+            const label = document.getElementById('jiraToggleLabel');
+            const statusEl = document.getElementById('jiraOAuthStatus');
+            const shield = document.getElementById('jiraOAuthShield');
+            const active = jiraOAuthConnected || jiraConnectionPending;
+
+            if (toggle) {
+                toggle.setAttribute('aria-checked', String(active));
+                toggle.setAttribute('aria-busy', String(jiraConnectionPending));
+                toggle.disabled = jiraConnectionPending;
+                toggle.classList.toggle('bg-emerald-500', jiraOAuthConnected);
+                toggle.classList.toggle('bg-indigo-500', jiraConnectionPending);
+                toggle.classList.toggle('bg-slate-300', !active);
+                toggle.setAttribute('aria-label', jiraOAuthConnected ? 'Ngắt kết nối Jira' : 'Kết nối Jira');
+                toggle.title = jiraConnectionPending ? 'Đang chờ xác nhận từ Atlassian' : (jiraOAuthConnected ? 'Ngắt kết nối Jira' : 'Kết nối Jira');
+            }
+            if (thumb) {
+                thumb.classList.toggle('translate-x-6', active);
+                thumb.classList.toggle('translate-x-1', !active);
+            }
+            if (label) {
+                label.textContent = jiraConnectionPending ? 'Đang kết nối...' : (jiraOAuthConnected ? 'Đã kết nối' : 'Chưa kết nối');
+                label.className = jiraOAuthConnected ? 'font-semibold text-emerald-700' : 'font-semibold text-slate-500';
+            }
+            if (statusEl && message) {
+                statusEl.textContent = message;
+                statusEl.className = jiraOAuthConnected ? 'text-emerald-700 mt-0.5 font-semibold' : (jiraConnectionPending ? 'text-indigo-700 mt-0.5 font-semibold' : 'text-slate-500 mt-0.5');
+            }
+            if (shield) {
+                shield.className = jiraOAuthConnected
+                    ? 'w-9 h-9 rounded-full bg-emerald-50 text-emerald-600 flex items-center justify-center flex-shrink-0'
+                    : 'w-9 h-9 rounded-full bg-slate-100 text-slate-500 flex items-center justify-center flex-shrink-0';
+            }
+        }
+
+        function renderJiraSites(sites) {
+            jiraConnectedSites = Array.isArray(sites) ? sites : [];
+            const panel = document.getElementById('jiraConnectedSitesPanel');
+            const select = document.getElementById('jiraSiteSelect');
+            const help = document.getElementById('jiraSitesHelp');
+            if (!panel || !select) return;
+
+            const previouslySelected = localStorage.getItem('jira_selected_site') || '';
+            select.innerHTML = '<option value="">Tự nhận diện site theo link Jira</option>';
+            jiraConnectedSites.forEach(site => {
+                const option = document.createElement('option');
+                option.value = String(site.id || '');
+                option.textContent = `${site.name || 'Jira site'} — ${site.url || ''}`;
+                option.dataset.url = site.url || '';
+                select.appendChild(option);
+            });
+            const hasSavedSite = jiraConnectedSites.some(site => String(site.id) === previouslySelected);
+            select.value = hasSavedSite ? previouslySelected : '';
+            if (!hasSavedSite) localStorage.removeItem('jira_selected_site');
+            panel.classList.toggle('hidden', jiraConnectedSites.length === 0);
+            if (help) {
+                help.textContent = jiraConnectedSites.length > 1
+                    ? `${jiraConnectedSites.length} site đã được cấp quyền. Chọn site cụ thể hoặc để portal tự nhận diện từ link.`
+                    : 'Link Jira cần thuộc site đã được cấp quyền.';
+            }
+        }
+
+        function saveSelectedJiraSite() {
+            const select = document.getElementById('jiraSiteSelect');
+            if (!select) return;
+            if (select.value) localStorage.setItem('jira_selected_site', select.value);
+            else localStorage.removeItem('jira_selected_site');
+        }
+
+        function requestJiraJsonp(params, onSuccess, onError, timeoutMs = 15000) {
+            const callbackName = 'jiraJsonp_' + Date.now() + '_' + Math.floor(Math.random() * 100000);
+            const script = document.createElement('script');
+            let finished = false;
+            const cleanup = () => {
+                clearTimeout(timeoutId);
+                delete window[callbackName];
+                if (script.parentNode) script.parentNode.removeChild(script);
+            };
+            const finish = (callback, value) => {
+                if (finished) return;
+                finished = true;
+                cleanup();
+                callback(value);
+            };
+            const timeoutId = setTimeout(() => finish(onError, new Error('Hết thời gian chờ Apps Script.')), timeoutMs);
+            window[callbackName] = data => finish(onSuccess, data);
+            script.onerror = () => finish(onError, new Error('Không kết nối được Apps Script.'));
+            const query = new URLSearchParams(params || {});
+            query.set('callback', callbackName);
+            query.set('_t', Date.now());
+            script.src = JIRA_PROXY_API_URL + (JIRA_PROXY_API_URL.includes('?') ? '&' : '?') + query.toString();
+            document.body.appendChild(script);
+        }
+
         function connectJiraAccount() {
             if (!loggedInUser) {
+                setJiraConnectionUI(false, 'Đăng nhập Google để kết nối Jira');
                 showToast("Yêu cầu đăng nhập Google", "Hãy đăng nhập Google để mở Apps Script, sau đó kết nối tài khoản Atlassian của bạn.", true);
                 return;
             }
             const connectUrl = JIRA_PROXY_API_URL + (JIRA_PROXY_API_URL.includes('?') ? '&' : '?') + 'action=connect';
+            jiraConnectionPending = true;
+            jiraOAuthMessageReceived = false;
+            setJiraConnectionUI(false, 'Đang chờ bạn xác nhận quyền trên Atlassian...');
+            jiraOAuthPopup = window.open(connectUrl, '_blank', 'width=560,height=760');
+            if (!jiraOAuthPopup) {
+                jiraConnectionPending = false;
+                setJiraConnectionUI(false, 'Trình duyệt đã chặn cửa sổ kết nối');
+                showToast("Cho phép popup", "Trình duyệt đang chặn cửa sổ kết nối. Hãy cho phép popup cho qc-portal-app rồi bấm Kết nối Jira lại.", true);
+                return;
+            }
+            if (jiraOAuthPopupCheckTimer) clearInterval(jiraOAuthPopupCheckTimer);
+            jiraOAuthPopupCheckTimer = setInterval(() => {
+                if (jiraOAuthPopup && !jiraOAuthPopup.closed) return;
+                clearInterval(jiraOAuthPopupCheckTimer);
+                jiraOAuthPopupCheckTimer = null;
+                if (jiraOAuthMessageReceived) return;
+                jiraConnectionPending = false;
+                checkJiraConnection(connected => {
+                    if (connected) showToast('Kết nối Jira thành công', 'Đã xác thực bằng tài khoản Atlassian của bạn.');
+                    else setJiraConnectionUI(false, 'Kết nối đã bị hủy hoặc chưa được cấp quyền');
+                });
+            }, 700);
         }
 
         function checkJiraConnection(done) {
-            const statusEl = document.getElementById('jiraOAuthStatus');
             if (!loggedInUser) {
-                jiraOAuthConnected = false;
-                if (statusEl) statusEl.textContent = 'Đăng nhập Google để kiểm tra kết nối Jira';
+                renderJiraSites([]);
+                setJiraConnectionUI(false, 'Đăng nhập Google để kiểm tra kết nối Jira');
                 if (typeof done === 'function') done(false);
                 return;
             }
+            if (jiraConnectionPending) return;
 
-            if (statusEl) statusEl.textContent = 'Đang kiểm tra kết nối Jira...';
-            const callbackName = 'jiraSitesCallback_' + Date.now() + '_' + Math.floor(Math.random() * 100000);
-            let finished = false;
-            const script = document.createElement('script');
-            script.id = callbackName;
-
-            const finish = (connected, message) => {
-                if (finished) return;
-                finished = true;
-                clearTimeout(timeoutId);
-                delete window[callbackName];
-                if (script.parentNode) script.parentNode.removeChild(script);
-                jiraOAuthConnected = connected;
-                if (statusEl) {
-                    statusEl.textContent = message;
-                    statusEl.className = connected ? 'text-emerald-700 mt-0.5 font-semibold' : 'text-slate-500 mt-0.5';
-                }
-                if (typeof done === 'function') done(connected);
-            };
-
-            const timeoutId = setTimeout(() => finish(false, 'Không kiểm tra được. Hãy thử lại hoặc kết nối Jira.'), 15000);
-            window[callbackName] = function(data) {
+            setJiraConnectionUI(jiraOAuthConnected, 'Đang kiểm tra kết nối Jira...');
+            requestJiraJsonp({ action: 'sites' }, data => {
                 if (data && !data.error && Array.isArray(data.sites)) {
+                    renderJiraSites(data.sites);
                     const siteCount = data.sites.length;
-                    finish(siteCount > 0, siteCount > 0 ? `Đã kết nối Jira (${siteCount} site)` : 'Tài khoản Atlassian chưa có Jira site được cấp quyền');
-                } else {
-                    finish(false, 'Chưa kết nối Jira. Nhấn “Kết nối Jira” để cấp quyền.');
+                    const connected = siteCount > 0;
+                    const message = connected
+                        ? `Đã kết nối Jira · ${siteCount} site được cấp quyền`
+                        : 'Chưa có Jira site nào được cấp quyền';
+                    setJiraConnectionUI(connected, message);
+                    if (typeof done === 'function') done(connected, data.sites);
+                    return;
                 }
-            };
-            script.onerror = () => finish(false, 'Không kết nối được Apps Script. Kiểm tra quyền truy cập Google.');
-            script.src = JIRA_PROXY_API_URL + (JIRA_PROXY_API_URL.includes('?') ? '&' : '?') +
-                'action=sites&callback=' + encodeURIComponent(callbackName) + '&_t=' + Date.now();
-            document.body.appendChild(script);
+                renderJiraSites([]);
+                setJiraConnectionUI(false, (data && data.error) ? 'Chưa kết nối Jira. Hãy bật công tắc để cấp quyền.' : 'Không nhận được danh sách Jira site');
+                if (typeof done === 'function') done(false, []);
+            }, error => {
+                setJiraConnectionUI(jiraOAuthConnected, 'Không kiểm tra được kết nối. Hãy thử làm mới trạng thái.');
+                if (typeof done === 'function') done(jiraOAuthConnected, jiraConnectedSites);
+                console.warn('Không kiểm tra được Jira OAuth:', error);
+            });
+        }
+
+        function disconnectJiraAccount() {
+            if (!loggedInUser) {
+                setJiraConnectionUI(false, 'Đăng nhập Google để ngắt kết nối Jira');
+                return;
+            }
+            jiraConnectionPending = true;
+            setJiraConnectionUI(true, 'Đang xóa thông tin kết nối Jira...');
+            requestJiraJsonp({ action: 'disconnect' }, data => {
+                jiraConnectionPending = false;
+                if (data && data.success) {
+                    renderJiraSites([]);
+                    localStorage.removeItem('jira_selected_site');
+                    setJiraConnectionUI(false, 'Đã ngắt kết nối Jira khỏi portal');
+                    showToast('Đã ngắt kết nối Jira', 'Thông tin OAuth đã được xóa khỏi tài khoản portal này.');
+                } else {
+                    setJiraConnectionUI(true, 'Không ngắt được kết nối Jira');
+                    showToast('Không ngắt được Jira', (data && data.error) || 'Hãy thử lại.', true);
+                }
+            }, error => {
+                jiraConnectionPending = false;
+                setJiraConnectionUI(true, 'Không ngắt được kết nối Jira');
+                showToast('Không ngắt được Jira', error.message || 'Không gọi được Apps Script. Hãy thử lại.', true);
+            });
         }
 
         function parseJiraUrl(urlStr) {
@@ -980,7 +1135,19 @@
             }
 
             if (!jiraOAuthConnected) {
-                showToast("Chưa kết nối Jira", "Hãy bấm “Kết nối Jira”, cấp quyền bằng tài khoản Atlassian, rồi tải lại dữ liệu.", true);
+                showToast("Chưa kết nối Jira", "Bật công tắc Jira và cấp quyền bằng tài khoản Atlassian, rồi tải lại dữ liệu.", true);
+                return;
+            }
+
+            const siteSelect = document.getElementById('jiraSiteSelect');
+            const selectedSiteId = siteSelect ? siteSelect.value : '';
+            const selectedSite = selectedSiteId ? jiraConnectedSites.find(site => String(site.id) === selectedSiteId) : null;
+            if (selectedSiteId && !selectedSite) {
+                showToast('Jira site không còn được cấp quyền', 'Làm mới trạng thái kết nối rồi chọn lại site.', true);
+                return;
+            }
+            if (selectedSite && String(selectedSite.url || '').replace(/\/+$/, '').toLowerCase() !== parsed.domain.replace(/\/+$/, '').toLowerCase()) {
+                showToast('Link không khớp Jira site', 'Link Jira không thuộc site bạn đã chọn. Chọn “Tự nhận diện site theo link Jira” hoặc dán link của site đã chọn.', true);
                 return;
             }
 
@@ -1066,7 +1233,8 @@
             script.id = 'jiraJsonpScript';
             
             const requestParams = new URLSearchParams();
-            requestParams.set('domain', parsed.domain);
+            if (selectedSite) requestParams.set('site', selectedSite.id);
+            else requestParams.set('domain', parsed.domain);
             if (parsed.jql) requestParams.set('jql', parsed.jql);
             if (parsed.filterId) requestParams.set('filterId', parsed.filterId);
             requestParams.set('callback', 'handleJiraResponse');
@@ -1095,6 +1263,10 @@
             
             if (storedUser) {
                 loggedInUser = JSON.parse(storedUser);
+                jiraOAuthConnected = false;
+                jiraConnectedSites = [];
+                renderJiraSites([]);
+                setJiraConnectionUI(false, 'Đang kiểm tra kết nối Jira...');
                 if(loginOption) loginOption.classList.add('hidden');
                 if(userProfileBtn) userProfileBtn.classList.remove('hidden');
                 document.getElementById('userNameDisplay').innerText = loggedInUser.name;
@@ -1103,12 +1275,14 @@
                 checkJiraConnection();
             } else {
                 loggedInUser = null;
+                jiraConnectionPending = false;
                 jiraOAuthConnected = false;
+                jiraConnectedSites = [];
+                renderJiraSites([]);
                 if(loginOption) loginOption.classList.remove('hidden');
                 if(userProfileBtn) userProfileBtn.classList.add('hidden');
                 if(userDropdown) userDropdown.classList.add('hidden');
-                const statusEl = document.getElementById('jiraOAuthStatus');
-                if (statusEl) statusEl.textContent = 'Đăng nhập Google để kiểm tra kết nối Jira';
+                setJiraConnectionUI(false, 'Đăng nhập Google để kiểm tra kết nối Jira');
             }
         }
 
@@ -1162,7 +1336,22 @@
         });
 
         window.addEventListener('focus', () => {
-            if (loggedInUser) checkJiraConnection();
+            if (loggedInUser && !jiraConnectionPending) checkJiraConnection();
+        });
+
+        window.addEventListener('message', (event) => {
+            const senderHost = (() => { try { return new URL(event.origin).hostname; } catch (e) { return ''; } })();
+            if (event.source !== jiraOAuthPopup || !['script.google.com', 'script.googleusercontent.com'].includes(senderHost)) return;
+            if (!event.data || event.data.type !== 'jira-oauth-complete' || event.data.success !== true) return;
+            jiraOAuthMessageReceived = true;
+            jiraConnectionPending = false;
+            if (jiraOAuthPopupCheckTimer) {
+                clearInterval(jiraOAuthPopupCheckTimer);
+                jiraOAuthPopupCheckTimer = null;
+            }
+            checkJiraConnection((connected) => {
+                if (connected) showToast("Kết nối Jira thành công", "Đã xác thực bằng tài khoản Atlassian của bạn.");
+            });
         });
 
         function getColumnValue(row, possibleNames) {
@@ -1698,7 +1887,10 @@
                 const timeoutId = setTimeout(() => {
                     if (!isResolved) {
                         isResolved = true;
-                        delete window[callbackName];
+                        // Leave a temporary no-op so a late JSONP response won't throw ReferenceError.
+                        window[callbackName] = function() { delete window[callbackName]; };
+                        if (script.parentNode) script.parentNode.removeChild(script);
+                        setTimeout(() => { delete window[callbackName]; }, 60000);
                         console.warn('Lỗi Timeout API Sheet');
                         resolve(null);
                     }
@@ -1709,7 +1901,7 @@
                     isResolved = true;
                     clearTimeout(timeoutId);
                     delete window[callbackName];
-                    document.body.removeChild(script);
+                    if (script.parentNode) script.parentNode.removeChild(script);
                     if (data.success === false) {
                         console.warn('Lỗi từ Google Script:', data.message);
                         resolve(null);
@@ -1725,7 +1917,7 @@
                     isResolved = true;
                     clearTimeout(timeoutId);
                     delete window[callbackName];
-                    document.body.removeChild(script);
+                    if (script.parentNode) script.parentNode.removeChild(script);
                     console.warn('Lỗi Kết Nối API Google Sheet');
                     resolve(null);
                 };
