@@ -262,7 +262,7 @@
           statusColor: validColor(rawColor) && !isNearWhite(rawColor) ? rawColor : statusColor(status)
         });
       });
-      return parsed.sort((a, b) => Number(!isInProgressStatus(a.status)) - Number(!isInProgressStatus(b.status)) || a.row - b.row);
+      return parsed.sort((a, b) => statusSortOrder(a.status) - statusSortOrder(b.status) || a.row - b.row);
     }
     function validColor(value) { return typeof value === 'string' && /^#[0-9a-f]{6}$/i.test(value); }
     function isNearWhite(hex) { return /^#f[4-9a-f]{5}$/i.test(hex); }
@@ -275,11 +275,20 @@
     }
     function isDoneStatus(status) {
       const key = String(status || '').trim().toLowerCase();
-      return ['done', 'fixed', 'passed', 'complete', 'completed'].some(value => key === value || key.startsWith(value + ' '));
+      return /\b(done|fixed|passed|complete|completed)\b/.test(key);
     }
     function isInProgressStatus(status) {
-      const key = String(status || '').trim().toLowerCase().replace(/[_-]+/g, ' ');
+      const key = String(status || '').trim().toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim();
       return key === 'inprogress' || key.includes('in progress');
+    }
+    function isRemainingStatus(status) {
+      return String(status || '').trim().toLowerCase().includes('remaining');
+    }
+    function statusSortOrder(status) {
+      if (isInProgressStatus(status)) return 0;
+      if (isDoneStatus(status)) return 1;
+      if (isRemainingStatus(status)) return 2;
+      return 3;
     }
     function chartPercent(task) { return isDoneStatus(task.status) ? 100 : task.percent; }
     function render() {
