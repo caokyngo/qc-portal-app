@@ -110,7 +110,7 @@
         html.dark-mode .text-indigo-800, html.dark-mode .text-indigo-700 { color: #c7d2fe !important; }
         html.dark-mode .text-indigo-600, html.dark-mode .text-indigo-500 { color: #a5b4fc !important; }
         html.dark-mode .hover\:bg-slate-100:hover, html.dark-mode .hover\:bg-slate-200:hover { background-color: #334155 !important; }
-        html.dark-mode #themeToggleBtn, html.dark-mode #themeToggleMobileBtn { background-color: #253247; color: #fbbf24; border-color: #475569; }
+        html.dark-mode #themeToggleBtn { background-color: #253247; color: #fbbf24; border-color: #475569; }
         html.dark-mode .travel-marquee > div { background-color: #172033; border-color: #334155; }
         html.dark-mode table thead { background-color: #1e293b !important; }
         html.dark-mode table tbody tr { border-color: #334155 !important; }
@@ -159,18 +159,17 @@
 
     <div class="flex-1 flex flex-col h-full overflow-hidden bg-slate-50 relative">
         <header class="app-header bg-white text-slate-800 shadow-sm border-b border-slate-200 z-10 p-3 px-4 md:px-6 items-center min-h-[72px]">
-            <div class="app-header-title flex items-center gap-3 min-w-0">
+            <div class="app-header-title flex items-center gap-2 min-w-0">
                 <button onclick="toggleSidebar()" class="md:hidden text-slate-500 hover:text-indigo-600 focus:outline-none p-1 transition">
                     <i class="fa-solid fa-bars text-xl"></i>
                 </button>
-                <h2 class="app-header-heading text-xl font-bold text-slate-800 hidden sm:block">Báo Cáo Daily (Jira Auto-Auth)</h2>
-                <h2 class="app-header-heading text-lg font-bold text-slate-800 sm:hidden">Báo Cáo Daily</h2>
-            </div>
-            
-            <div class="app-header-center hidden lg:flex min-w-0 justify-center items-center gap-2">
-                <button type="button" id="themeToggleBtn" onclick="toggleDarkMode()" aria-label="Bật chế độ tối" aria-pressed="false" title="Bật chế độ tối" class="h-10 w-10 shrink-0 inline-flex items-center justify-center rounded-xl border border-slate-200 bg-slate-50 text-slate-600 hover:bg-slate-100 transition focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2">
+                <h2 class="app-header-heading text-lg sm:text-xl font-bold text-slate-800">Báo Cáo Daily</h2>
+                <button type="button" id="themeToggleBtn" data-theme-toggle onclick="toggleDarkMode()" aria-label="Bật chế độ tối" aria-pressed="false" title="Bật chế độ tối" class="h-8 w-8 shrink-0 inline-flex items-center justify-center rounded-lg border border-slate-200 bg-slate-50 text-slate-600 hover:bg-slate-100 transition focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2">
                     <i class="fa-solid fa-moon" aria-hidden="true"></i>
                 </button>
+            </div>
+            
+            <div class="app-header-center hidden lg:flex min-w-0 justify-center items-center">
                 <div class="w-full max-w-[460px] px-4 py-2 rounded-full bg-slate-50/90 border border-slate-200 shadow-sm cursor-default">
                     <div class="travel-marquee">
                         <div class="travel-marquee-track">
@@ -207,9 +206,6 @@
                     </button>
                 </div>
                 
-                <button type="button" id="themeToggleMobileBtn" data-theme-toggle onclick="toggleDarkMode()" aria-label="Bật chế độ tối" aria-pressed="false" title="Bật chế độ tối" class="xl:hidden h-10 w-10 shrink-0 inline-flex items-center justify-center rounded-xl border border-slate-200 bg-slate-50 text-slate-600 hover:bg-slate-100 transition focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2">
-                    <i class="fa-solid fa-moon" aria-hidden="true"></i>
-                </button>
                 <div id="authSection" class="relative flex items-center min-h-[40px]">
                     <div id="g_id_onload" data-client_id="149310433677-uvpoilv41na98qdjlj58cpmfl8u9946e.apps.googleusercontent.com" data-callback="handleCredentialResponse" data-auto_prompt="false"></div>
                     <div id="loginOption" class="relative cursor-pointer flex items-center gap-2.5 px-3 py-1.5 bg-slate-100 hover:bg-slate-200 rounded-xl border border-slate-200 transition overflow-hidden">
@@ -281,7 +277,7 @@
                         
                         <div id="reportSetupGrid" class="grid grid-cols-1 xl:grid-cols-2 gap-6 items-stretch">
                         <!-- ================= GIAO DIỆN FORM CẤU HÌNH HIỆN ĐẠI ================= -->
-                        <section id="reportInfoCard" class="bg-white rounded-2xl shadow-sm border border-slate-200 w-full h-full flex flex-col overflow-hidden">
+                        <section id="reportInfoCard" class="report-setup-card bg-white rounded-2xl shadow-sm border border-slate-200 w-full h-full flex flex-col overflow-hidden">
                             <!-- Header của Form -->
                             <div class="flex flex-col sm:flex-row sm:items-center justify-between border-b border-slate-100 px-5 py-4 bg-slate-50/50">
                                 <h3 class="text-base font-bold text-slate-800 flex items-center gap-2 mb-3 sm:mb-0">
@@ -415,17 +411,17 @@
                             </div>
                         </section>
 
-                        <section id="reportConfigCard" class="bg-white rounded-xl shadow-sm border border-slate-200 p-4 sm:p-5 space-y-4 w-full h-full flex flex-col">
-                            <div class="border-b border-slate-100 pb-4 space-y-3">
-                                <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                                    <div class="flex items-center gap-2 min-w-0">
-                                        <i class="fa-solid fa-filter text-indigo-600 text-lg"></i>
-                                        <h2 class="text-base font-bold text-slate-800">Bộ lọc & Cấu hình Báo cáo</h2>
-                                    </div>
-                                    <button id="copyBtn" onclick="openTagSelectionModal()" class="shrink-0 inline-flex justify-center items-center gap-2 px-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-xl shadow-md hover:shadow-lg transition-all">
-                                        <i class="fa-solid fa-copy text-sm"></i> Xuất Báo Cáo
-                                    </button>
-                                </div>
+                        <section id="reportConfigCard" class="report-setup-card bg-white rounded-2xl shadow-sm border border-slate-200 w-full h-full flex flex-col overflow-hidden">
+                            <div class="flex flex-col sm:flex-row sm:items-center justify-between border-b border-slate-100 px-5 py-4 bg-slate-50/50">
+                                <h3 class="text-base font-bold text-slate-800 flex items-center gap-2 mb-3 sm:mb-0">
+                                    <i class="fa-solid fa-filter text-indigo-600"></i> Bộ lọc & Cấu hình Báo cáo
+                                </h3>
+                                <button id="copyBtn" onclick="openTagSelectionModal()" class="shrink-0 inline-flex justify-center items-center gap-2 px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-lg shadow-sm hover:shadow-md transition-all">
+                                    <i class="fa-solid fa-copy text-sm"></i> Xuất Báo Cáo
+                                </button>
+                            </div>
+
+                            <div class="p-5 space-y-6 flex-1">
                                 <div class="flex flex-col sm:flex-row sm:items-center gap-2">
                                     <label for="tagModeSelect" class="text-xs font-semibold text-slate-600 whitespace-nowrap">Chế độ nhóm Tag:</label>
                                     <select id="tagModeSelect" onchange="processData()" class="w-full sm:flex-1 bg-slate-100 border border-slate-300 text-slate-700 text-xs rounded-lg p-2.5 focus:ring-2 focus:ring-indigo-500 outline-none font-medium">
@@ -433,8 +429,6 @@
                                         <option value="all">Đếm tất cả Tag trong Ticket</option>
                                     </select>
                                 </div>
-                            </div>
-
                             <div class="bg-indigo-50/50 border border-indigo-100 rounded-lg p-3 grid grid-cols-1 sm:grid-cols-2 gap-4">
                                 <div>
                                     <label class="block text-xs font-bold text-indigo-900 mb-1">
@@ -471,6 +465,7 @@
                                     </div>
                                 </div>
                                 <div id="dynamicStatusContainer" class="flex flex-wrap gap-2 text-xs font-medium text-slate-700"></div>
+                            </div>
                             </div>
                         </section>
 
