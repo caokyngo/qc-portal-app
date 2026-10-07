@@ -216,13 +216,6 @@
                                     </button>
                                 </div>
                             </div>
-                            <div id="jiraConnectedSitesPanel" class="hidden border-t border-slate-200 px-4 py-3 bg-white">
-                                <label for="jiraSiteSelect" class="block text-[11px] font-bold text-slate-700 mb-1.5">Site Jira được cấp quyền</label>
-                                <select id="jiraSiteSelect" onchange="saveSelectedJiraSite()" class="w-full h-10 bg-white border border-slate-300 text-slate-700 text-xs rounded-lg px-3 focus:ring-2 focus:ring-indigo-500 outline-none">
-                                    <option value="">Tự nhận diện site theo link Jira</option>
-                                </select>
-                                <p id="jiraSitesHelp" class="text-[11px] text-slate-500 mt-1.5">Link Jira cần thuộc một site đã được cấp quyền.</p>
-                            </div>
                         </div>
 
                         <button type="button" id="btnFetchJira" onclick="fetchJiraDataFromUrl()" class="w-full h-12 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl shadow-md transition flex items-center justify-center gap-2 text-sm">
@@ -567,9 +560,25 @@
         </div>
     </div>
 
+    <div id="copyFallbackModal" class="hidden fixed inset-0 z-[120] flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4" role="dialog" aria-modal="true" aria-labelledby="copyFallbackTitle">
+        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-xl overflow-hidden">
+            <div class="px-5 py-4 border-b border-slate-200 bg-slate-50">
+                <h3 id="copyFallbackTitle" class="text-base font-bold text-slate-800 flex items-center gap-2"><i class="fa-solid fa-clipboard text-indigo-600"></i> Sao chép báo cáo</h3>
+                <p class="mt-1 text-xs text-slate-500">Trình duyệt chưa cho phép sao chép tự động. Bấm nút bên dưới hoặc nhấn Ctrl+C trong ô nội dung.</p>
+            </div>
+            <div class="p-5">
+                <textarea id="copyFallbackText" readonly class="w-full h-56 resize-y rounded-xl border border-slate-300 bg-slate-50 p-3 text-xs leading-5 text-slate-700 outline-none focus:ring-2 focus:ring-indigo-500"></textarea>
+            </div>
+            <div class="px-5 py-4 border-t border-slate-100 bg-slate-50 flex justify-end gap-2">
+                <button type="button" onclick="closeCopyFallbackModal()" class="px-4 py-2 rounded-lg border border-slate-300 bg-white text-xs font-bold text-slate-700 hover:bg-slate-100">Đóng</button>
+                <button type="button" onclick="copyReportFromFallback()" class="px-4 py-2 rounded-lg bg-indigo-600 text-xs font-bold text-white hover:bg-indigo-700"><i class="fa-solid fa-copy mr-1"></i> Thử sao chép</button>
+            </div>
+        </div>
+    </div>
+
     <!-- HÀM XỬ LÝ TOAST VÀ CÁC LOGIC KHÁC -->
     <script>
-       const JIRA_PROXY_API_URL = "https://script.google.com/a/macros/enotion.io/s/AKfycbwsjm9uO59mD-Ad6EUoo2WPxMql-ObwERoCPOcRXvcKx8XkYBZ_pkxBFDr0u95_6tec/exec";
+        const JIRA_PROXY_API_URL = "https://script.google.com/a/macros/enotion.io/s/AKfycbwsjm9uO59mD-Ad6EUoo2WPxMql-ObwERoCPOcRXvcKx8XkYBZ_pkxBFDr0u95_6tec/exec";
         // If OAuth Code.gs is deployed from a different Apps Script project, replace the URL above with its Web app /exec URL.
         const URL_REPORT_API = "https://script.google.com/a/macros/enotion.io/s/AKfycbzynUh65kMWVtwRdYdg8x35-6LViA_JwMPrWhEoMdDXFDP7tpcheilYrReQSIrQ6zAtIQ/exec"; 
         let currentBoardId = null;
@@ -581,6 +590,7 @@
         let jiraConnectionPending = false;
         let jiraOAuthMessageReceived = false;
         let jiraOAuthPopupCheckTimer = null;
+        let jiraOAuthProbeInFlight = false;
 
         // HÀM HIỂN THỊ TOAST THÔNG BÁO HIỆN ĐẠI (THAY THẾ MODAL)
         function showToast(title, message, isError = false) {
@@ -1022,8 +1032,27 @@
                 return;
             }
             if (jiraOAuthPopupCheckTimer) clearInterval(jiraOAuthPopupCheckTimer);
+            let lastProbeAt = 0;
             jiraOAuthPopupCheckTimer = setInterval(() => {
-                if (jiraOAuthPopup && !jiraOAuthPopup.closed) return;
+                if (jiraOAuthPopup && !jiraOAuthPopup.closed) {
+                    if (!jiraOAuthProbeInFlight && Date.now() - lastProbeAt > 4000) {
+                        lastProbeAt = Date.now();
+                        jiraOAuthProbeInFlight = true;
+                        probeJiraOAuthConnection((connected, sites) => {
+                            jiraOAuthProbeInFlight = false;
+                            if (!connected || !jiraConnectionPending) return;
+                            jiraOAuthMessageReceived = true;
+                            jiraConnectionPending = false;
+                            renderJiraSites(sites);
+                            clearInterval(jiraOAuthPopupCheckTimer);
+                            jiraOAuthPopupCheckTimer = null;
+                            try { jiraOAuthPopup.close(); } catch (e) {}
+                            setJiraConnectionUI(true, `Đã kết nối Jira · ${sites.length} site được cấp quyền`);
+                            showToast('Kết nối Jira thành công', 'Đã xác thực bằng tài khoản Atlassian của bạn.');
+                        });
+                    }
+                    return;
+                }
                 clearInterval(jiraOAuthPopupCheckTimer);
                 jiraOAuthPopupCheckTimer = null;
                 if (jiraOAuthMessageReceived) return;
@@ -1033,6 +1062,13 @@
                     else setJiraConnectionUI(false, 'Kết nối đã bị hủy hoặc chưa được cấp quyền');
                 });
             }, 700);
+        }
+
+        function probeJiraOAuthConnection(done) {
+            requestJiraJsonp({ action: 'sites' }, data => {
+                const sites = data && !data.error && Array.isArray(data.sites) ? data.sites : [];
+                done(sites.length > 0, sites);
+            }, () => done(false, []), 10000);
         }
 
         function checkJiraConnection(done) {
@@ -1345,6 +1381,7 @@
             if (!event.data || event.data.type !== 'jira-oauth-complete' || event.data.success !== true) return;
             jiraOAuthMessageReceived = true;
             jiraConnectionPending = false;
+            try { if (jiraOAuthPopup && !jiraOAuthPopup.closed) jiraOAuthPopup.close(); } catch (closeError) {}
             if (jiraOAuthPopupCheckTimer) {
                 clearInterval(jiraOAuthPopupCheckTimer);
                 jiraOAuthPopupCheckTimer = null;
@@ -1877,12 +1914,11 @@
             return new Promise((resolve) => {
                 if (!gasUrl.includes("script.google.com")) return resolve(null);
 
-                const callbackName = 'jsonpCallback_' + Math.round(100000 * Math.random());
-                let fetchUrl = gasUrl;
-                const separator = fetchUrl.includes('?') ? '&' : '?';
-                fetchUrl += separator + 'callback=' + callbackName;
-                if (sheetName) fetchUrl += '&sheet=' + encodeURIComponent(sheetName);
-
+                const callbackName = 'jsonpCallback_' + Date.now() + '_' + Math.floor(Math.random() * 100000);
+                const fetchUrl = new URL(gasUrl);
+                fetchUrl.searchParams.set('callback', callbackName);
+                fetchUrl.searchParams.set('sheet', sheetName || '');
+                fetchUrl.searchParams.set('_t', Date.now());
                 let isResolved = false;
                 const timeoutId = setTimeout(() => {
                     if (!isResolved) {
@@ -1891,10 +1927,9 @@
                         window[callbackName] = function() { delete window[callbackName]; };
                         if (script.parentNode) script.parentNode.removeChild(script);
                         setTimeout(() => { delete window[callbackName]; }, 60000);
-                        console.warn('Lỗi Timeout API Sheet');
                         resolve(null);
                     }
-                }, 30000);
+                }, 15000);
 
                 window[callbackName] = function(data) {
                     if (isResolved) return;
@@ -1902,8 +1937,7 @@
                     clearTimeout(timeoutId);
                     delete window[callbackName];
                     if (script.parentNode) script.parentNode.removeChild(script);
-                    if (data.success === false) {
-                        console.warn('Lỗi từ Google Script:', data.message);
+                    if (!data || data.success === false || !Array.isArray(data.values)) {
                         resolve(null);
                     } else {
                         resolve(parseProgressDataFromMatrix(data.values));
@@ -1911,18 +1945,80 @@
                 };
 
                 const script = document.createElement('script');
-                script.src = fetchUrl;
                 script.onerror = function() {
                     if (isResolved) return;
                     isResolved = true;
                     clearTimeout(timeoutId);
                     delete window[callbackName];
                     if (script.parentNode) script.parentNode.removeChild(script);
-                    console.warn('Lỗi Kết Nối API Google Sheet');
                     resolve(null);
                 };
+                script.src = fetchUrl.toString();
                 document.body.appendChild(script);
             });
+        }
+
+        async function copyTextToClipboard(text) {
+            try { window.focus(); } catch (e) {}
+            if (navigator.clipboard && document.hasFocus()) {
+                try {
+                    await navigator.clipboard.writeText(text);
+                    return true;
+                } catch (e) {
+                    // The user may have switched windows while the Sheet API was loading.
+                }
+            }
+
+            try {
+                const textarea = document.createElement('textarea');
+                textarea.value = text;
+                textarea.setAttribute('readonly', '');
+                textarea.style.position = 'fixed';
+                textarea.style.left = '-9999px';
+                textarea.style.top = '0';
+                document.body.appendChild(textarea);
+                textarea.focus();
+                textarea.select();
+                const copied = document.execCommand('copy');
+                textarea.remove();
+                if (copied) return true;
+            } catch (e) {
+                // Fall through to the manual copy dialog.
+            }
+            return false;
+        }
+
+        function openCopyFallbackModal(text) {
+            const modal = document.getElementById('copyFallbackModal');
+            const textarea = document.getElementById('copyFallbackText');
+            if (!modal || !textarea) return;
+            textarea.value = text;
+            modal.classList.remove('hidden');
+            setTimeout(() => { textarea.focus(); textarea.select(); }, 0);
+        }
+
+        function closeCopyFallbackModal() {
+            document.getElementById('copyFallbackModal')?.classList.add('hidden');
+        }
+
+        async function copyReportFromFallback() {
+            const textarea = document.getElementById('copyFallbackText');
+            if (!textarea) return;
+            try {
+                await navigator.clipboard.writeText(textarea.value);
+                closeCopyFallbackModal();
+                showToast('Copy thành công', 'Báo cáo đã được sao chép vào Clipboard.');
+            } catch (error) {
+                textarea.focus();
+                textarea.select();
+                const copied = document.execCommand('copy');
+                if (copied) {
+                    closeCopyFallbackModal();
+                    showToast('Copy thành công', 'Báo cáo đã được sao chép vào Clipboard.');
+                } else {
+                    showToast('Chưa copy được', 'Giữ Ctrl+C để sao chép nội dung đang được chọn.', true);
+                }
+            }
         }
 
         async function confirmAndCopyReport(skipTagFilter = false) {
@@ -2226,10 +2322,14 @@
                     });
                 }
 
-                await navigator.clipboard.writeText(reportLines.join('\n'));
+                const reportText = reportLines.join('\n');
+                const copied = await copyTextToClipboard(reportText);
                 if (!skipTagFilter) closeTagModal();
-                
-                if (isSheetError && sheetName) {
+
+                if (!copied) {
+                    openCopyFallbackModal(reportText);
+                    showToast('Báo cáo đã sẵn sàng', 'Trình duyệt yêu cầu thao tác copy trực tiếp. Nội dung đã được chọn trong hộp thoại.', true);
+                } else if (isSheetError && sheetName) {
                     showToast('Cảnh báo Báo Cáo', 'Đã copy Báo cáo nhưng bị thiếu phần dữ liệu Google Sheet do lỗi mạng/API.', true);
                 } else {
                     showToast('Copy Thành Công!', 'Báo Cáo Daily theo Mẫu Mới đã được sao chép vào Clipboard.');
