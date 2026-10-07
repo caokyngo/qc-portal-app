@@ -53,7 +53,7 @@
     .panel-heading { display:flex; align-items:center; justify-content:space-between; gap:12px; padding:17px 20px; border-bottom:1px solid var(--line); }
     .panel-heading h2 { margin:0; font-size:15px; }
     .panel-heading p { margin:4px 0 0; color:var(--muted); font-size:11px; }
-    .chart-scroll { overflow-x:auto; padding:18px 16px 14px; }
+    .chart-scroll { max-height:520px; overflow:auto; padding:16px 16px 14px; scrollbar-gutter:stable; }
     .chart-wrap { position:relative; height:390px; min-width:760px; }
     .empty-state { display:none; text-align:center; color:var(--muted); padding:52px 18px; font-size:13px; }
     .empty-state.show { display:block; }
@@ -81,7 +81,7 @@
       .summary { grid-template-columns:1fr; gap:9px; }
       .summary-card { padding:12px 15px; }
       .summary-value { font-size:20px; }
-      .chart-wrap { height:340px; }
+      .chart-scroll { max-height:460px; }
       .panel-heading { align-items:flex-start; flex-direction:column; }
       .brand-subtitle { display:none; }
     }
@@ -262,7 +262,7 @@
           statusColor: validColor(rawColor) && !isNearWhite(rawColor) ? rawColor : statusColor(status)
         });
       });
-      return parsed;
+      return parsed.sort((a, b) => Number(!isInProgressStatus(a.status)) - Number(!isInProgressStatus(b.status)) || a.row - b.row);
     }
     function validColor(value) { return typeof value === 'string' && /^#[0-9a-f]{6}$/i.test(value); }
     function isNearWhite(hex) { return /^#f[4-9a-f]{5}$/i.test(hex); }
@@ -276,6 +276,10 @@
     function isDoneStatus(status) {
       const key = String(status || '').trim().toLowerCase();
       return ['done', 'fixed', 'passed', 'complete', 'completed'].some(value => key === value || key.startsWith(value + ' '));
+    }
+    function isInProgressStatus(status) {
+      const key = String(status || '').trim().toLowerCase().replace(/[_-]+/g, ' ');
+      return key === 'inprogress' || key.includes('in progress');
     }
     function chartPercent(task) { return isDoneStatus(task.status) ? 100 : task.percent; }
     function render() {
@@ -296,7 +300,7 @@
       document.getElementById('executedPct').textContent = `${Math.max(0, executed).toFixed(2)}%`;
       document.getElementById('chartTitle').textContent = `Tiến độ theo task · ${currentSheetName}`;
       document.getElementById('chartWrap').style.width = '100%';
-      document.getElementById('chartWrap').style.height = `${Math.max(360, tasks.length * 38 + 80)}px`;
+      document.getElementById('chartWrap').style.height = `${Math.max(320, tasks.length * 34 + 58)}px`;
       if (chart) chart.destroy();
       const valueLabelPlugin = {
         id: 'taskValueLabels',
@@ -304,7 +308,7 @@
           const { ctx } = chartInstance;
           const dataset = chartInstance.getDatasetMeta(0);
           ctx.save(); ctx.fillStyle = document.documentElement.classList.contains('dark-mode') ? '#e2e8f0' : '#475569';
-          ctx.font = '600 10px Inter, sans-serif'; ctx.textBaseline = 'middle';
+          ctx.font = '700 12px Inter, sans-serif'; ctx.textBaseline = 'middle';
           dataset.data.forEach((bar, i) => {
             const task = tasks[i];
             const label = `${task.remaining}/${task.total}`;
@@ -317,15 +321,15 @@
       };
       chart = new Chart(document.getElementById('progressChart'), {
         type: 'bar',
-        data: { labels: tasks.map(task => task.name), datasets: [{ label: 'Tỷ lệ hiển thị (%)', data: tasks.map(chartPercent), backgroundColor: tasks.map(task => isDoneStatus(task.status) ? '#a8d49c' : task.statusColor), borderColor: tasks.map(task => isDoneStatus(task.status) ? '#a8d49c' : task.statusColor), borderWidth: 1, borderRadius: 6, maxBarThickness: 38 }] },
+        data: { labels: tasks.map(task => task.name), datasets: [{ label: 'Tỷ lệ hiển thị (%)', data: tasks.map(chartPercent), backgroundColor: tasks.map(task => isDoneStatus(task.status) ? '#a8d49c' : task.statusColor), borderColor: tasks.map(task => isDoneStatus(task.status) ? '#a8d49c' : task.statusColor), borderWidth: 1, borderRadius: 6, maxBarThickness: 24 }] },
         options: {
           responsive: true, maintainAspectRatio: false, indexAxis: 'y',
           onClick: (event, elements) => { if (elements.length) openTaskModal(tasks[elements[0].index]); },
           onHover: (event, elements) => { event.native.target.style.cursor = elements.length ? 'pointer' : 'default'; },
           plugins: { legend: { display: false }, tooltip: { callbacks: { label: context => { const task = tasks[context.dataIndex]; return isDoneStatus(task.status) ? `${task.remaining} case còn / ${task.total} tổng · 100% hoàn tất · ${task.status}` : `${task.remaining} case còn / ${task.total} tổng · ${task.percent.toFixed(2)}% còn lại · ${task.status}`; } } } },
           scales: {
-            x: { beginAtZero: true, max: 100, title: { display: true, text: '% hiển thị' }, ticks: { callback: value => `${value}%`, color: document.documentElement.classList.contains('dark-mode') ? '#cbd5e1' : '#475569' }, grid: { color: document.documentElement.classList.contains('dark-mode') ? '#334155' : '#e8edf4' } },
-            y: { reverse: true, ticks: { autoSkip: false, color: document.documentElement.classList.contains('dark-mode') ? '#cbd5e1' : '#475569', font: { size: 11 } }, grid: { display: false } }
+            x: { beginAtZero: true, max: 100, title: { display: true, text: '% hiển thị', font: { size: 13, weight: '600' } }, ticks: { callback: value => `${value}%`, color: document.documentElement.classList.contains('dark-mode') ? '#cbd5e1' : '#475569', font: { size: 12 } }, grid: { color: document.documentElement.classList.contains('dark-mode') ? '#334155' : '#e8edf4' } },
+            y: { reverse: true, ticks: { autoSkip: false, color: document.documentElement.classList.contains('dark-mode') ? '#cbd5e1' : '#475569', font: { size: 13, weight: '600' } }, grid: { display: false } }
           }
         },
         plugins: [valueLabelPlugin]
