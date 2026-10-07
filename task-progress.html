@@ -1,0 +1,408 @@
+<!doctype html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#f8fafc">
+  <title>Tiến độ Test Case | QC Portal</title>
+  <script>
+    try { if (localStorage.getItem('qc_portal_theme') === 'dark') document.documentElement.classList.add('dark-mode'); } catch (e) {}
+  </script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+    :root { color-scheme: light; --page:#f4f7fb; --surface:#fff; --surface-soft:#f8fafc; --text:#172033; --muted:#64748b; --line:#dfe6ef; --accent:#4f46e5; --accent-soft:#eef2ff; --green:#059669; --danger:#dc2626; }
+    * { box-sizing:border-box; }
+    body { margin:0; min-height:100vh; background:var(--page); color:var(--text); font-family:Inter,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif; }
+    button,input,select { font:inherit; }
+    .topbar { min-height:68px; display:flex; align-items:center; justify-content:space-between; gap:16px; padding:12px clamp(16px,4vw,42px); background:var(--surface); border-bottom:1px solid var(--line); box-shadow:0 2px 8px #0f172a08; }
+    .brand { display:flex; align-items:center; gap:12px; min-width:0; color:inherit; text-decoration:none; }
+    .brand-icon { width:38px; height:38px; display:grid; place-items:center; border-radius:12px; background:#eef2ff; color:var(--accent); }
+    .brand-title { font-size:17px; font-weight:800; white-space:nowrap; }
+    .brand-subtitle { margin-top:2px; color:var(--muted); font-size:11px; }
+    .top-actions { display:flex; align-items:center; gap:10px; }
+    .button { min-height:40px; border:1px solid var(--line); border-radius:11px; padding:0 14px; display:inline-flex; align-items:center; justify-content:center; gap:8px; font-size:13px; font-weight:700; cursor:pointer; transition:.16s; }
+    .button:disabled { opacity:.65; cursor:wait; }
+    .button-secondary { color:var(--text); background:var(--surface); }
+    .button-secondary:hover { background:var(--surface-soft); }
+    .button-primary { color:#fff; border-color:var(--accent); background:var(--accent); box-shadow:0 4px 10px #4f46e526; }
+    .button-primary:hover { background:#4338ca; }
+    .button-icon { width:38px; min-height:38px; padding:0; border-radius:10px; color:var(--muted); background:var(--surface-soft); }
+    main { width:min(1440px,100%); margin:0 auto; padding:28px clamp(14px,3vw,34px) 40px; }
+    .page-heading { margin:0 0 20px; }
+    .page-heading h1 { margin:0; font-size:clamp(22px,3vw,28px); letter-spacing:-.03em; }
+    .page-heading p { margin:7px 0 0; color:var(--muted); font-size:13px; }
+    .panel { background:var(--surface); border:1px solid var(--line); border-radius:18px; box-shadow:0 4px 18px #0f172a08; }
+    .load-panel { padding:18px 20px; display:flex; align-items:end; gap:14px; }
+    .field { display:grid; gap:7px; min-width:0; }
+    .field label { color:#475569; font-size:12px; font-weight:750; }
+    .field input,.field select { width:100%; height:42px; border:1px solid #cbd5e1; border-radius:10px; padding:0 12px; outline:none; color:var(--text); background:var(--surface); }
+    .field input:focus,.field select:focus { border-color:#818cf8; box-shadow:0 0 0 3px #6366f11a; }
+    .sheet-field { flex:1; }
+    .message { display:none; margin-top:14px; border-radius:11px; padding:11px 13px; font-size:12px; }
+    .message.show { display:block; }
+    .message.error { color:#b91c1c; background:#fef2f2; border:1px solid #fecaca; }
+    .message.info { color:#334155; background:#eff6ff; border:1px solid #bfdbfe; }
+    .summary { display:none; grid-template-columns:repeat(3,minmax(0,1fr)); gap:14px; margin:18px 0; }
+    .summary.show { display:grid; }
+    .summary-card { padding:15px 17px; }
+    .summary-label { color:var(--muted); font-size:11px; font-weight:750; text-transform:uppercase; letter-spacing:.06em; }
+    .summary-value { margin-top:5px; font-size:23px; font-weight:850; letter-spacing:-.03em; }
+    .chart-panel { display:none; margin-top:18px; overflow:hidden; }
+    .chart-panel.show { display:block; }
+    .panel-heading { display:flex; align-items:center; justify-content:space-between; gap:12px; padding:17px 20px; border-bottom:1px solid var(--line); }
+    .panel-heading h2 { margin:0; font-size:15px; }
+    .panel-heading p { margin:4px 0 0; color:var(--muted); font-size:11px; }
+    .chart-scroll { overflow-x:auto; padding:18px 16px 14px; }
+    .chart-wrap { position:relative; height:390px; min-width:760px; }
+    .empty-state { display:none; text-align:center; color:var(--muted); padding:52px 18px; font-size:13px; }
+    .empty-state.show { display:block; }
+    .modal-backdrop { position:fixed; inset:0; z-index:30; display:none; place-items:center; padding:18px; background:#0f172a80; backdrop-filter:blur(3px); }
+    .modal-backdrop.show { display:grid; }
+    .modal { width:min(100%,480px); background:var(--surface); color:var(--text); border:1px solid var(--line); border-radius:20px; box-shadow:0 24px 80px #0f172a40; overflow:hidden; }
+    .modal-head { display:flex; align-items:flex-start; justify-content:space-between; gap:12px; padding:20px 22px 16px; border-bottom:1px solid var(--line); }
+    .modal-head h2 { margin:0; font-size:18px; line-height:1.3; }
+    .modal-head p { margin:5px 0 0; color:var(--muted); font-size:12px; }
+    .modal-body { padding:20px 22px; display:grid; gap:16px; }
+    .counts-row { display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+    .percent-preview { border-radius:12px; background:var(--accent-soft); color:#3730a3; padding:12px 14px; font-size:13px; font-weight:750; }
+    .modal-actions { display:flex; justify-content:flex-end; gap:9px; padding:15px 22px 20px; }
+    .status-pill { display:inline-flex; align-items:center; gap:7px; border-radius:99px; padding:5px 10px; background:var(--surface-soft); color:var(--text); font-size:11px; font-weight:750; }
+    .status-dot { width:8px; height:8px; border-radius:50%; }
+    html.dark-mode { color-scheme:dark; --page:#0f172a; --surface:#172033; --surface-soft:#1e293b; --text:#e2e8f0; --muted:#a8b4c5; --line:#334155; --accent:#6366f1; --accent-soft:#25234b; }
+    html.dark-mode .field label { color:#cbd5e1; }
+    html.dark-mode .field input, html.dark-mode .field select { background:#111c2e; border-color:#475569; }
+    html.dark-mode .message.error { color:#fecaca; background:#451a1a; border-color:#7f1d1d; }
+    html.dark-mode .message.info { color:#bfdbfe; background:#172554; border-color:#1e40af; }
+    html.dark-mode .percent-preview { color:#c7d2fe; }
+    html.dark-mode .brand-icon { background:#24234b; }
+    @media(max-width:700px) {
+      .load-panel { align-items:stretch; flex-direction:column; }
+      .summary { grid-template-columns:1fr; gap:9px; }
+      .summary-card { padding:12px 15px; }
+      .summary-value { font-size:20px; }
+      .chart-wrap { height:340px; }
+      .panel-heading { align-items:flex-start; flex-direction:column; }
+      .brand-subtitle { display:none; }
+    }
+  </style>
+</head>
+<body>
+  <header class="topbar">
+    <a class="brand" href="index.html" aria-label="Quay lại QC Portal">
+      <span class="brand-icon"><i class="fa-solid fa-chart-column" aria-hidden="true"></i></span>
+      <span><span class="brand-title">QC Portal</span><span class="brand-subtitle">Tiến độ Test Case</span></span>
+    </a>
+    <div class="top-actions">
+      <button type="button" class="button button-secondary" onclick="location.href='index.html'"><i class="fa-solid fa-arrow-left"></i> Báo cáo Daily</button>
+      <button type="button" id="themeToggle" class="button button-icon" aria-label="Chuyển chế độ màu" title="Chuyển chế độ màu" onclick="toggleTheme()"><i class="fa-solid fa-moon"></i></button>
+    </div>
+  </header>
+
+  <main>
+    <div class="page-heading">
+      <h1>Tiến độ Test Case</h1>
+      <p>Tải tiến độ theo tab Google Sheet, xem trạng thái từng task và cập nhật số case ngay tại đây.</p>
+    </div>
+
+    <section class="panel load-panel" aria-label="Tải dữ liệu sheet">
+      <div class="field sheet-field">
+        <label for="sheetName">Tên tab trong Google Sheet</label>
+        <input id="sheetName" type="text" placeholder="Ví dụ: 9647" autocomplete="off">
+      </div>
+      <button type="button" id="loadButton" class="button button-primary" onclick="loadSheet()"><i class="fa-solid fa-cloud-arrow-down"></i> Tải dữ liệu</button>
+    </section>
+    <div id="message" class="message" role="status" aria-live="polite"></div>
+
+    <section id="summary" class="summary" aria-label="Tổng quan tiến độ">
+      <article class="panel summary-card"><div class="summary-label">Task</div><div id="taskCount" class="summary-value">0</div></article>
+      <article class="panel summary-card"><div class="summary-label">Case còn lại / tổng</div><div id="caseCount" class="summary-value">0 / 0</div></article>
+      <article class="panel summary-card"><div class="summary-label">Đã execute</div><div id="executedPct" class="summary-value">0%</div></article>
+    </section>
+
+    <section id="chartPanel" class="panel chart-panel">
+      <div class="panel-heading">
+        <div><h2 id="chartTitle">Tiến độ theo task</h2><p>Task Done hiển thị thanh xanh đầy đủ; các task khác hiển thị tỷ lệ case còn lại. Chọn task để xem hoặc chỉnh sửa.</p></div>
+        <span class="status-pill"><span class="status-dot" style="background:#a8d49c"></span>Done</span>
+      </div>
+      <div class="chart-scroll"><div id="chartWrap" class="chart-wrap"><canvas id="progressChart" aria-label="Biểu đồ số case còn lại theo task"></canvas></div></div>
+    </section>
+    <div id="emptyState" class="panel empty-state">Chưa có task hợp lệ trong tab này. Kiểm tra cột A, C, D và G.</div>
+  </main>
+
+  <div id="taskModal" class="modal-backdrop" role="presentation" onclick="handleBackdropClick(event)">
+    <section class="modal" role="dialog" aria-modal="true" aria-labelledby="modalTaskName">
+      <header class="modal-head">
+        <div><h2 id="modalTaskName">Task</h2><p id="modalRowLabel">Dòng trong sheet</p></div>
+        <span id="modalStatusPill" class="status-pill"><span id="modalStatusDot" class="status-dot"></span><span id="modalStatusText">status</span></span>
+      </header>
+      <div class="modal-body">
+        <div class="counts-row">
+          <div class="field"><label for="editRemaining">Case còn lại</label><input id="editRemaining" type="number" min="0" step="1" inputmode="numeric" oninput="updatePercentPreview()"></div>
+          <div class="field"><label for="editTotal">Tổng testcase</label><input id="editTotal" type="number" min="1" step="1" inputmode="numeric" oninput="updatePercentPreview()"></div>
+        </div>
+        <div id="percentPreview" class="percent-preview">Tỷ lệ còn lại: 0%</div>
+        <div class="field"><label for="editStatus">Status</label><select id="editStatus"></select></div>
+        <div id="modalError" class="message error"></div>
+      </div>
+      <footer class="modal-actions">
+        <button type="button" class="button button-secondary" onclick="closeTaskModal()">Hủy</button>
+        <button type="button" id="saveTaskButton" class="button button-primary" onclick="saveTask()"><i class="fa-solid fa-check"></i> Cập nhật</button>
+      </footer>
+    </section>
+  </div>
+
+  <script>
+    // Web App bound to report spreadsheet. Its default read response stays compatible with Section A.
+    const PROGRESS_API_URL = 'https://script.google.com/a/macros/enotion.io/s/AKfycbzynUh65kMWVtwRdYdg8x35-6LViA_JwMPrWhEoMdDXFDP7tpcheilYrReQSIrQ6zAtIQ/exec';
+    const fallbackStatusColors = {
+      'in progress': '#f6d66b', 'in-progress': '#f6d66b', 'inprogress': '#f6d66b',
+      'remaining': '#e6aaa0', 'done': '#a8d49c', 'fixed': '#a8d49c', 'complete': '#a8d49c', 'completed': '#a8d49c'
+    };
+    let currentSheetName = '';
+    let tasks = [];
+    let statusOptions = [];
+    let chart = null;
+    let activeTask = null;
+
+    function toggleTheme() {
+      const dark = document.documentElement.classList.toggle('dark-mode');
+      try { localStorage.setItem('qc_portal_theme', dark ? 'dark' : 'light'); } catch (e) {}
+      updateThemeButton();
+    }
+    function updateThemeButton() {
+      const dark = document.documentElement.classList.contains('dark-mode');
+      const button = document.getElementById('themeToggle');
+      button.innerHTML = dark ? '<i class="fa-solid fa-sun"></i>' : '<i class="fa-solid fa-moon"></i>';
+      button.title = dark ? 'Chuyển sang giao diện sáng' : 'Chuyển sang giao diện tối';
+      button.setAttribute('aria-label', button.title);
+    }
+    function showMessage(text, type = 'info') {
+      const el = document.getElementById('message');
+      el.textContent = text;
+      el.className = 'message show ' + type;
+    }
+    function clearMessage() {
+      const el = document.getElementById('message');
+      el.textContent = '';
+      el.className = 'message';
+    }
+    function jsonp(params, timeoutMs = 20000) {
+      return new Promise((resolve, reject) => {
+        const callback = 'progressJsonp_' + Date.now() + '_' + Math.floor(Math.random() * 1e6);
+        const url = new URL(PROGRESS_API_URL);
+        Object.entries(params).forEach(([key, value]) => url.searchParams.set(key, String(value ?? '')));
+        url.searchParams.set('callback', callback);
+        url.searchParams.set('_t', Date.now());
+        const script = document.createElement('script');
+        let settled = false;
+        const cleanup = () => { if (script.parentNode) script.parentNode.removeChild(script); };
+        const timer = setTimeout(() => {
+          if (settled) return;
+          settled = true;
+          window[callback] = () => { delete window[callback]; };
+          cleanup();
+          setTimeout(() => { delete window[callback]; }, 60000);
+          reject(new Error('Kết nối Apps Script quá thời gian. Kiểm tra deployment và quyền truy cập Google Sheet.'));
+        }, timeoutMs);
+        window[callback] = data => {
+          if (settled) return;
+          settled = true;
+          clearTimeout(timer);
+          delete window[callback];
+          cleanup();
+          if (!data || data.success === false) reject(new Error(data?.error || 'Apps Script trả về dữ liệu không hợp lệ.'));
+          else resolve(data);
+        };
+        script.onerror = () => {
+          if (settled) return;
+          settled = true;
+          clearTimeout(timer);
+          delete window[callback];
+          cleanup();
+          reject(new Error('Không tải được Apps Script. Kiểm tra URL deployment hoặc quyền truy cập.'));
+        };
+        script.src = url.toString();
+        document.body.appendChild(script);
+      });
+    }
+    function numberFromCell(value) {
+      if (value === null || value === undefined || String(value).trim() === '') return null;
+      const parsed = Number(String(value).replace(/,/g, '').replace(/\s/g, ''));
+      return Number.isFinite(parsed) ? parsed : null;
+    }
+    function parseTasks(data) {
+      const rows = Array.isArray(data.values) ? data.values : [];
+      const foundStatuses = new Map();
+      rows.slice(2).forEach(row => {
+        const status = String(row?.[6] ?? '').trim();
+        if (status && !foundStatuses.has(status.toLowerCase())) foundStatuses.set(status.toLowerCase(), status);
+      });
+      const defaults = ['in progress', 'remaining', 'done'];
+      statusOptions = [...new Set([...defaults, ...foundStatuses.values()].map(status => status.toLowerCase()))]
+        .map(key => foundStatuses.get(key) || defaults.find(status => status === key) || key);
+      const parsed = [];
+      rows.forEach((row, index) => {
+        if (index < 2 || !row) return;
+        const name = String(row[0] ?? '').trim();
+        if (!name) return;
+        let remaining = numberFromCell(row[2]);
+        let total = numberFromCell(row[3]);
+        const ratioMatch = String(row[1] ?? '').match(/([\d,]+)\s*\/\s*([\d,]+)/);
+        if ((remaining === null || total === null) && ratioMatch) {
+          remaining ??= numberFromCell(ratioMatch[1]);
+          total ??= numberFromCell(ratioMatch[2]);
+        }
+        if (remaining === null || total === null || total < 0) return;
+        const status = String(row[6] ?? '').trim() || 'remaining';
+        const rawColor = data.statusColors?.[index - 2];
+        parsed.push({
+          name, row: index + 1, remaining: Math.max(0, remaining), total: Math.max(0, total), status,
+          percent: total > 0 ? Math.max(0, Math.min(100, remaining / total * 100)) : 0,
+          statusColor: validColor(rawColor) && !isNearWhite(rawColor) ? rawColor : statusColor(status)
+        });
+      });
+      return parsed;
+    }
+    function validColor(value) { return typeof value === 'string' && /^#[0-9a-f]{6}$/i.test(value); }
+    function isNearWhite(hex) { return /^#f[4-9a-f]{5}$/i.test(hex); }
+    function statusColor(status) {
+      const key = String(status || '').trim().toLowerCase();
+      if (fallbackStatusColors[key]) return fallbackStatusColors[key];
+      if (key.includes('progress') || key.includes('testing') || key.includes('doing')) return '#f6d66b';
+      if (key.includes('done') || key.includes('pass') || key.includes('fixed') || key.includes('complete')) return '#a8d49c';
+      return '#e6aaa0';
+    }
+    function isDoneStatus(status) {
+      const key = String(status || '').trim().toLowerCase();
+      return ['done', 'fixed', 'passed', 'complete', 'completed'].some(value => key === value || key.startsWith(value + ' '));
+    }
+    function chartPercent(task) { return isDoneStatus(task.status) ? 100 : task.percent; }
+    function render() {
+      const summary = document.getElementById('summary');
+      const chartPanel = document.getElementById('chartPanel');
+      const empty = document.getElementById('emptyState');
+      if (!tasks.length) {
+        summary.classList.remove('show'); chartPanel.classList.remove('show'); empty.classList.add('show');
+        if (chart) { chart.destroy(); chart = null; }
+        return;
+      }
+      empty.classList.remove('show'); summary.classList.add('show'); chartPanel.classList.add('show');
+      const totalRemaining = tasks.reduce((sum, task) => sum + task.remaining, 0);
+      const totalCases = tasks.reduce((sum, task) => sum + task.total, 0);
+      document.getElementById('taskCount').textContent = tasks.length.toLocaleString('vi-VN');
+      document.getElementById('caseCount').textContent = `${totalRemaining.toLocaleString('vi-VN')} / ${totalCases.toLocaleString('vi-VN')}`;
+      const executed = totalCases ? (1 - totalRemaining / totalCases) * 100 : 0;
+      document.getElementById('executedPct').textContent = `${Math.max(0, executed).toFixed(2)}%`;
+      document.getElementById('chartTitle').textContent = `Tiến độ theo task · ${currentSheetName}`;
+      document.getElementById('chartWrap').style.width = '100%';
+      document.getElementById('chartWrap').style.height = `${Math.max(360, tasks.length * 38 + 80)}px`;
+      if (chart) chart.destroy();
+      const valueLabelPlugin = {
+        id: 'taskValueLabels',
+        afterDatasetsDraw(chartInstance) {
+          const { ctx } = chartInstance;
+          const dataset = chartInstance.getDatasetMeta(0);
+          ctx.save(); ctx.fillStyle = document.documentElement.classList.contains('dark-mode') ? '#e2e8f0' : '#475569';
+          ctx.font = '600 10px Inter, sans-serif'; ctx.textBaseline = 'middle';
+          dataset.data.forEach((bar, i) => {
+            const task = tasks[i];
+            const label = `${task.remaining}/${task.total}`;
+            const inside = chartPercent(task) >= 82;
+            ctx.textAlign = inside ? 'right' : 'left';
+            ctx.fillText(label, inside ? bar.x - 7 : bar.x + 7, bar.y);
+          });
+          ctx.restore();
+        }
+      };
+      chart = new Chart(document.getElementById('progressChart'), {
+        type: 'bar',
+        data: { labels: tasks.map(task => task.name), datasets: [{ label: 'Tỷ lệ hiển thị (%)', data: tasks.map(chartPercent), backgroundColor: tasks.map(task => isDoneStatus(task.status) ? '#a8d49c' : task.statusColor), borderColor: tasks.map(task => isDoneStatus(task.status) ? '#a8d49c' : task.statusColor), borderWidth: 1, borderRadius: 6, maxBarThickness: 38 }] },
+        options: {
+          responsive: true, maintainAspectRatio: false, indexAxis: 'y',
+          onClick: (event, elements) => { if (elements.length) openTaskModal(tasks[elements[0].index]); },
+          onHover: (event, elements) => { event.native.target.style.cursor = elements.length ? 'pointer' : 'default'; },
+          plugins: { legend: { display: false }, tooltip: { callbacks: { label: context => { const task = tasks[context.dataIndex]; return isDoneStatus(task.status) ? `${task.remaining} case còn / ${task.total} tổng · 100% hoàn tất · ${task.status}` : `${task.remaining} case còn / ${task.total} tổng · ${task.percent.toFixed(2)}% còn lại · ${task.status}`; } } } },
+          scales: {
+            x: { beginAtZero: true, max: 100, title: { display: true, text: '% hiển thị' }, ticks: { callback: value => `${value}%`, color: document.documentElement.classList.contains('dark-mode') ? '#cbd5e1' : '#475569' }, grid: { color: document.documentElement.classList.contains('dark-mode') ? '#334155' : '#e8edf4' } },
+            y: { reverse: true, ticks: { autoSkip: false, color: document.documentElement.classList.contains('dark-mode') ? '#cbd5e1' : '#475569', font: { size: 11 } }, grid: { display: false } }
+          }
+        },
+        plugins: [valueLabelPlugin]
+      });
+    }
+    async function loadSheet() {
+      const sheetName = document.getElementById('sheetName').value.trim();
+      if (!sheetName) { showMessage('Nhập tên tab Google Sheet trước khi tải.', 'error'); return; }
+      const button = document.getElementById('loadButton');
+      button.disabled = true; button.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Đang tải...'; clearMessage();
+      try {
+        const data = await jsonp({ action: 'progressRead', sheet: sheetName });
+        currentSheetName = data.sheetName || sheetName;
+        tasks = parseTasks(data);
+        localStorage.setItem('jira_sheet_name', sheetName);
+        render();
+        showMessage(tasks.length ? `Đã tải ${tasks.length} task từ tab “${currentSheetName}” trong file “${data.spreadsheetName || 'Google Sheet'}”.` : 'Đã đọc sheet nhưng chưa tìm thấy các dòng task có số case hợp lệ.', tasks.length ? 'info' : 'error');
+      } catch (error) { showMessage(error.message, 'error'); }
+      finally { button.disabled = false; button.innerHTML = '<i class="fa-solid fa-cloud-arrow-down"></i> Tải dữ liệu'; }
+    }
+    function openTaskModal(task) {
+      activeTask = task;
+      document.getElementById('modalTaskName').textContent = task.name;
+      document.getElementById('modalRowLabel').textContent = `Dòng ${task.row} · tab ${currentSheetName}`;
+      document.getElementById('editRemaining').value = task.remaining;
+      document.getElementById('editTotal').value = task.total;
+      const select = document.getElementById('editStatus');
+      const options = [...new Set([...statusOptions, task.status])];
+      select.innerHTML = options.map(status => `<option value="${escapeHtml(status)}">${escapeHtml(status)}</option>`).join('');
+      select.value = task.status;
+      document.getElementById('modalStatusText').textContent = task.status;
+      document.getElementById('modalStatusDot').style.background = task.statusColor;
+      document.getElementById('modalError').className = 'message error';
+      updatePercentPreview();
+      document.getElementById('taskModal').classList.add('show');
+      document.getElementById('editRemaining').focus();
+    }
+    function escapeHtml(value) { return String(value).replace(/[&<>"']/g, char => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' }[char])); }
+    function updatePercentPreview() {
+      const remaining = Number(document.getElementById('editRemaining').value);
+      const total = Number(document.getElementById('editTotal').value);
+      const percent = total > 0 && Number.isFinite(remaining) ? remaining / total * 100 : 0;
+      document.getElementById('percentPreview').textContent = `Tỷ lệ còn lại: ${Math.max(0, percent).toFixed(2)}%`;
+    }
+    function handleBackdropClick(event) { if (event.target.id === 'taskModal') closeTaskModal(); }
+    function closeTaskModal() { document.getElementById('taskModal').classList.remove('show'); activeTask = null; }
+    async function saveTask() {
+      if (!activeTask) return;
+      const remaining = Number(document.getElementById('editRemaining').value);
+      const total = Number(document.getElementById('editTotal').value);
+      const status = document.getElementById('editStatus').value;
+      const errorBox = document.getElementById('modalError');
+      if (!Number.isInteger(remaining) || !Number.isInteger(total) || total < 1 || remaining < 0 || remaining > total) {
+        errorBox.textContent = 'Nhập số nguyên hợp lệ; case còn lại phải từ 0 đến tổng testcase.'; errorBox.className = 'message error show'; return;
+      }
+      const button = document.getElementById('saveTaskButton');
+      button.disabled = true; button.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Đang lưu...';
+      try {
+        const result = await jsonp({ action: 'progressUpdate', sheet: currentSheetName, row: activeTask.row, remaining, total, status });
+        activeTask.remaining = result.remaining;
+        activeTask.total = result.total;
+        activeTask.status = result.status;
+        activeTask.percent = result.total ? result.remaining / result.total * 100 : 0;
+        if (validColor(result.statusColor) && !isNearWhite(result.statusColor)) activeTask.statusColor = result.statusColor;
+        else activeTask.statusColor = statusColor(result.status);
+        render(); closeTaskModal();
+        showMessage(`Đã cập nhật “${result.task}” vào tab “${currentSheetName}”.`, 'info');
+      } catch (error) { errorBox.textContent = error.message; errorBox.className = 'message error show'; }
+      finally { button.disabled = false; button.innerHTML = '<i class="fa-solid fa-check"></i> Cập nhật'; }
+    }
+    document.addEventListener('DOMContentLoaded', () => {
+      updateThemeButton();
+      const saved = localStorage.getItem('jira_sheet_name') || '';
+      if (saved) document.getElementById('sheetName').value = saved;
+      document.getElementById('sheetName').addEventListener('keydown', event => { if (event.key === 'Enter') loadSheet(); });
+      document.getElementById('taskModal').addEventListener('keydown', event => { if (event.key === 'Escape') closeTaskModal(); });
+    });
+  </script>
+</body>
+</html>
