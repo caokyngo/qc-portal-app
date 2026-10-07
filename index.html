@@ -1704,7 +1704,7 @@
                         console.warn('Lỗi Timeout API Sheet');
                         resolve(null);
                     }
-                }, 10000);
+                }, 30000);
 
                 window[callbackName] = function(data) {
                     if (isResolved) return;
