@@ -110,7 +110,7 @@
         html.dark-mode .text-indigo-800, html.dark-mode .text-indigo-700 { color: #c7d2fe !important; }
         html.dark-mode .text-indigo-600, html.dark-mode .text-indigo-500 { color: #a5b4fc !important; }
         html.dark-mode .hover\:bg-slate-100:hover, html.dark-mode .hover\:bg-slate-200:hover { background-color: #334155 !important; }
-        html.dark-mode #themeToggleBtn { background-color: #253247; color: #fbbf24; border-color: #475569; }
+        html.dark-mode #themeToggleBtn, html.dark-mode #themeToggleMobileBtn { background-color: #253247; color: #fbbf24; border-color: #475569; }
         html.dark-mode .travel-marquee > div { background-color: #172033; border-color: #334155; }
         html.dark-mode table thead { background-color: #1e293b !important; }
         html.dark-mode table tbody tr { border-color: #334155 !important; }
@@ -167,7 +167,10 @@
                 <h2 class="app-header-heading text-lg font-bold text-slate-800 sm:hidden">Báo Cáo Daily</h2>
             </div>
             
-            <div class="app-header-center hidden lg:flex min-w-0 justify-center items-center">
+            <div class="app-header-center hidden lg:flex min-w-0 justify-center items-center gap-2">
+                <button type="button" id="themeToggleBtn" onclick="toggleDarkMode()" aria-label="Bật chế độ tối" aria-pressed="false" title="Bật chế độ tối" class="h-10 w-10 shrink-0 inline-flex items-center justify-center rounded-xl border border-slate-200 bg-slate-50 text-slate-600 hover:bg-slate-100 transition focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2">
+                    <i class="fa-solid fa-moon" aria-hidden="true"></i>
+                </button>
                 <div class="w-full max-w-[460px] px-4 py-2 rounded-full bg-slate-50/90 border border-slate-200 shadow-sm cursor-default">
                     <div class="travel-marquee">
                         <div class="travel-marquee-track">
@@ -204,7 +207,7 @@
                     </button>
                 </div>
                 
-                <button type="button" id="themeToggleBtn" onclick="toggleDarkMode()" aria-label="Bật chế độ tối" aria-pressed="false" title="Bật chế độ tối" class="h-10 w-10 shrink-0 inline-flex items-center justify-center rounded-xl border border-slate-200 bg-slate-50 text-slate-600 hover:bg-slate-100 transition focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2">
+                <button type="button" id="themeToggleMobileBtn" data-theme-toggle onclick="toggleDarkMode()" aria-label="Bật chế độ tối" aria-pressed="false" title="Bật chế độ tối" class="xl:hidden h-10 w-10 shrink-0 inline-flex items-center justify-center rounded-xl border border-slate-200 bg-slate-50 text-slate-600 hover:bg-slate-100 transition focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2">
                     <i class="fa-solid fa-moon" aria-hidden="true"></i>
                 </button>
                 <div id="authSection" class="relative flex items-center min-h-[40px]">
@@ -1436,15 +1439,15 @@
         }
 
         function updateThemeToggleButton() {
-            const button = document.getElementById('themeToggleBtn');
-            if (!button) return;
             const isDark = document.documentElement.classList.contains('dark-mode');
-            button.innerHTML = isDark
-                ? '<i class="fa-solid fa-sun" aria-hidden="true"></i>'
-                : '<i class="fa-solid fa-moon" aria-hidden="true"></i>';
-            button.setAttribute('aria-pressed', String(isDark));
-            button.setAttribute('aria-label', isDark ? 'Bật chế độ sáng' : 'Bật chế độ tối');
-            button.title = isDark ? 'Chuyển sang chế độ sáng' : 'Chuyển sang chế độ tối';
+            document.querySelectorAll('[data-theme-toggle], #themeToggleBtn').forEach(button => {
+                button.innerHTML = isDark
+                    ? '<i class="fa-solid fa-sun" aria-hidden="true"></i>'
+                    : '<i class="fa-solid fa-moon" aria-hidden="true"></i>';
+                button.setAttribute('aria-pressed', String(isDark));
+                button.setAttribute('aria-label', isDark ? 'Bật chế độ sáng' : 'Bật chế độ tối');
+                button.title = isDark ? 'Chuyển sang chế độ sáng' : 'Chuyển sang chế độ tối';
+            });
             const themeColor = document.querySelector('meta[name="theme-color"]');
             if (themeColor) themeColor.content = isDark ? '#0f172a' : '#312e81';
         }
