@@ -891,8 +891,6 @@
                 return;
             }
             const connectUrl = JIRA_PROXY_API_URL + (JIRA_PROXY_API_URL.includes('?') ? '&' : '?') + 'action=connect';
-            const popup = window.open(connectUrl, '_blank', 'width=560,height=700');
-            if (!popup) window.location.href = connectUrl;
         }
 
         function checkJiraConnection(done) {
