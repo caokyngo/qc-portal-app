@@ -40,7 +40,7 @@
 
     <style>
         /* Giữ các vùng header ổn định khi tên Jira project dài */
-        .app-header { display: grid; grid-template-columns: minmax(0, 1fr) minmax(220px, 460px) minmax(0, 1fr); column-gap: 16px; }
+        .app-header { display: grid; grid-template-columns: minmax(0, 1fr) minmax(220px, 460px) minmax(0, 1fr); column-gap: 16px; height: 72px; min-height: 72px; max-height: 72px; flex: 0 0 72px; box-sizing: border-box; padding-top: 8px !important; padding-bottom: 8px !important; overflow: hidden; }
         .app-header-title, .app-header-center, .app-header-actions { min-width: 0; }
         .app-header-title { overflow: hidden; }
         .app-header-heading { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
@@ -49,6 +49,12 @@
         .app-header-project-name { display: inline-block; max-width: 210px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; vertical-align: bottom; }
         .app-header-actions { justify-self: end; }
         .app-header-center > div { min-width: 0; }
+        .app-header-actions { height: 48px; overflow: visible; }
+        #fileInfo { height: 48px; padding-top: 4px; padding-bottom: 4px; }
+        #authSection { height: 48px; min-height: 48px; }
+        #loginOption, #userProfileBtn { height: 48px; min-width: 0; flex-wrap: nowrap; }
+        #userProfileBtn { max-width: 190px; }
+        #userNameDisplay { max-width: 104px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
         @media (max-width: 1279px) {
             .app-header { grid-template-columns: minmax(0, 1fr) auto; }
             .app-header-center { display: none !important; }
@@ -1274,6 +1280,9 @@
                 currentBoardId = parsed.boardId || json.boardId || null;
                 currentProjectKey = json.projectKey || (parsed.projectName !== "Jira Filter" ? parsed.projectName : null);
                 currentJiraDomain = parsed.domain;
+                if (!currentBoardId && currentProjectKey) {
+                    showToast('Chưa lấy được Board ID', json.boardIdError || 'Apps Script không trả về boardId. Hãy triển khai bản Code.gs mới và cấp quyền Jira board.', true);
+                }
 
                 const issues = json.issues || [];
                 if (issues.length === 0) {
@@ -2002,7 +2011,7 @@
                 else if ((item.pctNum !== null && item.pctNum > 0 && item.pctNum < 100) || isInProgressStatus) {
                     let displayVal = formatPctDisplayFixed(valToUse);
                     if (item.pctNum !== null && item.pctNum > 0 && item.pctNum < 100) {
-                        displayVal = "Remain " + displayVal;
+                        displayVal = "remain " + displayVal;
                     }
                     inProgressRaw.push({ name: item.name, val: displayVal, status: item.colG });
                 }
@@ -2213,10 +2222,10 @@
                 const linkAppname = document.getElementById('reportLinkAppnameInput') ? document.getElementById('reportLinkAppnameInput').value.trim() : '';
                 
                 let generatedJiraLink = "";
-                if (currentProjectKey && currentJiraDomain && currentBoardId) {
-                    generatedJiraLink = `${currentJiraDomain}/jira/software/projects/${currentProjectKey}/boards/${currentBoardId}`;
+                if (currentProjectKey && currentJiraDomain) {
+                    const boardIdForLink = currentBoardId || '[boardId]';
+                    generatedJiraLink = `${currentJiraDomain}/jira/software/projects/${currentProjectKey}/boards/${boardIdForLink}`;
                 } else {
-                    // Nếu không có boardId thì giữ URL gốc, tránh tạo link board bị thiếu ID ở cuối.
                     generatedJiraLink = document.getElementById('jiraUrlInput') ? document.getElementById('jiraUrlInput').value.trim() : '';
                 }
                 
