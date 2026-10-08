@@ -79,7 +79,8 @@
     .config-panel-body { padding:17px 20px 20px; }
     .config-folder { margin-bottom:14px; }
     .config-list { display:grid; gap:11px; }
-    .config-card { padding:13px; border:1px solid var(--line); border-radius:12px; background:var(--soft); }
+    .config-card { padding:13px; border:1px solid var(--line); border-radius:12px; background:#f8fafc; }
+    .config-card:nth-child(odd) { background:#eff6ff; }
     .config-card-head { display:flex; justify-content:space-between; align-items:center; gap:10px; margin-bottom:10px; }
     .config-card-head strong { font-size:13px; }
     .config-card-head span { color:var(--muted); font-size:11px; }
@@ -96,6 +97,8 @@
     html.dark-mode { color-scheme:dark; --page:#0f172a; --surface:#172033; --soft:#1e293b; --text:#e2e8f0; --muted:#a8b4c5; --line:#334155; --accent:#6366f1; --accent-light:#25234b; }
     html.dark-mode .field label { color:#cbd5e1; }
     html.dark-mode .custom-suite input,html.dark-mode .field input,html.dark-mode .field select { background:#111c2e; border-color:#475569; }
+    html.dark-mode .config-card { background:#1e293b; }
+    html.dark-mode .config-card:nth-child(odd) { background:#243249; }
     html.dark-mode .message.error { color:#fecaca; background:#451a1a; border-color:#7f1d1d; }
     html.dark-mode .message.info { color:#bfdbfe; background:#172554; border-color:#1e40af; }
     html.dark-mode .modal-message { color:#fecaca; background:#451a1a; border-color:#7f1d1d; }
