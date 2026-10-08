@@ -8,6 +8,20 @@
   <script>
     try { if (localStorage.getItem('qc_portal_theme') === 'dark') document.documentElement.classList.add('dark-mode'); } catch (e) {}
   </script>
+  <script>
+    let loggedInUser = null;
+    function decodeJwtResponse(token) {
+      const payload = token.split('.')[1].replace(/-/g, '+').replace(/_/g, '/');
+      return JSON.parse(decodeURIComponent(atob(payload).split('').map(char => '%' + ('00' + char.charCodeAt(0).toString(16)).slice(-2)).join('')));
+    }
+    function handleCredentialResponse(response) {
+      const user = decodeJwtResponse(response.credential);
+      loggedInUser = { name: user.name, email: user.email, picture: user.picture };
+      localStorage.setItem('jira_google_user', JSON.stringify(loggedInUser));
+      updateAuthUI();
+    }
+  </script>
+  <script src="https://accounts.google.com/gsi/client" async defer></script>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   <style>
     :root { color-scheme:light; --page:#f4f7fb; --surface:#fff; --soft:#f8fafc; --text:#172033; --muted:#64748b; --line:#dfe6ef; --accent:#4f46e5; --accent-light:#eef2ff; --green:#059669; --red:#dc2626; }
@@ -21,6 +35,18 @@
     .brand-title { font-size:17px; font-weight:800; }
     .brand-subtitle { margin-top:2px; color:var(--muted); font-size:11px; }
     .top-actions { display:flex; align-items:center; gap:10px; }
+    .auth-section { position:relative; display:flex; align-items:center; min-height:40px; }
+    .login-option,.user-profile { position:relative; display:flex; align-items:center; gap:10px; height:42px; padding:5px 11px; border:1px solid var(--line); border-radius:12px; background:#f1f5f9; color:var(--text); cursor:pointer; }
+    .login-option { overflow:hidden; }
+    .login-option img,.user-avatar { width:31px; height:31px; flex:none; border:1px solid #cbd5e1; border-radius:50%; background:white; object-fit:cover; }
+    .login-label,.user-name { max-width:145px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; font-size:13px; font-weight:750; }
+    .signin-overlay { position:absolute; inset:0; z-index:2; display:flex; justify-content:center; align-items:center; opacity:.01; overflow:hidden; cursor:pointer; }
+    .signin-overlay .g_id_signin { transform:scale(1.55); }
+    .user-profile { text-align:left; }
+    .user-dropdown { position:absolute; z-index:70; top:calc(100% + 7px); right:0; width:190px; overflow:hidden; border:1px solid var(--line); border-radius:12px; background:var(--surface); box-shadow:0 12px 30px #0f172a24; }
+    .user-dropdown button { width:100%; padding:12px 14px; border:0; background:transparent; color:#e11d48; text-align:left; font-size:13px; font-weight:700; cursor:pointer; }
+    .user-dropdown button:hover { background:#fff1f2; }
+    .auth-hidden { display:none !important; }
     .button { min-height:40px; display:inline-flex; align-items:center; justify-content:center; gap:8px; border:1px solid var(--line); border-radius:11px; padding:0 14px; font-size:13px; font-weight:700; cursor:pointer; transition:.16s; }
     .button:disabled { opacity:.65; cursor:wait; }
     .button-primary { color:#fff; border-color:var(--accent); background:var(--accent); box-shadow:0 4px 10px #4f46e526; }
@@ -87,6 +113,27 @@
     .config-fields { display:grid; grid-template-columns:minmax(0,1.5fr) minmax(0,1fr) 115px 145px; gap:9px; }
     .formula-preview { margin-top:9px; border-radius:8px; padding:8px 10px; background:var(--surface); color:var(--muted); font-family:ui-monospace,SFMono-Regular,Consolas,monospace; font-size:11px; overflow-wrap:anywhere; }
     .config-empty { padding:24px; color:var(--muted); text-align:center; font-size:13px; }
+    .config-launch { display:flex; align-items:center; justify-content:space-between; gap:14px; margin-top:16px; padding:16px 18px; }
+    .config-launch h2 { margin:0; font-size:15px; }
+    .config-launch p { margin:5px 0 0; color:var(--muted); font-size:12px; }
+    .config-modal-backdrop { position:fixed; inset:0; z-index:80; display:none; place-items:center; padding:18px; background:#0f172a80; backdrop-filter:blur(3px); }
+    .config-modal-backdrop.show { display:grid; }
+    .config-modal { width:min(1120px,100%); max-height:92vh; display:flex; flex-direction:column; overflow:hidden; border:1px solid var(--line); border-radius:18px; background:var(--page); box-shadow:0 24px 80px #0f172a40; }
+    .config-modal-head { display:flex; align-items:center; justify-content:space-between; gap:12px; padding:15px 20px; border-bottom:1px solid var(--line); background:var(--surface); }
+    .config-modal-head h2 { margin:0; font-size:16px; }
+    .config-modal-body { overflow:auto; padding:4px 14px 18px; }
+    .config-modal-body .lookup-panel { margin-top:12px; }
+    .config-modal-body .config-panel { margin-top:12px; }
+    #toast-container { position:fixed; z-index:120; top:16px; right:16px; display:flex; flex-direction:column; gap:10px; pointer-events:none; }
+    .toast { display:flex; align-items:flex-start; gap:11px; min-width:290px; max-width:min(420px,calc(100vw - 32px)); padding:13px 14px; border:1px solid var(--line); border-left:4px solid #10b981; border-radius:12px; background:var(--surface); box-shadow:0 10px 32px #0f172a26; pointer-events:auto; animation:toast-in .22s ease-out; }
+    .toast.error { border-left-color:#f43f5e; }
+    .toast-icon { width:23px; height:23px; display:grid; place-items:center; flex:none; border-radius:50%; background:#d1fae5; color:#059669; font-size:11px; }
+    .toast.error .toast-icon { background:#ffe4e6; color:#e11d48; }
+    .toast-copy { min-width:0; flex:1; }
+    .toast-copy strong { display:block; font-size:13px; }
+    .toast-copy p { margin:4px 0 0; color:var(--muted); font-size:12px; line-height:1.45; overflow-wrap:anywhere; }
+    .toast-close { border:0; background:transparent; color:var(--muted); cursor:pointer; }
+    @keyframes toast-in { from { opacity:0; transform:translateX(12px); } to { opacity:1; transform:translateX(0); } }
     .field { display:grid; gap:6px; min-width:0; }
     .field label { color:#475569; font-size:11px; font-weight:750; }
     .field input,.field select { height:39px; font-size:12px; }
@@ -109,6 +156,9 @@
       .brand-subtitle { display:none; }
       .top-actions { gap:6px; }
       .top-actions .button-secondary { padding:0 10px; }
+      .login-label { display:none; }
+      .user-profile { gap:6px; padding:4px 8px; }
+      .user-name { max-width:90px; }
       main { padding-top:22px; }
       .panel-head { align-items:flex-start; flex-direction:column; padding:16px; }
       .suite-grid { grid-template-columns:1fr; padding:14px 16px 18px; }
@@ -127,6 +177,12 @@
       .modal-footer { padding-left:15px; padding-right:15px; }
       .modal-footer { align-items:stretch; flex-direction:column; }
       .modal-footer .actions { justify-content:flex-end; }
+      .config-launch { align-items:flex-start; flex-direction:column; }
+      .config-launch > .button { width:100%; }
+      .config-modal-backdrop { padding:7px; }
+      .config-modal { max-height:96vh; }
+      .config-modal-head { padding:12px 14px; }
+      .config-modal-body { padding:3px 8px 12px; }
     }
   </style>
 </head>
@@ -139,6 +195,22 @@
     <div class="top-actions">
       <button type="button" class="button button-secondary" onclick="location.href='index.html'"><i class="fa-solid fa-arrow-left"></i> Báo cáo Daily</button>
       <button type="button" id="themeToggle" class="button button-icon" aria-label="Chuyển chế độ màu" title="Chuyển chế độ màu" onclick="toggleTheme()"><i class="fa-solid fa-moon"></i></button>
+      <div id="authSection" class="auth-section">
+        <div id="g_id_onload" data-client_id="149310433677-uvpoilv41na98qdjlj58cpmfl8u9946e.apps.googleusercontent.com" data-callback="handleCredentialResponse" data-auto_prompt="false"></div>
+        <div id="loginOption" class="login-option">
+          <img src="https://cdn-icons-png.flaticon.com/512/149/149071.png" alt="Guest">
+          <span class="login-label">Đăng nhập</span>
+          <div class="signin-overlay"><div class="g_id_signin" data-type="standard" data-size="large" data-theme="outline" data-text="sign_in_with" data-shape="rectangular" data-logo_alignment="left"></div></div>
+        </div>
+        <button type="button" id="userProfileBtn" class="user-profile auth-hidden" aria-haspopup="true" aria-expanded="false" aria-controls="userDropdown" onclick="toggleUserDropdown(event)">
+          <img id="userAvatar" class="user-avatar" src="" alt="Avatar">
+          <span id="userNameDisplay" class="user-name"></span>
+          <i class="fa-solid fa-caret-down" aria-hidden="true"></i>
+        </button>
+        <div id="userDropdown" class="user-dropdown auth-hidden" role="menu">
+          <button type="button" role="menuitem" onclick="handleLogout()"><i class="fa-solid fa-arrow-right-from-bracket"></i>　Đăng xuất</button>
+        </div>
+      </div>
     </div>
   </header>
   <main>
@@ -165,26 +237,43 @@
       <span id="selectionCount" class="selection-count">Chưa chọn Test Suit nào</span>
       <button type="button" class="button button-primary" onclick="openSetupModal()"><i class="fa-solid fa-arrow-right"></i> Tiếp tục cấu hình nguồn</button>
     </section>
-    <section class="panel lookup-panel" aria-labelledby="configLookupTitle">
-      <h2 id="configLookupTitle">Xem hoặc chỉnh sửa cấu hình sheet</h2>
-      <p>Nhập tên tab report để tải công thức cột B và dữ liệu Test Suit, status, tab nguồn ở cột A/G/H.</p>
-      <div class="lookup-row">
-        <div class="field"><label for="configSheetName">Tên sheet cần tải</label><input id="configSheetName" type="text" placeholder="Ví dụ: 9648" autocomplete="off"></div>
-        <button type="button" id="loadConfigButton" class="button button-secondary" onclick="loadExistingConfig()"><i class="fa-solid fa-magnifying-glass"></i> Xem cấu hình</button>
-      </div>
-    </section>
-    <section id="configPanel" class="panel config-panel" hidden>
-      <header class="config-panel-head">
-        <div><h2 id="configPanelTitle">Cấu hình sheet</h2><p>Chỉnh link file, tên tab, địa chỉ ô và status. Công thức cột B sẽ được tạo lại khi lưu.</p></div>
-        <button type="button" id="saveConfigButton" class="button button-primary" onclick="saveExistingConfig()"><i class="fa-solid fa-floppy-disk"></i> Lưu cấu hình</button>
-      </header>
-      <div class="config-panel-body">
-        <div class="field config-folder"><label for="configFolderUrl">Link folder Test Case (ô A1)</label><input id="configFolderUrl" type="url" placeholder="https://drive.google.com/drive/folders/…"></div>
-        <div id="configRows" class="config-list"></div>
-      </div>
+    <section class="panel config-launch">
+      <div><h2>Xem hoặc chỉnh sửa cấu hình sheet</h2><p>Tải công thức, Test Suit, status và tab nguồn từ Google Sheet.</p></div>
+      <button type="button" class="button button-secondary" onclick="openSheetConfigModal()"><i class="fa-solid fa-sliders"></i> Mở cấu hình sheet</button>
     </section>
     <div id="message" class="message" role="status" aria-live="polite"></div>
   </main>
+
+  <div id="toast-container" aria-live="polite" aria-atomic="false"></div>
+
+  <div id="sheetConfigModal" class="config-modal-backdrop" role="presentation" onclick="handleSheetConfigBackdrop(event)">
+    <section class="config-modal" role="dialog" aria-modal="true" aria-labelledby="sheetConfigModalTitle">
+      <header class="config-modal-head">
+        <h2 id="sheetConfigModalTitle">Xem hoặc chỉnh sửa cấu hình sheet</h2>
+        <button type="button" class="button button-icon" aria-label="Đóng" onclick="closeSheetConfigModal()"><i class="fa-solid fa-xmark"></i></button>
+      </header>
+      <div class="config-modal-body">
+        <section class="panel lookup-panel" aria-labelledby="configLookupTitle">
+          <h2 id="configLookupTitle">Tải cấu hình từ Google Sheet</h2>
+          <p>Nhập tên tab report để tải công thức cột B và dữ liệu Test Suit, status, tab nguồn ở cột A/G/H.</p>
+          <div class="lookup-row">
+            <div class="field"><label for="configSheetName">Tên sheet cần tải</label><input id="configSheetName" type="text" placeholder="Ví dụ: 9648" autocomplete="off"></div>
+            <button type="button" id="loadConfigButton" class="button button-secondary" onclick="loadExistingConfig()"><i class="fa-solid fa-magnifying-glass"></i> Xem cấu hình</button>
+          </div>
+        </section>
+        <section id="configPanel" class="panel config-panel" hidden>
+          <header class="config-panel-head">
+            <div><h2 id="configPanelTitle">Cấu hình sheet</h2><p>Chỉnh link file, tên tab, địa chỉ ô và status. Công thức cột B sẽ được tạo lại khi lưu.</p></div>
+            <button type="button" id="saveConfigButton" class="button button-primary" onclick="saveExistingConfig()"><i class="fa-solid fa-floppy-disk"></i> Lưu cấu hình</button>
+          </header>
+          <div class="config-panel-body">
+            <div class="field config-folder"><label for="configFolderUrl">Link folder Test Case (ô A1)</label><input id="configFolderUrl" type="url" placeholder="https://drive.google.com/drive/folders/…"></div>
+            <div id="configRows" class="config-list"></div>
+          </div>
+        </section>
+      </div>
+    </section>
+  </div>
 
   <div id="setupModal" class="modal-backdrop" role="presentation" onclick="onBackdropClick(event)">
     <section class="modal" role="dialog" aria-modal="true" aria-labelledby="setupTitle">
@@ -245,6 +334,68 @@
       button.title = dark ? 'Chuyển sang giao diện sáng' : 'Chuyển sang giao diện tối';
       button.setAttribute('aria-label', button.title);
     }
+    function showToast(title, message, isError = false) {
+      const container = document.getElementById('toast-container');
+      if (!container) return;
+      const toast = document.createElement('div');
+      toast.className = 'toast' + (isError ? ' error' : '');
+      const icon = document.createElement('span'); icon.className = 'toast-icon';
+      icon.innerHTML = isError ? '<i class="fa-solid fa-triangle-exclamation"></i>' : '<i class="fa-solid fa-check"></i>';
+      const copy = document.createElement('div'); copy.className = 'toast-copy';
+      const heading = document.createElement('strong'); heading.textContent = title;
+      const detail = document.createElement('p'); detail.textContent = message;
+      copy.append(heading, detail);
+      const close = document.createElement('button'); close.type = 'button'; close.className = 'toast-close'; close.setAttribute('aria-label', 'Đóng thông báo');
+      close.innerHTML = '<i class="fa-solid fa-xmark"></i>'; close.onclick = () => toast.remove();
+      toast.append(icon, copy, close); container.appendChild(toast);
+      setTimeout(() => toast.remove(), 4200);
+    }
+    function updateAuthUI() {
+      let user = null;
+      try { user = JSON.parse(localStorage.getItem('jira_google_user') || 'null'); } catch (e) { localStorage.removeItem('jira_google_user'); }
+      loggedInUser = user;
+      const login = document.getElementById('loginOption');
+      const profile = document.getElementById('userProfileBtn');
+      const dropdown = document.getElementById('userDropdown');
+      if (user) {
+        login.classList.add('auth-hidden');
+        profile.classList.remove('auth-hidden');
+        document.getElementById('userNameDisplay').textContent = user.name || user.email || 'Google user';
+        document.getElementById('userAvatar').src = user.picture || 'https://cdn-icons-png.flaticon.com/512/149/149071.png';
+        dropdown.classList.add('auth-hidden');
+        profile.setAttribute('aria-expanded', 'false');
+      } else {
+        login.classList.remove('auth-hidden');
+        profile.classList.add('auth-hidden');
+        dropdown.classList.add('auth-hidden');
+      }
+    }
+    function toggleUserDropdown(event) {
+      event.stopPropagation();
+      const profile = document.getElementById('userProfileBtn');
+      const dropdown = document.getElementById('userDropdown');
+      const open = dropdown.classList.contains('auth-hidden');
+      dropdown.classList.toggle('auth-hidden', !open);
+      profile.setAttribute('aria-expanded', String(open));
+    }
+    function closeUserDropdown() {
+      const dropdown = document.getElementById('userDropdown');
+      const profile = document.getElementById('userProfileBtn');
+      if (dropdown) dropdown.classList.add('auth-hidden');
+      if (profile) profile.setAttribute('aria-expanded', 'false');
+    }
+    function handleLogout() {
+      if (window.google?.accounts?.id) google.accounts.id.disableAutoSelect();
+      localStorage.removeItem('jira_google_user');
+      updateAuthUI();
+      showToast('Đăng xuất Google', 'Bạn đã đăng xuất khỏi QC Portal.');
+    }
+    function openSheetConfigModal() {
+      document.getElementById('sheetConfigModal').classList.add('show');
+      setTimeout(() => document.getElementById('configSheetName').focus(), 0);
+    }
+    function closeSheetConfigModal() { document.getElementById('sheetConfigModal').classList.remove('show'); }
+    function handleSheetConfigBackdrop(event) { if (event.target.id === 'sheetConfigModal') closeSheetConfigModal(); }
     function allSuites() { return [...DEFAULT_SUITES, ...customSuites]; }
     function selectedSuites() { return allSuites().filter(name => selected.has(name)); }
     function escapeHtml(value) { return String(value).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
@@ -368,6 +519,7 @@
       return { sheetName, folderUrl, sources };
     }
     async function createReportSheet() {
+      if (!loggedInUser) { showToast('Yêu cầu đăng nhập', 'Đăng nhập Google trước khi tạo sheet report.', true); return; }
       let setup;
       try { setup = readSourceSettings(); clearModalMessage(); } catch (error) { showModalMessage(error.message); return; }
       const button = document.getElementById('createButton');
@@ -434,19 +586,21 @@
       card.querySelector('[data-formula-preview]').textContent = `Công thức B${row}: ${formula}`;
     }
     async function loadExistingConfig() {
+      if (!loggedInUser) { showToast('Yêu cầu đăng nhập', 'Đăng nhập Google trước khi đọc cấu hình Google Sheet.', true); return; }
       const sheetName = document.getElementById('configSheetName').value.trim();
-      if (!sheetName) { showMessage('Nhập tên sheet cần xem cấu hình.', 'error'); return; }
+      if (!sheetName) { showToast('Thiếu tên sheet', 'Nhập tên sheet cần xem cấu hình.', true); return; }
       const button = document.getElementById('loadConfigButton');
-      button.disabled = true; button.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Đang tải…'; clearMessage();
+      button.disabled = true; button.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Đang tải…';
       try {
         const config = await jsonp({ action: 'getReportSheetConfig', sheetName });
         renderExistingConfig(config);
-        showMessage(`Đã tải cấu hình của sheet “${config.sheetName}” gồm ${(config.suites || []).length} Test Suit.`, 'info');
-      } catch (error) { showMessage(error.message, 'error'); }
+        showToast('Tải cấu hình thành công', `Đã đọc sheet “${config.sheetName}” với ${(config.suites || []).length} Test Suit.`);
+      } catch (error) { showToast('Không tải được cấu hình', error.message, true); }
       finally { button.disabled = false; button.innerHTML = '<i class="fa-solid fa-magnifying-glass"></i> Xem cấu hình'; }
     }
     async function saveExistingConfig() {
       if (!loadedReportConfig) return;
+      if (!loggedInUser) { showToast('Yêu cầu đăng nhập', 'Đăng nhập Google trước khi lưu cấu hình sheet.', true); return; }
       const folderUrl = document.getElementById('configFolderUrl').value.trim();
       if (folderUrl && !/^https:\/\//i.test(folderUrl)) { showMessage('Link folder Test Case ở ô A1 phải bắt đầu bằng https://.', 'error'); return; }
       const cards = [...document.querySelectorAll('#configRows .config-card')];
@@ -483,13 +637,20 @@
     }
     document.addEventListener('DOMContentLoaded', () => {
       updateThemeButton();
+      updateAuthUI();
       try {
         const saved = JSON.parse(localStorage.getItem('qc_custom_test_suites') || '[]');
         if (Array.isArray(saved)) customSuites = saved.filter(name => typeof name === 'string' && name.trim() && !DEFAULT_SUITES.some(item => item.toLowerCase() === name.toLowerCase()));
       } catch (e) {}
       renderSuites();
       document.getElementById('setupModal').addEventListener('keydown', event => { if (event.key === 'Escape') closeSetupModal(); });
+      document.getElementById('sheetConfigModal').addEventListener('keydown', event => { if (event.key === 'Escape') closeSheetConfigModal(); });
       document.getElementById('configSheetName').addEventListener('keydown', event => { if (event.key === 'Enter') loadExistingConfig(); });
+      document.addEventListener('click', event => {
+        const profile = document.getElementById('userProfileBtn');
+        const dropdown = document.getElementById('userDropdown');
+        if (profile && dropdown && !profile.contains(event.target) && !dropdown.contains(event.target)) closeUserDropdown();
+      });
     });
   </script>
 </body>
