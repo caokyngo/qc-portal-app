@@ -12,6 +12,7 @@
   <style>
     :root { color-scheme:light; --page:#f4f7fb; --surface:#fff; --soft:#f8fafc; --text:#172033; --muted:#64748b; --line:#dfe6ef; --accent:#4f46e5; --accent-light:#eef2ff; --green:#059669; --red:#dc2626; }
     * { box-sizing:border-box; }
+    [hidden] { display:none !important; }
     body { margin:0; min-height:100vh; background:var(--page); color:var(--text); font-family:Inter,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif; }
     button,input,select { font:inherit; }
     .topbar { min-height:68px; display:flex; align-items:center; justify-content:space-between; gap:16px; padding:12px clamp(16px,4vw,42px); background:var(--surface); border-bottom:1px solid var(--line); box-shadow:0 2px 8px #0f172a08; }
@@ -45,7 +46,8 @@
     .suite-option input { width:16px; height:16px; accent-color:var(--accent); flex:none; }
     .custom-suite { display:flex; gap:9px; padding:0 22px 20px; }
     .custom-suite input,.field input { width:100%; height:42px; border:1px solid #cbd5e1; border-radius:10px; padding:0 12px; outline:none; color:var(--text); background:var(--surface); }
-    .custom-suite input:focus,.field input:focus { border-color:#818cf8; box-shadow:0 0 0 3px #6366f11a; }
+    .field select { width:100%; height:42px; border:1px solid #cbd5e1; border-radius:10px; padding:0 12px; outline:none; color:var(--text); background:var(--surface); }
+    .custom-suite input:focus,.field input:focus,.field select:focus { border-color:#818cf8; box-shadow:0 0 0 3px #6366f11a; }
     .bottom-bar { display:flex; align-items:center; justify-content:space-between; gap:12px; margin-top:16px; padding:14px 17px; }
     .selection-count { color:var(--muted); font-size:12px; }
     .message { display:none; margin-top:14px; border-radius:11px; padding:12px 14px; font-size:12px; line-height:1.5; }
@@ -65,16 +67,35 @@
     .source-card { padding:14px; border:1px solid var(--line); border-radius:13px; background:var(--soft); }
     .source-card h3 { margin:0 0 12px; font-size:13px; }
     .source-fields { display:grid; grid-template-columns:minmax(0,1.6fr) minmax(0,1fr) 110px; gap:10px; }
+    .lookup-panel { margin-top:16px; padding:18px 20px; }
+    .lookup-panel h2 { margin:0; font-size:15px; }
+    .lookup-panel p { margin:5px 0 14px; color:var(--muted); font-size:12px; }
+    .lookup-row { display:flex; align-items:end; gap:10px; }
+    .lookup-row .field { flex:1; }
+    .config-panel { margin-top:14px; overflow:hidden; }
+    .config-panel-head { display:flex; align-items:center; justify-content:space-between; gap:12px; padding:17px 20px; border-bottom:1px solid var(--line); }
+    .config-panel-head h2 { margin:0; font-size:15px; }
+    .config-panel-head p { margin:4px 0 0; color:var(--muted); font-size:11px; }
+    .config-panel-body { padding:17px 20px 20px; }
+    .config-folder { margin-bottom:14px; }
+    .config-list { display:grid; gap:11px; }
+    .config-card { padding:13px; border:1px solid var(--line); border-radius:12px; background:var(--soft); }
+    .config-card-head { display:flex; justify-content:space-between; align-items:center; gap:10px; margin-bottom:10px; }
+    .config-card-head strong { font-size:13px; }
+    .config-card-head span { color:var(--muted); font-size:11px; }
+    .config-fields { display:grid; grid-template-columns:minmax(0,1.5fr) minmax(0,1fr) 115px 145px; gap:9px; }
+    .formula-preview { margin-top:9px; border-radius:8px; padding:8px 10px; background:var(--surface); color:var(--muted); font-family:ui-monospace,SFMono-Regular,Consolas,monospace; font-size:11px; overflow-wrap:anywhere; }
+    .config-empty { padding:24px; color:var(--muted); text-align:center; font-size:13px; }
     .field { display:grid; gap:6px; min-width:0; }
     .field label { color:#475569; font-size:11px; font-weight:750; }
-    .field input { height:39px; font-size:12px; }
+    .field input,.field select { height:39px; font-size:12px; }
     .sheet-name-field { margin-top:16px; }
     .hint { margin:7px 0 0; color:var(--muted); font-size:11px; }
     .modal-footer { display:flex; justify-content:space-between; align-items:center; gap:10px; padding:14px 22px 18px; border-top:1px solid var(--line); }
     .modal-footer .actions { display:flex; gap:9px; }
     html.dark-mode { color-scheme:dark; --page:#0f172a; --surface:#172033; --soft:#1e293b; --text:#e2e8f0; --muted:#a8b4c5; --line:#334155; --accent:#6366f1; --accent-light:#25234b; }
     html.dark-mode .field label { color:#cbd5e1; }
-    html.dark-mode .custom-suite input,html.dark-mode .field input { background:#111c2e; border-color:#475569; }
+    html.dark-mode .custom-suite input,html.dark-mode .field input,html.dark-mode .field select { background:#111c2e; border-color:#475569; }
     html.dark-mode .message.error { color:#fecaca; background:#451a1a; border-color:#7f1d1d; }
     html.dark-mode .message.info { color:#bfdbfe; background:#172554; border-color:#1e40af; }
     html.dark-mode .modal-message { color:#fecaca; background:#451a1a; border-color:#7f1d1d; }
@@ -91,6 +112,10 @@
       .custom-suite { padding:0 16px 16px; }
       .bottom-bar { align-items:stretch; flex-direction:column; }
       .bottom-bar .button { width:100%; }
+      .lookup-row { align-items:stretch; flex-direction:column; }
+      .config-panel-head { align-items:flex-start; flex-direction:column; }
+      .config-fields { grid-template-columns:1fr 1fr; }
+      .config-fields .url-field { grid-column:1 / -1; }
       .source-fields { grid-template-columns:1fr 1fr; }
       .source-fields .file-field { grid-column:1 / -1; }
       .modal-backdrop { padding:8px; }
@@ -136,6 +161,24 @@
     <section class="panel bottom-bar">
       <span id="selectionCount" class="selection-count">Chưa chọn Test Suit nào</span>
       <button type="button" class="button button-primary" onclick="openSetupModal()"><i class="fa-solid fa-arrow-right"></i> Tiếp tục cấu hình nguồn</button>
+    </section>
+    <section class="panel lookup-panel" aria-labelledby="configLookupTitle">
+      <h2 id="configLookupTitle">Xem hoặc chỉnh sửa cấu hình sheet đã tạo</h2>
+      <p>Nhập tên sheet để tải cấu hình nguồn, công thức cột B và dữ liệu status/tab nguồn ở cột G/H.</p>
+      <div class="lookup-row">
+        <div class="field"><label for="configSheetName">Tên sheet cần tải</label><input id="configSheetName" type="text" placeholder="Ví dụ: 9648" autocomplete="off"></div>
+        <button type="button" id="loadConfigButton" class="button button-secondary" onclick="loadExistingConfig()"><i class="fa-solid fa-magnifying-glass"></i> Xem cấu hình</button>
+      </div>
+    </section>
+    <section id="configPanel" class="panel config-panel" hidden>
+      <header class="config-panel-head">
+        <div><h2 id="configPanelTitle">Cấu hình sheet</h2><p>Chỉnh link file, tên tab, địa chỉ ô và status. Công thức cột B sẽ được tạo lại khi lưu.</p></div>
+        <button type="button" id="saveConfigButton" class="button button-primary" onclick="saveExistingConfig()"><i class="fa-solid fa-floppy-disk"></i> Lưu cấu hình</button>
+      </header>
+      <div class="config-panel-body">
+        <div class="field config-folder"><label for="configFolderUrl">Link folder Test Case (ô A1)</label><input id="configFolderUrl" type="url" placeholder="https://drive.google.com/drive/folders/…"></div>
+        <div id="configRows" class="config-list"></div>
+      </div>
     </section>
     <div id="message" class="message" role="status" aria-live="polite"></div>
   </main>
@@ -185,6 +228,7 @@
     const sourceSettings = {};
     let customSuites = [];
     let folderUrlDraft = '';
+    let loadedReportConfig = null;
 
     function toggleTheme() {
       const dark = document.documentElement.classList.toggle('dark-mode');
@@ -345,6 +389,95 @@
         button.disabled = false; button.innerHTML = '<i class="fa-solid fa-file-circle-plus"></i> Tạo sheet';
       }
     }
+    function renderExistingConfig(config) {
+      loadedReportConfig = config;
+      document.getElementById('configPanel').hidden = false;
+      document.getElementById('configPanelTitle').textContent = `Cấu hình sheet · ${config.sheetName}`;
+      document.getElementById('configFolderUrl').value = config.folderUrl || '';
+      const rows = Array.isArray(config.suites) ? config.suites : [];
+      const root = document.getElementById('configRows');
+      if (!rows.length) {
+        root.innerHTML = '<div class="config-empty">Sheet chưa có dòng Test Suit nào để cấu hình.</div>';
+        return;
+      }
+      root.innerHTML = rows.map(item => {
+        const status = String(item.status || 'remaining').toLowerCase();
+        const statuses = [...new Set(['remaining', 'in progress', 'done', status])];
+        return `<article class="config-card" data-config-row="${Number(item.row)}" data-suite-name="${escapeHtml(item.name)}" data-original-formula="${escapeHtml(item.formula || '')}">
+          <div class="config-card-head"><strong>${escapeHtml(item.name)}</strong><span>Dòng ${Number(item.row)} · công thức ở cột B</span></div>
+          <div class="config-fields">
+            <div class="field url-field"><label>Link file Google Sheet</label><input type="url" data-config-field="fileUrl" value="${escapeHtml(item.fileUrl || '')}" placeholder="https://docs.google.com/spreadsheets/d/…"></div>
+            <div class="field"><label>Tên tab nguồn (cột H)</label><input type="text" data-config-field="sourceTab" value="${escapeHtml(item.sourceTab || '')}" placeholder="Tên tab trong file"></div>
+            <div class="field"><label>Ô dữ liệu (B)</label><input type="text" data-config-field="cellRef" value="${escapeHtml(item.cellRef || '')}" placeholder="G8" maxlength="10" autocapitalize="characters" style="text-transform:uppercase"></div>
+            <div class="field"><label>Status (cột G)</label><select data-config-field="status">${statuses.map(value => `<option value="${escapeHtml(value)}" ${value === status ? 'selected' : ''}>${escapeHtml(value)}</option>`).join('')}</select></div>
+          </div>
+          <div class="formula-preview" data-formula-preview></div>
+        </article>`;
+      }).join('');
+      root.querySelectorAll('[data-config-field="cellRef"]').forEach(input => input.addEventListener('input', () => {
+        input.value = input.value.toUpperCase().replace(/[^A-Z0-9]/g, '');
+        updateConfigFormulaPreview(input.closest('.config-card'));
+      }));
+      root.querySelectorAll('[data-config-field="fileUrl"]').forEach(input => input.addEventListener('input', () => updateConfigFormulaPreview(input.closest('.config-card'))));
+      root.querySelectorAll('[data-formula-preview]').forEach(preview => updateConfigFormulaPreview(preview.closest('.config-card')));
+    }
+    function updateConfigFormulaPreview(card) {
+      if (!card) return;
+      const get = field => card.querySelector(`[data-config-field="${field}"]`).value.trim();
+      const url = get('fileUrl').replace(/"/g, '""');
+      const cellRef = get('cellRef').toUpperCase();
+      const row = Number(card.dataset.configRow);
+      const formula = url && cellRef ? `=IMPORTRANGE("${url}",H${row}&"!${cellRef}")` : card.dataset.originalFormula || 'Chưa có công thức';
+      card.querySelector('[data-formula-preview]').textContent = `Công thức B${row}: ${formula}`;
+    }
+    async function loadExistingConfig() {
+      const sheetName = document.getElementById('configSheetName').value.trim();
+      if (!sheetName) { showMessage('Nhập tên sheet cần xem cấu hình.', 'error'); return; }
+      const button = document.getElementById('loadConfigButton');
+      button.disabled = true; button.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Đang tải…'; clearMessage();
+      try {
+        const config = await jsonp({ action: 'getReportSheetConfig', sheetName });
+        renderExistingConfig(config);
+        showMessage(`Đã tải cấu hình của sheet “${config.sheetName}” gồm ${(config.suites || []).length} Test Suit.`, 'info');
+      } catch (error) { showMessage(error.message, 'error'); }
+      finally { button.disabled = false; button.innerHTML = '<i class="fa-solid fa-magnifying-glass"></i> Xem cấu hình'; }
+    }
+    async function saveExistingConfig() {
+      if (!loadedReportConfig) return;
+      const folderUrl = document.getElementById('configFolderUrl').value.trim();
+      if (!/^https:\/\//i.test(folderUrl)) { showMessage('Nhập link folder Test Case hợp lệ cho ô A1.', 'error'); return; }
+      const cards = [...document.querySelectorAll('#configRows .config-card')];
+      const settings = cards.map(card => {
+        const get = field => card.querySelector(`[data-config-field="${field}"]`).value.trim();
+        return {
+          row: Number(card.dataset.configRow), name: card.dataset.suiteName,
+          fileUrl: get('fileUrl'), sourceTab: get('sourceTab'), cellRef: get('cellRef').toUpperCase(), status: get('status')
+        };
+      });
+      for (const item of settings) {
+        if (!/^https:\/\//i.test(item.fileUrl)) { showMessage(`Link file không hợp lệ cho “${item.name}”.`, 'error'); return; }
+        if (!item.sourceTab) { showMessage(`Nhập tên tab nguồn cho “${item.name}”.`, 'error'); return; }
+        if (!/^[A-Z]{1,3}[1-9][0-9]*$/.test(item.cellRef)) { showMessage(`Địa chỉ ô không hợp lệ cho “${item.name}”, ví dụ E7 hoặc G8.`, 'error'); return; }
+      }
+      const button = document.getElementById('saveConfigButton');
+      button.disabled = true; button.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Đang lưu…'; clearMessage();
+      try {
+        for (let start = 0; start < settings.length; start += 3) {
+          const batch = settings.slice(start, start + 3);
+          await jsonp({ action: 'saveReportSheetConfig', sheetName: loadedReportConfig.sheetName, folderUrl, settings: JSON.stringify(batch) });
+        }
+        loadedReportConfig.folderUrl = folderUrl;
+        settings.forEach(item => {
+          const card = cards.find(candidate => Number(candidate.dataset.configRow) === item.row);
+          if (card) {
+            card.dataset.originalFormula = `=IMPORTRANGE("${item.fileUrl.replace(/"/g, '""')}",H${item.row}&"!${item.cellRef}")`;
+            updateConfigFormulaPreview(card);
+          }
+        });
+        showMessage(`Đã lưu cấu hình vào đúng sheet “${loadedReportConfig.sheetName}” (${settings.length} Test Suit).`, 'info');
+      } catch (error) { showMessage(error.message, 'error'); }
+      finally { button.disabled = false; button.innerHTML = '<i class="fa-solid fa-floppy-disk"></i> Lưu cấu hình'; }
+    }
     document.addEventListener('DOMContentLoaded', () => {
       updateThemeButton();
       try {
@@ -353,6 +486,7 @@
       } catch (e) {}
       renderSuites();
       document.getElementById('setupModal').addEventListener('keydown', event => { if (event.key === 'Escape') closeSetupModal(); });
+      document.getElementById('configSheetName').addEventListener('keydown', event => { if (event.key === 'Enter') loadExistingConfig(); });
     });
   </script>
 </body>
