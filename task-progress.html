@@ -257,7 +257,7 @@
       <div class="config-modal-body">
         <section class="panel lookup-panel" aria-labelledby="configLookupTitle">
           <h2 id="configLookupTitle">Tải cấu hình từ Google Sheet</h2>
-          <p>Nhập tên tab report để tải công thức cột B và dữ liệu Test Suit, status, tab nguồn ở cột A/G/H.</p>
+          <p>Nhập tên tab report để tải công thức cột B và dữ liệu Test Suit, status, sheet nguồn ở cột A/G/H.</p>
           <div class="lookup-row">
             <div class="field"><label for="configSheetName">Tên sheet cần tải</label><input id="configSheetName" type="text" placeholder="Ví dụ: 9648" autocomplete="off"></div>
             <button type="button" id="loadConfigButton" class="button button-secondary" onclick="loadExistingConfig()"><i class="fa-solid fa-magnifying-glass"></i> Xem cấu hình</button>
@@ -293,7 +293,7 @@
         <div class="field sheet-name-field">
           <label for="newSheetName">Tên sheet report mới</label>
           <input id="newSheetName" type="text" maxlength="100" placeholder="Ví dụ: 9648">
-          <p class="hint">Công thức tạo ra sẽ có dạng =IMPORTRANGE("link file",H[x]&"!G8"). H[x] chứa tên tab nguồn của cùng Test Suit; địa chỉ ô lấy từ cấu hình bên trên.</p>
+          <p class="hint">Công thức tạo ra sẽ có dạng =IMPORTRANGE("link file",H[x]&"!G8"). H[x] chứa tên sheet nguồn của cùng Test Suit; địa chỉ ô lấy từ cấu hình bên trên.</p>
         </div>
       </div>
       <footer class="modal-footer">
@@ -476,7 +476,7 @@
           <h3>${index + 1}. ${escapeHtml(name)}</h3>
           <div class="source-fields">
             <div class="field file-field"><label>Link file Google Sheet nguồn</label><input type="url" data-source-field="fileUrl" value="${escapeHtml(saved.fileUrl || '')}" placeholder="https://docs.google.com/spreadsheets/d/…"></div>
-            <div class="field"><label>Tên tab nguồn</label><input type="text" data-source-field="sourceTab" value="${escapeHtml(saved.sourceTab || '')}" placeholder="Ví dụ: Test Suites"></div>
+            <div class="field"><label>Tên sheet nguồn</label><input type="text" data-source-field="sourceTab" value="${escapeHtml(saved.sourceTab || '')}" placeholder="Ví dụ: Test Suites"></div>
             <div class="field"><label>Ô remaining/total</label><input type="text" data-source-field="cellRef" value="${escapeHtml(saved.cellRef || '')}" placeholder="Ví dụ: G8" maxlength="10" autocapitalize="characters" pattern="[A-Z]{1,3}[1-9][0-9]*" title="Nhập địa chỉ ô, ví dụ E7 hoặc G8" style="text-transform:uppercase"></div>
           </div>
         </article>`;
@@ -515,7 +515,7 @@
       if (!/^https:\/\//i.test(folderUrl)) throw new Error('Nhập link folder Test Case hợp lệ.');
       for (const source of sources) {
         if (!/^https:\/\//i.test(source.fileUrl)) throw new Error(`Nhập link Google Sheet hợp lệ cho “${source.name}”.`);
-        if (!source.sourceTab) throw new Error(`Nhập tên tab nguồn cho “${source.name}”.`);
+        if (!source.sourceTab) throw new Error(`Nhập tên sheet nguồn cho “${source.name}”.`);
         if (!/^[A-Z]{1,3}[1-9][0-9]*$/.test(source.cellRef)) throw new Error(`Nhập địa chỉ ô hợp lệ cho “${source.name}”, ví dụ E7 hoặc G8.`);
       }
       return { sheetName, folderUrl, sources };
@@ -564,8 +564,8 @@
           <div class="config-card-head"><strong>${escapeHtml(item.name)}</strong><span>Dòng ${Number(item.row)} · công thức ở cột B</span></div>
           <div class="config-fields">
             <div class="field url-field"><label>Link file Google Sheet</label><input type="url" data-config-field="fileUrl" value="${escapeHtml(item.fileUrl || '')}" placeholder="https://docs.google.com/spreadsheets/d/…"></div>
-            <div class="field"><label>Tên tab nguồn (cột H)</label><input type="text" data-config-field="sourceTab" value="${escapeHtml(item.sourceTab || '')}" placeholder="Tên tab trong file"></div>
-            <div class="field"><label>Ô dữ liệu (B)</label><input type="text" data-config-field="cellRef" value="${escapeHtml(item.cellRef || '')}" placeholder="G8" maxlength="10" autocapitalize="characters" style="text-transform:uppercase"></div>
+            <div class="field"><label>Tên sheet nguồn (cột H)</label><input type="text" data-config-field="sourceTab" value="${escapeHtml(item.sourceTab || '')}" placeholder="Tên tab trong file"></div>
+            <div class="field"><label>Ô remaining/total (B)</label><input type="text" data-config-field="cellRef" value="${escapeHtml(item.cellRef || '')}" placeholder="G8" maxlength="10" autocapitalize="characters" style="text-transform:uppercase"></div>
             <div class="field"><label>Status (cột G)</label><select data-config-field="status">${statuses.map(value => `<option value="${escapeHtml(value)}" ${value === status ? 'selected' : ''}>${escapeHtml(value)}</option>`).join('')}</select></div>
           </div>
           <div class="formula-preview" data-formula-preview></div>
@@ -615,7 +615,7 @@
       });
       for (const item of settings) {
         if (!/^https:\/\//i.test(item.fileUrl)) { showMessage(`Link file không hợp lệ cho “${item.name}”.`, 'error'); return; }
-        if (!item.sourceTab) { showMessage(`Nhập tên tab nguồn cho “${item.name}”.`, 'error'); return; }
+        if (!item.sourceTab) { showMessage(`Nhập tên sheet nguồn cho “${item.name}”.`, 'error'); return; }
         if (!/^[A-Z]{1,3}[1-9][0-9]*$/.test(item.cellRef)) { showMessage(`Địa chỉ ô không hợp lệ cho “${item.name}”, ví dụ E7 hoặc G8.`, 'error'); return; }
       }
       const button = document.getElementById('saveConfigButton');
