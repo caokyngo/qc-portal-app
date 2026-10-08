@@ -166,8 +166,8 @@
       <button type="button" class="button button-primary" onclick="openSetupModal()"><i class="fa-solid fa-arrow-right"></i> Tiếp tục cấu hình nguồn</button>
     </section>
     <section class="panel lookup-panel" aria-labelledby="configLookupTitle">
-      <h2 id="configLookupTitle">Xem hoặc chỉnh sửa cấu hình sheet đã tạo</h2>
-      <p>Nhập tên sheet để tải cấu hình nguồn, công thức cột B và dữ liệu status/tab nguồn ở cột G/H.</p>
+      <h2 id="configLookupTitle">Xem hoặc chỉnh sửa cấu hình sheet</h2>
+      <p>Nhập tên tab report để tải công thức cột B và dữ liệu Test Suit, status, tab nguồn ở cột A/G/H.</p>
       <div class="lookup-row">
         <div class="field"><label for="configSheetName">Tên sheet cần tải</label><input id="configSheetName" type="text" placeholder="Ví dụ: 9648" autocomplete="off"></div>
         <button type="button" id="loadConfigButton" class="button button-secondary" onclick="loadExistingConfig()"><i class="fa-solid fa-magnifying-glass"></i> Xem cấu hình</button>
@@ -448,7 +448,7 @@
     async function saveExistingConfig() {
       if (!loadedReportConfig) return;
       const folderUrl = document.getElementById('configFolderUrl').value.trim();
-      if (!/^https:\/\//i.test(folderUrl)) { showMessage('Nhập link folder Test Case hợp lệ cho ô A1.', 'error'); return; }
+      if (folderUrl && !/^https:\/\//i.test(folderUrl)) { showMessage('Link folder Test Case ở ô A1 phải bắt đầu bằng https://.', 'error'); return; }
       const cards = [...document.querySelectorAll('#configRows .config-card')];
       const settings = cards.map(card => {
         const get = field => card.querySelector(`[data-config-field="${field}"]`).value.trim();
