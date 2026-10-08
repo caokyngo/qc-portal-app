@@ -218,7 +218,7 @@
   <main>
     <section class="intro">
       <h1>Tạo sheet báo cáo</h1>
-      <p>Chọn các Test Suits cần dùng. Mỗi loại sẽ lấy số liệu từ file và tab nguồn bạn chỉ định, sau đó tạo một sheet mới theo mẫu report.</p>
+      <p>Chọn các Test Suits cần dùng. Mỗi loại sẽ lấy số liệu từ file và sheet nguồn bạn chỉ định, sau đó tạo một sheet mới theo mẫu report.</p>
     </section>
 
     <section class="panel suite-panel" aria-labelledby="suiteHeading">
@@ -240,7 +240,7 @@
       <button type="button" class="button button-primary" onclick="openSetupModal()"><i class="fa-solid fa-arrow-right"></i> Tiếp tục cấu hình nguồn</button>
     </section>
     <section class="panel config-launch">
-      <div><h2>Xem hoặc chỉnh sửa cấu hình sheet</h2><p>Tải công thức, Test Suit, status và tab nguồn từ Google Sheet.</p></div>
+      <div><h2>Xem hoặc chỉnh sửa cấu hình sheet</h2><p>Tải công thức, Test Suit, status và sheet nguồn từ Google Sheet.</p></div>
       <button type="button" class="button button-secondary" onclick="openSheetConfigModal()"><i class="fa-solid fa-sliders"></i> Mở cấu hình sheet</button>
     </section>
     <div id="message" class="message" role="status" aria-live="polite"></div>
@@ -265,7 +265,7 @@
         </section>
         <section id="configPanel" class="panel config-panel" hidden>
           <header class="config-panel-head">
-            <div><h2 id="configPanelTitle">Cấu hình sheet</h2><p>Chỉnh link file, tên tab, địa chỉ ô và status. Công thức cột B sẽ được tạo lại khi lưu.</p></div>
+            <div><h2 id="configPanelTitle">Cấu hình sheet</h2><p>Chỉnh link file, tên sheet, địa chỉ ô và status. Công thức cột B sẽ được tạo lại khi lưu.</p></div>
             <button type="button" id="saveConfigButton" class="button button-primary" onclick="saveExistingConfig()"><i class="fa-solid fa-floppy-disk"></i> Lưu cấu hình</button>
           </header>
           <div class="config-panel-body">
@@ -465,6 +465,21 @@
         script.src = url.toString(); document.body.appendChild(script);
       });
     }
+    // JSONP travels in the URL; keep each payload comfortably below URL limits while
+    // packing as many suite rows as the source links allow.
+    function chunkForJsonp(items, maxEncodedChars = 5500) {
+      const chunks = [];
+      let current = [];
+      for (const item of items) {
+        const candidate = [...current, item];
+        if (current.length && encodeURIComponent(JSON.stringify(candidate)).length > maxEncodedChars) {
+          chunks.push(current);
+          current = [item];
+        } else current = candidate;
+      }
+      if (current.length) chunks.push(current);
+      return chunks;
+    }
     function openSetupModal() {
       if (!selected.size) { showMessage('Chọn ít nhất một Test Suit trước khi tiếp tục.', 'error'); return; }
       clearMessage();
@@ -530,10 +545,11 @@
       progress.textContent = 'Đang tạo cấu trúc sheet…'; clearMessage();
       try {
         await jsonp({ action: 'createReportSheet', sheetName: setup.sheetName, folderUrl: setup.folderUrl, suites: JSON.stringify(setup.sources.map(source => source.name)) });
-        const batchSize = 3;
-        for (let start = 0; start < setup.sources.length; start += batchSize) {
-          const batch = setup.sources.slice(start, start + batchSize);
-          progress.textContent = `Đang cài công thức ${Math.min(start + batch.length, setup.sources.length)}/${setup.sources.length}…`;
+        const batches = chunkForJsonp(setup.sources);
+        let configured = 0;
+        for (const batch of batches) {
+          configured += batch.length;
+          progress.textContent = `Đang cài công thức ${configured}/${setup.sources.length}…`;
           await jsonp({ action: 'setReportSuiteSources', sheetName: setup.sheetName, sources: JSON.stringify(batch) });
         }
         closeSetupModal();
@@ -565,7 +581,7 @@
           <div class="config-fields">
             <div class="field url-field"><label>Link file Google Sheet</label><input type="url" data-config-field="fileUrl" value="${escapeHtml(item.fileUrl || '')}" placeholder="https://docs.google.com/spreadsheets/d/…"></div>
             <div class="field"><label>Tên sheet nguồn (cột H)</label><input type="text" data-config-field="sourceTab" value="${escapeHtml(item.sourceTab || '')}" placeholder="Tên tab trong file"></div>
-            <div class="field"><label>Ô remaining/total (B)</label><input type="text" data-config-field="cellRef" value="${escapeHtml(item.cellRef || '')}" placeholder="G8" maxlength="10" autocapitalize="characters" style="text-transform:uppercase"></div>
+            <div class="field"><label>Ô Remaining/total (B)</label><input type="text" data-config-field="cellRef" value="${escapeHtml(item.cellRef || '')}" placeholder="G8" maxlength="10" autocapitalize="characters" style="text-transform:uppercase"></div>
             <div class="field"><label>Status (cột G)</label><select data-config-field="status">${statuses.map(value => `<option value="${escapeHtml(value)}" ${value === status ? 'selected' : ''}>${escapeHtml(value)}</option>`).join('')}</select></div>
           </div>
           <div class="formula-preview" data-formula-preview></div>
@@ -621,9 +637,9 @@
       const button = document.getElementById('saveConfigButton');
       button.disabled = true; button.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Đang lưu…'; clearMessage();
       try {
-        for (let start = 0; start < settings.length; start += 3) {
-          const batch = settings.slice(start, start + 3);
-          await jsonp({ action: 'saveReportSheetConfig', sheetName: loadedReportConfig.sheetName, folderUrl, settings: JSON.stringify(batch) });
+        const batches = chunkForJsonp(settings);
+        for (let index = 0; index < batches.length; index++) {
+          await jsonp({ action: 'saveReportSheetConfig', sheetName: loadedReportConfig.sheetName, folderUrl: index === 0 ? folderUrl : '', settings: JSON.stringify(batches[index]) });
         }
         loadedReportConfig.folderUrl = folderUrl;
         settings.forEach(item => {
