@@ -148,6 +148,10 @@
       </header>
       <div class="modal-scroll">
         <div id="modalMessage" class="modal-message" role="alert"></div>
+        <div class="field folder-link-field">
+          <label for="folderUrl">Link folder Test Case (ghi vào ô A1)</label>
+          <input id="folderUrl" type="url" placeholder="https://drive.google.com/drive/folders/…">
+        </div>
         <div id="sourceList" class="source-list"></div>
         <div class="field sheet-name-field">
           <label for="newSheetName">Tên sheet report mới</label>
@@ -180,6 +184,7 @@
     const selected = new Set();
     const sourceSettings = {};
     let customSuites = [];
+    let folderUrlDraft = '';
 
     function toggleTheme() {
       const dark = document.documentElement.classList.toggle('dark-mode');
@@ -279,6 +284,9 @@
       document.querySelectorAll('[data-source-field="cellRef"]').forEach(input => input.addEventListener('input', () => {
         input.value = input.value.toUpperCase().replace(/[^A-Z0-9]/g, '');
       }));
+      const folderInput = document.getElementById('folderUrl');
+      folderInput.value = folderUrlDraft;
+      folderInput.oninput = () => { folderUrlDraft = folderInput.value.trim(); };
       document.getElementById('newSheetName').value = '';
       document.getElementById('createProgress').textContent = '';
       document.getElementById('setupModal').classList.add('show');
@@ -302,13 +310,15 @@
         return source;
       });
       const sheetName = document.getElementById('newSheetName').value.trim();
+      const folderUrl = document.getElementById('folderUrl').value.trim();
       if (!sheetName) throw new Error('Nhập tên cho sheet report mới.');
+      if (!/^https:\/\//i.test(folderUrl)) throw new Error('Nhập link folder Test Case hợp lệ.');
       for (const source of sources) {
         if (!/^https:\/\//i.test(source.fileUrl)) throw new Error(`Nhập link Google Sheet hợp lệ cho “${source.name}”.`);
         if (!source.sourceTab) throw new Error(`Nhập tên tab nguồn cho “${source.name}”.`);
         if (!/^[A-Z]{1,3}[1-9][0-9]*$/.test(source.cellRef)) throw new Error(`Nhập địa chỉ ô hợp lệ cho “${source.name}”, ví dụ E7 hoặc G8.`);
       }
-      return { sheetName, sources };
+      return { sheetName, folderUrl, sources };
     }
     async function createReportSheet() {
       let setup;
@@ -318,7 +328,7 @@
       button.disabled = true; button.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Đang tạo…';
       progress.textContent = 'Đang tạo cấu trúc sheet…'; clearMessage();
       try {
-        await jsonp({ action: 'createReportSheet', sheetName: setup.sheetName, suites: JSON.stringify(setup.sources.map(source => source.name)) });
+        await jsonp({ action: 'createReportSheet', sheetName: setup.sheetName, folderUrl: setup.folderUrl, suites: JSON.stringify(setup.sources.map(source => source.name)) });
         const batchSize = 3;
         for (let start = 0; start < setup.sources.length; start += batchSize) {
           const batch = setup.sources.slice(start, start + batchSize);
