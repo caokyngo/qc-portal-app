@@ -673,35 +673,6 @@
         return;
       }
 
-      for (const item of settings) {
-        if (!/^https:\/\//i.test(item.fileUrl)) {
-          showToast(
-            'Link file không hợp lệ',
-            `Kiểm tra link Google Sheet của "${item.name}".`,
-            true
-          );
-          return;
-        }
-
-        if (!item.sourceTab) {
-          showToast(
-            'Thiếu tên sheet nguồn',
-            `Nhập tên sheet nguồn cho "${item.name}".`,
-            true
-          );
-          return;
-        }
-
-        if (!/^[A-Z]{1,3}[1-9][0-9]*$/.test(item.cellRef)) {
-          showToast(
-            'Địa chỉ ô không hợp lệ',
-            `Kiểm tra địa chỉ ô của "${item.name}", ví dụ E7 hoặc G8.`,
-            true
-          );
-          return;
-        }
-      }
-
       const button = document.getElementById('saveConfigButton');
       const originalHtml = button.innerHTML;
 
