@@ -617,41 +617,144 @@
       finally { button.disabled = false; button.innerHTML = '<i class="fa-solid fa-magnifying-glass"></i> Xem cấu hình'; }
     }
     async function saveExistingConfig() {
-      if (!loadedReportConfig) return;
-      if (!loggedInUser) { showToast('Yêu cầu đăng nhập', 'Đăng nhập Google trước khi lưu cấu hình sheet.', true); return; }
+      if (!loadedReportConfig) {
+        showToast(
+          'Chưa có cấu hình',
+          'Hãy nhập tên sheet và bấm Xem cấu hình trước khi lưu.',
+          true
+        );
+        return;
+      }
+
+      if (!loggedInUser) {
+        showToast(
+          'Yêu cầu đăng nhập',
+          'Đăng nhập Google trước khi lưu cấu hình sheet.',
+          true
+        );
+        return;
+      }
+
       const folderUrl = document.getElementById('configFolderUrl').value.trim();
-      if (folderUrl && !/^https:\/\//i.test(folderUrl)) { showMessage('Link folder Test Case ở ô A1 phải bắt đầu bằng https://.', 'error'); return; }
-      const cards = [...document.querySelectorAll('#configRows .config-card')];
+
+      if (folderUrl && !/^https:\/\//i.test(folderUrl)) {
+        showToast(
+          'Link folder không hợp lệ',
+          'Link folder Test Case ở ô A1 phải bắt đầu bằng https://.',
+          true
+        );
+        return;
+      }
+
+      const cards = [
+        ...document.querySelectorAll('#configRows .config-card')
+      ];
+
       const settings = cards.map(card => {
-        const get = field => card.querySelector(`[data-config-field="${field}"]`).value.trim();
+        const get = field =>
+          card.querySelector(`[data-config-field="${field}"]`).value.trim();
+
         return {
-          row: Number(card.dataset.configRow), name: card.dataset.suiteName,
-          fileUrl: get('fileUrl'), sourceTab: get('sourceTab'), cellRef: get('cellRef').toUpperCase(), status: get('status')
+          row: Number(card.dataset.configRow),
+          name: card.dataset.suiteName,
+          fileUrl: get('fileUrl'),
+          sourceTab: get('sourceTab'),
+          cellRef: get('cellRef').toUpperCase(),
+          status: get('status')
         };
       });
-      for (const item of settings) {
-        if (!/^https:\/\//i.test(item.fileUrl)) { showMessage(`Link file không hợp lệ cho “${item.name}”.`, 'error'); return; }
-        if (!item.sourceTab) { showMessage(`Nhập tên sheet nguồn cho “${item.name}”.`, 'error'); return; }
-        if (!/^[A-Z]{1,3}[1-9][0-9]*$/.test(item.cellRef)) { showMessage(`Địa chỉ ô không hợp lệ cho “${item.name}”, ví dụ E7 hoặc G8.`, 'error'); return; }
+
+      if (!settings.length) {
+        showToast(
+          'Không có dữ liệu',
+          'Không tìm thấy dòng Test Suit nào để lưu.',
+          true
+        );
+        return;
       }
+
+      for (const item of settings) {
+        if (!/^https:\/\//i.test(item.fileUrl)) {
+          showToast(
+            'Link file không hợp lệ',
+            `Kiểm tra link Google Sheet của "${item.name}".`,
+            true
+          );
+          return;
+        }
+
+        if (!item.sourceTab) {
+          showToast(
+            'Thiếu tên sheet nguồn',
+            `Nhập tên sheet nguồn cho "${item.name}".`,
+            true
+          );
+          return;
+        }
+
+        if (!/^[A-Z]{1,3}[1-9][0-9]*$/.test(item.cellRef)) {
+          showToast(
+            'Địa chỉ ô không hợp lệ',
+            `Kiểm tra địa chỉ ô của "${item.name}", ví dụ E7 hoặc G8.`,
+            true
+          );
+          return;
+        }
+      }
+
       const button = document.getElementById('saveConfigButton');
-      button.disabled = true; button.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Đang lưu…'; clearMessage();
+      const originalHtml = button.innerHTML;
+
+      button.disabled = true;
+      button.innerHTML =
+        '<i class="fa-solid fa-spinner fa-spin"></i> Đang lưu…';
+
       try {
         const batches = chunkForJsonp(settings);
+
         for (let index = 0; index < batches.length; index++) {
-          await jsonp({ action: 'saveReportSheetConfig', sheetName: loadedReportConfig.sheetName, folderUrl: index === 0 ? folderUrl : '', settings: JSON.stringify(batches[index]) });
+          await jsonp({
+            action: 'saveReportSheetConfig',
+            sheetName: loadedReportConfig.sheetName,
+            folderUrl: index === 0 ? folderUrl : '',
+            settings: JSON.stringify(batches[index])
+          });
         }
+
         loadedReportConfig.folderUrl = folderUrl;
+
         settings.forEach(item => {
-          const card = cards.find(candidate => Number(candidate.dataset.configRow) === item.row);
+          const card = cards.find(
+            candidate =>
+              Number(candidate.dataset.configRow) === item.row
+          );
+
           if (card) {
-            card.dataset.originalFormula = `=IMPORTRANGE("${item.fileUrl.replace(/"/g, '""')}",H${item.row}&"!${item.cellRef}")`;
+            card.dataset.originalFormula =
+              `=IMPORTRANGE("${item.fileUrl.replace(/"/g, '""')}",H${item.row}&"!${item.cellRef}")`;
+
             updateConfigFormulaPreview(card);
           }
         });
-        showMessage(`Đã lưu cấu hình vào đúng sheet “${loadedReportConfig.sheetName}” (${settings.length} Test Suit).`, 'info');
-      } catch (error) { showMessage(error.message, 'error'); }
-      finally { button.disabled = false; button.innerHTML = '<i class="fa-solid fa-floppy-disk"></i> Lưu cấu hình'; }
+
+        showToast(
+          'Lưu cấu hình thành công',
+          `Đã lưu ${settings.length} Test Suit vào sheet "${loadedReportConfig.sheetName}".`
+        );
+
+      } catch (error) {
+        console.error('[saveExistingConfig] Lỗi lưu cấu hình:', error);
+
+        showToast(
+          'Không thể lưu cấu hình',
+          error?.message || 'Đã xảy ra lỗi không xác định khi lưu.',
+          true
+        );
+
+      } finally {
+        button.disabled = false;
+        button.innerHTML = originalHtml;
+      }
     }
     document.addEventListener('DOMContentLoaded', () => {
       updateThemeButton();
