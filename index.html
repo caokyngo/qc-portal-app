@@ -2077,12 +2077,17 @@
                     status === 'in progress' || status === 'doing' || status === 'failed' ||
                     status === 'testing' || status === 'in test' || status === 'in testing'
                 ) {
-                    // Vẫn phân nhóm theo Status cột G, nhưng nội dung hiển thị của task
-                    // trong IN PROGRESS giữ logic cũ: tên task: remain [giá trị % cột E].
-                    const remainingPercent = item.colE || '0%';
+                    // Phân nhóm theo Status cột G.
+                    // IN PROGRESS: status "in progress" hiển thị % cột E;
+                    // status "failed" chỉ hiển thị ": failed".
+                    // val được rollupTree dùng để gộp nhánh cha/con khi nội dung giống nhau.
+                    const displayValue = status === 'failed'
+                        ? 'failed'
+                        : 'remain ' + (item.colE || '0%');
+
                     inProgressRaw.push({
                         name: item.name,
-                        val: 'remain ' + remainingPercent,
+                        val: displayValue,
                         status: parsedStatus
                     });
                 } else if (
