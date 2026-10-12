@@ -2032,34 +2032,27 @@
                 row16colI = String(rows[15][8]).trim();
             }
 
-            let doneOverall = "0%", inProgressOverall = "0%", remainingOverall = "0%";
             const allParsedItems = [];
             const getCell = (r, colIdx) => (r && r[colIdx] !== undefined && r[colIdx] !== null) ? String(r[colIdx]).trim() : '';
 
             rows.forEach((r, rowIndex) => {
-                if (rowIndex === 1) return;
-                const label = (getCell(r, 8) ? getCell(r, 8) : getCell(r, 7)).toLowerCase();
-                const summaryVal = getCell(r, 9) ? getCell(r, 9) : getCell(r, 8);
-                
-                if (label.includes('% done') || label.includes('done %')) {
-                    if (summaryVal) doneOverall = summaryVal;
-                } else if (label.includes('% in progress') || label.includes('in progress %') || label.includes('progress %')) {
-                    if (summaryVal) inProgressOverall = summaryVal;
-                } else if (label.includes('% remaining') || label.includes('remaining %')) {
-                    if (summaryVal) remainingOverall = summaryVal;
-                }
-            });
-
-            rows.forEach((r, rowIndex) => {
                 if (rowIndex < 2) return;
-                let name = getCell(r, 0) || getCell(r, 1) || getCell(r, 2);
+                const name = getCell(r, 0) || getCell(r, 1) || getCell(r, 2);
                 if (!name) return;
 
                 const lowerName = name.toLowerCase();
                 const filterWords = ['stt', 'module', 'feature', 'summary', 'total', '% done', 'done %', '% in progress', 'in progress %', '% remaining', 'remaining %'];
                 if (filterWords.some(kw => lowerName.includes(kw))) return;
 
-                allParsedItems.push({ name, colE: getCell(r, 4), colG: getCell(r, 6), lowerG: getCell(r, 6).toLowerCase(), pctNum: parsePctNum(getCell(r, 4)) });
+                const status = getCell(r, 6);
+                const normalizedStatus = status.toLowerCase().replace(/[_-]+/g, ' ').replace(/\s+/g, ' ').trim();
+                allParsedItems.push({
+                    name: name,
+                    colE: getCell(r, 4),
+                    colG: status,
+                    lowerG: normalizedStatus,
+                    pctNum: parsePctNum(getCell(r, 4))
+                });
             });
 
             const globalTree = {};
@@ -2071,30 +2064,33 @@
                 globalTree[parsed.base][parsed.platform][parsed.os][parsed.browser] = true;
             });
 
+            // Phân loại task dựa trên Status cột G, không dựa vào % ở cột E.
+            // "failed" được xếp vào IN PROGRESS vì task chưa hoàn tất.
             const doneRaw = [], inProgressRaw = [], remainingRaw = [];
             allParsedItems.forEach(item => {
-                const valToUse = item.colE ? item.colE : item.colG;
-                const isZero = (item.pctNum === 0 || ['0','0%','0.0%'].includes(String(item.colE).trim()));
-                const isHundred = (item.pctNum === 100 || ['100%','1','100'].includes(String(item.colE).trim()));
-                const isInProgressStatus = ['doing', 'in progress', 'in-progress'].some(kw => item.lowerG.includes(kw));
+                const status = item.lowerG;
+                const parsedStatus = item.colG || '';
 
-                if (isZero && isInProgressStatus) {
-                    inProgressRaw.push({ name: item.name, val: "Failed", status: item.colG });
-                }
-                else if (isZero && (item.lowerG.includes('done') || item.lowerG.includes('passed') || item.lowerG !== '')) {
-                    doneRaw.push({ name: item.name, val: "Passed", status: item.colG });
-                }
-                else if ((item.pctNum !== null && item.pctNum > 0 && item.pctNum < 100) || isInProgressStatus) {
-                    let displayVal = formatPctDisplayFixed(valToUse);
-                    if (item.pctNum !== null && item.pctNum > 0 && item.pctNum < 100) {
-                        displayVal = "remain " + displayVal;
-                    }
-                    inProgressRaw.push({ name: item.name, val: displayVal, status: item.colG });
-                }
-                else if (isHundred || ['100%','1','100'].includes(String(item.colE).trim())) {
-                    remainingRaw.push({ name: item.name, val: formatPctDisplayFixed(valToUse), status: item.colG });
+                if (status === 'done' || status === 'passed' || status === 'complete' || status === 'completed') {
+                    doneRaw.push({ name: item.name, val: parsedStatus || 'Done', status: parsedStatus });
+                } else if (
+                    status === 'in progress' || status === 'doing' || status === 'failed' ||
+                    status === 'testing' || status === 'in test' || status === 'in testing'
+                ) {
+                    inProgressRaw.push({ name: item.name, val: parsedStatus || 'In progress', status: parsedStatus });
+                } else if (
+                    status === 'remaining' || status === 'remains' || status === 'remain' ||
+                    status === 'todo' || status === 'to do' || status === 'not started'
+                ) {
+                    remainingRaw.push({ name: item.name, val: parsedStatus || 'Remaining', status: parsedStatus });
                 }
             });
+
+            const classifiedTotal = doneRaw.length + inProgressRaw.length + remainingRaw.length;
+            const percentFor = count => classifiedTotal ? (count * 100 / classifiedTotal).toFixed(2).replace(/\.00$/, '') + '%' : '0%';
+            const doneOverall = percentFor(doneRaw.length);
+            const inProgressOverall = percentFor(inProgressRaw.length);
+            const remainingOverall = percentFor(remainingRaw.length);
 
             const consolidate = (rawItems, hideValue = false) => {
                 let blocks = [], currentBlock = null, lines = [];
@@ -2122,9 +2118,9 @@
             };
 
             const lines = [];
-            if (doneRaw.length > 0 || (!isZeroPct(doneOverall) && doneOverall !== "0%")) { lines.push('- DONE: ' + formatPctDisplayFixed(doneOverall)); lines.push(...consolidate(doneRaw, true)); }
-            if (inProgressRaw.length > 0 || (!isZeroPct(inProgressOverall) && inProgressOverall !== "0%")) { lines.push('- IN PROGRESS: ' + formatPctDisplayFixed(inProgressOverall)); lines.push(...consolidate(inProgressRaw, false)); }
-            if (remainingRaw.length > 0 || (!isZeroPct(remainingOverall) && remainingOverall !== "0%")) { lines.push('- REMAINS: ' + formatPctDisplayFixed(remainingOverall)); lines.push(...consolidate(remainingRaw, true)); }
+            if (doneRaw.length > 0) { lines.push('- DONE: ' + doneOverall); lines.push(...consolidate(doneRaw, true)); }
+            if (inProgressRaw.length > 0) { lines.push('- IN PROGRESS: ' + inProgressOverall); lines.push(...consolidate(inProgressRaw, false)); }
+            if (remainingRaw.length > 0) { lines.push('- REMAINS: ' + remainingOverall); lines.push(...consolidate(remainingRaw, true)); }
 
             if (lines.length === 0) {
                 lines.push('- Tiến độ: Chưa cập nhật (Hoặc sai định dạng) trong Sheet');
