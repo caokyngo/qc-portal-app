@@ -2077,7 +2077,14 @@
                     status === 'in progress' || status === 'doing' || status === 'failed' ||
                     status === 'testing' || status === 'in test' || status === 'in testing'
                 ) {
-                    inProgressRaw.push({ name: item.name, val: parsedStatus || 'In progress', status: parsedStatus });
+                    // Vẫn phân nhóm theo Status cột G, nhưng nội dung hiển thị của task
+                    // trong IN PROGRESS giữ logic cũ: tên task: remain [giá trị % cột E].
+                    const remainingPercent = item.colE || '0%';
+                    inProgressRaw.push({
+                        name: item.name,
+                        val: 'remain ' + remainingPercent,
+                        status: parsedStatus
+                    });
                 } else if (
                     status === 'remaining' || status === 'remains' || status === 'remain' ||
                     status === 'todo' || status === 'to do' || status === 'not started'
