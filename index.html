@@ -2035,7 +2035,21 @@
             const allParsedItems = [];
             const getCell = (r, colIdx) => (r && r[colIdx] !== undefined && r[colIdx] !== null) ? String(r[colIdx]).trim() : '';
 
+            // Lấy % header từ các dòng tổng hợp trên sheet: nhãn ở cột I, phần trăm ở cột J.
+            // Dữ liệu này độc lập với phân loại từng task theo Status ở cột G.
+            const summaryPercentages = { done: '', inProgress: '', remaining: '' };
+
             rows.forEach((r, rowIndex) => {
+                const summaryLabel = getCell(r, 8).toLowerCase().replace(/\\s+/g, ' ').trim();
+                const summaryValue = getCell(r, 9);
+                if (summaryLabel === '% done' || summaryLabel === 'done %') {
+                    if (summaryValue) summaryPercentages.done = summaryValue;
+                } else if (summaryLabel === '% in progress' || summaryLabel === 'in progress %') {
+                    if (summaryValue) summaryPercentages.inProgress = summaryValue;
+                } else if (summaryLabel === '% remaining' || summaryLabel === 'remaining %') {
+                    if (summaryValue) summaryPercentages.remaining = summaryValue;
+                }
+
                 if (rowIndex < 2) return;
                 const name = getCell(r, 0) || getCell(r, 1) || getCell(r, 2);
                 if (!name) return;
@@ -2100,9 +2114,11 @@
 
             const classifiedTotal = doneRaw.length + inProgressRaw.length + remainingRaw.length;
             const percentFor = count => classifiedTotal ? (count * 100 / classifiedTotal).toFixed(2).replace(/\.00$/, '') + '%' : '0%';
-            const doneOverall = percentFor(doneRaw.length);
-            const inProgressOverall = percentFor(inProgressRaw.length);
-            const remainingOverall = percentFor(remainingRaw.length);
+            // Ưu tiên phần trăm tính sẵn ở cột J theo nhãn cột I.
+            // Nếu sheet không có các dòng tổng hợp này thì mới fallback sang tỷ lệ đếm task.
+            const doneOverall = summaryPercentages.done || percentFor(doneRaw.length);
+            const inProgressOverall = summaryPercentages.inProgress || percentFor(inProgressRaw.length);
+            const remainingOverall = summaryPercentages.remaining || percentFor(remainingRaw.length);
 
             const consolidate = (rawItems, hideValue = false) => {
                 let blocks = [], currentBlock = null, lines = [];
