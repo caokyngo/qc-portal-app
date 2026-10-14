@@ -660,6 +660,7 @@
         const URL_REPORT_API = "https://script.google.com/a/macros/enotion.io/s/AKfycbzynUh65kMWVtwRdYdg8x35-6LViA_JwMPrWhEoMdDXFDP7tpcheilYrReQSIrQ6zAtIQ/exec"; 
         let currentBoardId = null;
         let currentProjectKey = null;
+        let currentParentKey = null;
         let currentJiraDomain = null;
         let jiraOAuthConnected = false;
         let jiraOAuthPopup = null;
@@ -994,6 +995,7 @@
             document.getElementById('reportDashboard').classList.add('hidden');
             document.getElementById('jiraUrlSection').classList.remove('hidden');
             rawJiraData = [];
+            currentParentKey = null;
         }
 
         function toggleJiraConnection() {
@@ -1232,7 +1234,9 @@
                         jql = 'project = "' + projectName + '" ORDER BY created DESC';
                     }
                 }
-                return { domain, jql, filterId, boardId, projectName: projectName || "Jira Filter" };
+                const parentMatch = jql.match(/\bparent\s*=\s*["']?([A-Za-z][A-Za-z0-9_]*-\d+)["']?/i);
+                const parentKey = parentMatch ? parentMatch[1].toUpperCase() : "";
+                return { domain, jql, filterId, boardId, parentKey, projectName: projectName || "Jira Filter" };
             } catch (e) { return null; }
         }
 
@@ -1317,6 +1321,7 @@
                 // Ưu tiên boardId có sẵn trong URL người dùng dán để giữ đúng board; nếu không có thì dùng boardId từ Apps Script.
                 currentBoardId = parsed.boardId || json.boardId || null;
                 currentProjectKey = json.projectKey || (parsed.projectName !== "Jira Filter" ? parsed.projectName : null);
+                currentParentKey = parsed.parentKey || null;
                 currentJiraDomain = parsed.domain;
                 if (!currentBoardId && currentProjectKey) {
                     showToast('Chưa lấy được Board ID', json.boardIdError || 'Apps Script không trả về boardId. Hãy triển khai bản Code.gs mới và cấp quyền Jira board.', true);
@@ -2323,12 +2328,15 @@
                 const linkAppname = document.getElementById('reportLinkAppnameInput') ? document.getElementById('reportLinkAppnameInput').value.trim() : '';
                 
                 let generatedJiraLink = "";
-                if (currentProjectKey && currentJiraDomain) {
+                if (currentParentKey && currentJiraDomain) {
+                    generatedJiraLink = `${currentJiraDomain}/browse/${encodeURIComponent(currentParentKey)}`;
+                } else if (currentProjectKey && currentJiraDomain) {
                     const boardIdForLink = currentBoardId || '[boardId]';
                     generatedJiraLink = `${currentJiraDomain}/jira/software/projects/${currentProjectKey}/boards/${boardIdForLink}`;
                 } else {
-                    generatedJiraLink = document.getElementById('jiraUrlInput') ? document.getElementById('jiraUrlInput').value.trim() : '';
+                    generatedJiraLink = document.getElementById("jiraUrlInput")?.value.trim() || "";
                 }
+
                 
                 const customNotes = document.getElementById('reportNotesInput') ? document.getElementById('reportNotesInput').value.trim() : '';
                 const metadataText = document.getElementById('reportMetadataInput') ? document.getElementById('reportMetadataInput').value.trim() : '';
@@ -2416,7 +2424,7 @@
                     if (linkAppname) reportLines.push('  • App name: ' + linkAppname);
                 }
                 
-                if (generatedJiraLink) reportLines.push('Link Jira: ' + generatedJiraLink);
+                if (generatedJiraLink) reportLines.push(`Link Jira: [${generatedJiraLink}](${generatedJiraLink})`);
                 if (testcaseLinkToUse) reportLines.push('Test case: ' + testcaseLinkToUse);
                 reportLines.push('---------------------------------------------');
 
