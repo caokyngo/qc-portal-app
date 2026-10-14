@@ -1,0 +1,6 @@
+Chính sách quyền riêng tư — QC Portal  
+QC Portal dùng thông tin tài khoản Google gồm tên, email và ảnh đại diện để hiển thị phiên đăng nhập trên trình duyệt. Khi người dùng kết nối Jira, ứng dụng lưu access token và refresh token OAuth trong Google Apps Script, theo tài khoản Google của người dùng. Token được dùng để truy vấn Jira theo quyền người dùng đã cấp.  
+Khi tạo báo cáo, ứng dụng đọc thông tin ticket Jira gồm tiêu đề, độ ưu tiên, trạng thái và người được giao, rồi gửi kết quả tới trình duyệt để hiển thị và tạo báo cáo. Ứng dụng không chủ động lưu nội dung ticket vào kho dữ liệu riêng.  
+Thông tin đăng nhập Google được lưu trong bộ nhớ trình duyệt. Token Jira được lưu cho tới khi người dùng ngắt kết nối Jira hoặc thu hồi quyền truy cập. Người dùng có thể ngắt kết nối trong QC Portal để xóa token Jira đã lưu.  
+Dữ liệu được xử lý qua các dịch vụ Google Apps Script và Atlassian Jira để cung cấp chức năng đăng nhập, kết nối và truy vấn ticket. [Tên công ty] không bán dữ liệu người dùng.  
+Câu hỏi hoặc yêu cầu về dữ liệu: [email hỗ trợ của công ty].
