@@ -247,7 +247,7 @@
   <main>
     <section class="intro">
       <h1>Tạo sheet báo cáo</h1>
-      <p>Tạo report mới theo đúng mẫu đầy đủ 30 task và số liệu ban đầu. Việc tạo sheet không quét folder Test Case.</p>
+      <p>Tạo report mới bằng cách nhân bản tab mẫu để giữ nguyên định dạng, dropdown dạng chip và các ô merge. Việc tạo sheet không quét folder Test Case.</p>
     </section>
 
     <section class="panel bottom-bar">
@@ -295,7 +295,7 @@
   <div id="setupModal" class="modal-backdrop" role="presentation" onclick="onBackdropClick(event)">
     <section class="modal" role="dialog" aria-modal="true" aria-labelledby="setupTitle">
       <header class="modal-head">
-        <div><h2 id="setupTitle">Tạo report theo mẫu</h2><p>Sheet mới có đủ task, số liệu mẫu, công thức tổng hợp và status như file bạn gửi.</p></div>
+        <div><h2 id="setupTitle">Tạo report theo mẫu</h2><p>Sheet mới được nhân bản từ tab mẫu trong file report để giữ nguyên bố cục, định dạng, dropdown chip và ô merge.</p></div>
         <button type="button" class="button button-icon" aria-label="Đóng" onclick="closeSetupModal()"><i class="fa-solid fa-xmark"></i></button>
       </header>
       <div class="modal-scroll">
@@ -307,7 +307,7 @@
         <div class="field sheet-name-field">
           <label for="newSheetName">Tên sheet report mới</label>
           <input id="newSheetName" type="text" maxlength="100" placeholder="Ví dụ: 9648">
-          <p class="hint">Cột B được nạp số liệu ban đầu từ mẫu. Folder được lưu ở ô A1 để dùng khi bạn chủ động bấm Cập nhật data sau này.</p>
+          <p class="hint">Cần có tab Google Sheets mẫu trong file report, tên “QC_REPORT_TEMPLATE” hoặc “mẫu”. Folder được lưu ở ô A1; bước tạo không quét folder hay cập nhật remaining/total.</p>
         </div>
       </div>
       <footer class="modal-footer">
