@@ -409,7 +409,7 @@
     }
     function closeSheetConfigModal() { document.getElementById('sheetConfigModal').classList.remove('show'); }
     function handleSheetConfigBackdrop(event) { if (event.target.id === 'sheetConfigModal') closeSheetConfigModal(); }
-    function escapeHtml(value) { return String(value).replace(/[&<>"']/g, c => ({'&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'"': '&#39;'}[c])); }
+    function escapeHtml(value) { return String(value).replace(/[&<>"']/g, c => ({'&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'}[c])); }
     function showMessage(text, type = 'info') {
       const message = document.getElementById('message');
       message.textContent = text; message.className = 'message show ' + type;
