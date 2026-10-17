@@ -67,6 +67,7 @@
     .link-button { border:0; padding:7px 9px; border-radius:8px; background:transparent; color:var(--accent); font-size:12px; font-weight:750; cursor:pointer; white-space:nowrap; }
     .link-button:hover { background:var(--accent-light); }
     .suite-grid { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:10px; padding:18px 22px 22px; }
+    .suite-grid { max-height:260px; overflow:auto; }
     .suite-option { min-height:46px; display:flex; align-items:center; gap:10px; padding:9px 12px; border:1px solid var(--line); border-radius:11px; background:var(--surface); color:var(--text); font-size:13px; cursor:pointer; transition:.15s; }
     .suite-option:hover { border-color:#a5b4fc; background:var(--accent-light); }
     .suite-option input { width:16px; height:16px; accent-color:var(--accent); flex:none; }
@@ -74,7 +75,15 @@
     .custom-suite input,.field input { width:100%; height:42px; border:1px solid #cbd5e1; border-radius:10px; padding:0 12px; outline:none; color:var(--text); background:var(--surface); }
     .field select { width:100%; height:42px; border:1px solid #cbd5e1; border-radius:10px; padding:0 12px; outline:none; color:var(--text); background:var(--surface); }
     .custom-suite input:focus,.field input:focus,.field select:focus { border-color:#818cf8; box-shadow:0 0 0 3px #6366f11a; }
-    .bottom-bar { display:flex; align-items:center; justify-content:space-between; gap:12px; margin-top:16px; padding:14px 17px; }
+    .dashboard-grid { display:grid; grid-template-columns:minmax(0,1.2fr) minmax(300px,.8fr); gap:16px; margin-top:18px; align-items:stretch; }
+    .bottom-bar { display:flex; align-items:flex-start; justify-content:space-between; flex-direction:column; gap:24px; min-height:230px; padding:24px; }
+    .bottom-bar h2 { margin:0; font-size:18px; }
+    .bottom-bar p { max-width:560px; margin:7px 0 14px; color:var(--muted); font-size:13px; line-height:1.55; }
+    .dashboard-side { display:grid; grid-template-rows:1fr 1fr; gap:16px; }
+    .action-card { display:flex; align-items:center; justify-content:space-between; gap:14px; padding:18px; }
+    .action-card h2 { margin:0; font-size:15px; }
+    .action-card p { margin:5px 0 0; color:var(--muted); font-size:12px; line-height:1.45; }
+    .action-card .button { flex:none; }
     .selection-count { color:var(--muted); font-size:12px; }
     .message { display:none; margin-top:14px; border-radius:11px; padding:12px 14px; font-size:12px; line-height:1.5; }
     .message.show { display:block; }
@@ -93,7 +102,16 @@
     .source-card { padding:14px; border:1px solid var(--line); border-radius:13px; background:var(--soft); }
     .source-card h3 { margin:0 0 12px; font-size:13px; }
     .source-fields { display:grid; grid-template-columns:minmax(0,1.6fr) minmax(0,1fr) 110px; gap:10px; }
-    .mapping-panel { margin-top:16px; padding:18px 20px; }
+    .mapping-modal-backdrop { position:fixed; inset:0; z-index:85; display:none; place-items:center; padding:18px; background:#0f172a80; backdrop-filter:blur(3px); }
+    .mapping-modal-backdrop.show { display:grid; }
+    .mapping-modal { width:min(1050px,100%); max-height:92vh; display:flex; flex-direction:column; overflow:hidden; border:1px solid var(--line); border-radius:18px; background:var(--page); color:var(--text); box-shadow:0 24px 80px #0f172a40; }
+    .mapping-modal-head { display:flex; align-items:flex-start; justify-content:space-between; gap:12px; padding:18px 21px; border-bottom:1px solid var(--line); background:var(--surface); }
+    .mapping-modal-head h2 { margin:0; font-size:17px; }
+    .mapping-modal-head p { margin:5px 0 0; color:var(--muted); font-size:12px; line-height:1.5; }
+    .mapping-modal-body { overflow:auto; padding:18px 20px 20px; }
+    .mapping-head { display:flex; align-items:center; justify-content:space-between; gap:12px; }
+    .mapping-head h2 { margin:0; font-size:14px; }
+    .mapping-head p { margin:4px 0 0; color:var(--muted); font-size:12px; line-height:1.5; }
     .mapping-head { display:flex; align-items:flex-start; justify-content:space-between; gap:12px; }
     .mapping-head h2 { margin:0; font-size:15px; }
     .mapping-head p { margin:5px 0 0; color:var(--muted); font-size:12px; line-height:1.5; }
@@ -130,9 +148,7 @@
     .config-fields { display:grid; grid-template-columns:minmax(0,1.5fr) minmax(0,1fr) 115px 145px; gap:9px; }
     .formula-preview { margin-top:9px; border-radius:8px; padding:8px 10px; background:var(--surface); color:var(--muted); font-family:ui-monospace,SFMono-Regular,Consolas,monospace; font-size:11px; overflow-wrap:anywhere; }
     .config-empty { padding:24px; color:var(--muted); text-align:center; font-size:13px; }
-    .config-launch { display:flex; align-items:center; justify-content:space-between; gap:14px; margin-top:16px; padding:16px 18px; }
-    .config-launch h2 { margin:0; font-size:15px; }
-    .config-launch p { margin:5px 0 0; color:var(--muted); font-size:12px; }
+    .config-launch { margin-top:0; }
     .config-modal-backdrop { position:fixed; inset:0; z-index:80; display:none; place-items:center; padding:18px; background:#0f172a80; backdrop-filter:blur(3px); }
     .config-modal-backdrop.show { display:grid; }
     .config-modal { width:min(1120px,100%); max-height:92vh; display:flex; flex-direction:column; overflow:hidden; border:1px solid var(--line); border-radius:18px; background:var(--page); box-shadow:0 24px 80px #0f172a40; }
@@ -210,9 +226,16 @@
       .panel-head { align-items:flex-start; flex-direction:column; padding:16px; }
       .suite-grid { grid-template-columns:1fr; padding:14px 16px 18px; }
       .custom-suite { padding:0 16px 16px; }
-      .bottom-bar { align-items:stretch; flex-direction:column; }
+      .dashboard-grid { grid-template-columns:1fr; }
+      .bottom-bar { min-height:auto; gap:18px; padding:18px; }
       .bottom-bar .button { width:100%; }
-      .mapping-panel { padding:15px; }
+      .dashboard-side { grid-template-rows:auto; }
+      .action-card { align-items:flex-start; flex-direction:column; }
+      .action-card > .button { width:100%; }
+      .mapping-modal-backdrop { padding:7px; }
+      .mapping-modal { max-height:96vh; }
+      .mapping-modal-head { padding:14px; }
+      .mapping-modal-body { padding:14px; }
       .mapping-head { flex-direction:column; }
       .mapping-form { grid-template-columns:1fr; }
       .mapping-form > .button { width:100%; }
@@ -231,8 +254,6 @@
       .modal-footer { padding-left:15px; padding-right:15px; }
       .modal-footer { align-items:stretch; flex-direction:column; }
       .modal-footer .actions { justify-content:flex-end; }
-      .config-launch { align-items:flex-start; flex-direction:column; }
-      .config-launch > .button { width:100%; }
       .config-modal-backdrop { padding:7px; }
       .config-modal { max-height:96vh; }
       .config-modal-head { padding:12px 14px; }
@@ -273,31 +294,48 @@
       <p>Tạo report mới bằng cách nhân bản tab mẫu để giữ nguyên định dạng, dropdown dạng chip và các ô merge. Việc tạo sheet không quét folder Test Case.</p>
     </section>
 
-    <section class="panel bottom-bar">
-      <span class="selection-count">Mẫu có sẵn 30 task, trạng thái và số remaining/total ban đầu.</span>
-      <button type="button" class="button button-primary" onclick="openSetupModal()"><i class="fa-solid fa-file-circle-plus"></i> Tạo report theo mẫu</button>
-    </section>
-    <section class="panel mapping-panel" aria-labelledby="mappingTitle">
-      <div class="mapping-head">
-        <div><h2 id="mappingTitle">Mapping task với file Test Case</h2><p>Thêm hoặc đổi tên task/file tại đây. Chỉ nhập tên file; không cần URL hay ID. Task chưa có file sẽ được giữ nguyên khi cập nhật.</p></div>
-        <span id="mappingCount" class="mapping-count" aria-live="polite">Đang tải mapping…</span>
+    <section class="dashboard-grid" aria-label="Thao tác report">
+      <section class="panel bottom-bar">
+        <div><h2>Tạo report mới</h2><p>Nhân bản tab mẫu để giữ nguyên định dạng, dropdown dạng chip và ô merge. Chọn các task cần có trong report; mặc định hệ thống chọn tất cả task trong mẫu.</p><span class="selection-count">Không quét folder Test Case khi tạo report.</span></div>
+        <button type="button" class="button button-primary" onclick="openSetupModal()"><i class="fa-solid fa-file-circle-plus"></i> Tạo report theo mẫu</button>
+      </section>
+      <div class="dashboard-side">
+        <section class="panel action-card config-launch">
+          <div><h2>Cập nhật report hiện có</h2><p>Tải cấu hình report để cập nhật số liệu và status.</p></div>
+          <button type="button" class="button button-secondary" onclick="openSheetConfigModal()"><i class="fa-solid fa-sliders"></i> Mở cấu hình</button>
+        </section>
+        <section class="panel action-card mapping-launch">
+          <div><h2>Mapping task với file Test Case</h2><p>Thêm, sửa hoặc xóa mapping khi task hay tên file thay đổi.</p></div>
+          <button type="button" class="button button-secondary" onclick="openMappingModal()"><i class="fa-solid fa-list-check"></i> Xem chi tiết mapping</button>
+        </section>
       </div>
-      <form id="taskMappingForm" class="mapping-form" onsubmit="saveTaskMapping(event)">
-        <div class="field"><label for="mappingTaskName">Tên task (cột A)</label><input id="mappingTaskName" type="text" maxlength="150" placeholder="Ví dụ: Logic"></div>
-        <div class="field"><label for="mappingFileName">Tên file Test Case</label><input id="mappingFileName" type="text" maxlength="200" placeholder="Ví dụ: Logic_Testcase"></div>
-        <button id="mappingSaveButton" type="submit" class="button button-primary"><i class="fa-solid fa-floppy-disk"></i> Lưu mapping</button>
-      </form>
-      <p class="hint">Tự chọn sheet mới nhất theo thứ tự tab (tab ngoài cùng bên trái, bỏ qua Changelog). Với task nhiều thiết bị, hãy ghi thiết bị trong tên task (ví dụ iOS Safari, iOS Chrome, Android Chrome, iOS hoặc Android) để lấy đúng sheet/device mới nhất. File phải nằm trực tiếp trong folder Test Case.</p>
-      <div id="taskMappingList" class="mapping-list" aria-live="polite"><div class="config-empty">Đang tải danh sách mapping…</div></div>
-    </section>
-    <section class="panel config-launch">
-      <div><h2>Xem hoặc chỉnh sửa cấu hình sheet</h2><p>Tải report hiện có để cập nhật số liệu và chỉnh status.</p></div>
-      <button type="button" class="button button-secondary" onclick="openSheetConfigModal()"><i class="fa-solid fa-sliders"></i> Mở cấu hình sheet</button>
     </section>
     <div id="message" class="message" role="status" aria-live="polite"></div>
   </main>
 
   <div id="toast-container" aria-live="polite" aria-atomic="false"></div>
+
+  <div id="mappingModal" class="mapping-modal-backdrop" role="presentation" onclick="handleMappingBackdrop(event)">
+    <section class="mapping-modal" role="dialog" aria-modal="true" aria-labelledby="mappingTitle">
+      <header class="mapping-modal-head">
+        <div><h2 id="mappingTitle">Mapping task với file Test Case</h2><p>Thêm hoặc đổi tên task/file. Chỉ nhập tên file; task chưa có file sẽ được giữ nguyên khi cập nhật.</p></div>
+        <button type="button" class="button button-icon" aria-label="Đóng" onclick="closeMappingModal()"><i class="fa-solid fa-xmark"></i></button>
+      </header>
+      <div class="mapping-modal-body">
+        <div class="mapping-head">
+          <div><h2>Danh sách mapping</h2><p>Sheet mới nhất được chọn theo thứ tự tab; với task nhiều thiết bị, nhóm device được lấy từ tên task.</p></div>
+          <span id="mappingCount" class="mapping-count" aria-live="polite">Chưa tải</span>
+        </div>
+        <form id="taskMappingForm" class="mapping-form" onsubmit="saveTaskMapping(event)">
+          <div class="field"><label for="mappingTaskName">Tên task (cột A)</label><input id="mappingTaskName" type="text" maxlength="150" placeholder="Ví dụ: Logic"></div>
+          <div class="field"><label for="mappingFileName">Tên file Test Case</label><input id="mappingFileName" type="text" maxlength="200" placeholder="Ví dụ: Logic_Testcase"></div>
+          <button id="mappingSaveButton" type="submit" class="button button-primary"><i class="fa-solid fa-floppy-disk"></i> Lưu mapping</button>
+        </form>
+        <p class="hint">File cần nằm trực tiếp trong folder Test Case. Với task nhiều thiết bị, ghi rõ iOS Safari, iOS Chrome, Android Chrome, iOS hoặc Android trong tên task để lấy đúng sheet/device mới nhất.</p>
+        <div id="taskMappingList" class="mapping-list" aria-live="polite"><div class="config-empty">Bấm “Xem chi tiết mapping” để tải danh sách.</div></div>
+      </div>
+    </section>
+  </div>
 
   <div id="sheetConfigModal" class="config-modal-backdrop" role="presentation" onclick="handleSheetConfigBackdrop(event)">
     <section class="config-modal" role="dialog" aria-modal="true" aria-labelledby="sheetConfigModalTitle">
@@ -345,6 +383,13 @@
           <input id="newSheetName" type="text" maxlength="100" placeholder="Ví dụ: 9648">
           <p class="hint">Cần có tab Google Sheets mẫu trong file report, tên “QC_REPORT_TEMPLATE” hoặc “mẫu”. Folder được lưu ở ô A1; bước tạo không quét folder hay cập nhật remaining/total.</p>
         </div>
+        <section class="panel suite-panel" aria-labelledby="taskSelectionTitle">
+          <div class="panel-head">
+            <div><h2 id="taskSelectionTitle">Chọn loại task</h2><p>Chỉ giữ lại các task đã tích chọn trong report mới.</p></div>
+            <div class="head-actions"><button type="button" class="link-button" onclick="setAllReportTasks(true)">Chọn tất cả</button><button type="button" class="link-button" onclick="setAllReportTasks(false)">Bỏ chọn</button></div>
+          </div>
+          <div id="reportTaskOptions" class="suite-grid" aria-live="polite"><div class="config-empty">Đang tải danh sách task…</div></div>
+        </section>
       </div>
       <footer class="modal-footer">
         <span id="createProgress" class="selection-count" aria-live="polite"></span>
@@ -370,6 +415,7 @@
     const PROGRESS_API_URL = 'https://script.google.com/a/macros/enotion.io/s/AKfycbzynUh65kMWVtwRdYdg8x35-6LViA_JwMPrWhEoMdDXFDP7tpcheilYrReQSIrQ6zAtIQ/exec';
     let folderUrlDraft = '';
     let loadedReportConfig = null;
+    let reportTemplateTasks = [];
     let taskMappings = [];
     let editingTaskMappingTask = '';
 
@@ -447,9 +493,19 @@
     }
     function closeSheetConfigModal() { document.getElementById('sheetConfigModal').classList.remove('show'); }
     function handleSheetConfigBackdrop(event) { if (event.target.id === 'sheetConfigModal') closeSheetConfigModal(); }
+    function openMappingModal() {
+      document.getElementById('mappingModal').classList.add('show');
+      loadTaskMappings();
+    }
+    function closeMappingModal() {
+      document.getElementById('mappingModal').classList.remove('show');
+    }
+    function handleMappingBackdrop(event) { if (event.target.id === 'mappingModal') closeMappingModal(); }
     function escapeHtml(value) { return String(value).replace(/[&<>"']/g, c => ({'&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'}[c])); }
     async function loadTaskMappings() {
       const root = document.getElementById('taskMappingList');
+      root.innerHTML = '<div class="config-empty"><i class="fa-solid fa-spinner fa-spin"></i> Đang tải danh sách mapping…</div>';
+      document.getElementById('mappingCount').textContent = 'Đang tải…';
       try {
         const result = await jsonp({ action: 'getTaskMappings' });
         taskMappings = Array.isArray(result.mappings) ? result.mappings : [];
@@ -584,6 +640,7 @@
       document.getElementById('newSheetName').value = '';
       document.getElementById('createProgress').textContent = '';
       document.getElementById('setupModal').classList.add('show');
+      loadReportTemplateTasks();
       document.getElementById('newSheetName').focus();
     }
     function closeSetupModal() { document.getElementById('setupModal').classList.remove('show'); }
@@ -594,12 +651,32 @@
       const el = document.getElementById('modalMessage'); el.textContent = ''; el.classList.remove('show');
     }
     function onBackdropClick(event) { if (event.target.id === 'setupModal') closeSetupModal(); }
+    async function loadReportTemplateTasks() {
+      const root = document.getElementById('reportTaskOptions');
+      root.innerHTML = '<div class="config-empty"><i class="fa-solid fa-spinner fa-spin"></i> Đang tải danh sách task…</div>';
+      try {
+        const result = await jsonp({ action: 'getReportTemplateTasks' });
+        reportTemplateTasks = Array.isArray(result.tasks) ? result.tasks : [];
+        if (!reportTemplateTasks.length) throw new Error('Template chưa có task nào trong cột A.');
+        root.innerHTML = reportTemplateTasks.map((task, index) =>
+          '<label class="suite-option"><input type="checkbox" name="reportTask" value="' + escapeHtml(task) + '" checked><span>' + escapeHtml(task) + '</span></label>'
+        ).join('');
+      } catch (error) {
+        reportTemplateTasks = [];
+        root.innerHTML = '<div class="config-empty">Không tải được danh sách task: ' + escapeHtml(error?.message || 'Lỗi không xác định') + '</div>';
+      }
+    }
+    function setAllReportTasks(checked) {
+      document.querySelectorAll('#reportTaskOptions input[name="reportTask"]').forEach(input => { input.checked = checked; });
+    }
     function readSourceSettings() {
       const sheetName = document.getElementById('newSheetName').value.trim();
       const folderUrl = document.getElementById('folderUrl').value.trim();
+      const selectedTasks = Array.from(document.querySelectorAll('#reportTaskOptions input[name="reportTask"]:checked')).map(input => input.value);
       if (!sheetName) throw new Error('Nhập tên cho sheet report mới.');
       if (!/^https:\/\//i.test(folderUrl)) throw new Error('Nhập link folder Test Case hợp lệ.');
-      return { sheetName, folderUrl };
+      if (!selectedTasks.length) throw new Error('Chọn ít nhất một loại task.');
+      return { sheetName, folderUrl, selectedTasks };
     }
     async function createReportSheet() {
       if (!loggedInUser) { showToast('Yêu cầu đăng nhập', 'Đăng nhập Google trước khi tạo sheet report.', true); return; }
@@ -612,11 +689,12 @@
       progress.textContent = 'Đang dựng report từ mẫu…';
       clearMessage();
       try {
-        const result = await jsonp({ action: 'createReportSheet', sheetName: setup.sheetName, folderUrl: setup.folderUrl });
+        const result = await jsonp({ action: 'createReportSheet', sheetName: setup.sheetName, folderUrl: setup.folderUrl, selectedTasks: JSON.stringify(setup.selectedTasks) });
         closeSetupModal();
         const note = result.resumed ? 'Sheet report đã tồn tại; đã cập nhật link folder.' : 'Đã tạo sheet mới.';
-        showMessage(note + ' Đã nạp ' + Number(result.suiteCount || 30) + ' task và số liệu từ mẫu. Không quét folder hoặc cập nhật remaining/total trong bước tạo.', 'info');
-        showToast('Tạo report xong', 'Đã nạp đủ task và dữ liệu ban đầu từ mẫu.');
+        const suiteCount = Number(result.suiteCount || setup.selectedTasks.length);
+        showMessage(note + ' Sheet có ' + suiteCount + ' task cùng dữ liệu ban đầu từ mẫu. Không quét folder hoặc cập nhật remaining/total trong bước tạo.', 'info');
+        showToast('Tạo report xong', 'Sheet report hiện có ' + suiteCount + ' task.');
       } catch (error) {
         progress.textContent = 'Không thể tạo sheet report.';
         showModalMessage(error?.message || 'Đã xảy ra lỗi không xác định.');
@@ -820,10 +898,10 @@
     document.addEventListener('DOMContentLoaded', () => {
       updateThemeButton();
       updateAuthUI();
-      loadTaskMappings();
 
       document.getElementById('setupModal').addEventListener('keydown', event => { if (event.key === 'Escape') closeSetupModal(); });
       document.getElementById('sheetConfigModal').addEventListener('keydown', event => { if (event.key === 'Escape') closeSheetConfigModal(); });
+      document.getElementById('mappingModal').addEventListener('keydown', event => { if (event.key === 'Escape') closeMappingModal(); });
       document.getElementById('configSheetName').addEventListener('keydown', event => { if (event.key === 'Enter') loadExistingConfig(); });
       document.addEventListener('click', event => {
         const profile = document.getElementById('userProfileBtn');
