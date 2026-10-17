@@ -190,7 +190,7 @@
     .progress-bar { width:0; height:100%; border-radius:inherit; background:linear-gradient(90deg,#6366f1,#14b8a6); transition:width .25s ease; }
     .progress-bar.failed { background:#ef4444; }
     .progress-meta { display:flex; justify-content:space-between; gap:12px; margin-top:9px; color:var(--muted); font-size:11px; }
-        .progress-feed { min-height:42px; max-height:88px; margin-top:16px; display:flex; flex-direction:column; justify-content:flex-start; gap:7px; overflow:hidden; border:1px solid var(--line); border-radius:10px; padding:10px 12px; background:var(--soft); }
+    .progress-feed { min-height:42px; max-height:88px; margin-top:16px; display:flex; flex-direction:column; justify-content:flex-start; gap:7px; overflow:hidden; border:1px solid var(--line); border-radius:10px; padding:10px 12px; background:var(--soft); }
     .progress-line { flex:none; display:flex; align-items:flex-start; gap:9px; min-width:0; color:var(--muted); font-size:12px; line-height:1.4; opacity:.74; transform:translateY(0); transition:opacity .45s ease, transform .45s ease, max-height .45s ease, margin .45s ease, padding .45s ease; max-height:38px; overflow:hidden; }
     .progress-line-icon { width:16px; flex:none; text-align:center; }
     .progress-line-copy { min-width:0; overflow-wrap:anywhere; }
@@ -401,7 +401,7 @@
     </section>
   </div>
 
-    <div id="refreshProgressModal" class="refresh-progress-backdrop" role="presentation">
+  <div id="refreshProgressModal" class="refresh-progress-backdrop" role="presentation">
     <section class="refresh-progress" role="dialog" aria-modal="true" aria-labelledby="refreshProgressTitle">
       <div class="refresh-progress-head"><span class="refresh-progress-icon"><i id="refreshProgressIcon" class="fa-solid fa-arrows-rotate"></i></span><div><h2 id="refreshProgressTitle">Đang cập nhật report</h2><p id="refreshProgressSubtitle">Đang đọc dữ liệu từ folder Test Case.</p></div></div>
       <div class="progress-track" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"><div id="refreshProgressBar" class="progress-bar"></div></div>
@@ -703,7 +703,8 @@
         button.disabled = false;
         button.innerHTML = '<i class="fa-solid fa-file-circle-plus"></i> Tạo sheet';
       }
-    }    function renderExistingConfig(config) {
+    }
+    function renderExistingConfig(config) {
       loadedReportConfig = config;
       document.getElementById('configPanel').hidden = false;
       document.getElementById('configPanelTitle').textContent = 'Cấu hình sheet · ' + config.sheetName;
@@ -823,66 +824,86 @@
       summary.textContent = message;
       feed.appendChild(summary);
       feed.scrollTop = feed.scrollHeight;
-    }    function closeRefreshProgress() {
+    }
+    function closeRefreshProgress() {
       if (refreshJobRunning) return;
       document.getElementById('refreshProgressModal').classList.remove('show');
     }
-    function waitForProgress(milliseconds) {
-      return new Promise(resolve => setTimeout(resolve, milliseconds));
+
+    // Gom task theo file nguồn để mỗi file chỉ phải mở 1 lần trong 1 lô (tối đa maxSize task / lô).
+    function buildRefreshBatches(tasks, maxSize = 10) {
+      const groups = new Map();
+      tasks.forEach(task => {
+        const key = String(task.testcaseFile || '').toLowerCase().replace(/[^a-z0-9]/g, '') || '__none__';
+        if (!groups.has(key)) groups.set(key, []);
+        groups.get(key).push(task);
+      });
+      const batches = [];
+      let current = [];
+      for (const group of groups.values()) {
+        if (current.length && current.length + group.length > maxSize) { batches.push(current); current = []; }
+        current.push(...group);
+      }
+      if (current.length) batches.push(current);
+      return batches;
     }
+
     async function refreshExistingData() {
       if (!loadedReportConfig) { showToast('Chưa có report', 'Hãy tải sheet report trước khi cập nhật.', true); return; }
       if (!loggedInUser) { showToast('Yêu cầu đăng nhập', 'Đăng nhập Google trước khi đọc folder Test Case.', true); return; }
       const tasks = Array.isArray(loadedReportConfig.suites) ? loadedReportConfig.suites : [];
       if (!tasks.length) { showToast('Không có task', 'Sheet này chưa có task để cập nhật.', true); return; }
+
       const folderUrl = document.getElementById('configFolderUrl').value.trim();
+      const sheetName = loadedReportConfig.sheetName;
       const button = document.getElementById('refreshDataButton');
       const original = button.innerHTML;
-      const batchSize = 4;
+      const CONCURRENCY = 3;
+      const batches = buildRefreshBatches(tasks, 10);
       let completed = 0;
       const aggregate = { updated: 0, skipped: [], errors: [] };
+
       button.disabled = true;
       button.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Đang cập nhật…';
       showRefreshProgress(tasks.length);
+
+      async function runBatch(batch, folderForThisBatch) {
+        const rows = batch.map(task => task.row);
+        const label = { row: Math.min(...rows) + '–' + Math.max(...rows), name: batch.length + ' task' };
+        const result = await jsonp({
+          action: 'refreshReportData',
+          sheetName,
+          folderUrl: folderForThisBatch,
+          rows: JSON.stringify(rows),
+          statusUpdates: JSON.stringify(batch.map(task => {
+            const statusSelect = document.querySelector('[data-config-row="' + task.row + '"] [data-config-field="status"]');
+            return { row: task.row, name: task.name, status: statusSelect ? statusSelect.value : task.status };
+          }))
+        }, 90000);
+        aggregate.updated += Number(result.updated || 0);
+        aggregate.skipped.push(...(result.skipped || []));
+        aggregate.errors.push(...(result.errors || []));
+        completed += batch.length;
+        setRefreshProgress(completed, tasks.length, aggregate.errors.length > 0);
+        const firstError = (result.errors || [])[0];
+        addProgressLine(label, firstError ? 'error' : 'done',
+          firstError ? (firstError.task + ' — ' + firstError.error) : 'Đã lưu ' + Number(result.updated || 0) + ' task');
+      }
+
       try {
-        for (let offset = 0; offset < tasks.length; offset += batchSize) {
-          const batch = tasks.slice(offset, offset + batchSize);
-          const first = batch[0];
-          const last = batch[batch.length - 1];
-          document.getElementById('refreshProgressSubtitle').textContent = 'Đang đọc và lưu dòng ' + first.row + '–' + last.row + ' trong sheet “' + loadedReportConfig.sheetName + '”.';
-          addProgressLine({ row: first.row + '–' + last.row, name: 'Đang xử lý lô' }, 'active', 'Đang lấy và lưu data…');
-          const result = await jsonp({
-            action: 'refreshReportData',
-            sheetName: loadedReportConfig.sheetName,
-            folderUrl: offset === 0 ? folderUrl : '',
-            startRow: first.row,
-            endRow: last.row,
-            statusUpdates: JSON.stringify(batch.map(task => {
-              const statusSelect = document.querySelector('[data-config-row="' + task.row + '"] [data-config-field="status"]');
-              return { row: task.row, name: task.name, status: statusSelect ? statusSelect.value : task.status };
-            }))
-          });
-          aggregate.updated += Number(result.updated || 0);
-          aggregate.skipped.push(...(result.skipped || []));
-          aggregate.errors.push(...(result.errors || []));
-          for (let index = 0; index < batch.length; index++) {
-            const task = batch[index];
-            const taskError = (result.errors || []).find(item => Number(item.row) === Number(task.row));
-            const taskSkipped = (result.skipped || []).find(item => Number(item.row) === Number(task.row));
-            const state = taskError ? 'error' : 'done';
-            const detail = taskError ? taskError.error : taskSkipped ? taskSkipped.reason : 'Đã lưu vào Google Sheet';
-            if (index === 0) addProgressLine(task, state, detail);
-            else {
-              addProgressLine(task, 'active');
-              await waitForProgress(80);
-              addProgressLine(task, state, detail);
-            }
-            completed++;
-            setRefreshProgress(completed, tasks.length, aggregate.errors.length > 0);
-            await waitForProgress(110);
+        document.getElementById('refreshProgressSubtitle').textContent = 'Đang đọc folder Test Case và lưu vào sheet “' + sheetName + '”.';
+        // Lô đầu chạy riêng: ghi link folder vào A1 và làm nóng cache folder; các lô sau chạy song song.
+        await runBatch(batches[0], folderUrl);
+        let next = 1;
+        const worker = async () => {
+          while (next < batches.length) {
+            const batch = batches[next++];
+            await runBatch(batch, '');
           }
-        }
-        const refreshed = await jsonp({ action: 'getReportSheetConfig', sheetName: loadedReportConfig.sheetName });
+        };
+        await Promise.all(Array.from({ length: Math.min(CONCURRENCY, Math.max(0, batches.length - 1)) }, worker));
+
+        const refreshed = await jsonp({ action: 'getReportSheetConfig', sheetName });
         renderExistingConfig(refreshed);
         const summary = formatRefreshSummary(aggregate);
         finishRefreshProgress(aggregate.errors.length ? 'Cập nhật xong, có lỗi' : 'Cập nhật hoàn tất', summary, Boolean(aggregate.errors.length));
