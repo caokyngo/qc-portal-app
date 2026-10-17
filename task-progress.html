@@ -247,26 +247,12 @@
   <main>
     <section class="intro">
       <h1>Tạo sheet báo cáo</h1>
-      <p>Chọn các Test Suits cần dùng. Report sẽ tự tìm file và sheet mới nhất trong folder Test Case, rồi ghi số liệu trực tiếp vào cột B.</p>
-    </section>
-
-    <section class="panel suite-panel" aria-labelledby="suiteHeading">
-      <div class="panel-head">
-        <div><h2 id="suiteHeading">Test Suits</h2><p>Các loại không được chọn sẽ không xuất hiện trong sheet mới.</p></div>
-        <div class="head-actions">
-          <button type="button" id="selectAllButton" class="link-button" onclick="toggleSelectAll()">Chọn tất cả</button>
-        </div>
-      </div>
-      <div id="suiteList" class="suite-grid"></div>
-      <form class="custom-suite" onsubmit="addCustomSuite(event)">
-        <input id="customSuiteName" type="text" maxlength="80" placeholder="Thêm Test Suit khác…" aria-label="Tên Test Suit mới">
-        <button type="submit" class="button button-secondary"><i class="fa-solid fa-plus"></i> Thêm</button>
-      </form>
+      <p>Tạo report mới theo đúng mẫu đầy đủ 30 task và số liệu ban đầu. Việc tạo sheet không quét folder Test Case.</p>
     </section>
 
     <section class="panel bottom-bar">
-      <span id="selectionCount" class="selection-count">Chưa chọn Test Suit nào</span>
-      <button type="button" class="button button-primary" onclick="openSetupModal()"><i class="fa-solid fa-arrow-right"></i> Tiếp tục cấu hình nguồn</button>
+      <span class="selection-count">Mẫu có sẵn 30 task, trạng thái và số remaining/total ban đầu.</span>
+      <button type="button" class="button button-primary" onclick="openSetupModal()"><i class="fa-solid fa-file-circle-plus"></i> Tạo report theo mẫu</button>
     </section>
     <section class="panel config-launch">
       <div><h2>Xem hoặc chỉnh sửa cấu hình sheet</h2><p>Tải report hiện có để cập nhật số liệu và chỉnh status.</p></div>
@@ -309,7 +295,7 @@
   <div id="setupModal" class="modal-backdrop" role="presentation" onclick="onBackdropClick(event)">
     <section class="modal" role="dialog" aria-modal="true" aria-labelledby="setupTitle">
       <header class="modal-head">
-        <div><h2 id="setupTitle">Tạo report từ folder Test Case</h2><p>Hệ thống tự ghép task với file, chọn tab mới nhất và tìm ô REMAINING/TOTAL.</p></div>
+        <div><h2 id="setupTitle">Tạo report theo mẫu</h2><p>Sheet mới có đủ task, số liệu mẫu, công thức tổng hợp và status như file bạn gửi.</p></div>
         <button type="button" class="button button-icon" aria-label="Đóng" onclick="closeSetupModal()"><i class="fa-solid fa-xmark"></i></button>
       </header>
       <div class="modal-scroll">
@@ -321,7 +307,7 @@
         <div class="field sheet-name-field">
           <label for="newSheetName">Tên sheet report mới</label>
           <input id="newSheetName" type="text" maxlength="100" placeholder="Ví dụ: 9648">
-          <p class="hint">Cột B sẽ chứa giá trị tĩnh dạng remaining/total. Crosscheck là task adhoc nên được bỏ qua.</p>
+          <p class="hint">Cột B được nạp số liệu ban đầu từ mẫu. Folder được lưu ở ô A1 để dùng khi bạn chủ động bấm Cập nhật data sau này.</p>
         </div>
       </div>
       <footer class="modal-footer">
@@ -346,19 +332,6 @@
 
   <script>
     const PROGRESS_API_URL = 'https://script.google.com/a/macros/enotion.io/s/AKfycbzynUh65kMWVtwRdYdg8x35-6LViA_JwMPrWhEoMdDXFDP7tpcheilYrReQSIrQ6zAtIQ/exec';
-    const DEFAULT_SUITES = [
-      'Logic UI', 'Logic', 'Data', 'Promotion', 'Interruption on PC', 'Interruption on IOS/Safari',
-      'Interruption on IOS/Chrome', 'Interruption on Android', 'UI', 'Tutorial/Trial', 'Sound',
-      'Interruption App iOS', 'Interruption App Android', 'Compatibility iframe ios safari',
-      'Compatibility iframe ios chrome', 'Compatibility iframe android chrome', 'Compatibility app ios',
-      'Compatibility app android', 'OBF', 'Performance', 'Betfail', 'Ban&Maintainance',
-      'Common Behaviour App Android', 'Common Behaviour App iOS', 'Common Behaviour Webapp Android Chrome',
-      'Common Behaviour Webapp iOS Chrome', 'Common Behaviour Webapp iOS Safari',
-      'Betting History Auto Delete App', 'Betting History Auto Delete Webapp', 'UAT/Happy case'
-    ];
-    const selected = new Set();
-    const sourceSettings = {};
-    let customSuites = [];
     let folderUrlDraft = '';
     let loadedReportConfig = null;
 
@@ -436,40 +409,7 @@
     }
     function closeSheetConfigModal() { document.getElementById('sheetConfigModal').classList.remove('show'); }
     function handleSheetConfigBackdrop(event) { if (event.target.id === 'sheetConfigModal') closeSheetConfigModal(); }
-    function allSuites() { return [...DEFAULT_SUITES, ...customSuites]; }
-    function selectedSuites() { return allSuites().filter(name => selected.has(name)); }
-    function escapeHtml(value) { return String(value).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
-    function renderSuites() {
-      const root = document.getElementById('suiteList');
-      root.innerHTML = allSuites().map(name => `<label class="suite-option"><input type="checkbox" data-suite="${escapeHtml(name)}" ${selected.has(name) ? 'checked' : ''}><span>${escapeHtml(name)}</span></label>`).join('');
-      root.querySelectorAll('input[data-suite]').forEach(input => input.addEventListener('change', () => {
-        const name = input.dataset.suite;
-        if (input.checked) selected.add(name); else selected.delete(name);
-        updateSelection();
-      }));
-      updateSelection();
-    }
-    function updateSelection() {
-      const count = selected.size;
-      document.getElementById('selectionCount').textContent = count ? `Đã chọn ${count} Test Suit` : 'Chưa chọn Test Suit nào';
-      const names = allSuites();
-      document.getElementById('selectAllButton').textContent = count === names.length ? 'Bỏ chọn tất cả' : 'Chọn tất cả';
-    }
-    function toggleSelectAll() {
-      const names = allSuites();
-      if (selected.size === names.length) selected.clear(); else names.forEach(name => selected.add(name));
-      renderSuites();
-    }
-    function addCustomSuite(event) {
-      event.preventDefault();
-      const input = document.getElementById('customSuiteName');
-      const name = input.value.trim();
-      if (!name) return;
-      if (allSuites().some(existing => existing.toLowerCase() === name.toLowerCase())) { showMessage('Tên Test Suit đã có trong danh sách.', 'error'); return; }
-      customSuites.push(name); selected.add(name);
-      try { localStorage.setItem('qc_custom_test_suites', JSON.stringify(customSuites)); } catch (e) {}
-      input.value = ''; clearMessage(); renderSuites();
-    }
+    function escapeHtml(value) { return String(value).replace(/[&<>"']/g, c => ({'&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'"': '&#39;'}[c])); }
     function showMessage(text, type = 'info') {
       const message = document.getElementById('message');
       message.textContent = text; message.className = 'message show ' + type;
@@ -519,7 +459,6 @@
       return chunks;
     }
     function openSetupModal() {
-      if (!selected.size) { showMessage('Chọn ít nhất một Test Suit trước khi tiếp tục.', 'error'); return; }
       clearMessage();
       clearModalMessage();
       const folderInput = document.getElementById('folderUrl');
@@ -541,11 +480,9 @@
     function readSourceSettings() {
       const sheetName = document.getElementById('newSheetName').value.trim();
       const folderUrl = document.getElementById('folderUrl').value.trim();
-      const suites = selectedSuites();
       if (!sheetName) throw new Error('Nhập tên cho sheet report mới.');
       if (!/^https:\/\//i.test(folderUrl)) throw new Error('Nhập link folder Test Case hợp lệ.');
-      if (!suites.length) throw new Error('Chọn ít nhất một Test Suit.');
-      return { sheetName, folderUrl, suites };
+      return { sheetName, folderUrl };
     }
     async function createReportSheet() {
       if (!loggedInUser) { showToast('Yêu cầu đăng nhập', 'Đăng nhập Google trước khi tạo sheet report.', true); return; }
@@ -553,24 +490,25 @@
       try { setup = readSourceSettings(); clearModalMessage(); } catch (error) { showModalMessage(error.message); return; }
       const button = document.getElementById('createButton');
       const progress = document.getElementById('createProgress');
-      button.disabled = true; button.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Đang tạo…';
-      progress.textContent = 'Đang tạo cấu trúc sheet…'; clearMessage();
+      button.disabled = true;
+      button.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Đang tạo…';
+      progress.textContent = 'Đang dựng report từ mẫu…';
+      clearMessage();
       try {
-        await jsonp({ action: 'createReportSheet', sheetName: setup.sheetName, folderUrl: setup.folderUrl, suites: JSON.stringify(setup.suites) });
-        progress.textContent = 'Đang quét folder và cập nhật dữ liệu…';
-        const result = await jsonp({ action: 'refreshReportData', sheetName: setup.sheetName, folderUrl: setup.folderUrl });
+        const result = await jsonp({ action: 'createReportSheet', sheetName: setup.sheetName, folderUrl: setup.folderUrl });
         closeSetupModal();
-        const summary = formatRefreshSummary(result);
-        showMessage('Đã tạo sheet “' + setup.sheetName + '”. ' + summary, result.errors?.length ? 'error' : 'info');
+        const note = result.resumed ? 'Sheet report đã tồn tại; đã cập nhật link folder.' : 'Đã tạo sheet mới.';
+        showMessage(note + ' Đã nạp ' + Number(result.suiteCount || 30) + ' task và số liệu từ mẫu. Không quét folder hoặc cập nhật remaining/total trong bước tạo.', 'info');
+        showToast('Tạo report xong', 'Đã nạp đủ task và dữ liệu ban đầu từ mẫu.');
       } catch (error) {
-        progress.textContent = 'Sheet có thể đã được tạo; bạn có thể tải cấu hình sheet rồi bấm Cập nhật data.';
-        showModalMessage(error.message);
-        showMessage(error.message, 'error');
+        progress.textContent = 'Không thể tạo sheet report.';
+        showModalMessage(error?.message || 'Đã xảy ra lỗi không xác định.');
+        showMessage(error?.message || 'Không thể tạo sheet report.', 'error');
       } finally {
-        button.disabled = false; button.innerHTML = '<i class="fa-solid fa-file-circle-plus"></i> Tạo sheet';
+        button.disabled = false;
+        button.innerHTML = '<i class="fa-solid fa-file-circle-plus"></i> Tạo sheet';
       }
-    }
-    function renderExistingConfig(config) {
+    }    function renderExistingConfig(config) {
       loadedReportConfig = config;
       document.getElementById('configPanel').hidden = false;
       document.getElementById('configPanelTitle').textContent = 'Cấu hình sheet · ' + config.sheetName;
@@ -583,7 +521,7 @@
       }
       root.innerHTML = rows.map(item => {
         const status = String(item.status || 'remaining').toLowerCase();
-        const statuses = [...new Set(['remaining', 'in progress', 'done', status])];
+        const statuses = [...new Set(['done', 'in progress', 'remaining', 'failed', status])];
         return '<article class="config-card" data-config-row="' + Number(item.row) + '" data-suite-name="' + escapeHtml(item.name) + '">' +
           '<div class="config-card-head"><strong>' + escapeHtml(item.name) + '</strong><span>Google Sheet · dòng ' + Number(item.row) + '</span></div>' +
           '<div class="data-summary-grid">' +
@@ -761,14 +699,11 @@
         button.disabled = false;
         button.innerHTML = original;
       }
-    }    document.addEventListener('DOMContentLoaded', () => {
+    }
+    document.addEventListener('DOMContentLoaded', () => {
       updateThemeButton();
       updateAuthUI();
-      try {
-        const saved = JSON.parse(localStorage.getItem('qc_custom_test_suites') || '[]');
-        if (Array.isArray(saved)) customSuites = saved.filter(name => typeof name === 'string' && name.trim() && !DEFAULT_SUITES.some(item => item.toLowerCase() === name.toLowerCase()));
-      } catch (e) {}
-      renderSuites();
+
       document.getElementById('setupModal').addEventListener('keydown', event => { if (event.key === 'Escape') closeSetupModal(); });
       document.getElementById('sheetConfigModal').addEventListener('keydown', event => { if (event.key === 'Escape') closeSheetConfigModal(); });
       document.getElementById('configSheetName').addEventListener('keydown', event => { if (event.key === 'Enter') loadExistingConfig(); });
