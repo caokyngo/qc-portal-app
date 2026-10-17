@@ -142,6 +142,25 @@
     .hint { margin:7px 0 0; color:var(--muted); font-size:11px; }
     .modal-footer { display:flex; justify-content:space-between; align-items:center; gap:10px; padding:14px 22px 18px; border-top:1px solid var(--line); }
     .modal-footer .actions { display:flex; gap:9px; }
+    .data-summary-grid { display:grid; grid-template-columns:minmax(150px,.8fr) minmax(240px,1.7fr) minmax(150px,.7fr); gap:12px; align-items:end; }
+    .data-summary { min-width:0; display:grid; gap:7px; }
+    .data-summary > span { color:var(--muted); font-size:11px; font-weight:750; }
+    .data-summary > strong { min-height:39px; display:flex; align-items:center; overflow:hidden; border:1px solid var(--line); border-radius:10px; padding:0 12px; background:var(--surface); font-size:13px; text-overflow:ellipsis; white-space:nowrap; }
+    .source-chip { font-size:12px !important; font-weight:600; }
+    .refresh-progress-backdrop { position:fixed; inset:0; z-index:100; display:none; place-items:center; padding:18px; background:#0f172a80; backdrop-filter:blur(3px); }
+    .refresh-progress-backdrop.show { display:grid; }
+    .refresh-progress { width:min(520px,100%); border:1px solid var(--line); border-radius:18px; padding:22px; background:var(--surface); color:var(--text); box-shadow:0 24px 80px #0f172a40; }
+    .refresh-progress-head { display:flex; align-items:flex-start; gap:13px; }
+    .refresh-progress-icon { width:40px; height:40px; display:grid; place-items:center; flex:none; border-radius:12px; background:var(--accent-light); color:var(--accent); }
+    .refresh-progress-head h2 { margin:0; font-size:17px; }
+    .refresh-progress-head p { margin:6px 0 0; color:var(--muted); font-size:12px; line-height:1.5; }
+    .progress-track { height:10px; margin-top:20px; overflow:hidden; border-radius:999px; background:#e2e8f0; }
+    .progress-bar { width:0; height:100%; border-radius:inherit; background:linear-gradient(90deg,#6366f1,#14b8a6); transition:width .25s ease; }
+    .progress-bar.failed { background:#ef4444; }
+    .progress-meta { display:flex; justify-content:space-between; gap:12px; margin-top:9px; color:var(--muted); font-size:11px; }
+    .progress-current { min-height:42px; margin-top:16px; border:1px solid var(--line); border-radius:10px; padding:10px 12px; background:var(--soft); font-size:12px; line-height:1.5; overflow-wrap:anywhere; }
+    .progress-actions { display:flex; justify-content:flex-end; margin-top:17px; }
+    html.dark-mode .progress-track { background:#334155; }
     html.dark-mode { color-scheme:dark; --page:#0f172a; --surface:#172033; --soft:#1e293b; --text:#e2e8f0; --muted:#a8b4c5; --line:#334155; --accent:#6366f1; --accent-light:#25234b; }
     html.dark-mode .field label { color:#cbd5e1; }
     html.dark-mode .custom-suite input,html.dark-mode .field input,html.dark-mode .field select { background:#111c2e; border-color:#475569; }
@@ -265,8 +284,8 @@
         </section>
         <section id="configPanel" class="panel config-panel" hidden>
           <header class="config-panel-head">
-            <div><h2 id="configPanelTitle">Cấu hình sheet</h2><p>Cập nhật dữ liệu nguồn vào cột B hoặc chỉnh status. B được lưu dưới dạng giá trị, không dùng IMPORTRANGE.</p></div>
-            <div class="head-actions"><button type="button" id="refreshDataButton" class="button button-secondary" onclick="refreshExistingData()"><i class="fa-solid fa-rotate"></i> Cập nhật data</button><button type="button" id="saveConfigButton" class="button button-primary" onclick="saveExistingConfig()"><i class="fa-solid fa-floppy-disk"></i> Lưu status/folder</button></div>
+            <div><h2 id="configPanelTitle">Cấu hình sheet</h2><p>Cập nhật sẽ ghi data và status trực tiếp xuống report.</p></div>
+            <button type="button" id="refreshDataButton" class="button button-primary" onclick="refreshExistingData()"><i class="fa-solid fa-rotate"></i> Cập nhật &amp; lưu</button>
           </header>
           <div class="config-panel-body">
             <div class="field config-folder"><label for="configFolderUrl">Link folder Test Case (ô A1)</label><input id="configFolderUrl" type="url" placeholder="https://drive.google.com/drive/folders/…"></div>
@@ -302,6 +321,16 @@
           <button type="button" id="createButton" class="button button-primary" onclick="createReportSheet()"><i class="fa-solid fa-file-circle-plus"></i> Tạo sheet</button>
         </div>
       </footer>
+    </section>
+  </div>
+
+    <div id="refreshProgressModal" class="refresh-progress-backdrop" role="presentation">
+    <section class="refresh-progress" role="dialog" aria-modal="true" aria-labelledby="refreshProgressTitle">
+      <div class="refresh-progress-head"><span class="refresh-progress-icon"><i id="refreshProgressIcon" class="fa-solid fa-arrows-rotate"></i></span><div><h2 id="refreshProgressTitle">Đang cập nhật report</h2><p id="refreshProgressSubtitle">Đang đọc dữ liệu từ folder Test Case.</p></div></div>
+      <div class="progress-track" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"><div id="refreshProgressBar" class="progress-bar"></div></div>
+      <div class="progress-meta"><span id="refreshProgressCount">0 / 0 task</span><span id="refreshProgressPercent">0%</span></div>
+      <div id="refreshProgressCurrent" class="progress-current" aria-live="polite">Chuẩn bị cập nhật…</div>
+      <div class="progress-actions"><button type="button" id="closeRefreshProgressButton" class="button button-secondary" onclick="closeRefreshProgress()" disabled>Đang xử lý…</button></div>
     </section>
   </div>
 
@@ -546,9 +575,12 @@
         const status = String(item.status || 'remaining').toLowerCase();
         const statuses = [...new Set(['remaining', 'in progress', 'done', status])];
         return '<article class="config-card" data-config-row="' + Number(item.row) + '" data-suite-name="' + escapeHtml(item.name) + '">' +
-          '<div class="config-card-head"><strong>' + escapeHtml(item.name) + '</strong><span>Dòng ' + Number(item.row) + ' · B hiện tại: ' + escapeHtml(item.value || '—') + '</span></div>' +
-          '<div class="config-fields"><div class="field"><label>Sheet nguồn (cột H)</label><input type="text" value="' + escapeHtml(item.sourceTab || '') + '" readonly></div>' +
-          '<div class="field"><label>Status (cột G)</label><select data-config-field="status">' + statuses.map(value => '<option value="' + escapeHtml(value) + '" ' + (value === status ? 'selected' : '') + '>' + escapeHtml(value) + '</option>').join('') + '</select></div></div></article>';
+          '<div class="config-card-head"><strong>' + escapeHtml(item.name) + '</strong><span>Google Sheet · dòng ' + Number(item.row) + '</span></div>' +
+          '<div class="data-summary-grid">' +
+            '<div class="data-summary"><span>Remaining / total · cột B</span><strong>' + escapeHtml(item.value || '—') + '</strong></div>' +
+            '<div class="data-summary"><span>Sheet nguồn · cột H</span><strong class="source-chip">' + escapeHtml(item.sourceTab || 'Chưa cập nhật') + '</strong></div>' +
+            '<div class="field status-field"><label>Status · cột G</label><select data-config-field="status">' + statuses.map(value => '<option value="' + escapeHtml(value) + '" ' + (value === status ? 'selected' : '') + '>' + escapeHtml(value) + '</option>').join('') + '</select></div>' +
+          '</div></article>';
       }).join('');
     }
     function formatRefreshSummary(result) {
@@ -557,52 +589,88 @@
       if (result.errors?.length) parts.push('lỗi ' + result.errors.length + ': ' + result.errors.slice(0, 3).map(item => item.task + ' — ' + item.error).join('; '));
       return parts.join(', ') + '.';
     }
+    let refreshJobRunning = false;
+    function setRefreshProgress(done, total, message, failed = false) {
+      const percent = total ? Math.round(done / total * 100) : 0;
+      const bar = document.getElementById('refreshProgressBar');
+      bar.style.width = percent + '%';
+      bar.classList.toggle('failed', failed);
+      const track = bar.parentElement;
+      track.setAttribute('aria-valuenow', String(percent));
+      document.getElementById('refreshProgressCount').textContent = done + ' / ' + total + ' task';
+      document.getElementById('refreshProgressPercent').textContent = percent + '%';
+      document.getElementById('refreshProgressCurrent').textContent = message;
+    }
+    function showRefreshProgress(total) {
+      refreshJobRunning = true;
+      document.getElementById('refreshProgressTitle').textContent = 'Đang cập nhật report';
+      document.getElementById('refreshProgressSubtitle').textContent = 'Data và status sẽ được ghi xuống sheet sau mỗi lô.';
+      document.getElementById('refreshProgressIcon').className = 'fa-solid fa-arrows-rotate fa-spin';
+      document.getElementById('closeRefreshProgressButton').disabled = true;
+      document.getElementById('closeRefreshProgressButton').textContent = 'Đang xử lý…';
+      setRefreshProgress(0, total, 'Đang chuẩn bị truy cập folder Test Case…');
+      document.getElementById('refreshProgressModal').classList.add('show');
+    }
+    function finishRefreshProgress(title, message, failed = false) {
+      refreshJobRunning = false;
+      document.getElementById('refreshProgressTitle').textContent = title;
+      document.getElementById('refreshProgressSubtitle').textContent = failed ? 'Một phần cập nhật chưa hoàn tất.' : 'Đã lưu kết quả cập nhật vào Google Sheet.';
+      document.getElementById('refreshProgressIcon').className = failed ? 'fa-solid fa-triangle-exclamation' : 'fa-solid fa-circle-check';
+      document.getElementById('closeRefreshProgressButton').disabled = false;
+      document.getElementById('closeRefreshProgressButton').textContent = 'Đóng';
+      document.getElementById('refreshProgressCurrent').textContent = message;
+    }
+    function closeRefreshProgress() {
+      if (refreshJobRunning) return;
+      document.getElementById('refreshProgressModal').classList.remove('show');
+    }
     async function refreshExistingData() {
       if (!loadedReportConfig) { showToast('Chưa có report', 'Hãy tải sheet report trước khi cập nhật.', true); return; }
       if (!loggedInUser) { showToast('Yêu cầu đăng nhập', 'Đăng nhập Google trước khi đọc folder Test Case.', true); return; }
+      const tasks = Array.isArray(loadedReportConfig.suites) ? loadedReportConfig.suites : [];
+      if (!tasks.length) { showToast('Không có task', 'Sheet này chưa có task để cập nhật.', true); return; }
       const folderUrl = document.getElementById('configFolderUrl').value.trim();
       const button = document.getElementById('refreshDataButton');
       const original = button.innerHTML;
-      button.disabled = true; button.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Đang cập nhật…';
+      const batchSize = 4;
+      let completed = 0;
+      const aggregate = { updated: 0, skipped: [], errors: [] };
+      button.disabled = true;
+      button.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Đang cập nhật…';
+      showRefreshProgress(tasks.length);
       try {
-        const result = await jsonp({ action: 'refreshReportData', sheetName: loadedReportConfig.sheetName, folderUrl });
+        for (let offset = 0; offset < tasks.length; offset += batchSize) {
+          const batch = tasks.slice(offset, offset + batchSize);
+          const first = batch[0];
+          const last = batch[batch.length - 1];
+          document.getElementById('refreshProgressSubtitle').textContent = 'Đang xử lý dòng ' + first.row + '–' + last.row + ' trong sheet “' + loadedReportConfig.sheetName + '”.';
+          setRefreshProgress(completed, tasks.length, 'Đang lấy data cho: ' + batch.map(item => 'dòng ' + item.row + ' · ' + item.name).join(' | '));
+          const result = await jsonp({
+            action: 'refreshReportData',
+            sheetName: loadedReportConfig.sheetName,
+            folderUrl: offset === 0 ? folderUrl : '',
+            startRow: first.row,
+            endRow: last.row,
+            statusUpdates: JSON.stringify(batch.map(item => ({ row: item.row, name: item.name, status: document.querySelector('[data-config-row="' + item.row + '"] [data-config-field="status"]').value })))
+          });
+          aggregate.updated += Number(result.updated || 0);
+          aggregate.skipped.push(...(result.skipped || []));
+          aggregate.errors.push(...(result.errors || []));
+          completed += batch.length;
+          setRefreshProgress(completed, tasks.length, 'Đã lưu đến dòng ' + last.row + ' · ' + last.name + '.');
+        }
         const refreshed = await jsonp({ action: 'getReportSheetConfig', sheetName: loadedReportConfig.sheetName });
         renderExistingConfig(refreshed);
-        showToast('Cập nhật report xong', formatRefreshSummary(result), Boolean(result.errors?.length));
-      } catch (error) { showToast('Không thể cập nhật data', error.message, true); }
-      finally { button.disabled = false; button.innerHTML = original; }
-    }
-    async function loadExistingConfig() {
-      if (!loggedInUser) { showToast('Yêu cầu đăng nhập', 'Đăng nhập Google trước khi đọc cấu hình Google Sheet.', true); return; }
-      const sheetName = document.getElementById('configSheetName').value.trim();
-      if (!sheetName) { showToast('Thiếu tên sheet', 'Nhập tên sheet cần xem cấu hình.', true); return; }
-      const button = document.getElementById('loadConfigButton');
-      button.disabled = true; button.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Đang tải…';
-      try {
-        const config = await jsonp({ action: 'getReportSheetConfig', sheetName });
-        renderExistingConfig(config);
-        showToast('Tải cấu hình thành công', `Đã đọc sheet “${config.sheetName}” với ${(config.suites || []).length} Test Suit.`);
-      } catch (error) { showToast('Không tải được cấu hình', error.message, true); }
-      finally { button.disabled = false; button.innerHTML = '<i class="fa-solid fa-magnifying-glass"></i> Xem cấu hình'; }
-    }
-    async function saveExistingConfig() {
-      if (!loadedReportConfig) { showToast('Chưa có cấu hình', 'Hãy tải sheet report trước khi lưu.', true); return; }
-      if (!loggedInUser) { showToast('Yêu cầu đăng nhập', 'Đăng nhập Google trước khi lưu cấu hình.', true); return; }
-      const folderUrl = document.getElementById('configFolderUrl').value.trim();
-      if (folderUrl && !/^https:\/\//i.test(folderUrl)) { showToast('Link folder không hợp lệ', 'Link folder Test Case phải bắt đầu bằng https://.', true); return; }
-      const settings = [...document.querySelectorAll('#configRows .config-card')].map(card => ({
-        row: Number(card.dataset.configRow), name: card.dataset.suiteName,
-        status: card.querySelector('[data-config-field="status"]').value
-      }));
-      const button = document.getElementById('saveConfigButton');
-      const original = button.innerHTML;
-      button.disabled = true; button.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Đang lưu…';
-      try {
-        const result = await jsonp({ action: 'saveReportSheetConfig', sheetName: loadedReportConfig.sheetName, folderUrl, settings: JSON.stringify(settings) });
-        loadedReportConfig.folderUrl = folderUrl;
-        showToast('Đã lưu cấu hình', 'Đã lưu folder và status cho ' + Number(result.savedCount || 0) + ' task.');
-      } catch (error) { showToast('Không thể lưu cấu hình', error.message, true); }
-      finally { button.disabled = false; button.innerHTML = original; }
+        const summary = formatRefreshSummary(aggregate);
+        finishRefreshProgress(aggregate.errors.length ? 'Cập nhật xong, có lỗi' : 'Cập nhật hoàn tất', summary, Boolean(aggregate.errors.length));
+        showToast('Cập nhật report xong', summary, Boolean(aggregate.errors.length));
+      } catch (error) {
+        finishRefreshProgress('Không thể hoàn tất cập nhật', error?.message || 'Đã xảy ra lỗi không xác định.', true);
+        showToast('Không thể cập nhật data', error?.message || 'Đã xảy ra lỗi không xác định.', true);
+      } finally {
+        button.disabled = false;
+        button.innerHTML = original;
+      }
     }
     document.addEventListener('DOMContentLoaded', () => {
       updateThemeButton();
