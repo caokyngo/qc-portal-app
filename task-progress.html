@@ -589,6 +589,32 @@
       if (result.errors?.length) parts.push('lỗi ' + result.errors.length + ': ' + result.errors.slice(0, 3).map(item => item.task + ' — ' + item.error).join('; '));
       return parts.join(', ') + '.';
     }
+    async function loadExistingConfig() {
+      const sheetName = document.getElementById('configSheetName').value.trim();
+      if (!sheetName) {
+        showToast('Nhập tên sheet', 'Nhập tên tab report cần tải cấu hình.', true);
+        return;
+      }
+      if (!loggedInUser) {
+        showToast('Yêu cầu đăng nhập', 'Đăng nhập Google trước khi tải cấu hình report.', true);
+        return;
+      }
+
+      const button = document.getElementById('loadConfigButton');
+      const original = button.innerHTML;
+      button.disabled = true;
+      button.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Đang tải…';
+      try {
+        const config = await jsonp({ action: 'getReportSheetConfig', sheetName });
+        renderExistingConfig(config);
+        showToast('Đã tải cấu hình', 'Đã tải sheet “' + config.sheetName + '” với ' + (config.suites || []).length + ' task.');
+      } catch (error) {
+        showToast('Không tải được cấu hình', error?.message || 'Đã xảy ra lỗi không xác định.', true);
+      } finally {
+        button.disabled = false;
+        button.innerHTML = original;
+      }
+    }
     let refreshJobRunning = false;
     function setRefreshProgress(done, total, message, failed = false) {
       const percent = total ? Math.round(done / total * 100) : 0;
