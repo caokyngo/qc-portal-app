@@ -203,6 +203,10 @@
     .progress-line.is-leaving { max-height:0; margin-top:-7px; padding-top:0; padding-bottom:0; opacity:0; transform:translateY(-16px); }
     @keyframes progress-pulse { 50% { opacity:.3; transform:scale(.82); } }
     @media (prefers-reduced-motion: reduce) { .progress-line,.progress-line.is-active .progress-line-icon,.progress-bar.indeterminate { animation:none; transition:none; } }
+    .progress-feed.is-final { max-height:240px; overflow-y:auto; }
+    .progress-line.is-summary { max-height:none; opacity:1; color:var(--text); }
+    .progress-line.is-skip .progress-line-icon { color:#f59e0b; }
+    .progress-line.is-time .progress-line-icon { color:var(--accent); }
     .progress-actions { display:flex; justify-content:flex-end; margin-top:17px; }
     html.dark-mode .progress-track { background:#334155; }
     html.dark-mode { color-scheme:dark; --page:#0f172a; --surface:#172033; --soft:#1e293b; --text:#e2e8f0; --muted:#a8b4c5; --line:#334155; --accent:#6366f1; --accent-light:#25234b; }
@@ -729,11 +733,28 @@
           '</div></article>';
       }).join('');
     }
-    function formatRefreshSummary(result) {
-      const parts = ['Đã cập nhật ' + Number(result.updated || 0) + ' task'];
-      if (result.skipped?.length) parts.push('bỏ qua ' + result.skipped.length + ' task');
-      if (result.errors?.length) parts.push('lỗi ' + result.errors.length + ': ' + result.errors.slice(0, 3).map(item => item.task + ' — ' + item.error).join('; '));
-      return parts.join(', ') + '.';
+    function fmtElapsed(ms) {
+      const s = ms / 1000;
+      if (s < 10) return s.toFixed(1) + 's';
+      if (s < 60) return Math.round(s) + 's';
+      return Math.floor(s / 60) + 'm ' + String(Math.round(s % 60)).padStart(2, '0') + 's';
+    }
+    // Gom các task có cùng lý do để dòng tổng kết ngắn gọn: "Bỏ qua 3 task — <lý do>: A, B, C."
+    function groupByReason(items, reasonOf) {
+      const map = new Map();
+      items.forEach(item => {
+        const reason = String(reasonOf(item) || 'Không rõ lý do').trim().replace(/[.\s]+$/, '');
+        if (!map.has(reason)) map.set(reason, []);
+        map.get(reason).push(item.task || ('dòng ' + item.row));
+      });
+      return Array.from(map, ([reason, names]) => ({ reason, names }));
+    }
+    function buildRefreshSummary(result, elapsedMs) {
+      const lines = [{ state: 'done', text: 'Đã cập nhật ' + Number(result.updated || 0) + ' task.' }];
+      groupByReason(result.skipped || [], item => item.reason).forEach(g => lines.push({ state: 'skip', text: 'Bỏ qua ' + g.names.length + ' task — ' + g.reason + ': ' + g.names.join(', ') + '.' }));
+      groupByReason(result.errors || [], item => item.error).forEach(g => lines.push({ state: 'error', text: 'Lỗi ' + g.names.length + ' task — ' + g.reason + ': ' + g.names.join(', ') + '.' }));
+      lines.push({ state: 'time', text: 'Hoàn tất trong ' + fmtElapsed(elapsedMs) + '.' });
+      return lines;
     }
     async function loadExistingConfig() {
       const sheetName = document.getElementById('configSheetName').value.trim();
@@ -802,7 +823,7 @@
       const secs = Math.floor((Date.now() - refreshStartedAt) / 1000);
       const labels = Array.from(refreshInFlight.values());
       const text = labels.length
-        ? 'Đang xử lý dòng ' + labels.join(' · ') + ' — ' + secs + 's'
+        ? 'Đang xử lý ' + labels.join(' · ') + ' — ' + secs + 's'
         : 'Đang kết nối Google Apps Script và quét folder Test Case… — ' + secs + 's';
       setRefreshLive(text);
     }
@@ -862,6 +883,7 @@
       document.getElementById('closeRefreshProgressButton').disabled = true;
       document.getElementById('closeRefreshProgressButton').textContent = 'Đang xử lý…';
       document.getElementById('refreshProgressCurrent').replaceChildren();
+      document.getElementById('refreshProgressCurrent').classList.remove('is-final');
       setRefreshProgress(0, total);
       document.getElementById('refreshProgressModal').classList.add('show');
       // Hiện trạng thái ngay khi popup mở, không để khung trống.
@@ -871,7 +893,7 @@
       renderLiveStatus();
       refreshTicker = setInterval(renderLiveStatus, 1000);
     }
-    function finishRefreshProgress(title, message, failed = false) {
+    function finishRefreshProgress(title, lines, failed = false) {
       refreshJobRunning = false;
       clearInterval(refreshTicker);
       refreshTicker = null;
@@ -885,10 +907,20 @@
       document.getElementById('closeRefreshProgressButton').disabled = false;
       document.getElementById('closeRefreshProgressButton').textContent = 'Đóng';
       const feed = document.getElementById('refreshProgressCurrent');
-      const summary = document.createElement('div');
-      summary.className = 'progress-line ' + (failed ? 'is-error' : 'is-done');
-      summary.textContent = message;
-      feed.appendChild(summary);
+      feed.classList.add('is-final');
+      const icons = { done: 'fa-circle-check', skip: 'fa-forward', error: 'fa-circle-exclamation', time: 'fa-stopwatch' };
+      lines.forEach(({ state, text }) => {
+        const line = document.createElement('div');
+        line.className = 'progress-line is-summary is-' + state;
+        const icon = document.createElement('span');
+        icon.className = 'progress-line-icon';
+        icon.innerHTML = '<i class="fa-solid ' + (icons[state] || icons.done) + '"></i>';
+        const copy = document.createElement('span');
+        copy.className = 'progress-line-copy';
+        copy.textContent = text;
+        line.append(icon, copy);
+        feed.appendChild(line);
+      });
       feed.scrollTop = feed.scrollHeight;
     }
     function closeRefreshProgress() {
@@ -896,22 +928,27 @@
       document.getElementById('refreshProgressModal').classList.remove('show');
     }
 
-    // Gom task theo file nguồn để mỗi file chỉ phải mở 1 lần trong 1 lô (tối đa maxSize task / lô).
-    function buildRefreshBatches(tasks, maxSize = 15) {
+    // Gom task theo file nguồn (mỗi file chỉ mở 1 lần), rồi chia đều "chi phí" cho tối đa maxBatches lô chạy song song.
+    // Chi phí 1 file ≈ 3 + số task; task chưa map file không cần đọc Drive nên gần như miễn phí.
+    function buildRefreshBatches(tasks, maxBatches = 6, maxSize = 20) {
       const groups = new Map();
       tasks.forEach(task => {
         const key = String(task.testcaseFile || '').toLowerCase().replace(/[^a-z0-9]/g, '') || '__none__';
         if (!groups.has(key)) groups.set(key, []);
         groups.get(key).push(task);
       });
-      const groupList = Array.from(groups.values());
-      const batches = [groupList.shift()]; // lô đầu chỉ 1 nhóm file: phản hồi sớm và làm nóng cache folder
-      let current = [];
-      for (const group of groupList) {
-        if (current.length && current.length + group.length > maxSize) { batches.push(current); current = []; }
-        current.push(...group);
-      }
-      if (current.length) batches.push(current);
+      const none = groups.get('__none__') || [];
+      groups.delete('__none__');
+      const list = Array.from(groups.values()).map(items => ({ items, cost: 3 + items.length })).sort((a, b) => b.cost - a.cost);
+      const buckets = Array.from({ length: Math.max(1, Math.min(maxBatches, list.length)) }, () => ({ items: [], cost: 0 }));
+      const lightest = () => buckets.reduce((min, b) => b.cost < min.cost ? b : min);
+      list.forEach(g => { const b = lightest(); b.items.push(...g.items); b.cost += g.cost; });
+      if (none.length) lightest().items.push(...none);
+      const batches = [];
+      buckets.filter(b => b.items.length).forEach(b => {
+        b.items.sort((x, y) => x.row - y.row); // dòng liền nhau → ghi sheet bằng ít lệnh hơn
+        for (let n = 0; n < b.items.length; n += maxSize) batches.push(b.items.slice(n, n + maxSize));
+      });
       return batches;
     }
 
@@ -925,8 +962,8 @@
       const sheetName = loadedReportConfig.sheetName;
       const button = document.getElementById('refreshDataButton');
       const original = button.innerHTML;
-      const CONCURRENCY = 4;
-      const batches = buildRefreshBatches(tasks, 15);
+      const MAX_PARALLEL = 6;
+      const batches = buildRefreshBatches(tasks, MAX_PARALLEL);
       const byRow = new Map(tasks.map(t => [Number(t.row), t]));
       let completed = 0;
       const aggregate = { updated: 0, skipped: [], errors: [] };
@@ -935,31 +972,32 @@
       button.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Đang cập nhật…';
       showRefreshProgress(tasks.length);
 
-      async function runBatch(batch, folderForThisBatch) {
+      async function runBatch(batch, index) {
         const rows = batch.map(task => task.row);
-        const label = { row: Math.min(...rows) + '–' + Math.max(...rows), name: batch.length + ' task' };
+        const label = 'lô ' + (index + 1) + '/' + batches.length;
         const statuses = batch.map(task => {
           const select = document.querySelector('[data-config-row="' + task.row + '"] [data-config-field="status"]');
           return { row: task.row, name: task.name, status: select ? select.value : task.status };
         });
         const batchId = ++refreshBatchCounter;
-        refreshInFlight.set(batchId, label.row);
+        const batchStart = Date.now();
+        refreshInFlight.set(batchId, label);
         renderLiveStatus();
         let result;
         try {
-        result = await jsonp({
-          action: 'refreshReportData',
-          sheetName,
-          folderUrl: folderForThisBatch,
-          rows: JSON.stringify(rows),
-          statusUpdates: JSON.stringify(statuses)
-        }, 90000);
+          result = await jsonp({
+            action: 'refreshReportData',
+            sheetName,
+            folderUrl,                          // mọi lô đều biết folder → không phải chờ lô đầu
+            writeLink: index === 0 ? '1' : '0', // chỉ lô đầu ghi link vào A1
+            rows: JSON.stringify(rows),
+            statusUpdates: JSON.stringify(statuses)
+          }, 90000);
         } finally {
           refreshInFlight.delete(batchId);
           renderLiveStatus();
         }
 
-        // Gộp kết quả trả về vào dữ liệu đang hiển thị, không cần tải lại sheet.
         (result.updatedRows || []).forEach(u => {
           const t = byRow.get(Number(u.row));
           if (t) { t.value = u.value; t.sourceTab = u.sourceTab; }
@@ -975,32 +1013,30 @@
         completed += batch.length;
         setRefreshProgress(completed, tasks.length, aggregate.errors.length > 0);
         const firstError = (result.errors || [])[0];
-        addRefreshLog('Dòng ' + label.row + ' — ' + (firstError ? (firstError.task + ': ' + firstError.error) : 'Đã lưu ' + Number(result.updated || 0) + ' task'),
+        const took = fmtElapsed(Date.now() - batchStart);
+        console.info('[refresh] ' + label + ': ' + took + ' (Apps Script ' + fmtElapsed(Number(result.serverMs || 0)) + ')');
+        addRefreshLog(label[0].toUpperCase() + label.slice(1) + ' — ' + (firstError ? (firstError.task + ': ' + firstError.error) : 'Đã lưu ' + Number(result.updated || 0) + ' task') + ' · ' + took,
           firstError ? 'error' : 'done');
       }
 
       try {
         document.getElementById('refreshProgressSubtitle').textContent = 'Đang đọc folder Test Case và lưu vào sheet “' + sheetName + '”.';
-        // Lô đầu chạy trước để ghi link folder vào A1 và làm nóng cache danh sách file trên Drive.
-        await runBatch(batches[0], folderUrl);
+        let next = 0;
+        const worker = async () => {
+          while (next < batches.length) { const i = next++; await runBatch(batches[i], i); }
+        };
+        await Promise.all(Array.from({ length: Math.min(MAX_PARALLEL, batches.length) }, worker));
         loadedReportConfig.folderUrl = folderUrl || loadedReportConfig.folderUrl;
 
-        let next = 1;
-        const worker = async () => {
-          while (next < batches.length) {
-            const batch = batches[next++];
-            await runBatch(batch, '');
-          }
-        };
-        await Promise.all(Array.from({ length: Math.min(CONCURRENCY, Math.max(0, batches.length - 1)) }, worker));
-
         renderExistingConfig(loadedReportConfig);
-        const summary = formatRefreshSummary(aggregate);
-        finishRefreshProgress(aggregate.errors.length ? 'Cập nhật xong, có lỗi' : 'Cập nhật hoàn tất', summary, Boolean(aggregate.errors.length));
-        showToast('Cập nhật report xong', summary, Boolean(aggregate.errors.length));
+        const lines = buildRefreshSummary(aggregate, Date.now() - refreshStartedAt);
+        const hasErrors = aggregate.errors.length > 0;
+        finishRefreshProgress(hasErrors ? 'Cập nhật xong, có lỗi' : 'Cập nhật hoàn tất', lines, hasErrors);
+        showToast('Cập nhật report xong', lines.map(l => l.text).join(' '), hasErrors);
       } catch (error) {
-        finishRefreshProgress('Không thể hoàn tất cập nhật', error?.message || 'Đã xảy ra lỗi không xác định.', true);
-        showToast('Không thể cập nhật data', error?.message || 'Đã xảy ra lỗi không xác định.', true);
+        const msg = error?.message || 'Đã xảy ra lỗi không xác định.';
+        finishRefreshProgress('Không thể hoàn tất cập nhật', [{ state: 'error', text: msg }, { state: 'time', text: 'Dừng sau ' + fmtElapsed(Date.now() - refreshStartedAt) + '.' }], true);
+        showToast('Không thể cập nhật data', msg, true);
       } finally {
         button.disabled = false;
         button.innerHTML = original;
