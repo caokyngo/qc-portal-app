@@ -93,6 +93,22 @@
     .source-card { padding:14px; border:1px solid var(--line); border-radius:13px; background:var(--soft); }
     .source-card h3 { margin:0 0 12px; font-size:13px; }
     .source-fields { display:grid; grid-template-columns:minmax(0,1.6fr) minmax(0,1fr) 110px; gap:10px; }
+    .mapping-panel { margin-top:16px; padding:18px 20px; }
+    .mapping-head { display:flex; align-items:flex-start; justify-content:space-between; gap:12px; }
+    .mapping-head h2 { margin:0; font-size:15px; }
+    .mapping-head p { margin:5px 0 0; color:var(--muted); font-size:12px; line-height:1.5; }
+    .mapping-form { display:grid; grid-template-columns:minmax(180px,1fr) minmax(220px,1.4fr) auto; align-items:end; gap:10px; margin:16px 0 13px; }
+    .mapping-list { display:grid; max-height:370px; overflow:auto; border:1px solid var(--line); border-radius:12px; }
+    .mapping-row { display:grid; grid-template-columns:minmax(180px,1fr) minmax(220px,1.4fr) auto; align-items:center; gap:10px; padding:9px 12px; border-bottom:1px solid var(--line); font-size:12px; }
+    .mapping-row:last-child { border-bottom:0; }
+    .mapping-row:nth-child(even) { background:var(--soft); }
+    .mapping-task,.mapping-file { min-width:0; overflow-wrap:anywhere; }
+    .mapping-task { font-weight:650; }
+    .mapping-file.empty { color:#b45309; font-style:italic; }
+    .mapping-actions { display:flex; justify-content:flex-end; gap:6px; }
+    .button-small { height:30px; padding:0 9px; border:1px solid var(--line); border-radius:8px; background:var(--surface); color:var(--text); font-size:11px; font-weight:650; cursor:pointer; }
+    .button-small:hover { border-color:#94a3b8; }
+    .mapping-count { color:var(--muted); font-size:11px; white-space:nowrap; }
     .lookup-panel { margin-top:16px; padding:18px 20px; }
     .lookup-panel h2 { margin:0; font-size:15px; }
     .lookup-panel p { margin:5px 0 14px; color:var(--muted); font-size:12px; }
@@ -196,6 +212,13 @@
       .custom-suite { padding:0 16px 16px; }
       .bottom-bar { align-items:stretch; flex-direction:column; }
       .bottom-bar .button { width:100%; }
+      .mapping-panel { padding:15px; }
+      .mapping-head { flex-direction:column; }
+      .mapping-form { grid-template-columns:1fr; }
+      .mapping-form > .button { width:100%; }
+      .mapping-row { grid-template-columns:1fr auto; gap:4px 8px; }
+      .mapping-file { grid-column:1; color:var(--muted); }
+      .mapping-actions { grid-column:2; grid-row:1 / span 2; }
       .lookup-row { align-items:stretch; flex-direction:column; }
       .config-panel-head { align-items:flex-start; flex-direction:column; }
       .config-fields { grid-template-columns:1fr 1fr; }
@@ -253,6 +276,19 @@
     <section class="panel bottom-bar">
       <span class="selection-count">Mẫu có sẵn 30 task, trạng thái và số remaining/total ban đầu.</span>
       <button type="button" class="button button-primary" onclick="openSetupModal()"><i class="fa-solid fa-file-circle-plus"></i> Tạo report theo mẫu</button>
+    </section>
+    <section class="panel mapping-panel" aria-labelledby="mappingTitle">
+      <div class="mapping-head">
+        <div><h2 id="mappingTitle">Mapping task với file Test Case</h2><p>Thêm hoặc đổi tên task/file tại đây. Chỉ nhập tên file; không cần URL hay ID. Task chưa có file sẽ được giữ nguyên khi cập nhật.</p></div>
+        <span id="mappingCount" class="mapping-count" aria-live="polite">Đang tải mapping…</span>
+      </div>
+      <form id="taskMappingForm" class="mapping-form" onsubmit="saveTaskMapping(event)">
+        <div class="field"><label for="mappingTaskName">Tên task (cột A)</label><input id="mappingTaskName" type="text" maxlength="150" placeholder="Ví dụ: Logic"></div>
+        <div class="field"><label for="mappingFileName">Tên file Test Case</label><input id="mappingFileName" type="text" maxlength="200" placeholder="Ví dụ: Logic_Testcase"></div>
+        <button id="mappingSaveButton" type="submit" class="button button-primary"><i class="fa-solid fa-floppy-disk"></i> Lưu mapping</button>
+      </form>
+      <p class="hint">Tự chọn sheet mới nhất theo thứ tự tab (tab ngoài cùng bên trái, bỏ qua Changelog). Với task nhiều thiết bị, hãy ghi thiết bị trong tên task (ví dụ iOS Safari, iOS Chrome, Android Chrome, iOS hoặc Android) để lấy đúng sheet/device mới nhất. File phải nằm trực tiếp trong folder Test Case.</p>
+      <div id="taskMappingList" class="mapping-list" aria-live="polite"><div class="config-empty">Đang tải danh sách mapping…</div></div>
     </section>
     <section class="panel config-launch">
       <div><h2>Xem hoặc chỉnh sửa cấu hình sheet</h2><p>Tải report hiện có để cập nhật số liệu và chỉnh status.</p></div>
@@ -334,6 +370,8 @@
     const PROGRESS_API_URL = 'https://script.google.com/a/macros/enotion.io/s/AKfycbzynUh65kMWVtwRdYdg8x35-6LViA_JwMPrWhEoMdDXFDP7tpcheilYrReQSIrQ6zAtIQ/exec';
     let folderUrlDraft = '';
     let loadedReportConfig = null;
+    let taskMappings = [];
+    let editingTaskMappingTask = '';
 
     function toggleTheme() {
       const dark = document.documentElement.classList.toggle('dark-mode');
@@ -410,6 +448,85 @@
     function closeSheetConfigModal() { document.getElementById('sheetConfigModal').classList.remove('show'); }
     function handleSheetConfigBackdrop(event) { if (event.target.id === 'sheetConfigModal') closeSheetConfigModal(); }
     function escapeHtml(value) { return String(value).replace(/[&<>"']/g, c => ({'&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'}[c])); }
+    async function loadTaskMappings() {
+      const root = document.getElementById('taskMappingList');
+      try {
+        const result = await jsonp({ action: 'getTaskMappings' });
+        taskMappings = Array.isArray(result.mappings) ? result.mappings : [];
+        renderTaskMappings();
+      } catch (error) {
+        root.innerHTML = '<div class="config-empty">Không tải được mapping: ' + escapeHtml(error?.message || 'Lỗi không xác định') + '</div>';
+        document.getElementById('mappingCount').textContent = 'Chưa tải được';
+      }
+    }
+    function renderTaskMappings() {
+      const root = document.getElementById('taskMappingList');
+      const mappedCount = taskMappings.filter(item => String(item.file || '').trim()).length;
+      document.getElementById('mappingCount').textContent = mappedCount + ' đã mapping · ' + (taskMappings.length - mappedCount) + ' chưa mapping';
+      if (!taskMappings.length) {
+        root.innerHTML = '<div class="config-empty">Chưa có mapping. Nhập tên task và file ở phía trên để thêm.</div>';
+        return;
+      }
+      root.innerHTML = taskMappings.map((item, index) => {
+        const file = String(item.file || '').trim();
+        return '<div class="mapping-row">' +
+          '<div class="mapping-task">' + escapeHtml(item.task) + '</div>' +
+          '<div class="mapping-file' + (file ? '' : ' empty') + '">' + escapeHtml(file || 'Chưa mapping') + '</div>' +
+          '<div class="mapping-actions"><button type="button" class="button-small" onclick="editTaskMapping(' + index + ')">Sửa</button><button type="button" class="button-small" onclick="deleteTaskMapping(' + index + ')">Xóa</button></div>' +
+          '</div>';
+      }).join('');
+    }
+    function editTaskMapping(index) {
+      const item = taskMappings[index];
+      if (!item) return;
+      editingTaskMappingTask = item.task;
+      document.getElementById('mappingTaskName').value = item.task;
+      document.getElementById('mappingFileName').value = item.file || '';
+      document.getElementById('mappingSaveButton').innerHTML = '<i class="fa-solid fa-floppy-disk"></i> Cập nhật mapping';
+      document.getElementById('mappingTaskName').focus();
+    }
+    function cancelTaskMappingEdit() {
+      editingTaskMappingTask = '';
+      document.getElementById('taskMappingForm').reset();
+      document.getElementById('mappingSaveButton').innerHTML = '<i class="fa-solid fa-floppy-disk"></i> Lưu mapping';
+    }
+    async function saveTaskMapping(event) {
+      event.preventDefault();
+      if (!loggedInUser) { showToast('Yêu cầu đăng nhập', 'Đăng nhập Google trước khi lưu mapping.', true); return; }
+      const taskName = document.getElementById('mappingTaskName').value.trim();
+      const fileName = document.getElementById('mappingFileName').value.trim();
+      if (!taskName || !fileName) { showToast('Thiếu thông tin', 'Nhập tên task và tên file Test Case.', true); return; }
+      const button = document.getElementById('mappingSaveButton');
+      const original = button.innerHTML;
+      button.disabled = true;
+      button.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Đang lưu…';
+      try {
+        const result = await jsonp({ action: 'saveTaskMapping', taskName, fileName, oldTaskName: editingTaskMappingTask });
+        taskMappings = result.mappings || [];
+        renderTaskMappings();
+        cancelTaskMappingEdit();
+        showToast('Đã lưu mapping', 'Task “' + taskName + '” sẽ lấy dữ liệu từ file “' + fileName + '”.');
+      } catch (error) {
+        showToast('Không lưu được mapping', error?.message || 'Lỗi không xác định.', true);
+      } finally {
+        button.disabled = false;
+        button.innerHTML = editingTaskMappingTask ? original : '<i class="fa-solid fa-floppy-disk"></i> Lưu mapping';
+      }
+    }
+    async function deleteTaskMapping(index) {
+      const item = taskMappings[index];
+      if (!item || !confirm('Xóa mapping cho task “' + item.task + '”?')) return;
+      if (!loggedInUser) { showToast('Yêu cầu đăng nhập', 'Đăng nhập Google trước khi xóa mapping.', true); return; }
+      try {
+        const result = await jsonp({ action: 'deleteTaskMapping', taskName: item.task });
+        taskMappings = result.mappings || [];
+        if (editingTaskMappingTask === item.task) cancelTaskMappingEdit();
+        renderTaskMappings();
+        showToast('Đã xóa mapping', 'Task “' + item.task + '” sẽ được bỏ qua khi cập nhật cho đến khi map lại.');
+      } catch (error) {
+        showToast('Không xóa được mapping', error?.message || 'Lỗi không xác định.', true);
+      }
+    }
     function showMessage(text, type = 'info') {
       const message = document.getElementById('message');
       message.textContent = text; message.className = 'message show ' + type;
@@ -703,6 +820,7 @@
     document.addEventListener('DOMContentLoaded', () => {
       updateThemeButton();
       updateAuthUI();
+      loadTaskMappings();
 
       document.getElementById('setupModal').addEventListener('keydown', event => { if (event.key === 'Escape') closeSetupModal(); });
       document.getElementById('sheetConfigModal').addEventListener('keydown', event => { if (event.key === 'Escape') closeSheetConfigModal(); });
