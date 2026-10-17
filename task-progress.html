@@ -158,7 +158,7 @@
     .progress-bar { width:0; height:100%; border-radius:inherit; background:linear-gradient(90deg,#6366f1,#14b8a6); transition:width .25s ease; }
     .progress-bar.failed { background:#ef4444; }
     .progress-meta { display:flex; justify-content:space-between; gap:12px; margin-top:9px; color:var(--muted); font-size:11px; }
-        .progress-feed { height:126px; margin-top:16px; display:flex; flex-direction:column; justify-content:flex-end; gap:7px; overflow:hidden; border:1px solid var(--line); border-radius:10px; padding:10px 12px; background:var(--soft); }
+        .progress-feed { min-height:42px; max-height:88px; margin-top:16px; display:flex; flex-direction:column; justify-content:flex-start; gap:7px; overflow:hidden; border:1px solid var(--line); border-radius:10px; padding:10px 12px; background:var(--soft); }
     .progress-line { flex:none; display:flex; align-items:flex-start; gap:9px; min-width:0; color:var(--muted); font-size:12px; line-height:1.4; opacity:.74; transform:translateY(0); transition:opacity .45s ease, transform .45s ease, max-height .45s ease, margin .45s ease, padding .45s ease; max-height:38px; overflow:hidden; }
     .progress-line-icon { width:16px; flex:none; text-align:center; }
     .progress-line-copy { min-width:0; overflow-wrap:anywhere; }
@@ -694,6 +694,9 @@
       if (refreshJobRunning) return;
       document.getElementById('refreshProgressModal').classList.remove('show');
     }
+    function waitForProgress(milliseconds) {
+      return new Promise(resolve => setTimeout(resolve, milliseconds));
+    }
     async function refreshExistingData() {
       if (!loadedReportConfig) { showToast('Chưa có report', 'Hãy tải sheet report trước khi cập nhật.', true); return; }
       if (!loggedInUser) { showToast('Yêu cầu đăng nhập', 'Đăng nhập Google trước khi đọc folder Test Case.', true); return; }
@@ -702,40 +705,49 @@
       const folderUrl = document.getElementById('configFolderUrl').value.trim();
       const button = document.getElementById('refreshDataButton');
       const original = button.innerHTML;
+      const batchSize = 4;
       let completed = 0;
       const aggregate = { updated: 0, skipped: [], errors: [] };
       button.disabled = true;
       button.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Đang cập nhật…';
       showRefreshProgress(tasks.length);
       try {
-        for (let index = 0; index < tasks.length; index++) {
-          const task = tasks[index];
-          document.getElementById('refreshProgressSubtitle').textContent = 'Đang xử lý dòng ' + task.row + ' trong sheet “' + loadedReportConfig.sheetName + '”.';
-          addProgressLine(task, 'active');
-          try {
-            const statusSelect = document.querySelector('[data-config-row="' + task.row + '"] [data-config-field="status"]');
-            const result = await jsonp({
-              action: 'refreshReportData',
-              sheetName: loadedReportConfig.sheetName,
-              folderUrl: index === 0 ? folderUrl : '',
-              startRow: task.row,
-              endRow: task.row,
-              statusUpdates: JSON.stringify([{ row: task.row, name: task.name, status: statusSelect ? statusSelect.value : task.status }])
-            });
-            aggregate.updated += Number(result.updated || 0);
-            aggregate.skipped.push(...(result.skipped || []));
-            aggregate.errors.push(...(result.errors || []));
+        for (let offset = 0; offset < tasks.length; offset += batchSize) {
+          const batch = tasks.slice(offset, offset + batchSize);
+          const first = batch[0];
+          const last = batch[batch.length - 1];
+          document.getElementById('refreshProgressSubtitle').textContent = 'Đang đọc và lưu dòng ' + first.row + '–' + last.row + ' trong sheet “' + loadedReportConfig.sheetName + '”.';
+          addProgressLine({ row: first.row + '–' + last.row, name: 'Đang xử lý lô' }, 'active', 'Đang lấy và lưu data…');
+          const result = await jsonp({
+            action: 'refreshReportData',
+            sheetName: loadedReportConfig.sheetName,
+            folderUrl: offset === 0 ? folderUrl : '',
+            startRow: first.row,
+            endRow: last.row,
+            statusUpdates: JSON.stringify(batch.map(task => {
+              const statusSelect = document.querySelector('[data-config-row="' + task.row + '"] [data-config-field="status"]');
+              return { row: task.row, name: task.name, status: statusSelect ? statusSelect.value : task.status };
+            }))
+          });
+          aggregate.updated += Number(result.updated || 0);
+          aggregate.skipped.push(...(result.skipped || []));
+          aggregate.errors.push(...(result.errors || []));
+          for (let index = 0; index < batch.length; index++) {
+            const task = batch[index];
             const taskError = (result.errors || []).find(item => Number(item.row) === Number(task.row));
             const taskSkipped = (result.skipped || []).find(item => Number(item.row) === Number(task.row));
             const state = taskError ? 'error' : 'done';
             const detail = taskError ? taskError.error : taskSkipped ? taskSkipped.reason : 'Đã lưu vào Google Sheet';
-            addProgressLine(task, state, detail);
-          } catch (error) {
-            addProgressLine(task, 'error', error?.message || 'Không thể cập nhật dòng này.');
-            throw error;
+            if (index === 0) addProgressLine(task, state, detail);
+            else {
+              addProgressLine(task, 'active');
+              await waitForProgress(80);
+              addProgressLine(task, state, detail);
+            }
+            completed++;
+            setRefreshProgress(completed, tasks.length, aggregate.errors.length > 0);
+            await waitForProgress(110);
           }
-          completed++;
-          setRefreshProgress(completed, tasks.length, aggregate.errors.length > 0);
         }
         const refreshed = await jsonp({ action: 'getReportSheetConfig', sheetName: loadedReportConfig.sheetName });
         renderExistingConfig(refreshed);
