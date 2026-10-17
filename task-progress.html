@@ -189,8 +189,10 @@
     .progress-track { height:10px; margin-top:20px; overflow:hidden; border-radius:999px; background:#e2e8f0; }
     .progress-bar { width:0; height:100%; border-radius:inherit; background:linear-gradient(90deg,#6366f1,#14b8a6); transition:width .25s ease; }
     .progress-bar.failed { background:#ef4444; }
+    .progress-bar.indeterminate { width:35% !important; animation:progress-slide 1.3s ease-in-out infinite; }
+    @keyframes progress-slide { 0% { transform:translateX(-110%); } 100% { transform:translateX(300%); } }
     .progress-meta { display:flex; justify-content:space-between; gap:12px; margin-top:9px; color:var(--muted); font-size:11px; }
-    .progress-feed { min-height:42px; max-height:88px; margin-top:16px; display:flex; flex-direction:column; justify-content:flex-start; gap:7px; overflow:hidden; border:1px solid var(--line); border-radius:10px; padding:10px 12px; background:var(--soft); }
+    .progress-feed { min-height:42px; max-height:120px; margin-top:16px; display:flex; flex-direction:column; justify-content:flex-start; gap:7px; overflow:hidden; border:1px solid var(--line); border-radius:10px; padding:10px 12px; background:var(--soft); }
     .progress-line { flex:none; display:flex; align-items:flex-start; gap:9px; min-width:0; color:var(--muted); font-size:12px; line-height:1.4; opacity:.74; transform:translateY(0); transition:opacity .45s ease, transform .45s ease, max-height .45s ease, margin .45s ease, padding .45s ease; max-height:38px; overflow:hidden; }
     .progress-line-icon { width:16px; flex:none; text-align:center; }
     .progress-line-copy { min-width:0; overflow-wrap:anywhere; }
@@ -200,7 +202,7 @@
     .progress-line.is-error .progress-line-icon { color:#ef4444; }
     .progress-line.is-leaving { max-height:0; margin-top:-7px; padding-top:0; padding-bottom:0; opacity:0; transform:translateY(-16px); }
     @keyframes progress-pulse { 50% { opacity:.3; transform:scale(.82); } }
-    @media (prefers-reduced-motion: reduce) { .progress-line,.progress-line.is-active .progress-line-icon { animation:none; transition:none; } }
+    @media (prefers-reduced-motion: reduce) { .progress-line,.progress-line.is-active .progress-line-icon,.progress-bar.indeterminate { animation:none; transition:none; } }
     .progress-actions { display:flex; justify-content:flex-end; margin-top:17px; }
     html.dark-mode .progress-track { background:#334155; }
     html.dark-mode { color-scheme:dark; --page:#0f172a; --surface:#172033; --soft:#1e293b; --text:#e2e8f0; --muted:#a8b4c5; --line:#334155; --accent:#6366f1; --accent-light:#25234b; }
@@ -760,14 +762,66 @@
       }
     }
     let refreshJobRunning = false;
+    let refreshTicker = null;
+    let refreshStartedAt = 0;
+    const refreshInFlight = new Map();
+    let refreshBatchCounter = 0;
     function setRefreshProgress(done, total, failed = false) {
       const percent = total ? Math.round(done / total * 100) : 0;
       const bar = document.getElementById('refreshProgressBar');
       bar.style.width = percent + '%';
       bar.classList.toggle('failed', failed);
+      // Chưa có lô nào xong: hiện thanh chạy liên tục để người dùng biết hệ thống vẫn đang làm việc.
+      bar.classList.toggle('indeterminate', refreshJobRunning && done === 0);
       bar.parentElement.setAttribute('aria-valuenow', String(percent));
       document.getElementById('refreshProgressCount').textContent = done + ' / ' + total + ' task';
       document.getElementById('refreshProgressPercent').textContent = percent + '%';
+    }
+    function ensureLiveLine() {
+      const feed = document.getElementById('refreshProgressCurrent');
+      let line = document.getElementById('refreshLiveLine');
+      if (!line) {
+        line = document.createElement('div');
+        line.id = 'refreshLiveLine';
+        line.className = 'progress-line is-active';
+        const icon = document.createElement('span');
+        icon.className = 'progress-line-icon';
+        icon.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i>';
+        const copy = document.createElement('span');
+        copy.className = 'progress-line-copy';
+        line.append(icon, copy);
+        feed.appendChild(line);
+      }
+      return line;
+    }
+    function setRefreshLive(text) {
+      ensureLiveLine().querySelector('.progress-line-copy').textContent = text;
+    }
+    // Dòng trạng thái "đang chạy" luôn hiện và cập nhật mỗi giây (kèm thời gian đã chờ).
+    function renderLiveStatus() {
+      const secs = Math.floor((Date.now() - refreshStartedAt) / 1000);
+      const labels = Array.from(refreshInFlight.values());
+      const text = labels.length
+        ? 'Đang xử lý dòng ' + labels.join(' · ') + ' — ' + secs + 's'
+        : 'Đang kết nối Google Apps Script và quét folder Test Case… — ' + secs + 's';
+      setRefreshLive(text);
+    }
+    // Các lô đã xong được chèn phía trên dòng trạng thái; chỉ giữ lại 3 dòng gần nhất.
+    function addRefreshLog(text, state) {
+      const feed = document.getElementById('refreshProgressCurrent');
+      const live = ensureLiveLine();
+      const line = document.createElement('div');
+      line.className = 'progress-line ' + (state === 'error' ? 'is-error' : 'is-done');
+      const icon = document.createElement('span');
+      icon.className = 'progress-line-icon';
+      icon.innerHTML = state === 'error' ? '<i class="fa-solid fa-circle-exclamation"></i>' : '<i class="fa-solid fa-circle-check"></i>';
+      const copy = document.createElement('span');
+      copy.className = 'progress-line-copy';
+      copy.textContent = text;
+      line.append(icon, copy);
+      feed.insertBefore(line, live);
+      const logs = feed.querySelectorAll('.progress-line:not(#refreshLiveLine)');
+      for (let i = 0; i < logs.length - 3; i++) logs[i].remove();
     }
     function addProgressLine(task, state, detail) {
       const feed = document.getElementById('refreshProgressCurrent');
@@ -810,9 +864,21 @@
       document.getElementById('refreshProgressCurrent').replaceChildren();
       setRefreshProgress(0, total);
       document.getElementById('refreshProgressModal').classList.add('show');
+      // Hiện trạng thái ngay khi popup mở, không để khung trống.
+      refreshStartedAt = Date.now();
+      refreshInFlight.clear();
+      clearInterval(refreshTicker);
+      renderLiveStatus();
+      refreshTicker = setInterval(renderLiveStatus, 1000);
     }
     function finishRefreshProgress(title, message, failed = false) {
       refreshJobRunning = false;
+      clearInterval(refreshTicker);
+      refreshTicker = null;
+      refreshInFlight.clear();
+      const live = document.getElementById('refreshLiveLine');
+      if (live) live.remove();
+      document.getElementById('refreshProgressBar').classList.remove('indeterminate');
       document.getElementById('refreshProgressTitle').textContent = title;
       document.getElementById('refreshProgressSubtitle').textContent = failed ? 'Một phần cập nhật chưa hoàn tất.' : 'Đã lưu kết quả cập nhật vào Google Sheet.';
       document.getElementById('refreshProgressIcon').className = failed ? 'fa-solid fa-triangle-exclamation' : 'fa-solid fa-circle-check';
@@ -831,16 +897,17 @@
     }
 
     // Gom task theo file nguồn để mỗi file chỉ phải mở 1 lần trong 1 lô (tối đa maxSize task / lô).
-    function buildRefreshBatches(tasks, maxSize = 10) {
+    function buildRefreshBatches(tasks, maxSize = 15) {
       const groups = new Map();
       tasks.forEach(task => {
         const key = String(task.testcaseFile || '').toLowerCase().replace(/[^a-z0-9]/g, '') || '__none__';
         if (!groups.has(key)) groups.set(key, []);
         groups.get(key).push(task);
       });
-      const batches = [];
+      const groupList = Array.from(groups.values());
+      const batches = [groupList.shift()]; // lô đầu chỉ 1 nhóm file: phản hồi sớm và làm nóng cache folder
       let current = [];
-      for (const group of groups.values()) {
+      for (const group of groupList) {
         if (current.length && current.length + group.length > maxSize) { batches.push(current); current = []; }
         current.push(...group);
       }
@@ -858,8 +925,9 @@
       const sheetName = loadedReportConfig.sheetName;
       const button = document.getElementById('refreshDataButton');
       const original = button.innerHTML;
-      const CONCURRENCY = 3;
-      const batches = buildRefreshBatches(tasks, 10);
+      const CONCURRENCY = 4;
+      const batches = buildRefreshBatches(tasks, 15);
+      const byRow = new Map(tasks.map(t => [Number(t.row), t]));
       let completed = 0;
       const aggregate = { updated: 0, skipped: [], errors: [] };
 
@@ -870,30 +938,53 @@
       async function runBatch(batch, folderForThisBatch) {
         const rows = batch.map(task => task.row);
         const label = { row: Math.min(...rows) + '–' + Math.max(...rows), name: batch.length + ' task' };
-        const result = await jsonp({
+        const statuses = batch.map(task => {
+          const select = document.querySelector('[data-config-row="' + task.row + '"] [data-config-field="status"]');
+          return { row: task.row, name: task.name, status: select ? select.value : task.status };
+        });
+        const batchId = ++refreshBatchCounter;
+        refreshInFlight.set(batchId, label.row);
+        renderLiveStatus();
+        let result;
+        try {
+        result = await jsonp({
           action: 'refreshReportData',
           sheetName,
           folderUrl: folderForThisBatch,
           rows: JSON.stringify(rows),
-          statusUpdates: JSON.stringify(batch.map(task => {
-            const statusSelect = document.querySelector('[data-config-row="' + task.row + '"] [data-config-field="status"]');
-            return { row: task.row, name: task.name, status: statusSelect ? statusSelect.value : task.status };
-          }))
+          statusUpdates: JSON.stringify(statuses)
         }, 90000);
+        } finally {
+          refreshInFlight.delete(batchId);
+          renderLiveStatus();
+        }
+
+        // Gộp kết quả trả về vào dữ liệu đang hiển thị, không cần tải lại sheet.
+        (result.updatedRows || []).forEach(u => {
+          const t = byRow.get(Number(u.row));
+          if (t) { t.value = u.value; t.sourceTab = u.sourceTab; }
+        });
+        statuses.forEach(s => {
+          const t = byRow.get(Number(s.row));
+          if (t) t.status = s.status;
+        });
+
         aggregate.updated += Number(result.updated || 0);
         aggregate.skipped.push(...(result.skipped || []));
         aggregate.errors.push(...(result.errors || []));
         completed += batch.length;
         setRefreshProgress(completed, tasks.length, aggregate.errors.length > 0);
         const firstError = (result.errors || [])[0];
-        addProgressLine(label, firstError ? 'error' : 'done',
-          firstError ? (firstError.task + ' — ' + firstError.error) : 'Đã lưu ' + Number(result.updated || 0) + ' task');
+        addRefreshLog('Dòng ' + label.row + ' — ' + (firstError ? (firstError.task + ': ' + firstError.error) : 'Đã lưu ' + Number(result.updated || 0) + ' task'),
+          firstError ? 'error' : 'done');
       }
 
       try {
         document.getElementById('refreshProgressSubtitle').textContent = 'Đang đọc folder Test Case và lưu vào sheet “' + sheetName + '”.';
-        // Lô đầu chạy riêng: ghi link folder vào A1 và làm nóng cache folder; các lô sau chạy song song.
+        // Lô đầu chạy trước để ghi link folder vào A1 và làm nóng cache danh sách file trên Drive.
         await runBatch(batches[0], folderUrl);
+        loadedReportConfig.folderUrl = folderUrl || loadedReportConfig.folderUrl;
+
         let next = 1;
         const worker = async () => {
           while (next < batches.length) {
@@ -903,8 +994,7 @@
         };
         await Promise.all(Array.from({ length: Math.min(CONCURRENCY, Math.max(0, batches.length - 1)) }, worker));
 
-        const refreshed = await jsonp({ action: 'getReportSheetConfig', sheetName });
-        renderExistingConfig(refreshed);
+        renderExistingConfig(loadedReportConfig);
         const summary = formatRefreshSummary(aggregate);
         finishRefreshProgress(aggregate.errors.length ? 'Cập nhật xong, có lỗi' : 'Cập nhật hoàn tất', summary, Boolean(aggregate.errors.length));
         showToast('Cập nhật report xong', summary, Boolean(aggregate.errors.length));
