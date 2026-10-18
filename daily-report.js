@@ -1,5 +1,6 @@
 const DISCORD_WEBHOOK_URL = process.env.DISCORD_WEBHOOK_URL || '';
 const REMINDER_TYPE = process.env.REMINDER_TYPE || 'report';
+const IS_MANUAL_RUN = process.env.IS_MANUAL_RUN === 'true';
 const FIREBASE_PROJECT_ID = "device-manage-d4f5d";
 // Thêm tham số pageSize=1000 để lấy tối đa data mỗi lần gọi
 const FIRESTORE_URL = `https://firestore.googleapis.com/v1/projects/${FIREBASE_PROJECT_ID}/databases/(default)/documents/device_logs?pageSize=1000`;
@@ -31,6 +32,8 @@ async function sendDeviceReminder(type, now) {
         username: "Daily Device Reporter",
         content: '@everyone',
         allowed_mentions: { parse: ['everyone'] },
+        content: IS_MANUAL_RUN ? '' : '@everyone',
+        allowed_mentions: { parse: IS_MANUAL_RUN ? [] : ['everyone'] },
         embeds: [{
             title,
             description,
@@ -131,6 +134,7 @@ async function runDailyReport() {
 
         // Kiểm tra Thứ 7 (6) hoặc Chủ Nhật (0)
         if (dayOfWeek === 0 || dayOfWeek === 6) {
+        if (!IS_MANUAL_RUN && (dayOfWeek === 0 || dayOfWeek === 6)) {
             console.log(`Hôm nay là Cuối tuần (${fullDate}), Bot nghỉ làm!`);
             return; // Dừng toàn bộ hàm, không chạy đoạn lấy dữ liệu bên dưới nữa
         }
@@ -156,6 +160,7 @@ async function runDailyReport() {
 
         // Kiểm tra nếu hôm nay nằm trong danh sách Lễ Tết
         if (fixedHolidays.includes(dayMonth) || dynamicHolidays.includes(fullDate)) {
+        if (!IS_MANUAL_RUN && (fixedHolidays.includes(dayMonth) || dynamicHolidays.includes(fullDate))) {
             console.log(`Hôm nay (${fullDate}) là ngày Lễ/Tết, Bot nghỉ làm!`);
             return; // Dừng toàn bộ hàm
         }
