@@ -55,7 +55,7 @@
     .sidebar-overlay.is-open { visibility:visible;opacity:1; }
     .app-content { min-height:100vh;margin-left:260px; }
     .topbar { min-height:58px; display:flex; align-items:center; justify-content:space-between; gap:12px; padding:8px clamp(14px,2vw,26px); background:var(--surface); border-bottom:1px solid var(--line); box-shadow:0 2px 8px #0f172a08; }
-    .menu-toggle { display:none; }
+    .button.menu-toggle { display:none; }
     .brand { display:flex; align-items:center; gap:12px; color:inherit; text-decoration:none; }
     .brand-icon { width:38px; height:38px; display:grid; place-items:center; border-radius:12px; background:var(--accent-light); color:var(--accent); }
     .brand-title { font-size:17px; font-weight:800; }
@@ -250,14 +250,14 @@
     @media(max-width:767px) {
       .app-content { margin-left:0; }
       .app-sidebar { width:min(260px,84vw);transform:translateX(-100%); }
-      .sidebar-close,.menu-toggle { display:inline-flex;align-items:center;justify-content:center; }
-      .menu-toggle { flex:none;width:38px;height:38px;min-height:38px;padding:0;color:var(--muted);background:transparent;border:0;font-size:19px; }
+      .sidebar-close,.button.menu-toggle { display:inline-flex;align-items:center;justify-content:center; }
+      .button.menu-toggle { flex:none;width:38px;height:38px;min-height:38px;padding:0;color:var(--muted);background:transparent;border:0;font-size:19px; }
       .sidebar-overlay { z-index:40; }
       body.sidebar-open { overflow:hidden; }
     }
     @media(max-width:600px) {
       .topbar { min-height:58px;padding:8px 12px;gap:9px; }
-      .menu-toggle { display:inline-flex;flex:none;width:38px;height:38px;padding:0;color:var(--accent);background:transparent;border:0;font-size:19px; }
+      .button.menu-toggle { display:inline-flex;flex:none;width:38px;height:38px;padding:0;color:var(--accent);background:transparent;border:0;font-size:19px; }
       .brand { margin-right:auto;gap:8px; }
       .brand-icon { width:32px;height:32px;border-radius:9px; }
       .brand-title { font-size:15px; }
