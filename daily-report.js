@@ -2,8 +2,6 @@ const DISCORD_WEBHOOK_URL = process.env.DISCORD_WEBHOOK_URL || '';
 const REMINDER_TYPE = process.env.REMINDER_TYPE || 'report';
 const IS_MANUAL_RUN = process.env.IS_MANUAL_RUN === 'true';
 const FIREBASE_PROJECT_ID = "device-manage-d4f5d";
-// Thêm tham số pageSize=1000 để lấy tối đa data mỗi lần gọi
-const FIRESTORE_URL = `https://firestore.googleapis.com/v1/projects/${FIREBASE_PROJECT_ID}/databases/(default)/documents/device_logs?pageSize=1000`;
 const FIRESTORE_QUERY_URL = `https://firestore.googleapis.com/v1/projects/${FIREBASE_PROJECT_ID}/databases/(default)/documents:runQuery`;
 
 async function sendDiscordPayload(payload) {
@@ -198,29 +196,13 @@ async function runDailyReport() {
         console.log("Hôm nay là ngày làm việc bình thường. Đang lấy dữ liệu từ Firebase...");
         
         let allDocuments = [];
-        if (REMINDER_TYPE === 'daily-borrow-report') {
-            // Chỉ đọc log trong 30 ngày gần nhất, rồi giữ lại thiết bị chưa trả.
+        if (REMINDER_TYPE === 'report' || REMINDER_TYPE === 'daily-borrow-report') {
+            // Cả chạy thủ công và lịch 19:00 chỉ đọc log 30 ngày gần nhất,
+            // rồi lọc các thiết bị hiện vẫn chưa được trả.
             allDocuments = await fetchDocumentsCreatedWithinLastMonth(now);
             await sendRecentUnreturnedReport(allDocuments, fullDate, now);
             return;
         }
-
-        let pageToken = '';
-        // Báo cáo tồn đang mượn vẫn quét toàn bộ log để không bỏ sót lượt mượn cũ chưa trả.
-        do {
-            let url = FIRESTORE_URL;
-            if (pageToken) url += `&pageToken=${pageToken}`;
-
-            const response = await fetch(url);
-            if (!response.ok) {
-                const responseBody = await response.text();
-                throw new Error(`Firestore list trả về HTTP ${response.status}: ${responseBody || response.statusText}`);
-            }
-
-            const data = await response.json();
-            if (data.documents) allDocuments.push(...data.documents);
-            pageToken = data.nextPageToken;
-        } while (pageToken);
 
         let unreturnedList = [];
         let count = 1;
