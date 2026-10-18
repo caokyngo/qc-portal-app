@@ -37,20 +37,38 @@
     [hidden] { display:none !important; }
     body { margin:0; min-height:100vh; background:var(--page); color:var(--text); font-family:Inter,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif; }
     button,input,select { font:inherit; }
-    .topbar { min-height:68px; display:flex; align-items:center; justify-content:space-between; gap:16px; padding:12px clamp(16px,4vw,42px); background:var(--surface); border-bottom:1px solid var(--line); box-shadow:0 2px 8px #0f172a08; }
+    .app-sidebar { position:fixed;z-index:50;inset:0 auto 0 0;width:260px;height:100vh;display:flex;flex-direction:column;flex-shrink:0;overflow:hidden;color:#fff;background-image:linear-gradient(to bottom,rgba(15,23,42,.65),rgba(30,27,75,.75)),url('./trungkhanh.jpg');background-size:cover;background-position:center;background-repeat:no-repeat;box-shadow:0 25px 50px -12px #0005;transform:translateX(0);transition:transform .3s ease; }
+    .app-sidebar.is-open { transform:translateX(0); }
+    .sidebar-brand { height:72px;min-height:72px;display:flex;align-items:center;justify-content:space-between;padding:0 22px;border-bottom:1px solid #ffffff1a;background:#0003;backdrop-filter:blur(12px); }
+    .sidebar-brand-copy { display:flex;align-items:center;gap:12px; }
+    .sidebar-brand-icon { color:#a5b4fc;font-size:28px; }
+    .sidebar-brand strong { display:block;font-size:20px;line-height:1.15; }
+    .sidebar-brand small { display:block;margin-top:4px;color:#c7d2fe;font-size:11px;font-weight:500;letter-spacing:.04em; }
+    .sidebar-close { display:none;border:0;background:transparent;color:#ffffffb3;font-size:22px;cursor:pointer; }
+    .sidebar-close:hover { color:#fff; }
+    .sidebar-nav { display:flex;flex:1;flex-direction:column;gap:10px;overflow-y:auto;padding:16px;background:#ffffff05; }
+    .sidebar-nav a { min-height:62px;display:flex;align-items:center;gap:12px;padding:12px 16px;border:1px solid #ffffff26;border-radius:14px;background:#ffffff1a;color:#fff;text-decoration:none;font-size:14px;font-weight:750;backdrop-filter:blur(10px);box-shadow:0 1px 2px #0002;transition:background .18s,border-color .18s; }
+    .sidebar-nav a:hover { border-color:#ffffff66;background:#ffffff40; }
+    .sidebar-nav a[aria-current="page"] { border-color:#a5b4fc80;background:#4f46e5b3;box-shadow:0 10px 15px -3px #0003; }
+    .sidebar-nav i { width:20px;text-align:center;font-size:18px; }
+    .sidebar-overlay { position:fixed;z-index:40;inset:0;visibility:hidden;opacity:0;background:#0f172a99;backdrop-filter:blur(3px);transition:opacity .3s,visibility .3s; }
+    .sidebar-overlay.is-open { visibility:visible;opacity:1; }
+    .app-content { min-height:100vh;margin-left:260px; }
+    .topbar { min-height:58px; display:flex; align-items:center; justify-content:space-between; gap:12px; padding:8px clamp(14px,2vw,26px); background:var(--surface); border-bottom:1px solid var(--line); box-shadow:0 2px 8px #0f172a08; }
+    .menu-toggle { display:none; }
     .brand { display:flex; align-items:center; gap:12px; color:inherit; text-decoration:none; }
     .brand-icon { width:38px; height:38px; display:grid; place-items:center; border-radius:12px; background:var(--accent-light); color:var(--accent); }
     .brand-title { font-size:17px; font-weight:800; }
     .brand-subtitle { margin-top:2px; color:var(--muted); font-size:11px; }
     .top-actions { display:flex; align-items:center; gap:10px; }
     .auth-section { position:relative; display:flex; align-items:center; min-height:40px; }
-    .login-option,.user-profile { position:relative; display:flex; align-items:center; gap:10px; height:42px; padding:5px 11px; border:1px solid var(--line); border-radius:12px; background:#f1f5f9; color:var(--text); cursor:pointer; }
+    .login-option,.user-profile { position:relative; display:flex; align-items:center; justify-content:center; gap:0; width:40px;height:40px;padding:3px;border:1px solid var(--line);border-radius:50%;background:#f1f5f9;color:var(--text);cursor:pointer; }
     .login-option { overflow:hidden; }
-    .login-option img,.user-avatar { width:31px; height:31px; flex:none; border:1px solid #cbd5e1; border-radius:50%; background:white; object-fit:cover; }
-    .login-label,.user-name { max-width:145px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; font-size:13px; font-weight:750; }
+    .login-option img,.user-avatar { width:32px;height:32px;flex:none;border:1px solid #cbd5e1;border-radius:50%;background:white;object-fit:cover; }
+    .login-label,.user-name,.user-profile > i { display:none; }
     .signin-overlay { position:absolute; inset:0; z-index:2; display:flex; justify-content:center; align-items:center; opacity:.01; overflow:hidden; cursor:pointer; }
     .signin-overlay .g_id_signin { transform:scale(1.55); }
-    .user-profile { text-align:left; }
+    .user-profile { text-align:center; }
     .user-dropdown { position:absolute; z-index:70; top:calc(100% + 7px); right:0; width:190px; overflow:hidden; border:1px solid var(--line); border-radius:12px; background:var(--surface); box-shadow:0 12px 30px #0f172a24; }
     .user-dropdown button { width:100%; padding:12px 14px; border:0; background:transparent; color:#e11d48; text-align:left; font-size:13px; font-weight:700; cursor:pointer; }
     .user-dropdown button:hover { background:#fff1f2; }
@@ -62,7 +80,7 @@
     .button-secondary { color:var(--text); background:var(--surface); }
     .button-secondary:hover { background:var(--soft); }
     .button-icon { width:38px; padding:0; color:var(--muted); background:var(--soft); }
-    main { width:min(1240px,100%); margin:0 auto; padding:30px clamp(14px,3vw,34px) 48px; }
+    main { width:min(1240px,100%); margin:0 auto; padding:26px clamp(14px,2vw,28px) 48px; }
     .intro { margin-bottom:20px; }
     .intro h1 { margin:0; font-size:clamp(23px,3vw,29px); letter-spacing:-.03em; }
     .intro p { margin:7px 0 0; color:var(--muted); font-size:13px; line-height:1.55; }
@@ -227,16 +245,29 @@
     html.dark-mode .message.info { color:#bfdbfe; background:#172554; border-color:#1e40af; }
     html.dark-mode .modal-message { color:#fecaca; background:#451a1a; border-color:#7f1d1d; }
     html.dark-mode .brand-icon { background:#24234b; }
+    html.dark-mode .sidebar-brand-icon { color:#a5b4fc; }
     @media(max-width:850px) { .suite-grid { grid-template-columns:repeat(2,minmax(0,1fr)); } .data-summary-grid { grid-template-columns:repeat(2,minmax(0,1fr)); } .data-summary:nth-child(2) { grid-column:1 / -1; } }
+    @media(max-width:767px) {
+      .app-content { margin-left:0; }
+      .app-sidebar { width:min(260px,84vw);transform:translateX(-100%); }
+      .sidebar-close,.menu-toggle { display:inline-flex;align-items:center;justify-content:center; }
+      .menu-toggle { flex:none;width:38px;height:38px;min-height:38px;padding:0;color:var(--muted);background:transparent;border:0;font-size:19px; }
+      .sidebar-overlay { z-index:40; }
+      body.sidebar-open { overflow:hidden; }
+    }
     @media(max-width:600px) {
-      .topbar { padding:10px 13px; }
+      .topbar { min-height:58px;padding:8px 12px;gap:9px; }
+      .menu-toggle { display:inline-flex;flex:none;width:38px;height:38px;padding:0;color:var(--accent);background:transparent;border:0;font-size:19px; }
+      .brand { margin-right:auto;gap:8px; }
+      .brand-icon { width:32px;height:32px;border-radius:9px; }
+      .brand-title { font-size:15px; }
       .brand-subtitle { display:none; }
       .top-actions { gap:6px; }
-      .top-actions .button-secondary { padding:0 10px; }
-      .login-label { display:none; }
-      .user-profile { gap:6px; padding:4px 8px; }
-      .user-name { max-width:90px; }
-      main { padding-top:22px; }
+      .top-actions > .button-secondary { display:none; }
+      .auth-section { min-height:38px; }
+      .login-option,.user-profile { width:38px;height:38px;padding:2px; }
+      .login-option img,.user-avatar { width:31px;height:31px; }
+      main { padding:20px 13px 36px; }
       .panel-head { align-items:flex-start; flex-direction:column; padding:16px; }
       .suite-grid { grid-template-columns:1fr; padding:14px 16px 18px; }
       .custom-suite { padding:0 16px 16px; }
@@ -278,13 +309,27 @@
   </style>
 </head>
 <body>
+  <div id="sidebarOverlay" class="sidebar-overlay" onclick="toggleSidebar()" aria-hidden="true"></div>
+  <aside id="mainSidebar" class="app-sidebar" aria-label="Menu chính">
+    <div class="sidebar-brand">
+      <span class="sidebar-brand-copy"><i class="sidebar-brand-icon fa-solid fa-square-poll-vertical" aria-hidden="true"></i><span><strong>QC Portal</strong><small>Report &amp; Device Tool</small></span></span>
+      <button type="button" class="sidebar-close" aria-label="Đóng menu" onclick="toggleSidebar()"><i class="fa-solid fa-xmark"></i></button>
+    </div>
+    <nav class="sidebar-nav">
+      <a href="index"><i class="fa-solid fa-chart-line"></i><span>Báo Cáo Daily</span></a>
+      <a href="task-progress" aria-current="page"><i class="fa-solid fa-chart-column"></i><span>Tạo/xem sheet report</span></a>
+      <a href="device_manage"><i class="fa-solid fa-mobile-screen-button"></i><span>Mượn Device</span></a>
+      <a href="device_info"><i class="fa-solid fa-circle-info"></i><span>Thông tin Device</span></a>
+    </nav>
+  </aside>
+  <div class="app-content">
   <header class="topbar">
-    <a class="brand" href="index.html" aria-label="Quay lại QC Portal">
+    <button type="button" class="button menu-toggle" aria-label="Mở menu" aria-controls="mainSidebar" aria-expanded="false" onclick="toggleSidebar()"><i class="fa-solid fa-bars"></i></button>
+    <a class="brand" href="task-progress.html" aria-label="Tạo sheet báo cáo">
       <span class="brand-icon"><i class="fa-solid fa-table-cells-large" aria-hidden="true"></i></span>
-      <span><span class="brand-title">QC Portal</span><span class="brand-subtitle">Tạo Report Sheet</span></span>
+      <span><span class="brand-title">Tạo Report Sheet</span><span class="brand-subtitle">QC Portal</span></span>
     </a>
     <div class="top-actions">
-      <button type="button" class="button button-secondary" onclick="location.href='index.html'"><i class="fa-solid fa-arrow-left"></i> Báo cáo Daily</button>
       <button type="button" id="themeToggle" class="button button-icon" aria-label="Chuyển chế độ màu" title="Chuyển chế độ màu" onclick="toggleTheme()"><i class="fa-solid fa-moon"></i></button>
       <div id="authSection" class="auth-section">
         <div id="g_id_onload" data-client_id="149310433677-uvpoilv41na98qdjlj58cpmfl8u9946e.apps.googleusercontent.com" data-callback="handleCredentialResponse" data-auto_prompt="false"></div>
@@ -328,6 +373,7 @@
     </section>
     <div id="message" class="message" role="status" aria-live="polite"></div>
   </main>
+  </div>
 
   <div id="toast-container" aria-live="polite" aria-atomic="false"></div>
 
@@ -463,6 +509,22 @@
       toast.append(icon, copy, close); container.appendChild(toast);
       setTimeout(() => toast.remove(), 4200);
     }
+    function toggleSidebar() {
+      const sidebar = document.getElementById('mainSidebar');
+      const overlay = document.getElementById('sidebarOverlay');
+      const isOpen = !sidebar.classList.contains('is-open');
+      sidebar.classList.toggle('is-open', isOpen);
+      overlay.classList.toggle('is-open', isOpen);
+      document.body.classList.toggle('sidebar-open', isOpen);
+      document.querySelector('.menu-toggle')?.setAttribute('aria-expanded', String(isOpen));
+    }
+    function closeSidebar() {
+      document.getElementById('mainSidebar')?.classList.remove('is-open');
+      document.getElementById('sidebarOverlay')?.classList.remove('is-open');
+      document.body.classList.remove('sidebar-open');
+      document.querySelector('.menu-toggle')?.setAttribute('aria-expanded', 'false');
+    }
+    document.addEventListener('keydown', event => { if (event.key === 'Escape') closeSidebar(); });
     function updateAuthUI() {
       let user = null;
       try { user = JSON.parse(localStorage.getItem('jira_google_user') || 'null'); } catch (e) { localStorage.removeItem('jira_google_user'); }
