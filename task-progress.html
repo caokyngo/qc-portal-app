@@ -3,6 +3,14 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
+  <script>
+  const pageUrl = new URL(window.location.href);
+
+  if (!pageUrl.searchParams.has("_fresh")) {
+    pageUrl.searchParams.set("_fresh", Date.now().toString());
+    window.location.replace(pageUrl.toString());
+  }
+  </script>
   <meta name="theme-color" content="#f8fafc">
   <title>Tạo Report Sheet | QC Portal</title>
   <script>
