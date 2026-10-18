@@ -82,7 +82,6 @@ async function sendRecentUnreturnedReport(allDocuments, dateString, now) {
             username: 'Daily Device Reporter',
             embeds: [{
                 title: `📋 BÁO CÁO TỔNG HỢP THIẾT BỊ ĐANG MƯỢN (${dateString})${chunks.length > 1 ? ` • ${index + 1}/${chunks.length}` : ''}`,
-                description: `Đối chiếu các lượt mượn trong 30 ngày gần nhất.\nTổng thiết bị chưa trả: **${unreturnedDevices.length}**\n\n${chunks[index]}`,
                 color: unreturnedDevices.length ? 3447003 : 3066993,
                 footer: { text: 'QA Internal Portal • Báo cáo thiết bị chưa trả' },
                 timestamp: now.toISOString()
