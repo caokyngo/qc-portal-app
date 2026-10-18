@@ -17,16 +17,17 @@ async function sendDiscordPayload(payload) {
     });
 
     if (!response.ok) {
-        throw new Error(`Discord webhook trả về HTTP ${response.status}.`);
+        const responseBody = await response.text();
+        throw new Error(`Discord webhook trả về HTTP ${response.status}: ${responseBody || response.statusText}`);
     }
 }
 
 async function sendDeviceReminder(type, now) {
     const isBorrowReminder = type === 'borrow';
-    const title = isBorrowReminder ? '🔔 Nhắc mượn thiết bị' : '🔔 Nhắc trả thiết bị';
+    const title = isBorrowReminder ? '📣 NHẮC MƯỢN THIẾT BỊ' : '📣 NHẮC TRẢ THIẾT BỊ';
     const description = isBorrowReminder
-        ? 'Nếu mượn thiết bị, vui lòng bấm **Mượn Device** trên tool để ghi nhận trước khi sử dụng.'
-        : 'Vui lòng bấm **Trả Device** trên tool để cập nhật trạng thái thiết bị trước khi ra về.';
+        ? '👋 Cả nhà ơi!\n\n📲 Nhớ bấm **Mượn Device** để ghi nhận trước khi sử dụng nhé cả nhà!\n\n✅ Ghi nhận trên tool giúp mọi người theo dõi thiết bị chính xác.'
+        : '👋 Cả nhà ơi!\n\n↩️ Nhớ bấm **Trả Device** trên tool để cập nhật trạng thái thiết bị trước khi ra về nhé!\n\n✅ Cảm ơn cả nhà đã cập nhật tình trạng thiết bị.';
 
     await sendDiscordPayload({
         username: "Daily Device Reporter",
@@ -36,7 +37,7 @@ async function sendDeviceReminder(type, now) {
             title,
             description,
             color: isBorrowReminder ? 3447003 : 15158332,
-            footer: { text: "QA Internal Portal • Device Reminder" },
+            footer: { text: `QA Internal Portal • ${isBorrowReminder ? 'Nhắc mượn thiết bị' : 'Nhắc trả thiết bị'} • ${now.toLocaleTimeString('vi-VN', { timeZone: 'Asia/Ho_Chi_Minh', hour: '2-digit', minute: '2-digit' })}` },
             timestamp: now.toISOString()
         }]
     });
@@ -257,6 +258,7 @@ async function runDailyReport() {
         
     } catch (error) {
         console.error("Lỗi khi chạy báo cáo:", error);
+        process.exitCode = 1;
     }
 }
 
