@@ -6,9 +6,9 @@ on:
     - cron: '30 9 * * *'
       timezone: 'Asia/Ho_Chi_Minh'
       # Separate schedules below map to their corresponding task types.
-    - cron: '0 18 * * *'
+    - cron: '05 18 * * *'
       timezone: 'Asia/Ho_Chi_Minh'
-    - cron: '0 19 * * *'
+    - cron: '05 19 * * *'
       timezone: 'Asia/Ho_Chi_Minh'
   
   workflow_dispatch:
