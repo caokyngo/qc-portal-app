@@ -3,12 +3,12 @@ name: Daily Device Report
 on:
   schedule:
     # Giờ Việt Nam: nhắc mượn lúc 09:30, nhắc trả lúc 18:00, report mượn trong ngày lúc 19:00.
-    - cron: '04 9 * * *'
+    - cron: '30 9 * * *'
       timezone: 'Asia/Ho_Chi_Minh'
       # Separate schedules below map to their corresponding task types.
-    - cron: '05 9 * * *'
+    - cron: '0 18 * * *'
       timezone: 'Asia/Ho_Chi_Minh'
-    - cron: '00 19 * * *'
+    - cron: '0 19 * * *'
       timezone: 'Asia/Ho_Chi_Minh'
   
   workflow_dispatch:
@@ -41,4 +41,5 @@ jobs:
         run: node daily-report.js
         env:
           DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
+          IS_MANUAL_RUN: ${{ github.event_name == 'workflow_dispatch' && 'true' || 'false' }}
           REMINDER_TYPE: ${{ github.event_name == 'schedule' && github.event.schedule == '30 9 * * *' && 'borrow' || github.event_name == 'schedule' && github.event.schedule == '0 18 * * *' && 'return' || github.event_name == 'schedule' && github.event.schedule == '0 19 * * *' && 'daily-borrow-report' || inputs.reminder_type || 'report' }}
