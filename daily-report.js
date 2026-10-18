@@ -30,8 +30,6 @@ async function sendDeviceReminder(type, now) {
 
     await sendDiscordPayload({
         username: "Daily Device Reporter",
-        content: '@everyone',
-        allowed_mentions: { parse: ['everyone'] },
         content: IS_MANUAL_RUN ? '' : '@everyone',
         allowed_mentions: { parse: IS_MANUAL_RUN ? [] : ['everyone'] },
         embeds: [{
@@ -133,7 +131,6 @@ async function runDailyReport() {
         const fullDate = `${dayMonth}/${vnTime.getUTCFullYear()}`;
 
         // Kiểm tra Thứ 7 (6) hoặc Chủ Nhật (0)
-        if (dayOfWeek === 0 || dayOfWeek === 6) {
         if (!IS_MANUAL_RUN && (dayOfWeek === 0 || dayOfWeek === 6)) {
             console.log(`Hôm nay là Cuối tuần (${fullDate}), Bot nghỉ làm!`);
             return; // Dừng toàn bộ hàm, không chạy đoạn lấy dữ liệu bên dưới nữa
@@ -159,13 +156,11 @@ async function runDailyReport() {
         ];
 
         // Kiểm tra nếu hôm nay nằm trong danh sách Lễ Tết
-        if (fixedHolidays.includes(dayMonth) || dynamicHolidays.includes(fullDate)) {
         if (!IS_MANUAL_RUN && (fixedHolidays.includes(dayMonth) || dynamicHolidays.includes(fullDate))) {
             console.log(`Hôm nay (${fullDate}) là ngày Lễ/Tết, Bot nghỉ làm!`);
             return; // Dừng toàn bộ hàm
         }
 
-        if (!['report', 'borrow', 'return'].includes(REMINDER_TYPE)) {
         if (!['report', 'borrow', 'return', 'daily-borrow-report'].includes(REMINDER_TYPE)) {
             throw new Error(`REMINDER_TYPE không hợp lệ: ${REMINDER_TYPE}`);
         }
@@ -173,7 +168,6 @@ async function runDailyReport() {
         if (REMINDER_TYPE === 'borrow' || REMINDER_TYPE === 'return') {
             await sendDeviceReminder(REMINDER_TYPE, now);
             console.log(`Đã gửi nhắc ${REMINDER_TYPE === 'borrow' ? 'mượn' : 'trả'} thiết bị.`);
-            if (REMINDER_TYPE === 'borrow') return;
             return;
         }
 
