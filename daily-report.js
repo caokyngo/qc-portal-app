@@ -1,7 +1,119 @@
-const DISCORD_WEBHOOK_URL = "https://discord.com/api/webhooks/1522191984020684830/z2Y75Ncd-Ocn0PGWEWrD0_amVNnua5KGdUVxXuHIPSPyIvRv6TmPsDit2ag7gRaHrXID";
+const DISCORD_WEBHOOK_URL = process.env.DISCORD_WEBHOOK_URL || '';
+const REMINDER_TYPE = process.env.REMINDER_TYPE || 'report';
 const FIREBASE_PROJECT_ID = "device-manage-d4f5d";
 // Thêm tham số pageSize=1000 để lấy tối đa data mỗi lần gọi
 const FIRESTORE_URL = `https://firestore.googleapis.com/v1/projects/${FIREBASE_PROJECT_ID}/databases/(default)/documents/device_logs?pageSize=1000`;
+
+async function sendDiscordPayload(payload) {
+    if (!DISCORD_WEBHOOK_URL) {
+        throw new Error('Thiếu DISCORD_WEBHOOK_URL trong environment của workflow.');
+    }
+
+    const response = await fetch(DISCORD_WEBHOOK_URL, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload)
+    });
+
+    if (!response.ok) {
+        throw new Error(`Discord webhook trả về HTTP ${response.status}.`);
+    }
+}
+
+async function sendDeviceReminder(type, now) {
+    const isBorrowReminder = type === 'borrow';
+    const title = isBorrowReminder ? '🔔 Nhắc mượn thiết bị' : '🔔 Nhắc trả thiết bị';
+    const description = isBorrowReminder
+        ? 'Nếu mượn thiết bị, vui lòng bấm **Mượn Device** trên tool để ghi nhận trước khi sử dụng.'
+        : 'Vui lòng bấm **Trả Device** trên tool để cập nhật trạng thái thiết bị trước khi ra về.';
+
+    await sendDiscordPayload({
+        username: "Daily Device Reporter",
+        content: '@everyone',
+        allowed_mentions: { parse: ['everyone'] },
+        embeds: [{
+            title,
+            description,
+            color: isBorrowReminder ? 3447003 : 15158332,
+            footer: { text: "QA Internal Portal • Device Reminder" },
+            timestamp: now.toISOString()
+        }]
+    });
+}
+
+function getFieldValue(field) {
+    if (!field) return '';
+    return field.stringValue ?? field.timestampValue ?? field.integerValue ?? field.doubleValue ?? '';
+}
+
+function isBorrowedOnDate(value, year, month, day) {
+    if (!value) return false;
+    const text = String(value).trim();
+
+    // Firestore timestamps and ISO date strings are compared in Vietnam time.
+    const isoDate = new Date(text);
+    if (!Number.isNaN(isoDate.getTime())) {
+        const vnDate = new Date(isoDate.getTime() + 7 * 60 * 60 * 1000);
+        return vnDate.getUTCFullYear() === year &&
+            vnDate.getUTCMonth() + 1 === month &&
+            vnDate.getUTCDate() === day;
+    }
+
+    // The tool commonly stores localized dates such as 18/10/2026 08:30.
+    const localized = text.match(/(?:^|\D)(\d{1,2})[\/.\-](\d{1,2})[\/.\-](\d{4})(?:\D|$)/);
+    if (localized) {
+        return Number(localized[1]) === day &&
+            Number(localized[2]) === month &&
+            Number(localized[3]) === year;
+    }
+
+    return false;
+}
+
+async function sendDailyBorrowReport(allDocuments, dateString, year, month, day, now) {
+    const borrowedToday = allDocuments
+        .map(doc => doc.fields || {})
+        .filter(fields => isBorrowedOnDate(getFieldValue(fields.thoiGian), year, month, day))
+        .map(fields => ({
+            device: getFieldValue(fields.thietBi) || 'Thiết bị chưa rõ tên',
+            borrower: getFieldValue(fields.nguoiMuon) || 'Chưa rõ',
+            borrowedAt: getFieldValue(fields.thoiGian),
+            status: getFieldValue(fields.trangThai) || 'Chưa rõ trạng thái'
+        }));
+
+    const lines = borrowedToday.length
+        ? borrowedToday.map((item, index) =>
+            `${index + 1}. 📲 **${item.device}**\n👤 **Người mượn:** ${item.borrower}\n⏰ **Giờ mượn:** \`${item.borrowedAt}\`\n📌 **Trạng thái:** ${item.status}`)
+        : ['Hôm nay chưa ghi nhận lượt mượn thiết bị nào.'];
+
+    // Discord limits an embed description to 4096 characters; send multiple messages if needed.
+    const chunks = [];
+    let chunk = '';
+    for (const line of lines) {
+        const next = chunk ? `${chunk}\n\n${line}` : line;
+        if (next.length > 3800 && chunk) {
+            chunks.push(chunk);
+            chunk = line;
+        } else {
+            chunk = next;
+        }
+    }
+    if (chunk) chunks.push(chunk);
+
+    for (let index = 0; index < chunks.length; index++) {
+        await sendDiscordPayload({
+            username: 'Daily Device Reporter',
+            embeds: [{
+                title: `📋 REPORT THIẾT BỊ ĐÃ MƯỢN TRONG NGÀY (${dateString})${chunks.length > 1 ? ` • ${index + 1}/${chunks.length}` : ''}`,
+                description: `Tổng lượt mượn hôm nay: **${borrowedToday.length}**\n\n${chunks[index]}`,
+                color: borrowedToday.length ? 3447003 : 3066993,
+                footer: { text: 'QA Internal Portal • Daily Borrow Report' },
+                timestamp: now.toISOString()
+            }]
+        });
+    }
+    console.log(`Đã gửi report ${borrowedToday.length} lượt mượn trong ngày.`);
+}
 
 async function runDailyReport() {
     try {
@@ -48,6 +160,18 @@ async function runDailyReport() {
             return; // Dừng toàn bộ hàm
         }
 
+        if (!['report', 'borrow', 'return'].includes(REMINDER_TYPE)) {
+        if (!['report', 'borrow', 'return', 'daily-borrow-report'].includes(REMINDER_TYPE)) {
+            throw new Error(`REMINDER_TYPE không hợp lệ: ${REMINDER_TYPE}`);
+        }
+
+        if (REMINDER_TYPE === 'borrow' || REMINDER_TYPE === 'return') {
+            await sendDeviceReminder(REMINDER_TYPE, now);
+            console.log(`Đã gửi nhắc ${REMINDER_TYPE === 'borrow' ? 'mượn' : 'trả'} thiết bị.`);
+            if (REMINDER_TYPE === 'borrow') return;
+            return;
+        }
+
         // =========================================================
         // 2. CHẠY BÁO CÁO NẾU LÀ NGÀY LÀM VIỆC BÌNH THƯỜNG
         // =========================================================
@@ -69,6 +193,18 @@ async function runDailyReport() {
             }
             pageToken = data.nextPageToken; // Chuyển sang trang tiếp theo nếu có
         } while (pageToken);
+
+        if (REMINDER_TYPE === 'daily-borrow-report') {
+            await sendDailyBorrowReport(
+                allDocuments,
+                fullDate,
+                vnTime.getUTCFullYear(),
+                vnTime.getUTCMonth() + 1,
+                vnTime.getUTCDate(),
+                now
+            );
+            return;
+        }
 
         let unreturnedList = [];
         let count = 1;
@@ -117,11 +253,7 @@ async function runDailyReport() {
             });
         }
 
-        await fetch(DISCORD_WEBHOOK_URL, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(payload)
-        });
+        await sendDiscordPayload(payload);
         console.log("Đã gửi thông báo Discord thành công!");
         
     } catch (error) {
