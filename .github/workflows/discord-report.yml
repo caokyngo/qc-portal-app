@@ -2,12 +2,27 @@ name: Daily Device Report
 
 on:
   schedule:
-    # Chạy lúc 11:17 UTC (tương đương 18:17 giờ Việt Nam) mỗi ngày
-    # Việc dùng số lẻ "17" giúp né được hàng đợi tắc nghẽn ở phút thứ 00 và 30 của GitHub
-    - cron: '33 11 * * *'
+    # Giờ Việt Nam: nhắc mượn lúc 09:30, nhắc trả lúc 18:00, report mượn trong ngày lúc 19:00.
+    - cron: '30 9 * * *'
+      timezone: 'Asia/Ho_Chi_Minh'
+      # Separate schedules below map to their corresponding task types.
+    - cron: '0 18 * * *'
+      timezone: 'Asia/Ho_Chi_Minh'
+    - cron: '0 19 * * *'
+      timezone: 'Asia/Ho_Chi_Minh'
   
-  # Thêm dòng này để bạn có thể tự bấm nút "Run workflow" chạy bằng tay bất cứ lúc nào muốn test
-  workflow_dispatch: 
+  workflow_dispatch:
+    inputs:
+      reminder_type:
+        description: 'Chọn nội dung khi chạy thủ công'
+        required: true
+        type: choice
+        default: report
+        options:
+          - report
+          - borrow
+          - return
+          - daily-borrow-report
 
 jobs:
   run-report:
@@ -22,6 +37,8 @@ jobs:
         with:
           node-version: '20'
 
-      - name: Run Daily Report Script
-        # Sửa lại tên file 'runDailyReport.js' cho đúng với tên file script của bạn nếu cần
+      - name: Run Device Reminder and Daily Report
         run: node daily-report.js
+        env:
+          DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
+          REMINDER_TYPE: ${{ github.event_name == 'schedule' && github.event.schedule == '30 9 * * *' && 'borrow' || github.event_name == 'schedule' && github.event.schedule == '0 18 * * *' && 'return' || github.event_name == 'schedule' && github.event.schedule == '0 19 * * *' && 'daily-borrow-report' || inputs.reminder_type || 'report' }}
