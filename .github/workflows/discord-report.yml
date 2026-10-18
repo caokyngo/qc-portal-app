@@ -22,7 +22,6 @@ on:
           - report
           - borrow
           - return
-          - daily-borrow-report
 
 jobs:
   run-report:
