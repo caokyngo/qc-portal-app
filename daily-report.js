@@ -4,6 +4,7 @@ const IS_MANUAL_RUN = process.env.IS_MANUAL_RUN === 'true';
 const FIREBASE_PROJECT_ID = "device-manage-d4f5d";
 // Thêm tham số pageSize=1000 để lấy tối đa data mỗi lần gọi
 const FIRESTORE_URL = `https://firestore.googleapis.com/v1/projects/${FIREBASE_PROJECT_ID}/databases/(default)/documents/device_logs?pageSize=1000`;
+const FIRESTORE_QUERY_URL = `https://firestore.googleapis.com/v1/projects/${FIREBASE_PROJECT_ID}/databases/(default)/documents:runQuery`;
 
 async function sendDiscordPayload(payload) {
     if (!DISCORD_WEBHOOK_URL) {
@@ -48,34 +49,10 @@ function getFieldValue(field) {
     return field.stringValue ?? field.timestampValue ?? field.integerValue ?? field.doubleValue ?? '';
 }
 
-function isBorrowedOnDate(value, year, month, day) {
-    if (!value) return false;
-    const text = String(value).trim();
-
-    // Firestore timestamps and ISO date strings are compared in Vietnam time.
-    const isoDate = new Date(text);
-    if (!Number.isNaN(isoDate.getTime())) {
-        const vnDate = new Date(isoDate.getTime() + 7 * 60 * 60 * 1000);
-        return vnDate.getUTCFullYear() === year &&
-            vnDate.getUTCMonth() + 1 === month &&
-            vnDate.getUTCDate() === day;
-    }
-
-    // The tool commonly stores localized dates such as 18/10/2026 08:30.
-    const localized = text.match(/(?:^|\D)(\d{1,2})[\/.\-](\d{1,2})[\/.\-](\d{4})(?:\D|$)/);
-    if (localized) {
-        return Number(localized[1]) === day &&
-            Number(localized[2]) === month &&
-            Number(localized[3]) === year;
-    }
-
-    return false;
-}
-
-async function sendDailyBorrowReport(allDocuments, dateString, year, month, day, now) {
-    const borrowedToday = allDocuments
+async function sendRecentUnreturnedReport(allDocuments, dateString, now) {
+    const unreturnedDevices = allDocuments
         .map(doc => doc.fields || {})
-        .filter(fields => isBorrowedOnDate(getFieldValue(fields.thoiGian), year, month, day))
+        .filter(fields => !String(getFieldValue(fields.trangThai)).toLowerCase().includes('đã trả'))
         .map(fields => ({
             device: getFieldValue(fields.thietBi) || 'Thiết bị chưa rõ tên',
             borrower: getFieldValue(fields.nguoiMuon) || 'Chưa rõ',
@@ -83,10 +60,10 @@ async function sendDailyBorrowReport(allDocuments, dateString, year, month, day,
             status: getFieldValue(fields.trangThai) || 'Chưa rõ trạng thái'
         }));
 
-    const lines = borrowedToday.length
-        ? borrowedToday.map((item, index) =>
+    const lines = unreturnedDevices.length
+        ? unreturnedDevices.map((item, index) =>
             `${index + 1}. 📲 **${item.device}**\n👤 **Người mượn:** ${item.borrower}\n⏰ **Giờ mượn:** \`${item.borrowedAt}\`\n📌 **Trạng thái:** ${item.status}`)
-        : ['Hôm nay chưa ghi nhận lượt mượn thiết bị nào.'];
+        : ['Không có thiết bị nào đang mượn trong phạm vi log được kiểm tra.'];
 
     // Discord limits an embed description to 4096 characters; send multiple messages if needed.
     const chunks = [];
@@ -106,15 +83,58 @@ async function sendDailyBorrowReport(allDocuments, dateString, year, month, day,
         await sendDiscordPayload({
             username: 'Daily Device Reporter',
             embeds: [{
-                title: `📋 REPORT THIẾT BỊ ĐÃ MƯỢN TRONG NGÀY (${dateString})${chunks.length > 1 ? ` • ${index + 1}/${chunks.length}` : ''}`,
-                description: `Tổng lượt mượn hôm nay: **${borrowedToday.length}**\n\n${chunks[index]}`,
-                color: borrowedToday.length ? 3447003 : 3066993,
-                footer: { text: 'QA Internal Portal • Daily Borrow Report' },
+                title: `📋 BÁO CÁO TỔNG HỢP THIẾT BỊ ĐANG MƯỢN (${dateString})${chunks.length > 1 ? ` • ${index + 1}/${chunks.length}` : ''}`,
+                description: `Đối chiếu các lượt mượn trong 30 ngày gần nhất.\nTổng thiết bị chưa trả: **${unreturnedDevices.length}**\n\n${chunks[index]}`,
+                color: unreturnedDevices.length ? 3447003 : 3066993,
+                footer: { text: 'QA Internal Portal • Báo cáo thiết bị chưa trả' },
                 timestamp: now.toISOString()
             }]
         });
     }
-    console.log(`Đã gửi report ${borrowedToday.length} lượt mượn trong ngày.`);
+    console.log(`Đã gửi report ${unreturnedDevices.length} thiết bị chưa trả trong phạm vi 30 ngày.`);
+}
+
+async function fetchDocumentsCreatedWithinLastMonth(now) {
+    const oneMonthAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+    const response = await fetch(FIRESTORE_QUERY_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+            structuredQuery: {
+                from: [{ collectionId: 'device_logs' }],
+                where: {
+                    compositeFilter: {
+                        op: 'AND',
+                        filters: [
+                            {
+                                fieldFilter: {
+                                    field: { fieldPath: 'createdAt' },
+                                    op: 'GREATER_THAN_OR_EQUAL',
+                                    value: { timestampValue: oneMonthAgo.toISOString() }
+                                }
+                            },
+                            {
+                                fieldFilter: {
+                                    field: { fieldPath: 'createdAt' },
+                                    op: 'LESS_THAN',
+                                    value: { timestampValue: now.toISOString() }
+                                }
+                            }
+                        ]
+                    }
+                },
+                orderBy: [{ field: { fieldPath: 'createdAt' }, direction: 'DESCENDING' }]
+            }
+        })
+    });
+
+    if (!response.ok) {
+        const responseBody = await response.text();
+        throw new Error(`Firestore query trả về HTTP ${response.status}: ${responseBody || response.statusText}`);
+    }
+
+    const rows = await response.json();
+    return rows.map(row => row.document).filter(Boolean);
 }
 
 async function runDailyReport() {
@@ -178,33 +198,29 @@ async function runDailyReport() {
         console.log("Hôm nay là ngày làm việc bình thường. Đang lấy dữ liệu từ Firebase...");
         
         let allDocuments = [];
-        let pageToken = "";
-        
-        // Vòng lặp lấy toàn bộ data (vượt qua giới hạn mặc định của Firebase)
+        if (REMINDER_TYPE === 'daily-borrow-report') {
+            // Chỉ đọc log trong 30 ngày gần nhất, rồi giữ lại thiết bị chưa trả.
+            allDocuments = await fetchDocumentsCreatedWithinLastMonth(now);
+            await sendRecentUnreturnedReport(allDocuments, fullDate, now);
+            return;
+        }
+
+        let pageToken = '';
+        // Báo cáo tồn đang mượn vẫn quét toàn bộ log để không bỏ sót lượt mượn cũ chưa trả.
         do {
             let url = FIRESTORE_URL;
             if (pageToken) url += `&pageToken=${pageToken}`;
-            
-            const response = await fetch(url);
-            const data = await response.json();
-            
-            if (data.documents) {
-                allDocuments.push(...data.documents);
-            }
-            pageToken = data.nextPageToken; // Chuyển sang trang tiếp theo nếu có
-        } while (pageToken);
 
-        if (REMINDER_TYPE === 'daily-borrow-report') {
-            await sendDailyBorrowReport(
-                allDocuments,
-                fullDate,
-                vnTime.getUTCFullYear(),
-                vnTime.getUTCMonth() + 1,
-                vnTime.getUTCDate(),
-                now
-            );
-            return;
-        }
+            const response = await fetch(url);
+            if (!response.ok) {
+                const responseBody = await response.text();
+                throw new Error(`Firestore list trả về HTTP ${response.status}: ${responseBody || response.statusText}`);
+            }
+
+            const data = await response.json();
+            if (data.documents) allDocuments.push(...data.documents);
+            pageToken = data.nextPageToken;
+        } while (pageToken);
 
         let unreturnedList = [];
         let count = 1;
