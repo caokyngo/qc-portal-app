@@ -428,9 +428,14 @@
                                 <h3 class="text-base font-bold text-slate-800 flex items-center gap-2 mb-3 sm:mb-0">
                                     <i class="fa-solid fa-filter text-indigo-600"></i> Bộ lọc & Cấu hình Báo cáo
                                 </h3>
+                                <div class="flex flex-wrap items-center gap-2">
+                                <button type="button" onclick="openCreateUpdateReportModal()" class="shrink-0 inline-flex justify-center items-center gap-2 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold rounded-lg shadow-sm hover:shadow-md transition-all">
+                                    <i class="fa-solid fa-file-circle-plus text-sm"></i> Tạo báo cáo Create/Update Testcase
+                                </button>
                                 <button id="copyBtn" onclick="openTagSelectionModal()" class="shrink-0 inline-flex justify-center items-center gap-2 px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-lg shadow-sm hover:shadow-md transition-all">
                                     <i class="fa-solid fa-copy text-sm"></i> Xuất Báo Cáo
                                 </button>
+                                </div>
                             </div>
 
                             <div class="p-5 space-y-6 flex-1">
@@ -595,6 +600,39 @@
                 </div>
             </div>
         </main>
+    </div>
+
+    <!-- MODAL TẠO BÁO CÁO CREATE/UPDATE TESTCASE -->
+    <div id="createUpdateReportModal" class="hidden fixed inset-0 z-[70] flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4" role="dialog" aria-modal="true" aria-labelledby="createUpdateReportTitle">
+        <div class="w-full max-w-2xl max-h-[90vh] overflow-y-auto rounded-2xl bg-white shadow-2xl">
+            <div class="flex items-start justify-between gap-4 border-b border-slate-100 px-5 py-4">
+                <div><h3 id="createUpdateReportTitle" class="text-base font-bold text-slate-800"><i class="fa-solid fa-file-circle-plus mr-2 text-indigo-600"></i>Tạo báo cáo Create/Update Testcase</h3><p class="mt-1 text-xs text-slate-500">Báo cáo sẽ lấy ID & Game Name từ phần Thông tin Báo cáo.</p></div>
+                <button type="button" onclick="closeCreateUpdateReportModal()" aria-label="Đóng" class="text-slate-400 hover:text-rose-500"><i class="fa-solid fa-xmark text-xl"></i></button>
+            </div>
+            <div class="space-y-5 p-5">
+                <fieldset>
+                    <legend class="mb-2 text-xs font-bold text-slate-700">Scope</legend>
+                    <div class="flex flex-wrap gap-2">
+                        <label class="inline-flex cursor-pointer items-center gap-2 rounded-lg border border-slate-200 px-3 py-2 text-xs font-medium"><input class="create-update-scope rounded text-indigo-600" type="checkbox" value="Create testcases">Create testcases</label>
+                        <label class="inline-flex cursor-pointer items-center gap-2 rounded-lg border border-slate-200 px-3 py-2 text-xs font-medium"><input class="create-update-scope rounded text-indigo-600" type="checkbox" value="Review testcases">Review testcases</label>
+                        <label class="inline-flex cursor-pointer items-center gap-2 rounded-lg border border-slate-200 px-3 py-2 text-xs font-medium"><input class="create-update-scope rounded text-indigo-600" type="checkbox" value="Update testcases">Update testcases</label>
+                    </div>
+                </fieldset>
+                <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                    <label class="block text-xs font-bold text-slate-700">Status tổng
+                        <input id="createUpdateOverallStatus" type="text" value="Doing" class="mt-1 block w-full rounded-lg border border-slate-300 px-3 py-2 text-sm font-normal outline-none focus:ring-2 focus:ring-indigo-200">
+                    </label>
+                    <div class="self-end rounded-lg bg-indigo-50 px-3 py-2 text-xs text-indigo-800"><i class="fa-solid fa-table-cells-large mr-1"></i>Link folder testcase sẽ được đọc từ ô A1 của sheet report.</div>
+                </div>
+                <div>
+                    <div class="mb-2 flex flex-wrap items-center justify-between gap-2"><div><h4 class="text-xs font-bold text-slate-700">Task / file testcase</h4><p class="mt-1 text-[11px] text-slate-500">Nạp tên file theo mapping và status từ report sheet, hoặc nhập thủ công.</p></div><div class="flex flex-wrap gap-2"><button type="button" onclick="loadCreateUpdateTasksFromDriveReport()" class="shrink-0 rounded-lg border border-emerald-200 px-3 py-2 text-xs font-bold text-emerald-700 hover:bg-emerald-50"><i class="fa-solid fa-cloud-arrow-down mr-1"></i>Nạp task từ report sheet</button><button type="button" onclick="addCreateUpdateTaskRow()" class="shrink-0 rounded-lg border border-indigo-200 px-3 py-2 text-xs font-bold text-indigo-700 hover:bg-indigo-50"><i class="fa-solid fa-plus mr-1"></i>Thêm task</button></div></div>
+                    <p id="createUpdateLoadStatus" class="mb-2 text-[11px] text-slate-500" aria-live="polite"></p>
+                    <div id="createUpdateTaskRows" class="space-y-2"></div>
+                </div>
+                <p class="rounded-lg bg-slate-50 p-3 text-xs text-slate-600">Testcase folder: <a class="font-semibold text-indigo-600 underline" href="https://drive.google.com/drive/folders/1nWc5wpDbzkPw0mI4sAvbVN0J1eynogSy" target="_blank" rel="noopener noreferrer">Mở folder testcase</a></p>
+            </div>
+            <div class="flex justify-end gap-2 border-t border-slate-100 bg-slate-50 px-5 py-4"><button type="button" onclick="closeCreateUpdateReportModal()" class="rounded-lg border border-slate-300 bg-white px-4 py-2 text-xs font-bold text-slate-700">Hủy</button><button type="button" onclick="createUpdateTestcaseReport()" class="rounded-lg bg-indigo-600 px-4 py-2 text-xs font-bold text-white hover:bg-indigo-700"><i class="fa-solid fa-copy mr-1"></i>Tạo & Copy báo cáo</button></div>
+        </div>
     </div>
 
     <!-- MODAL LỰA CHỌN SCOPE -->
@@ -2012,8 +2050,13 @@
         function parseProgressDataFromMatrix(rows) {
             let testcaseLinkFromSheet = "";
             if (rows && rows.length > 0) {
+                // Ô A1 trong report sheet chứa link folder Test Case; ưu tiên đúng ô này.
+                const a1Value = rows[0] && rows[0][0] !== undefined ? String(rows[0][0]).trim() : '';
+                const a1Url = a1Value.match(/https?:\/\/[^\s]+/i);
+                if (a1Url && /drive\.google\.com|docs\.google\.com/i.test(a1Url[0])) testcaseLinkFromSheet = a1Url[0];
+
                 outerLoop:
-                for (let i = 0; i < Math.min(rows.length, 30); i++) {
+                for (let i = 0; !testcaseLinkFromSheet && i < Math.min(rows.length, 30); i++) {
                     if (!rows[i]) continue;
                     for (let j = 0; j < Math.min(rows[i].length, 10); j++) {
                         let cellVal = String(rows[i][j]).trim();
@@ -2283,6 +2326,179 @@
                     showToast('Chưa copy được', 'Giữ Ctrl+C để sao chép nội dung đang được chọn.', true);
                 }
             }
+        }
+
+        function openCreateUpdateReportModal() {
+            const gameName = document.getElementById('reportGameNameInput')?.value.trim() || '';
+            if (!gameName) {
+                showCustomAlert('Thiếu thông tin', 'Vui lòng nhập ID & Game Name trước khi tạo báo cáo.', true);
+                document.getElementById('reportGameNameInput')?.focus();
+                return;
+            }
+            const taskRows = document.getElementById('createUpdateTaskRows');
+            if (taskRows && taskRows.children.length === 0) addCreateUpdateTaskRow();
+            document.getElementById('createUpdateReportModal')?.classList.remove('hidden');
+        }
+
+        function closeCreateUpdateReportModal() {
+            document.getElementById('createUpdateReportModal')?.classList.add('hidden');
+        }
+
+        function addCreateUpdateTaskRow(name = '', status = 'Doing') {
+            const container = document.getElementById('createUpdateTaskRows');
+            if (!container) return;
+            const row = document.createElement('div');
+            row.className = 'grid grid-cols-[minmax(0,1fr)_minmax(110px,0.45fr)_auto] gap-2';
+            const nameInput = document.createElement('input');
+            nameInput.type = 'text'; nameInput.maxLength = 180; nameInput.placeholder = 'Tên file testcase'; nameInput.value = name;
+            nameInput.className = 'min-w-0 rounded-lg border border-slate-300 px-3 py-2 text-xs outline-none focus:ring-2 focus:ring-indigo-200';
+            nameInput.setAttribute('aria-label', 'Tên file testcase');
+            const statusInput = document.createElement('input');
+            statusInput.type = 'text'; statusInput.maxLength = 80; statusInput.placeholder = 'Trạng thái'; statusInput.value = status;
+            statusInput.className = 'min-w-0 rounded-lg border border-slate-300 px-3 py-2 text-xs outline-none focus:ring-2 focus:ring-indigo-200';
+            statusInput.setAttribute('aria-label', 'Trạng thái task');
+            const removeButton = document.createElement('button');
+            removeButton.type = 'button'; removeButton.className = 'rounded-lg px-3 text-slate-400 hover:bg-rose-50 hover:text-rose-600';
+            removeButton.title = 'Xóa task'; removeButton.setAttribute('aria-label', 'Xóa task');
+            removeButton.innerHTML = '<i class="fa-solid fa-trash"></i>';
+            removeButton.onclick = () => row.remove();
+            row.append(nameInput, statusInput, removeButton);
+            container.appendChild(row);
+        }
+
+        function requestReportApiJsonp(params, timeoutMs = 25000) {
+            return new Promise((resolve, reject) => {
+                const callback = 'createUpdateReportCallback_' + Date.now() + '_' + Math.floor(Math.random() * 1e6);
+                const url = new URL(URL_REPORT_API);
+                Object.entries(params).forEach(([key, value]) => url.searchParams.set(key, String(value ?? '')));
+                url.searchParams.set('callback', callback);
+                url.searchParams.set('_t', Date.now());
+                const script = document.createElement('script');
+                let settled = false;
+                const cleanup = () => { if (script.parentNode) script.parentNode.removeChild(script); };
+                const timer = setTimeout(() => {
+                    if (settled) return;
+                    settled = true;
+                    window[callback] = () => { delete window[callback]; };
+                    cleanup();
+                    setTimeout(() => { delete window[callback]; }, 60000);
+                    reject(new Error('Apps Script không phản hồi kịp thời.'));
+                }, timeoutMs);
+                window[callback] = data => {
+                    if (settled) return;
+                    settled = true;
+                    clearTimeout(timer);
+                    delete window[callback];
+                    cleanup();
+                    if (!data || data.success === false) reject(new Error(data?.error || 'Không đọc được dữ liệu report sheet.'));
+                    else resolve(data);
+                };
+                script.onerror = () => {
+                    if (settled) return;
+                    settled = true;
+                    clearTimeout(timer);
+                    delete window[callback];
+                    cleanup();
+                    reject(new Error('Không kết nối được Google Apps Script.'));
+                };
+                script.src = url.toString();
+                document.body.appendChild(script);
+            });
+        }
+
+        async function loadCreateUpdateTasksFromDriveReport() {
+            const statusLabel = document.getElementById('createUpdateLoadStatus');
+            const sheetName = document.getElementById('sheetNameInput')?.value.trim() || '';
+            if (!loggedInUser) {
+                showToast('Yêu cầu đăng nhập Google', 'Đăng nhập Google trước khi tải task và mapping testcase.', true);
+                return;
+            }
+            if (!sheetName) {
+                showToast('Thiếu tên report sheet', 'Nhập ID & Game Name để hệ thống xác định tên sheet report.', true);
+                return;
+            }
+            statusLabel.textContent = 'Đang tải task, trạng thái và mapping file testcase…';
+            try {
+                const [config, mappingResult] = await Promise.all([
+                    requestReportApiJsonp({ action: 'getReportSheetConfig', sheetName }),
+                    requestReportApiJsonp({ action: 'getTaskMappings' })
+                ]);
+                const suites = Array.isArray(config.suites) ? config.suites : [];
+                const mappings = Array.isArray(mappingResult.mappings) ? mappingResult.mappings : [];
+                const normalize = value => String(value || '').toLowerCase().replace(/[^a-z0-9]/g, '');
+                const mappingByTask = new Map(mappings.map(item => [normalize(item.task), String(item.file || '').trim()]));
+                const mappedTasks = suites.map(item => ({
+                    name: mappingByTask.get(normalize(item.name)) || String(item.testcaseFile || '').trim() || String(item.name || '').trim(),
+                    status: String(item.status || 'Doing').trim()
+                })).filter(item => item.name);
+                if (!mappedTasks.length) throw new Error('Report sheet chưa có task nào để nạp.');
+                const rows = document.getElementById('createUpdateTaskRows');
+                rows.replaceChildren();
+                mappedTasks.forEach(task => addCreateUpdateTaskRow(task.name, task.status));
+                statusLabel.textContent = `Đã nạp ${mappedTasks.length} task từ sheet “${config.sheetName || sheetName}”; tên file lấy theo mapping đã lưu.`;
+            } catch (error) {
+                statusLabel.textContent = error?.message || 'Không tải được task từ report sheet.';
+                showToast('Không tải được task', statusLabel.textContent, true);
+            }
+        }
+
+        async function createUpdateTestcaseReport() {
+            const gameName = document.getElementById('reportGameNameInput')?.value.trim() || '';
+            if (!gameName) {
+                showCustomAlert('Thiếu thông tin', 'Vui lòng nhập ID & Game Name trước khi tạo báo cáo.', true);
+                closeCreateUpdateReportModal();
+                document.getElementById('reportGameNameInput')?.focus();
+                return;
+            }
+            const scopes = Array.from(document.querySelectorAll('.create-update-scope:checked')).map(input => input.value);
+            if (!scopes.length) {
+                showCustomAlert('Thiếu Scope', 'Vui lòng chọn ít nhất một Scope.', true);
+                return;
+            }
+            const tasks = Array.from(document.getElementById('createUpdateTaskRows')?.children || [])
+                .map(row => ({ name: row.querySelector('input[aria-label="Tên file testcase"]')?.value.trim() || '', status: row.querySelector('input[aria-label="Trạng thái task"]')?.value.trim() || '' }))
+                .filter(task => task.name);
+            if (!tasks.length) {
+                showCustomAlert('Thiếu task', 'Vui lòng nhập ít nhất một tên file testcase.', true);
+                return;
+            }
+
+            let sheetName = document.getElementById('sheetNameInput')?.value.trim() || '';
+            if (!sheetName) sheetName = gameName.match(/^\d+/)?.[0] || '';
+            if (!sheetName) {
+                showToast('Thiếu tên report sheet', 'Không xác định được tên sheet từ ID & Game Name.', true);
+                return;
+            }
+            const sheetData = await fetchGSheetProgressReport(URL_REPORT_API, sheetName);
+            const testcaseFolderUrl = sheetData?.testcaseLink || '';
+            if (!testcaseFolderUrl) {
+                showToast('Không đọc được ô A1', `Không tìm thấy link folder testcase trong ô A1 của sheet “${sheetName}”. Kiểm tra sheet report rồi thử lại.`, true);
+                return;
+            }
+            const status = document.getElementById('createUpdateOverallStatus')?.value.trim() || 'Doing';
+            const now = new Date();
+            const date = `${String(now.getDate()).padStart(2, '0')}/${String(now.getMonth() + 1).padStart(2, '0')}/${now.getFullYear()}`;
+            const lines = [
+                `Report for ${gameName} (${date})`,
+                `Testcase: ${testcaseFolderUrl}`,
+                '——————————————————',
+                '[SUMMARY]',
+                `- Scope: ${scopes.join(', ')}`,
+                `- Status: ${status}`
+            ];
+            tasks.forEach(task => {
+                lines.push(`+ ${task.name}: ${task.status || status}`);
+            });
+            lines.push('————————————————————————————', '- QC: Dino, Py, Sugar, Nico, Ton, Kenz, Lily', 'QC sends the report today!');
+            const reportText = lines.join('\n');
+            const copied = await copyTextToClipboard(reportText);
+            if (!copied) {
+                openCopyFallbackModal(reportText);
+                showToast('Báo cáo đã sẵn sàng', 'Nội dung đã được chọn trong hộp thoại để bạn sao chép.', true);
+                return;
+            }
+            closeCreateUpdateReportModal();
+            showToast('Tạo báo cáo thành công', 'Báo cáo Create/Update Testcase đã được sao chép vào Clipboard.');
         }
 
         async function confirmAndCopyReport(skipTagFilter = false) {
