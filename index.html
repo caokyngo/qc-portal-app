@@ -625,7 +625,7 @@
                     <div class="self-end rounded-lg bg-slate-50 px-3 py-2 text-xs text-slate-600">Chọn trạng thái cho từng task ở danh sách bên dưới.</div>
                 </div>
                 <div>
-                    <div class="mb-2 flex flex-wrap items-center justify-between gap-2"><div><h4 class="text-xs font-bold text-slate-700">File testcase trong folder</h4></div><div class="flex flex-wrap gap-2"><button type="button" onclick="loadCreateUpdateFilesFromFolder()" class="shrink-0 rounded-lg border border-emerald-200 px-3 py-2 text-xs font-bold text-emerald-700 hover:bg-emerald-50"><i class="fa-solid fa-rotate mr-1"></i>Refresh</button><button type="button" onclick="addCreateUpdateTaskRow()" class="shrink-0 rounded-lg border border-indigo-200 px-3 py-2 text-xs font-bold text-indigo-700 hover:bg-indigo-50"><i class="fa-solid fa-plus mr-1"></i>Thêm task</button></div></div>
+                    <div class="mb-2 flex flex-wrap items-center justify-between gap-2"><div><h4 class="text-xs font-bold text-slate-700">File testcase trong folder</h4></div><div class="flex flex-wrap gap-2"><button type="button" onclick="loadCreateUpdateFilesFromFolder()" class="shrink-0 rounded-lg border border-emerald-200 px-3 py-2 text-xs font-bold text-emerald-700 hover:bg-emerald-50"><i class="fa-solid fa-rotate mr-1"></i>Tải lại file</button><button type="button" onclick="addCreateUpdateTaskRow()" class="shrink-0 rounded-lg border border-indigo-200 px-3 py-2 text-xs font-bold text-indigo-700 hover:bg-indigo-50"><i class="fa-solid fa-plus mr-1"></i>Thêm task</button></div></div>
                     <p id="createUpdateLoadStatus" class="mb-2 text-[11px] text-slate-500" aria-live="polite"></p>
                     <div id="createUpdateTaskRows" class="space-y-2 overflow-x-auto"></div>
                 </div>
@@ -2525,6 +2525,7 @@
                     `Report for ${gameName} (${date})`,
                     `Testcase: ${testcaseFolderUrl}`,
                     '——————————————————',
+                    '```',
                     '[SUMMARY]',
                     `- Scope: ${scopes.join(', ')}`,
                     `- Status: ${status}`
@@ -2546,6 +2547,7 @@
                 }
                 lines.push('————————————————————————————');
                 if (qcMembers) lines.push(`- QC: ${qcMembers}`);
+                lines.push('```');
                 lines.push('QC sends the report today!');
                 const reportText = lines.join('\n');
 
@@ -2722,6 +2724,7 @@
                 reportLines.push('---------------------------------------------');
 
                 // A. [SUMMARY]
+                reportLines.push('```');
                 reportLines.push('A. [SUMMARY]');
                 if (scopeText) reportLines.push('- Scope of testing: ' + scopeText);
                 reportLines.push('- Testing Status: ' + testingStatus);
@@ -2859,6 +2862,9 @@
                 if (qcMembers) {
                     reportLines.push('- QC: ' + qcMembers);
                 }
+
+                reportLines.push('```');
+                reportLines.push('QC sends the report today!');
 
                 if (metadataText) {
                     reportLines.push('');
