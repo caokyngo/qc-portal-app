@@ -622,14 +622,13 @@
                     <label class="block text-xs font-bold text-slate-700">Status tổng
                         <input id="createUpdateOverallStatus" type="text" value="Doing" class="mt-1 block w-full rounded-lg border border-slate-300 px-3 py-2 text-sm font-normal outline-none focus:ring-2 focus:ring-indigo-200">
                     </label>
-                    <div class="self-end rounded-lg bg-indigo-50 px-3 py-2 text-xs text-indigo-800"><i class="fa-solid fa-table-cells-large mr-1"></i>Link folder testcase sẽ được đọc từ ô A1 của sheet report.</div>
                 </div>
                 <div>
-                    <div class="mb-2 flex flex-wrap items-center justify-between gap-2"><div><h4 class="text-xs font-bold text-slate-700">Task / file testcase</h4><p class="mt-1 text-[11px] text-slate-500">Nạp tên file theo mapping và status từ report sheet, hoặc nhập thủ công.</p></div><div class="flex flex-wrap gap-2"><button type="button" onclick="loadCreateUpdateTasksFromDriveReport()" class="shrink-0 rounded-lg border border-emerald-200 px-3 py-2 text-xs font-bold text-emerald-700 hover:bg-emerald-50"><i class="fa-solid fa-cloud-arrow-down mr-1"></i>Nạp task từ report sheet</button><button type="button" onclick="addCreateUpdateTaskRow()" class="shrink-0 rounded-lg border border-indigo-200 px-3 py-2 text-xs font-bold text-indigo-700 hover:bg-indigo-50"><i class="fa-solid fa-plus mr-1"></i>Thêm task</button></div></div>
+                    <div class="mb-2 flex flex-wrap items-center justify-between gap-2"><div><h4 class="text-xs font-bold text-slate-700">File testcase trong folder</h4><p class="mt-1 text-[11px] text-slate-500"></p></div><div class="flex flex-wrap gap-2"><button type="button" onclick="loadCreateUpdateFilesFromFolder()" class="shrink-0 rounded-lg border border-emerald-200 px-3 py-2 text-xs font-bold text-emerald-700 hover:bg-emerald-50"><i class="fa-solid fa-rotate mr-1"></i>Tải lại file</button><button type="button" onclick="addCreateUpdateTaskRow()" class="shrink-0 rounded-lg border border-indigo-200 px-3 py-2 text-xs font-bold text-indigo-700 hover:bg-indigo-50"><i class="fa-solid fa-plus mr-1"></i>Thêm task</button></div></div>
                     <p id="createUpdateLoadStatus" class="mb-2 text-[11px] text-slate-500" aria-live="polite"></p>
                     <div id="createUpdateTaskRows" class="space-y-2"></div>
                 </div>
-                <p class="rounded-lg bg-slate-50 p-3 text-xs text-slate-600">Testcase folder: <a class="font-semibold text-indigo-600 underline" href="https://drive.google.com/drive/folders/1nWc5wpDbzkPw0mI4sAvbVN0J1eynogSy" target="_blank" rel="noopener noreferrer">Mở folder testcase</a></p>
+                <p class="rounded-lg bg-slate-50 p-3 text-xs text-slate-600">Folder testcase: <a id="createUpdateOpenFolderLink" class="pointer-events-none font-semibold text-slate-400 underline" href="#" target="_blank" rel="noopener noreferrer" aria-disabled="true">Đang lấy link từ ô A1 của sheet report…</a></p>
             </div>
             <div class="flex justify-end gap-2 border-t border-slate-100 bg-slate-50 px-5 py-4"><button type="button" onclick="closeCreateUpdateReportModal()" class="rounded-lg border border-slate-300 bg-white px-4 py-2 text-xs font-bold text-slate-700">Hủy</button><button type="button" onclick="createUpdateTestcaseReport()" class="rounded-lg bg-indigo-600 px-4 py-2 text-xs font-bold text-white hover:bg-indigo-700"><i class="fa-solid fa-copy mr-1"></i>Tạo & Copy báo cáo</button></div>
         </div>
@@ -2338,6 +2337,7 @@
             const taskRows = document.getElementById('createUpdateTaskRows');
             if (taskRows && taskRows.children.length === 0) addCreateUpdateTaskRow();
             document.getElementById('createUpdateReportModal')?.classList.remove('hidden');
+            loadCreateUpdateFilesFromFolder();
         }
 
         function closeCreateUpdateReportModal() {
@@ -2406,36 +2406,33 @@
             });
         }
 
-        async function loadCreateUpdateTasksFromDriveReport() {
+        async function loadCreateUpdateFilesFromFolder() {
             const statusLabel = document.getElementById('createUpdateLoadStatus');
             const sheetName = document.getElementById('sheetNameInput')?.value.trim() || '';
             if (!loggedInUser) {
-                showToast('Yêu cầu đăng nhập Google', 'Đăng nhập Google trước khi tải task và mapping testcase.', true);
+                statusLabel.textContent = 'Đăng nhập Google để đọc file trong Drive.';
+                showToast('Yêu cầu đăng nhập Google', 'Đăng nhập Google trước khi tải file testcase từ Drive.', true);
                 return;
             }
             if (!sheetName) {
                 showToast('Thiếu tên report sheet', 'Nhập ID & Game Name để hệ thống xác định tên sheet report.', true);
                 return;
             }
-            statusLabel.textContent = 'Đang tải task, trạng thái và mapping file testcase…';
+            statusLabel.textContent = 'Đang đọc link A1 và danh sách file Google Sheets trong folder…';
             try {
-                const [config, mappingResult] = await Promise.all([
-                    requestReportApiJsonp({ action: 'getReportSheetConfig', sheetName }),
-                    requestReportApiJsonp({ action: 'getTaskMappings' })
-                ]);
-                const suites = Array.isArray(config.suites) ? config.suites : [];
-                const mappings = Array.isArray(mappingResult.mappings) ? mappingResult.mappings : [];
-                const normalize = value => String(value || '').toLowerCase().replace(/[^a-z0-9]/g, '');
-                const mappingByTask = new Map(mappings.map(item => [normalize(item.task), String(item.file || '').trim()]));
-                const mappedTasks = suites.map(item => ({
-                    name: mappingByTask.get(normalize(item.name)) || String(item.testcaseFile || '').trim() || String(item.name || '').trim(),
-                    status: String(item.status || 'Doing').trim()
-                })).filter(item => item.name);
-                if (!mappedTasks.length) throw new Error('Report sheet chưa có task nào để nạp.');
+                const result = await requestReportApiJsonp({ action: 'listTestcaseFiles', sheetName });
+                const files = Array.isArray(result.files) ? result.files : [];
+                if (!files.length) throw new Error('Folder testcase không có file Google Sheets nào.');
                 const rows = document.getElementById('createUpdateTaskRows');
                 rows.replaceChildren();
-                mappedTasks.forEach(task => addCreateUpdateTaskRow(task.name, task.status));
-                statusLabel.textContent = `Đã nạp ${mappedTasks.length} task từ sheet “${config.sheetName || sheetName}”; tên file lấy theo mapping đã lưu.`;
+                files.forEach(file => addCreateUpdateTaskRow(file.name, 'Doing'));
+                const folderLink = document.getElementById('createUpdateOpenFolderLink');
+                folderLink.href = result.folderUrl;
+                folderLink.textContent = 'Mở folder testcase';
+                folderLink.classList.remove('pointer-events-none', 'text-slate-400');
+                folderLink.classList.add('text-indigo-600');
+                folderLink.removeAttribute('aria-disabled');
+                statusLabel.textContent = `Đã tải ${files.length} file từ folder trên ô A1 của sheet “${result.sheetName || sheetName}”.`;
             } catch (error) {
                 statusLabel.textContent = error?.message || 'Không tải được task từ report sheet.';
                 showToast('Không tải được task', statusLabel.textContent, true);
