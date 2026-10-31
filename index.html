@@ -630,7 +630,7 @@
                     <div class="self-end rounded-lg bg-slate-50 px-3 py-2 text-xs text-slate-600">Chọn trạng thái cho từng Task ở danh sách bên dưới.</div>
                 </div>
                 <div>
-                    <div class="mb-2 flex flex-wrap items-center justify-between gap-2"><div><h4 class="text-xs font-bold text-slate-700">File testcase trong folder</h4></div><div class="flex flex-wrap gap-2"><button type="button" id="createUpdateReloadFilesButton" onclick="loadCreateUpdateFilesFromFolder()" class="shrink-0 rounded-lg border border-emerald-200 px-3 py-2 text-xs font-bold text-emerald-700 hover:bg-emerald-50"><i class="fa-solid fa-rotate mr-1"></i>Tải lại file</button><button type="button" onclick="addCreateUpdateTaskRow()" class="shrink-0 rounded-lg border border-indigo-200 px-3 py-2 text-xs font-bold text-indigo-700 hover:bg-indigo-50"><i class="fa-solid fa-plus mr-1"></i>Thêm task</button></div></div>
+                    <div class="mb-2 flex flex-wrap items-center justify-between gap-2"><div><h4 class="text-xs font-bold text-slate-700">File testcase trong folder</h4><p class="mt-1 text-[11px] text-slate-500">Dán report cũ để áp status cho các file trùng tên.</p></div><div class="flex flex-wrap gap-2"><button type="button" id="pasteCreateUpdateClipboardButton" onclick="pasteCreateUpdateStatusesFromClipboard()" class="shrink-0 rounded-lg border border-indigo-200 bg-indigo-50 px-3 py-2 text-xs font-bold text-indigo-700 hover:bg-indigo-100"><i class="fa-solid fa-paste mr-1"></i>Dán từ Clipboard</button><button type="button" id="createUpdateReloadFilesButton" onclick="loadCreateUpdateFilesFromFolder()" class="shrink-0 rounded-lg border border-emerald-200 px-3 py-2 text-xs font-bold text-emerald-700 hover:bg-emerald-50"><i class="fa-solid fa-rotate mr-1"></i>Tải lại file</button><button type="button" onclick="addCreateUpdateTaskRow()" class="shrink-0 rounded-lg border border-indigo-200 px-3 py-2 text-xs font-bold text-indigo-700 hover:bg-indigo-50"><i class="fa-solid fa-plus mr-1"></i>Thêm task</button></div></div>
                     <p id="createUpdateLoadStatus" class="mb-2 text-[11px] text-slate-500" aria-live="polite"></p>
                     <div id="createUpdateLoadingPanel" class="hidden mb-3 rounded-xl border border-indigo-200 bg-indigo-50/70 p-4" role="status" aria-live="polite">
                         <div class="flex items-center gap-3"><span class="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-white text-indigo-600 shadow-sm"><i class="fa-solid fa-spinner fa-spin text-xl"></i></span><div class="min-w-0"><p class="text-sm font-bold text-indigo-900">Đang tải danh sách testcase…</p><p class="mt-0.5 text-xs text-indigo-700">Đọc link A1, kết nối Drive và quét các file Google Sheets trong folder.</p></div></div>
@@ -2489,6 +2489,101 @@
                     reloadButton.innerHTML = originalReloadButtonHtml;
                     reloadButton.classList.remove('opacity-70', 'cursor-wait');
                 }
+            }
+        }
+
+        function normalizeCreateUpdateTaskName(name) {
+            return stripTestcaseGamePrefix(name).toLowerCase().replace(/[^a-z0-9]/g, '');
+        }
+
+        function parseCreateUpdateClipboardStatuses(text) {
+            const statusByTask = new Map();
+            let currentGroup = '';
+            String(text || '').split(/\r?\n/).forEach(line => {
+                const groupMatch = line.match(/^\s*\*\s*(DONE|REMAINING)\s*:\s*$/i);
+                if (groupMatch) {
+                    currentGroup = groupMatch[1].toUpperCase();
+                    return;
+                }
+                const itemMatch = line.match(/^\s*\+\s*(.*?)\s*$/);
+                if (!itemMatch || !currentGroup) return;
+                const item = itemMatch[1].trim();
+                if (currentGroup === 'DONE') {
+                    const doneName = item.replace(/\s*:\s*Done\s*$/i, '').trim();
+                    const key = normalizeCreateUpdateTaskName(doneName);
+                    if (key) statusByTask.set(key, { status: 'done', detailValue: '' });
+                    return;
+                }
+                const reviewMatch = item.match(/^(.+?)\s*:\s*Waiting for review round\s+(\d+)\s*$/i);
+                if (reviewMatch) {
+                    const key = normalizeCreateUpdateTaskName(reviewMatch[1]);
+                    if (key) statusByTask.set(key, { status: 'review', detailValue: reviewMatch[2] });
+                    return;
+                }
+                const percentMatch = item.match(/^(.+?)\s*:\s*Remaining\s+(\d+(?:\.\d+)?)\s*%\s*$/i);
+                if (percentMatch) {
+                    const key = normalizeCreateUpdateTaskName(percentMatch[1]);
+                    if (key) statusByTask.set(key, { status: 'percent', detailValue: percentMatch[2] });
+                }
+            });
+            return statusByTask;
+        }
+
+        async function pasteCreateUpdateStatusesFromClipboard() {
+            const button = document.getElementById('pasteCreateUpdateClipboardButton');
+            if (!button || button.disabled) return;
+            const originalHtml = button.innerHTML;
+            button.disabled = true;
+            button.innerHTML = '<i class="fa-solid fa-spinner fa-spin mr-1"></i>Đang đọc…';
+            try {
+                const text = await navigator.clipboard.readText();
+                if (!text || !text.trim()) {
+                    showToast('Clipboard trống', 'Copy report hôm trước rồi bấm Dán từ Clipboard.', true);
+                    return;
+                }
+                const previousStatuses = parseCreateUpdateClipboardStatuses(text);
+                if (!previousStatuses.size) {
+                    showToast('Không tìm thấy status task', 'Clipboard cần có các nhóm DONE/REMAINING và dòng task theo mẫu report.', true);
+                    return;
+                }
+
+                const rows = Array.from(document.getElementById('createUpdateTaskRows')?.children || []);
+                if (!rows.length) {
+                    showToast('Chưa có danh sách file', 'Đợi tải task từ folder testcase xong rồi dán report cũ.', true);
+                    return;
+                }
+                let matched = 0;
+                rows.forEach(row => {
+                    const nameInput = row.querySelector('input[aria-label="Tên file testcase"]');
+                    const statusInput = row.querySelector('select[aria-label="Trạng thái task"]');
+                    const valueInput = row.querySelector('input[aria-label="Giá trị status task"]');
+                    const oldStatus = previousStatuses.get(normalizeCreateUpdateTaskName(nameInput?.value || ''));
+                    if (!oldStatus || !statusInput || !valueInput) return;
+                    statusInput.value = oldStatus.status;
+                    valueInput.value = oldStatus.detailValue;
+                    statusInput.dispatchEvent(new Event('change', { bubbles: true }));
+                    matched++;
+                });
+
+                const scopeMatch = text.match(/^\s*-\s*Scope:\s*(.*)$/im);
+                if (scopeMatch) {
+                    const previousScopes = new Set(scopeMatch[1].split(',').map(value => value.trim().toLowerCase()).filter(Boolean));
+                    document.querySelectorAll('.create-update-scope').forEach(input => {
+                        input.checked = previousScopes.has(input.value.toLowerCase());
+                    });
+                }
+                const overallStatusMatch = text.match(/^\s*-\s*Status:\s*(.*)$/im);
+                if (overallStatusMatch && document.getElementById('createUpdateOverallStatus')) {
+                    document.getElementById('createUpdateOverallStatus').value = overallStatusMatch[1].trim();
+                }
+
+                showToast('Đã dán status', `Đã cập nhật ${matched}/${rows.length} task khớp với report trong Clipboard.`);
+            } catch (error) {
+                console.error('Không thể đọc status report từ Clipboard:', error);
+                showToast('Không đọc được Clipboard', 'Cho phép truy cập Clipboard rồi thử lại.', true);
+            } finally {
+                button.disabled = false;
+                button.innerHTML = originalHtml;
             }
         }
 
