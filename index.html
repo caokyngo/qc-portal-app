@@ -622,6 +622,7 @@
                     <label class="block text-xs font-bold text-slate-700">Status tổng
                         <input id="createUpdateOverallStatus" type="text" value="Doing" class="mt-1 block w-full rounded-lg border border-slate-300 px-3 py-2 text-sm font-normal outline-none focus:ring-2 focus:ring-indigo-200">
                     </label>
+                    <div class="self-end rounded-lg bg-slate-50 px-3 py-2 text-xs text-slate-600">Chọn trạng thái cho từng task ở danh sách bên dưới.</div>
                 </div>
                 <div>
                     <div class="mb-2 flex flex-wrap items-center justify-between gap-2"><div><h4 class="text-xs font-bold text-slate-700">File testcase trong folder</h4><p class="mt-1 text-[11px] text-slate-500"></p></div><div class="flex flex-wrap gap-2"><button type="button" onclick="loadCreateUpdateFilesFromFolder()" class="shrink-0 rounded-lg border border-emerald-200 px-3 py-2 text-xs font-bold text-emerald-700 hover:bg-emerald-50"><i class="fa-solid fa-rotate mr-1"></i>Tải lại file</button><button type="button" onclick="addCreateUpdateTaskRow()" class="shrink-0 rounded-lg border border-indigo-200 px-3 py-2 text-xs font-bold text-indigo-700 hover:bg-indigo-50"><i class="fa-solid fa-plus mr-1"></i>Thêm task</button></div></div>
@@ -2344,25 +2345,54 @@
             document.getElementById('createUpdateReportModal')?.classList.add('hidden');
         }
 
-        function addCreateUpdateTaskRow(name = '', status = 'Doing') {
+        function addCreateUpdateTaskRow(name = '', status = 'remaining', detailType = 'review', detailValue = '') {
             const container = document.getElementById('createUpdateTaskRows');
             if (!container) return;
             const row = document.createElement('div');
-            row.className = 'grid grid-cols-[minmax(0,1fr)_minmax(110px,0.45fr)_auto] gap-2';
+            row.className = 'rounded-lg border border-slate-200 bg-white p-2 space-y-2';
+            const mainLine = document.createElement('div');
+            mainLine.className = 'grid grid-cols-[minmax(0,1fr)_130px_auto] gap-2';
             const nameInput = document.createElement('input');
             nameInput.type = 'text'; nameInput.maxLength = 180; nameInput.placeholder = 'Tên file testcase'; nameInput.value = name;
             nameInput.className = 'min-w-0 rounded-lg border border-slate-300 px-3 py-2 text-xs outline-none focus:ring-2 focus:ring-indigo-200';
             nameInput.setAttribute('aria-label', 'Tên file testcase');
-            const statusInput = document.createElement('input');
-            statusInput.type = 'text'; statusInput.maxLength = 80; statusInput.placeholder = 'Trạng thái'; statusInput.value = status;
-            statusInput.className = 'min-w-0 rounded-lg border border-slate-300 px-3 py-2 text-xs outline-none focus:ring-2 focus:ring-indigo-200';
+            const statusInput = document.createElement('select');
+            statusInput.className = 'min-w-0 rounded-lg border border-slate-300 bg-white px-2 py-2 text-xs outline-none focus:ring-2 focus:ring-indigo-200';
             statusInput.setAttribute('aria-label', 'Trạng thái task');
+            statusInput.innerHTML = '<option value="done">Done</option><option value="remaining">Remaining</option>';
+            statusInput.value = String(status).toLowerCase() === 'done' ? 'done' : 'remaining';
             const removeButton = document.createElement('button');
             removeButton.type = 'button'; removeButton.className = 'rounded-lg px-3 text-slate-400 hover:bg-rose-50 hover:text-rose-600';
             removeButton.title = 'Xóa task'; removeButton.setAttribute('aria-label', 'Xóa task');
             removeButton.innerHTML = '<i class="fa-solid fa-trash"></i>';
             removeButton.onclick = () => row.remove();
-            row.append(nameInput, statusInput, removeButton);
+            mainLine.append(nameInput, statusInput, removeButton);
+
+            const detailLine = document.createElement('div');
+            detailLine.className = 'grid grid-cols-[minmax(0,1fr)_minmax(100px,0.35fr)] gap-2';
+            const detailTypeInput = document.createElement('select');
+            detailTypeInput.className = 'min-w-0 rounded-lg border border-slate-300 bg-white px-3 py-2 text-xs outline-none focus:ring-2 focus:ring-indigo-200';
+            detailTypeInput.setAttribute('aria-label', 'Kiểu Remaining');
+            detailTypeInput.innerHTML = '<option value="review">Waiting for review round</option><option value="percent">Remaining %</option>';
+            detailTypeInput.value = detailType === 'percent' ? 'percent' : 'review';
+            const detailValueInput = document.createElement('input');
+            detailValueInput.type = 'number'; detailValueInput.value = detailValue;
+            detailValueInput.className = 'min-w-0 rounded-lg border border-slate-300 px-3 py-2 text-xs outline-none focus:ring-2 focus:ring-indigo-200';
+            detailValueInput.setAttribute('aria-label', 'Giá trị Remaining');
+            const updateDetailControls = () => {
+                detailLine.classList.toggle('hidden', statusInput.value === 'done');
+                if (detailTypeInput.value === 'percent') {
+                    detailValueInput.min = '0'; detailValueInput.max = '100'; detailValueInput.step = 'any'; detailValueInput.placeholder = '% (0–100)';
+                } else {
+                    detailValueInput.min = '1'; detailValueInput.removeAttribute('max'); detailValueInput.step = '1'; detailValueInput.placeholder = 'Số round';
+                }
+            };
+            statusInput.onchange = updateDetailControls;
+            detailTypeInput.onchange = updateDetailControls;
+            detailLine.append(detailTypeInput, detailValueInput);
+            updateDetailControls();
+
+            row.append(mainLine, detailLine);
             container.appendChild(row);
         }
 
@@ -2425,7 +2455,7 @@
                 if (!files.length) throw new Error('Folder testcase không có file Google Sheets nào.');
                 const rows = document.getElementById('createUpdateTaskRows');
                 rows.replaceChildren();
-                files.forEach(file => addCreateUpdateTaskRow(file.name, 'Doing'));
+                files.forEach(file => addCreateUpdateTaskRow(file.name, 'remaining'));
                 const folderLink = document.getElementById('createUpdateOpenFolderLink');
                 folderLink.href = result.folderUrl;
                 folderLink.textContent = 'Mở folder testcase';
@@ -2453,10 +2483,25 @@
                 return;
             }
             const tasks = Array.from(document.getElementById('createUpdateTaskRows')?.children || [])
-                .map(row => ({ name: row.querySelector('input[aria-label="Tên file testcase"]')?.value.trim() || '', status: row.querySelector('input[aria-label="Trạng thái task"]')?.value.trim() || '' }))
+                .map(row => ({
+                    name: row.querySelector('input[aria-label="Tên file testcase"]')?.value.trim() || '',
+                    status: row.querySelector('select[aria-label="Trạng thái task"]')?.value || 'remaining',
+                    detailType: row.querySelector('select[aria-label="Kiểu Remaining"]')?.value || 'review',
+                    detailValue: row.querySelector('input[aria-label="Giá trị Remaining"]')?.value.trim() || ''
+                }))
                 .filter(task => task.name);
             if (!tasks.length) {
                 showCustomAlert('Thiếu task', 'Vui lòng nhập ít nhất một tên file testcase.', true);
+                return;
+            }
+            const invalidRemaining = tasks.find(task => {
+                if (task.status !== 'remaining') return false;
+                if (task.detailValue === '') return true;
+                const value = Number(task.detailValue);
+                return !Number.isFinite(value) || (task.detailType === 'percent' ? value < 0 || value > 100 : !Number.isInteger(value) || value < 1);
+            });
+            if (invalidRemaining) {
+                showCustomAlert('Thiếu thông tin Remaining', `Nhập ${invalidRemaining.detailType === 'percent' ? 'phần trăm từ 0 đến 100' : 'số review round lớn hơn 0'} cho task “${invalidRemaining.name}”.`, true);
                 return;
             }
 
@@ -2483,9 +2528,21 @@
                 `- Scope: ${scopes.join(', ')}`,
                 `- Status: ${status}`
             ];
-            tasks.forEach(task => {
-                lines.push(`+ ${task.name}: ${task.status || status}`);
-            });
+            const doneTasks = tasks.filter(task => task.status === 'done');
+            const remainingTasks = tasks.filter(task => task.status === 'remaining');
+            if (doneTasks.length) {
+                lines.push('  * DONE:');
+                doneTasks.forEach(task => lines.push(`    + ${task.name}`));
+            }
+            if (remainingTasks.length) {
+                lines.push('  * REMAINING:');
+                remainingTasks.forEach(task => {
+                    const detail = task.detailType === 'percent'
+                        ? `Remaining ${task.detailValue}%`
+                        : `Waiting for review round ${task.detailValue}`;
+                    lines.push(`    + ${task.name}: ${detail}`);
+                });
+            }
             lines.push('————————————————————————————', '- QC: Dino, Py, Sugar, Nico, Ton, Kenz, Lily', 'QC sends the report today!');
             const reportText = lines.join('\n');
             const copied = await copyTextToClipboard(reportText);
