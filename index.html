@@ -1528,6 +1528,10 @@
             return summary.replace(/\[.*?\]/g, '').trim();
         }
 
+        function hasTicketTitle(summary) {
+            return typeof summary === 'string' && cleanTicketSummary(summary).trim().length > 0;
+        }
+
         document.addEventListener('DOMContentLoaded', () => {
             updateThemeToggleButton();
             updateAuthUI();
@@ -1751,6 +1755,7 @@
                 if (!selectedStatusSet.has(status)) return;
 
                 const summary = getColumnValue(row, ['Summary', 'Tóm tắt', 'Title']);
+                if (!hasTicketTitle(summary)) return;
                 const key = getColumnValue(row, ['Issue key', 'Issue Key', 'Key', 'Khóa sự cố']);
                 const priority = normalizePriority(getColumnValue(row, ['Priority', 'Độ ưu tiên']));
                 const assignee = getColumnValue(row, ['Assignee', 'Người được giao']) || 'Unassigned';
@@ -1869,6 +1874,7 @@
                 if (!selectedStatusSet.has(status)) return;
 
                 const summary = getColumnValue(row, ['Summary', 'Tóm tắt', 'Title']);
+                if (!hasTicketTitle(summary)) return;
                 const key = getColumnValue(row, ['Issue key', 'Issue Key', 'Key', 'Khóa sự cố']);
                 const priority = normalizePriority(getColumnValue(row, ['Priority', 'Độ ưu tiên']));
                 const tags = parseTagsFromSummary(summary);
@@ -1945,6 +1951,7 @@
                 if (!selectedStatusSet.has(status)) return; 
                 
                 const summary = getColumnValue(row, ['Summary', 'Tóm tắt', 'Title']);
+                if (!hasTicketTitle(summary)) return;
                 const tags = parseTagsFromSummary(summary);
                 const selectedTags = (tagMode === 'primary') ? [tags[0]] : tags;
                 
@@ -2770,7 +2777,8 @@
 
                 rawJiraData.forEach(row => {
                     const key = getColumnValue(row, ['Issue key', 'Issue Key', 'Key', 'Khóa sự cố']);
-                    if (!key) return;
+                    const summary = getColumnValue(row, ['Summary', 'Tóm tắt', 'Title']);
+                    if (!key || !hasTicketTitle(summary)) return;
                     totalFileTickets++;
 
                     const status = (getColumnValue(row, ['Status', 'Trạng thái']) || 'N/A').toString().trim();
@@ -2787,10 +2795,10 @@
                     totalSelectedTickets++;
 
                     const priority = normalizePriority(getColumnValue(row, ['Priority', 'Độ ưu tiên']));
-                    const tags = parseTagsFromSummary(getColumnValue(row, ['Summary', 'Tóm tắt', 'Title'])).map(t => t.toLowerCase());
+                    const tags = parseTagsFromSummary(summary).map(t => t.toLowerCase());
 
                     if (tags.includes('improvement')) summaryCounts['Improvement']++;
-                    else if (tags.includes('question')) summaryCounts['Question']++;
+                    else if (tags.some(tag => ['question', 'q&a', 'q & a'].includes(tag.trim()))) summaryCounts['Question']++;
                     else if (summaryCounts[priority] !== undefined) summaryCounts[priority]++;
                 });
 
@@ -2864,7 +2872,7 @@
                 reportLines.push('---------------------------------------------');
 
                 // B. [TICKETS]
-                const specialTagsList = ['improvement', 'question'];
+                const specialTagsList = ['improvement', 'question', 'q&a', 'q & a'];
                 const tagDataMap = {}; 
                 const tagOrder = [];
 
@@ -2873,6 +2881,7 @@
                     if (!selectedStatusSet.has(status)) return;
 
                     const summary = getColumnValue(row, ['Summary', 'Tóm tắt', 'Title']);
+                    if (!hasTicketTitle(summary)) return;
                     const key = getColumnValue(row, ['Issue key', 'Issue Key', 'Key', 'Khóa sự cố']) || '';
                     const priority = normalizePriority(getColumnValue(row, ['Priority', 'Độ ưu tiên']));
 
