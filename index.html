@@ -276,7 +276,7 @@
                             <div class="space-y-1.5">
                                 <label class="text-xs font-bold text-slate-700"><i class="fa-solid fa-cloud text-indigo-500 mr-1.5"></i>Workspace</label>
                                 <div class="relative" id="jiraSiteCombo">
-                                    <button type="button" id="jiraSiteToggle" onclick="toggleJiraCombo('site')" class="w-full h-10 flex items-center justify-between gap-2 bg-slate-50 border border-slate-300 rounded-xl px-3 text-xs text-slate-800 text-left disabled:opacity-60" disabled><span id="jiraSiteLabel" class="min-w-0 flex-1 truncate">Đang tải Jira Space...</span><i class="fa-solid fa-chevron-down text-slate-400"></i></button>
+                                    <button type="button" id="jiraSiteToggle" onclick="toggleJiraCombo('site')" class="w-full h-10 flex items-center justify-between gap-2 bg-slate-50 border border-slate-300 rounded-xl px-3 text-xs text-slate-800 text-left disabled:opacity-60" disabled><span id="jiraSiteLabel" class="min-w-0 flex-1 truncate">Đang tải Workspace...</span><i class="fa-solid fa-chevron-down text-slate-400"></i></button>
                                     <div id="jiraSitePanel" class="hidden absolute z-40 mt-1 w-full overflow-hidden rounded-xl border border-slate-200 bg-white shadow-xl">
                                         <input id="jiraSiteSearch" oninput="renderJiraComboOptions('site')" placeholder="Tìm Workspace..." class="h-9 w-full border-b border-slate-100 px-3 text-xs outline-none">
                                         <ul id="jiraSiteOptions" class="max-h-52 overflow-y-auto py-1"></ul>
@@ -1150,7 +1150,7 @@
             else localStorage.removeItem('jira_selected_site');
             const label = document.getElementById('jiraSiteLabel');
             const toggle = document.getElementById('jiraSiteToggle');
-            if (label) label.textContent = selectedJiraSite ? `${selectedJiraSite.name || 'Workspace'} · ${selectedJiraSite.url || ''}` : (jiraConnectedSites.length ? 'Chọn Workspace Jira...' : 'Chưa có Workspace được cấp quyền');
+            if (label) label.textContent = selectedJiraSite ? formatWorkspaceName(selectedJiraSite) : (jiraConnectedSites.length ? 'Chọn Workspace Jira...' : 'Chưa có Workspace được cấp quyền');
             if (toggle) toggle.disabled = jiraConnectedSites.length === 0;
             if (!selectedJiraSite) {
                 resetJiraSpaceSelection('Kết nối Jira để tải danh sách Workspace');
@@ -1165,6 +1165,14 @@
 
         function saveSelectedJiraSite() {
             if (selectedJiraSite) localStorage.setItem('jira_selected_site', String(selectedJiraSite.id));
+        }
+
+        function formatWorkspaceName(site) {
+            const rawUrl = String(site && (site.url || site.name) || '').trim();
+            let host = rawUrl;
+            try { host = new URL(/^https?:\/\//i.test(rawUrl) ? rawUrl : 'https://' + rawUrl).hostname; } catch (e) {}
+            const workspace = String(host || '').replace(/\.atlassian\.net$/i, '').split('.')[0] || String(site && site.name || 'Workspace');
+            return workspace.charAt(0).toUpperCase() + workspace.slice(1);
         }
 
         function requestJiraProxyJson(params, timeoutMs = 30000) {
@@ -1239,11 +1247,11 @@
             if (!list) return;
             const term = foldText(search ? search.value.trim() : '');
             const source = kind === 'site' ? jiraConnectedSites.map(site => ({
-                value: String(site.id), label: site.name || 'Jira Workspace', detail: site.url || ''
+                value: String(site.id), label: formatWorkspaceName(site), detail: site.url || ''
             })) : (kind === 'space' ? jiraSpaces.map(space => ({
-                value: String(space.id), label: space.name || 'Space', detail: `${space.projectCount || 0} projects`
+                value: String(space.id), label: space.name || 'Space', detail: space.key || ''
             })) : jiraProjects.map(project => ({
-                value: project.key, label: `${project.key} · ${project.name}`, detail: project.projectTypeKey || ''
+                value: String(project.id), label: project.name, detail: project.type || ''
             })));
             const rows = source.filter(row => !term || foldText(row.label + ' ' + row.detail).includes(term));
             list.replaceChildren();
@@ -1279,7 +1287,7 @@
             selectedJiraSite = nextSite;
             saveSelectedJiraSite();
             const label = document.getElementById('jiraSiteLabel');
-            if (label) label.textContent = `${selectedJiraSite.name || 'Workspace'} · ${selectedJiraSite.url || ''}`;
+            if (label) label.textContent = formatWorkspaceName(selectedJiraSite);
             closeJiraCombo('site');
             jiraSpacesLoadedForSite = '';
             resetJiraSpaceSelection('Đang tải Space...');
@@ -1300,11 +1308,11 @@
                 if (!selectedJiraSite || String(selectedJiraSite.id) !== requestedSiteId) return;
                 jiraSpaces = Array.isArray(data.spaces) ? data.spaces : [];
                 jiraSpacesLoadedForSite = requestedSiteId;
-                if (!jiraSpaces.length) throw new Error('Workspace này không có Space/project category mà bạn được quyền xem.');
+                if (!jiraSpaces.length) throw new Error('Workspace này không có Jira Space/project mà bạn được quyền xem.');
                 if (label) label.textContent = 'Chọn Space...';
                 if (toggle) toggle.disabled = false;
                 renderJiraComboOptions('space');
-                showToast('Đã tải Jira Space', `${jiraSpaces.length} Space trong ${selectedJiraSite.name || 'Workspace'}.`);
+                showToast('Đã tải Jira Space', `${jiraSpaces.length} Space trong ${formatWorkspaceName(selectedJiraSite)}.`);
             } catch (err) {
                 if (label) label.textContent = 'Không tải được Space';
                 showToast('Lỗi tải Space Jira', err.message || 'Không truy vấn được Jira project categories.', true);
@@ -1320,7 +1328,7 @@
             selectedJiraSpace = nextSpace;
             jiraProjectsLoadedForSpace = '';
             const label = document.getElementById('jiraSpaceLabel');
-            if (label) label.textContent = `${selectedJiraSpace.name} · ${selectedJiraSpace.projectCount || 0} projects`;
+            if (label) label.textContent = selectedJiraSpace.name;
             closeJiraCombo('space');
             resetJiraProjectSelection('Đang tải project...');
             await loadJiraProjects();
@@ -1336,7 +1344,7 @@
             if (toggle) toggle.disabled = true;
             if (label) label.innerHTML = '<i class="fa-solid fa-spinner fa-spin mr-2"></i>Đang tải project...';
             try {
-                const data = await requestJiraProxyJson({ action: 'projects', site: selectedJiraSite.id, categoryId: requestedSpaceId });
+                const data = await requestJiraProxyJson({ action: 'projects', site: selectedJiraSite.id, projectKey: selectedJiraSpace.key });
                 if (!selectedJiraSpace || String(selectedJiraSpace.id) !== requestedSpaceId) return;
                 jiraProjects = Array.isArray(data.projects) ? data.projects : [];
                 jiraProjectsLoadedForSpace = requestedSpaceId;
@@ -1344,7 +1352,7 @@
                 if (label) label.textContent = 'Chọn project...';
                 if (toggle) toggle.disabled = false;
                 renderJiraComboOptions('project');
-                showToast('Đã tải project', `${jiraProjects.length} project trong Space ${selectedJiraSpace.name}.`);
+                showToast('Đã tải project', `${jiraProjects.length} project/board trong Space ${selectedJiraSpace.name}.`);
             } catch (err) {
                 if (label) label.textContent = 'Không tải được project';
                 showToast('Lỗi tải project Jira', err.message || 'Không truy vấn được danh sách project.', true);
@@ -1353,10 +1361,11 @@
             }
         }
         async function selectJiraProject(projectKey) {
-            selectedJiraProject = jiraProjects.find(project => project.key === projectKey) || null;
+            selectedJiraProject = jiraProjects.find(project => String(project.id) === String(projectKey)) || null;
             if (!selectedJiraProject || !selectedJiraSite) return;
             const selectedSiteId = String(selectedJiraSite.id);
             const selectedSpaceId = selectedJiraSpace ? String(selectedJiraSpace.id) : '';
+            const selectedBoardId = String(selectedJiraProject.id);
             closeJiraCombo('project');
             selectedParentValue = null;
             selectedTargetParentValue = null;
@@ -1365,32 +1374,27 @@
             currentParentKey = null;
             const label = document.getElementById('jiraProjectLabel');
             const toggle = document.getElementById('jiraProjectToggle');
-            if (label) label.textContent = `${selectedJiraProject.key} · ${selectedJiraProject.name}`;
+            if (label) label.textContent = selectedJiraProject.name;
             if (toggle) toggle.disabled = true;
             updateReportLoadButton();
-            jiraBoardCtx = { domain: String(selectedJiraSite.url || '').replace(/\/$/, ''), projectKey: selectedJiraProject.key, boardId: '', siteParams: { site: selectedJiraSite.id }, projectName: selectedJiraProject.name };
-            document.getElementById('jiraBoardLabel').innerHTML = '<i class="fa-solid fa-spinner fa-spin mr-1"></i>Đang tải Epic và board...';
+            jiraBoardCtx = { domain: String(selectedJiraSite.url || '').replace(/\/+$/, ''), projectKey: selectedJiraSpace.key, boardId: selectedBoardId, siteParams: { site: selectedJiraSite.id }, projectName: selectedJiraProject.name };
+            document.getElementById('jiraBoardLabel').innerHTML = '<i class="fa-solid fa-spinner fa-spin mr-1"></i>Đang tải Epic trên board...';
             document.getElementById('jiraBoardLabel').removeAttribute('href');
             document.getElementById('jiraParentSection').classList.remove('hidden');
             document.getElementById('jiraTargetParentSection').classList.add('hidden');
             try {
-                const json = await jiraQuery(jiraBoardCtx.siteParams, `project = "${jiraBoardCtx.projectKey}" AND issuetype = Epic ORDER BY created DESC`);
-                if (!selectedJiraSite || String(selectedJiraSite.id) !== selectedSiteId || !selectedJiraSpace || String(selectedJiraSpace.id) !== selectedSpaceId || !selectedJiraProject || selectedJiraProject.key !== projectKey) return;
-                jiraBoardCtx.boardId = json.boardId || json.board && json.board.id || '';
-                jiraBoardCtx.projectName = selectedJiraProject.name || extractProjectName(json) || projectKey;
-                jiraParents = (json.issues || []).filter(issue => issue.key).map(issue => {
-                    const fields = issue.fields || {};
-                    return { key: issue.key, summary: fields.summary || '', status: fields.status ? fields.status.name : '' };
-                });
+                const json = await requestJiraProxyJson({ action: 'epics', site: selectedSiteId, boardId: selectedBoardId });
+                if (!selectedJiraSite || String(selectedJiraSite.id) !== selectedSiteId || !selectedJiraSpace || String(selectedJiraSpace.id) !== selectedSpaceId || !selectedJiraProject || String(selectedJiraProject.id) !== selectedBoardId) return;
+                jiraParents = (json.epics || []).filter(epic => epic.key).map(epic => ({ key: epic.key, summary: epic.summary || '', status: epic.status || '' }));
                 selectedParentValue = null;
                 selectedTargetParentValue = null;
                 jiraTargetParents = [];
                 renderParentSection();
                 updateReportLoadButton();
-                const link = jiraBoardCtx.boardId ? `${jiraBoardCtx.domain}/jira/software/c/projects/${encodeURIComponent(projectKey)}/boards/${jiraBoardCtx.boardId}` : '';
-                document.getElementById('jiraBoardLabel').textContent = link || `${projectKey} · chưa nhận được board ID`;
+                const link = jiraBoardCtx.boardId ? `${jiraBoardCtx.domain}/jira/software/c/projects/${encodeURIComponent(jiraBoardCtx.projectKey)}/boards/${jiraBoardCtx.boardId}` : '';
+                document.getElementById('jiraBoardLabel').textContent = link || `${jiraBoardCtx.projectName} · chưa nhận được board ID`;
                 if (link) document.getElementById('jiraBoardLabel').href = link;
-                showToast('Đã tải Epic', `${jiraParents.length} Epic trong project ${projectKey}.`);
+                showToast('Đã tải Epic', `${jiraParents.length} Epic trên board ${jiraBoardCtx.projectName}.`);
             } catch (err) {
                 document.getElementById('jiraBoardLabel').textContent = 'Không tải được Epic / board';
                 showToast('Lỗi tải Epic', err.message || 'Không truy vấn được Epic của project.', true);
