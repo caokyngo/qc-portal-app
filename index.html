@@ -1159,7 +1159,66 @@
             return workspace.charAt(0).toUpperCase() + workspace.slice(1);
         }
 
+        /* ===== Jira speed: cache localStorage + prefetch ticket ===== */
+        const JIRA_CACHE_PREFIX = 'jira_cache_v1:';
+        const JIRA_CACHE_TTL = { spaces: 600000, projects: 600000, epics: 180000 };
+        const jiraInflight = {};
+        let lastJiraCheckAt = 0;
+        let ticketPrefetch = null;
+
+        function jiraCacheKey(p) { return JIRA_CACHE_PREFIX + ((loggedInUser && loggedInUser.email) || 'anon') + ':' + [p.action, p.site || '', p.projectKey || '', p.boardId || ''].join('|'); }
+        function purgeJiraCache() { try { Object.keys(localStorage).filter(k => k.indexOf(JIRA_CACHE_PREFIX) === 0).forEach(k => localStorage.removeItem(k)); } catch (e) {} }
+
         function requestJiraProxyJson(params, timeoutMs = 30000) {
+            const ttl = JIRA_CACHE_TTL[params.action];
+            if (!ttl) return requestJiraProxyJsonRaw(params, timeoutMs);
+            const key = jiraCacheKey(params);
+            try {
+                const hit = JSON.parse(localStorage.getItem(key) || 'null');
+                if (hit && Date.now() - hit.t < ttl) return Promise.resolve(hit.d);
+            } catch (e) {}
+            if (jiraInflight[key]) return jiraInflight[key];
+            const pending = requestJiraProxyJsonRaw(params, timeoutMs).then(data => {
+                try { localStorage.setItem(key, JSON.stringify({ t: Date.now(), d: data })); } catch (e) {}
+                return data;
+            }).finally(() => { delete jiraInflight[key]; });
+            jiraInflight[key] = pending;
+            return pending;
+        }
+
+        // sites + spaces về chung 1 lần gọi Apps Script
+        function applyPrefetchedSpaces(data) {
+            if (!data || !Array.isArray(data.spaces) || !data.spaces.length || !selectedJiraSite) return;
+            const siteId = String(selectedJiraSite.id);
+            if (String(data.spacesSite) !== siteId || jiraSpacesLoadedForSite === siteId) return;
+            jiraSpaces = data.spaces;
+            jiraSpacesLoadedForSite = siteId;
+            try { localStorage.setItem(jiraCacheKey({ action: 'spaces', site: siteId }), JSON.stringify({ t: Date.now(), d: { success: true, spaces: data.spaces } })); } catch (e) {}
+            const label = document.getElementById('jiraSpaceLabel'), toggle = document.getElementById('jiraSpaceToggle');
+            if (label) label.textContent = 'Chọn Space...';
+            if (toggle) toggle.disabled = false;
+            renderJiraComboOptions('space');
+        }
+
+        // tải sẵn ticket ngay khi đã biết Epic + Target Task, bấm "Tải dữ liệu" là có ngay
+        function prefetchTickets(epicKey, parentKey) {
+            if (!jiraBoardCtx || !epicKey || !parentKey) return;
+            const key = epicKey + '|' + parentKey;
+            if (ticketPrefetch && ticketPrefetch.key === key && Date.now() - ticketPrefetch.t < 120000) return;
+            const entry = { key, t: Date.now(), promise: queryBoardTickets(epicKey, parentKey) };
+            ticketPrefetch = entry;
+            entry.promise.catch(() => { if (ticketPrefetch === entry) ticketPrefetch = null; });
+        }
+        function takeTicketPrefetch(epicKey, parentKey) {
+            const entry = ticketPrefetch;
+            ticketPrefetch = null;
+            if (entry && entry.key === epicKey + '|' + parentKey && Date.now() - entry.t < 120000) {
+                return entry.promise.catch(() => queryBoardTickets(epicKey, parentKey));
+            }
+            return queryBoardTickets(epicKey, parentKey);
+        }
+
+        function requestJiraProxyJsonRaw(params, timeoutMs = 30000) {
             return new Promise((resolve, reject) => {
                 requestJiraJsonp(params, data => {
                     if (!data) reject(new Error('Jira proxy không trả dữ liệu.'));
@@ -1427,6 +1486,7 @@
                 return;
             }
             const connectUrl = JIRA_PROXY_API_URL + (JIRA_PROXY_API_URL.includes('?') ? '&' : '?') + 'action=connect';
+            purgeJiraCache();
             localStorage.removeItem('jira_selected_site');
             selectedJiraSite = null;
             resetJiraSpaceSelection('Chọn Workspace sau khi kết nối');
@@ -1490,9 +1550,10 @@
             if (jiraConnectionPending) return;
 
             setJiraConnectionUI(jiraOAuthConnected, 'Đang kiểm tra kết nối Jira...');
-            requestJiraJsonp({ action: 'sites' }, data => {
+            requestJiraJsonp({ action: 'sites', withSpaces: '1', site: localStorage.getItem('jira_selected_site') || '' }, data => {
                 if (data && !data.error && Array.isArray(data.sites)) {
                     renderJiraSites(data.sites);
+                    applyPrefetchedSpaces(data);
                     const siteCount = data.sites.length;
                     const connected = siteCount > 0;
                     const message = connected
@@ -1525,6 +1586,7 @@
                     renderJiraSites([]);
                     localStorage.removeItem('jira_selected_site');
                     setJiraConnectionUI(false, 'Đã ngắt kết nối Jira khỏi portal');
+                    purgeJiraCache();
                     showToast('Đã ngắt kết nối Jira', 'Thông tin OAuth đã được xóa khỏi tài khoản portal này.');
                 } else {
                     setJiraConnectionUI(true, 'Không ngắt được kết nối Jira');
@@ -1560,7 +1622,7 @@
         
         function jiraQuery(siteParams, jql, timeoutMs = 30000, extraParams = {}) {
             return new Promise((resolve, reject) => {
-                requestJiraJsonp({ ...siteParams, ...extraParams, jql }, data => {
+                requestJiraJsonp({ skipBoard: '1', ...siteParams, ...extraParams, jql }, data => {
                     if (!data) reject(new Error('Google Script trả về dữ liệu rỗng!'));
                     else if (data.error) reject(new Error(String(data.error)));
                     else resolve(data);
@@ -1602,7 +1664,7 @@
             btn.disabled = true;
             btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Đang tải ticket...';
             try {
-                const { json, types, dropped } = await queryBoardTickets(selectedParentValue, selectedTargetParentValue);
+                const { json, types, dropped } = await takeTicketPrefetch(selectedParentValue, selectedTargetParentValue);
                 currentJiraDomain = jiraBoardCtx.domain;
                 const issues = json.issues || [];
                 if (!issues.length) {
@@ -1651,7 +1713,7 @@
                 if (parentKey) parts.push(parentField === 'parent' ? `parent = "${parentKey}"` : `"Epic Link" = "${parentKey}"`);
                 try {
                     const jql = parts.join(' AND ') + ' ORDER BY created DESC';
-                    const json = await jiraQuery(ctx.siteParams, jql);
+                    const json = await jiraQuery(ctx.siteParams, jql, 30000, types ? {} : { fields: 'summary,status,issuetype' });
                     return { json, types: currentTypes || [], dropped, jql, parentField };
                 } catch (err) {
                     const msg = String(err.message || '');
@@ -1696,6 +1758,7 @@
                 // Match both "Bug List" and "Bugs List", including punctuation/separators.
                 const defaultTarget = jiraTargetParents.find(item => /bugs?\s*[-_:]?\s*lists?/i.test(`${item.key} ${item.summary}`));
                 selectedTargetParentValue = defaultTarget ? defaultTarget.key : null;
+                if (selectedTargetParentValue) prefetchTickets(epicKey, selectedTargetParentValue);
                 renderTargetParentOptions();
                 if (!jiraTargetParents.length) {
                     document.getElementById('jiraTargetParentLabel').textContent = 'Epic này chưa có Parent/Target Task';
@@ -1729,6 +1792,7 @@
             selectedTargetParentValue = value;
             updateTargetParentLabel();
             updateReportLoadButton();
+            prefetchTickets(selectedParentValue, value);
         }
 
         function updateReportLoadButton() {
@@ -1988,6 +2052,7 @@
         function handleLogout() {
             google.accounts.id.disableAutoSelect();
             localStorage.removeItem('jira_google_user');
+            purgeJiraCache();
             updateAuthUI();
             showToast('Đăng xuất Google', 'Bạn đã đăng xuất Google khỏi portal. Kết nối Jira được lưu riêng trong Apps Script.');
         }
@@ -2050,7 +2115,7 @@
         });
 
         window.addEventListener('focus', () => {
-            if (loggedInUser && !jiraConnectionPending) checkJiraConnection();
+            if (loggedInUser && !jiraConnectionPending && Date.now() - lastJiraCheckAt > 60000) { lastJiraCheckAt = Date.now(); checkJiraConnection(); }
         });
 
         window.addEventListener('message', (event) => {
