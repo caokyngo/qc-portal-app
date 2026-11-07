@@ -464,7 +464,10 @@
                                 </h3>
                                 <div class="flex flex-wrap items-center gap-2">
                                 <button type="button" onclick="openCreateUpdateReportModal()" class="shrink-0 inline-flex justify-center items-center gap-2 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold rounded-lg shadow-sm hover:shadow-md transition-all">
-                                    <i class="fa-solid fa-file-circle-plus text-sm"></i> Tạo báo cáo Create/Update Testcase
+                                    <i class="fa-solid fa-file-circle-plus text-sm"></i> Tạo report testcase
+                                </button>
+                                <button type="button" id="btnRefreshJiraData" onclick="fetchJiraDataFromUrl(true)" class="shrink-0 inline-flex justify-center items-center gap-2 px-4 py-2 bg-sky-600 hover:bg-sky-700 text-white text-xs font-bold rounded-lg shadow-sm hover:shadow-md transition-all">
+                                    <i class="fa-solid fa-rotate text-sm"></i> Cập nhật
                                 </button>
                                 <button id="copyBtn" onclick="openTagSelectionModal()" class="shrink-0 inline-flex justify-center items-center gap-2 px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-lg shadow-sm hover:shadow-md transition-all">
                                     <i class="fa-solid fa-copy text-sm"></i> Xuất Báo Cáo
@@ -1651,7 +1654,7 @@
             return true;
         }
         
-        async function fetchJiraDataFromUrl() {
+        async function fetchJiraDataFromUrl(forceRefresh = false) {
             if (!loggedInUser) { showToast('Yêu cầu đăng nhập', 'Vui lòng Đăng nhập tài khoản Google trước khi tải dữ liệu!', true); return; }
             if (!jiraOAuthConnected) { showToast('Chưa kết nối Jira', 'Bật công tắc Jira và cấp quyền bằng tài khoản Atlassian, rồi tải lại dữ liệu.', true); return; }
             if (!jiraBoardCtx || !selectedParentValue || !selectedTargetParentValue) {
@@ -1661,13 +1664,34 @@
         
             const btn = document.getElementById('btnFetchJira');
             const origHtml = btn.innerHTML;
+            const refreshBtn = document.getElementById('btnRefreshJiraData');
+            const refreshOrigHtml = refreshBtn ? refreshBtn.innerHTML : '';
+            if (forceRefresh) {
+                if (typeof ticketPrefetch !== 'undefined') ticketPrefetch = null;
+                document.getElementById('malformedTagPopup')?.remove();
+                if (refreshBtn) {
+                    refreshBtn.disabled = true;
+                    refreshBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin text-sm"></i> Đang cập nhật...';
+                }
+            }
             btn.disabled = true;
             btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Đang tải ticket...';
             try {
-                const { json, types, dropped } = await takeTicketPrefetch(selectedParentValue, selectedTargetParentValue);
+                const queryPromise = forceRefresh || typeof takeTicketPrefetch !== 'function'
+                    ? queryBoardTickets(selectedParentValue, selectedTargetParentValue)
+                    : takeTicketPrefetch(selectedParentValue, selectedTargetParentValue);
+                const { json, types, dropped } = await queryPromise;
                 currentJiraDomain = jiraBoardCtx.domain;
                 const issues = json.issues || [];
                 if (!issues.length) {
+                    if (forceRefresh) {
+                        currentBoardId = jiraBoardCtx.boardId || json.boardId || null;
+                        currentProjectKey = jiraBoardCtx.projectKey;
+                        currentParentKey = selectedTargetParentValue;
+                        rawJiraData = [];
+                        buildDynamicStatusFilters();
+                        processData();
+                    }
                     showToast('Không tìm thấy ticket', `Không có Bug/Defect, Improvement hoặc Q&A thuộc ${selectedTargetParentValue}.`, true);
                     return;
                 }
@@ -1693,12 +1717,17 @@
                 document.getElementById('reportDashboard').classList.remove('hidden');
                 buildDynamicStatusFilters();
                 processData();
+                showMalformedTagTicketsPopup(rawJiraData);
                 showToast('Tải Thành Công', `Đã tải ${rawJiraData.length} ticket thuộc ${selectedTargetParentValue} (${types.join(', ')})` + (dropped.length ? `. Project không có loại: ${dropped.join(', ')}.` : '.'));
             } catch (err) {
                 showToast('Lỗi tải dữ liệu Jira', err.message || 'Không kết nối được Proxy.', true);
             } finally {
                 btn.disabled = !selectedTargetParentValue;
                 btn.innerHTML = origHtml;
+                if (refreshBtn) {
+                    refreshBtn.disabled = false;
+                    refreshBtn.innerHTML = refreshOrigHtml;
+                }
             }
         }
         
@@ -2088,7 +2117,79 @@
         }
 
         function hasTicketTitle(summary) {
-            return typeof summary === 'string' && cleanTicketSummary(summary).trim().length > 0;
+            return typeof summary === 'string' && cleanTicketSummary(summary).trim().length > 0 && parseTagsFromSummary(summary).length > 0 && !hasUnclosedTagWithText(summary);
+        }
+
+        function hasUnclosedTagWithText(summary) {
+            const text = String(summary || '');
+            const stack = [];
+            for (let i = 0; i < text.length; i++) {
+                if (text[i] === '[') stack.push(i);
+                else if (text[i] === ']' && stack.length) stack.pop();
+            }
+            return stack.some(index => text.slice(index + 1).trim().length > 0);
+        }
+
+        function showMalformedTagTicketsPopup(rows) {
+            const malformed = (rows || []).filter(row => {
+                const summary = getColumnValue(row, ['Summary', 'Tóm tắt', 'Title']);
+                return hasUnclosedTagWithText(summary);
+            });
+            if (!malformed.length || document.getElementById('malformedTagPopup')) return;
+
+            const overlay = document.createElement('div');
+            overlay.id = 'malformedTagPopup';
+            overlay.className = 'fixed inset-0 z-[120] flex items-center justify-center bg-slate-950/50 p-4';
+            const dialog = document.createElement('div');
+            dialog.className = 'w-full max-w-xl overflow-hidden rounded-2xl bg-white shadow-2xl';
+            const header = document.createElement('div');
+            header.className = 'flex items-start gap-3 border-b border-amber-100 bg-amber-50 px-5 py-4';
+            const icon = document.createElement('div');
+            icon.className = 'mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-amber-100 text-amber-700';
+            icon.innerHTML = '<i class="fa-solid fa-triangle-exclamation"></i>';
+            const heading = document.createElement('div');
+            heading.className = 'min-w-0 flex-1';
+            const title = document.createElement('h3');
+            title.className = 'text-sm font-bold text-slate-900';
+            title.textContent = 'Phát hiện ticket thiếu dấu ]';
+            const description = document.createElement('p');
+            description.className = 'mt-1 text-xs leading-5 text-slate-600';
+            description.textContent = 'Các ticket này chưa có tag hoàn chỉnh nên không được tính hoặc đưa vào report. Hãy kiểm tra Summary và thêm dấu ] sau tag.';
+            heading.append(title, description);
+            header.append(icon, heading);
+
+            const list = document.createElement('div');
+            list.className = 'max-h-72 space-y-2 overflow-y-auto p-4';
+            malformed.forEach(row => {
+                const key = getColumnValue(row, ['Issue key', 'Issue Key', 'Key', 'Khóa sự cố']) || 'Unknown issue';
+                const summary = getColumnValue(row, ['Summary', 'Tóm tắt', 'Title']) || '';
+                const item = document.createElement('div');
+                item.className = 'rounded-xl border border-slate-200 p-3';
+                const link = document.createElement('a');
+                link.className = 'text-sm font-bold text-indigo-700 hover:underline';
+                link.textContent = key;
+                link.href = currentJiraDomain ? `${currentJiraDomain}/browse/${encodeURIComponent(key)}` : '#';
+                link.target = '_blank';
+                link.rel = 'noopener noreferrer';
+                const summaryText = document.createElement('p');
+                summaryText.className = 'mt-1 text-xs text-slate-600';
+                summaryText.textContent = summary;
+                item.append(link, summaryText);
+                list.appendChild(item);
+            });
+
+            const footer = document.createElement('div');
+            footer.className = 'flex justify-end border-t border-slate-100 px-5 py-3';
+            const close = document.createElement('button');
+            close.type = 'button';
+            close.className = 'rounded-lg bg-indigo-600 px-4 py-2 text-xs font-bold text-white hover:bg-indigo-700';
+            close.textContent = 'Đã hiểu';
+            close.onclick = () => overlay.remove();
+            footer.appendChild(close);
+            dialog.append(header, list, footer);
+            overlay.appendChild(dialog);
+            overlay.addEventListener('click', event => { if (event.target === overlay) overlay.remove(); });
+            document.body.appendChild(overlay);
         }
 
         document.addEventListener('DOMContentLoaded', () => {
@@ -2148,9 +2249,9 @@
         }
 
         function parseTagsFromSummary(summaryText) {
-            if (!summaryText || typeof summaryText !== 'string') return ['Không có Tag'];
+            if (!summaryText || typeof summaryText !== 'string') return [];
             const matches = summaryText.match(/\[(.*?)\]/g);
-            if (!matches || matches.length === 0) return ['Không có Tag'];
+            if (!matches || matches.length === 0) return [];
             return matches.map(m => m.replace(/^\[|\]$/g, '').trim()).filter(t => t.length > 0);
         }
 
@@ -2520,7 +2621,9 @@
             container.innerHTML = '';
 
             if (foundTags.size === 0) {
-                container.innerHTML = '<div class="w-full text-center py-6 bg-slate-100 rounded-xl border border-slate-200"><i class="fa-solid fa-check-circle text-emerald-500 text-3xl mb-2"></i><p class="text-sm font-bold text-slate-700">Tất cả ticket đều đã Closed!</p><p class="text-xs text-slate-500 mt-1">Báo cáo sẽ được tạo với trạng thái 0 Ticket.</p></div>';
+                const taggedTicketExists = rawJiraData.some(row => hasTicketTitle(getColumnValue(row, ['Summary', 'Tóm tắt', 'Title'])) && selectedStatusSet.has((getColumnValue(row, ['Status', 'Trạng thái']) || 'N/A').toString().trim()));
+                const message = taggedTicketExists ? 'Không có tag nào trong các status đang chọn.' : 'Không có ticket hợp lệ có tag trong các status đang chọn.';
+                container.innerHTML = '<div class="w-full text-center py-6 bg-slate-100 rounded-xl border border-slate-200"><i class="fa-solid fa-circle-info text-indigo-500 text-3xl mb-2"></i><p class="text-sm font-bold text-slate-700">' + message + '</p><p class="text-xs text-slate-500 mt-1">Ticket không có tag hoàn chỉnh sẽ không được đưa vào report.</p></div>';
             } else {
                 Array.from(foundTags).sort().forEach(tag => {
                     const label = document.createElement('label');
