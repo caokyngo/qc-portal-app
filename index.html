@@ -2116,8 +2116,10 @@
             return summary.replace(/\[.*?\]/g, '').trim();
         }
 
+        const invalidTagSummaries = new Set();
+
         function hasTicketTitle(summary) {
-            return typeof summary === 'string' && cleanTicketSummary(summary).trim().length > 0 && parseTagsFromSummary(summary).length > 0 && !hasUnclosedTagWithText(summary);
+            return typeof summary === 'string' && cleanTicketSummary(summary).trim().length > 0 && parseTagsFromSummary(summary).length > 0 && !hasUnclosedTagWithText(summary) && !invalidTagSummaries.has(summary.trim().toLowerCase());
         }
 
         function hasUnclosedTagWithText(summary) {
@@ -2130,12 +2132,59 @@
             return stack.some(index => text.slice(index + 1).trim().length > 0);
         }
 
+        function normalizeTagForTypoCheck(tag) {
+            return String(tag || '').toLowerCase().replace(/[^a-z0-9]/g, '');
+        }
+
+        function tagEditDistanceAtMostOne(a, b) {
+            if (a === b) return false;
+            if (Math.abs(a.length - b.length) > 1) return false;
+            let i = 0, j = 0, edits = 0;
+            while (i < a.length && j < b.length) {
+                if (a[i] === b[j]) { i++; j++; continue; }
+                if (++edits > 1) return false;
+                if (a.length > b.length) i++;
+                else if (b.length > a.length) j++;
+                else { i++; j++; }
+            }
+            if (i < a.length || j < b.length) edits++;
+            return edits === 1;
+        }
+
         function showMalformedTagTicketsPopup(rows) {
-            const malformed = (rows || []).filter(row => {
-                const summary = getColumnValue(row, ['Summary', 'Tóm tắt', 'Title']);
-                return hasUnclosedTagWithText(summary);
+            invalidTagSummaries.clear();
+            const items = [];
+            const tagCounts = new Map();
+            const tagsByNormalized = new Map();
+            (rows || []).forEach(row => parseTagsFromSummary(getColumnValue(row, ['Summary', 'Tóm tắt', 'Title'])).forEach(tag => {
+                const normalized = normalizeTagForTypoCheck(tag);
+                if (normalized.length >= 6) {
+                    tagCounts.set(normalized, (tagCounts.get(normalized) || 0) + 1);
+                    if (!tagsByNormalized.has(normalized)) tagsByNormalized.set(normalized, tag);
+                }
+            }));
+            (rows || []).forEach(row => {
+                const summary = String(getColumnValue(row, ['Summary', 'Tóm tắt', 'Title']) || '');
+                const key = getColumnValue(row, ['Issue key', 'Issue Key', 'Key', 'Khóa sự cố']) || 'Unknown issue';
+                if (hasUnclosedTagWithText(summary)) {
+                    items.push({ row, summary, key, issue: 'Thiếu dấu ]', correction: 'Thêm dấu ] để đóng tag.' });
+                    return;
+                }
+                const tags = parseTagsFromSummary(summary);
+                for (const tag of tags) {
+                    const normalized = normalizeTagForTypoCheck(tag);
+                    if (normalized.length < 6 || (tagCounts.get(normalized) || 0) !== 1) continue;
+                    const candidates = [...tagCounts.keys()].filter(other => (tagCounts.get(other) || 0) >= 2 && tagEditDistanceAtMostOne(normalized, other));
+                    if (candidates.length === 1) {
+                        const canonical = tagsByNormalized.get(candidates[0]);
+                        items.push({ row, summary, key, issue: `Tag có thể bị typo: [${tag}]`, correction: `Có thể muốn dùng [${canonical}].` });
+                        break;
+                    }
+                }
             });
-            if (!malformed.length || document.getElementById('malformedTagPopup')) return;
+            const uniqueItems = [...new Map(items.map(item => [String(item.key) + '|' + item.summary, item])).values()];
+            uniqueItems.forEach(item => invalidTagSummaries.add(item.summary.trim().toLowerCase()));
+            if (!uniqueItems.length || document.getElementById('malformedTagPopup')) return;
 
             const overlay = document.createElement('div');
             overlay.id = 'malformedTagPopup';
@@ -2151,18 +2200,17 @@
             heading.className = 'min-w-0 flex-1';
             const title = document.createElement('h3');
             title.className = 'text-sm font-bold text-slate-900';
-            title.textContent = 'Phát hiện ticket thiếu dấu ]';
+            title.textContent = 'Phát hiện tag cần kiểm tra';
             const description = document.createElement('p');
             description.className = 'mt-1 text-xs leading-5 text-slate-600';
-            description.textContent = 'Các ticket này chưa có tag hoàn chỉnh nên không được tính hoặc đưa vào report. Hãy kiểm tra Summary và thêm dấu ] sau tag.';
+            description.textContent = 'Ticket thiếu dấu đóng tag hoặc có tag typo sẽ được bỏ khỏi report cho đến khi bạn sửa Summary.';
             heading.append(title, description);
             header.append(icon, heading);
 
             const list = document.createElement('div');
             list.className = 'max-h-72 space-y-2 overflow-y-auto p-4';
-            malformed.forEach(row => {
-                const key = getColumnValue(row, ['Issue key', 'Issue Key', 'Key', 'Khóa sự cố']) || 'Unknown issue';
-                const summary = getColumnValue(row, ['Summary', 'Tóm tắt', 'Title']) || '';
+            uniqueItems.forEach(entry => {
+                const { key, summary } = entry;
                 const item = document.createElement('div');
                 item.className = 'rounded-xl border border-slate-200 p-3';
                 const link = document.createElement('a');
@@ -2174,7 +2222,10 @@
                 const summaryText = document.createElement('p');
                 summaryText.className = 'mt-1 text-xs text-slate-600';
                 summaryText.textContent = summary;
-                item.append(link, summaryText);
+                const issueText = document.createElement('p');
+                issueText.className = 'mt-1 text-xs font-semibold text-amber-700';
+                issueText.textContent = `${entry.issue} ${entry.correction}`;
+                item.append(link, issueText, summaryText);
                 list.appendChild(item);
             });
 
