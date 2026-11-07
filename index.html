@@ -1107,6 +1107,8 @@
 
         function setJiraConnectionUI(connected, message) {
             jiraOAuthConnected = Boolean(connected);
+            const workspaceToggle = document.getElementById('jiraSiteToggle');
+            if (workspaceToggle) workspaceToggle.disabled = !jiraOAuthConnected || jiraConnectedSites.length === 0;
             const toggle = document.getElementById('jiraConnectionToggle');
             const label = document.getElementById('jiraToggleLabel');
             const statusEl = document.getElementById('jiraOAuthStatus');
@@ -1154,9 +1156,9 @@
             const siteToggle = document.getElementById('jiraSiteToggle');
             if (label) label.textContent = selectedJiraSite
                 ? formatWorkspaceName(selectedJiraSite)
-                : (jiraConnectedSites.length > 1 ? 'Không xác định được Workspace từ kết nối OAuth' : 'Chưa có Workspace được cấp quyền');
+                : (jiraConnectedSites.length ? 'Chọn Workspace Jira...' : 'Chưa có Workspace được cấp quyền');
             if (siteToggle) {
-                siteToggle.disabled = !jiraOAuthConnected || jiraConnectedSites.length === 0;
+                siteToggle.disabled = jiraConnectedSites.length === 0;
                 siteToggle.title = jiraConnectedSites.length > 1 ? 'Đổi Jira Workspace' : 'Workspace Jira đã kết nối';
                 siteToggle.setAttribute('aria-label', selectedJiraSite ? `Workspace Jira hiện tại: ${formatWorkspaceName(selectedJiraSite)}. Chọn để đổi site.` : 'Chọn Jira Workspace');
             }
