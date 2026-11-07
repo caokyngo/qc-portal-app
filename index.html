@@ -357,7 +357,10 @@
                                             </label>
                                         </div>
                                         <div class="relative group">
-                                            <input type="text" id="reportVersionGameInput" oninput="saveHeaderConfig()" class="block w-full h-[48px] px-3.5 pt-5 pb-1.5 text-sm text-slate-900 bg-slate-50/50 border border-slate-300 rounded-xl appearance-none focus:outline-none focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 peer transition-all shadow-sm" placeholder=" " />
+                                            <input type="text" id="reportVersionGameTextInput" oninput="syncVersionGameValue()" class="block w-full h-[48px] px-3.5 pr-12 pt-5 pb-1.5 text-sm text-slate-900 bg-slate-50/50 border border-slate-300 rounded-xl appearance-none focus:outline-none focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 peer transition-all shadow-sm" placeholder=" " aria-label="Version Game & Build" />
+                                            <span class="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" aria-hidden="true"><i class="fa-regular fa-calendar-days"></i></span>
+                                            <input type="date" id="reportVersionGameDateInput" onchange="syncVersionGameValue()" class="absolute right-2 top-1/2 z-20 h-8 w-8 -translate-y-1/2 cursor-pointer opacity-0" aria-label="Chọn ngày version game" title="Chọn ngày version game" />
+                                            <input type="hidden" id="reportVersionGameInput" />
                                             <label class="absolute text-xs font-bold text-slate-400 duration-300 transform -translate-y-3 scale-75 top-3.5 z-10 origin-[0] left-3.5 peer-focus:text-indigo-600 peer-placeholder-shown:scale-100 peer-placeholder-shown:translate-y-0 peer-placeholder-shown:font-medium peer-focus:scale-75 peer-focus:-translate-y-3 pointer-events-none">
                                                 Version Game & Build
                                             </label>
@@ -847,6 +850,29 @@
             if (envInput) envInput.value = envLines.length > 1 ? '- ' + envLines.join('\n- ') : (envLines[0] || '');
         }
 
+        function syncVersionGameValue(shouldSave = true) {
+            const version = document.getElementById('reportVersionGameTextInput')?.value.trim() || '';
+            const dateValue = document.getElementById('reportVersionGameDateInput')?.value || '';
+            let formattedDate = '';
+            if (dateValue) {
+                const [year, month, day] = dateValue.split('-');
+                formattedDate = ` (${day}/${month}/${year})`;
+            }
+            const combined = document.getElementById('reportVersionGameInput');
+            if (combined) combined.value = version + formattedDate;
+            if (shouldSave) saveHeaderConfig();
+        }
+
+        function setVersionGameValue(value) {
+            const raw = String(value || '').trim();
+            const match = raw.match(/^(.*?)\s*\((\d{1,2})\/(\d{1,2})\/(\d{4})\)\s*$/);
+            const textInput = document.getElementById('reportVersionGameTextInput');
+            const dateInput = document.getElementById('reportVersionGameDateInput');
+            if (textInput) textInput.value = match ? match[1].trim() : raw;
+            if (dateInput) dateInput.value = match ? `${match[4]}-${String(match[3]).padStart(2, '0')}-${String(match[2]).padStart(2, '0')}` : '';
+            syncVersionGameValue(false);
+        }
+
         function toggleLinkInputs() {
             const linkConfigs = [
                 { cb: 'cbIframe', field: 'fieldIframe' },
@@ -907,7 +933,7 @@
             try {
                 const config = JSON.parse(saved);
                 if (config.gameName !== undefined && document.getElementById('reportGameNameInput')) document.getElementById('reportGameNameInput').value = config.gameName;
-                if (config.versionGame !== undefined && document.getElementById('reportVersionGameInput')) document.getElementById('reportVersionGameInput').value = config.versionGame;
+                if (config.versionGame !== undefined) setVersionGameValue(config.versionGame);
                 if (config.versionApp !== undefined && document.getElementById('reportVersionAppInput')) document.getElementById('reportVersionAppInput').value = config.versionApp;
                 if (config.testingStatus && document.getElementById('reportTestingStatusInput')) document.getElementById('reportTestingStatusInput').value = config.testingStatus;
                 if (config.env !== undefined && document.getElementById('reportEnvInput')) document.getElementById('reportEnvInput').value = config.env;
@@ -959,7 +985,7 @@
 
                 const verGameMatch = text.match(/Version game:\s*(.*)/i);
                 if (verGameMatch) {
-                    if (document.getElementById('reportVersionGameInput')) document.getElementById('reportVersionGameInput').value = verGameMatch[1].trim();
+                    setVersionGameValue(verGameMatch[1].trim());
                     filledCount++;
                 }
 
