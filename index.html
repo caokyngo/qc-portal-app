@@ -1383,6 +1383,7 @@
             if (selectedJiraSpace && String(selectedJiraSpace.id) === String(nextSpace.id)) { closeJiraCombo('space'); return; }
             selectedJiraSpace = nextSpace;
             jiraProjectsLoadedForSpace = '';
+            if (isEnotionWorkspace()) applyProjectName(selectedJiraSpace.name || selectedJiraSpace.key);
             const label = document.getElementById('jiraSpaceLabel');
             if (label) label.textContent = selectedJiraSpace.name;
             closeJiraCombo('space');
@@ -1711,7 +1712,7 @@
                 currentBoardId = jiraBoardCtx.boardId || json.boardId || null;
                 currentProjectKey = jiraBoardCtx.projectKey;
                 currentParentKey = selectedTargetParentValue || selectedParentValue;
-                applyProjectName(jiraBoardCtx.projectName);
+                applyProjectName(isEnotionWorkspace() && selectedJiraSpace ? (selectedJiraSpace.name || selectedJiraSpace.key) : jiraBoardCtx.projectName);
                 rawJiraData = issues.map(item => {
                     const fields = item.fields || {};
                     return {
