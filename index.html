@@ -304,8 +304,8 @@
                             </div>
                         </div>
                         <div id="jiraParentSection" class="hidden space-y-2 border-t border-slate-100 pt-4">
-                            <div class="grid grid-cols-1 md:grid-cols-2 gap-3 items-end">
-                                <div class="space-y-1.5">
+                            <div id="jiraParentFilterGrid" class="grid grid-cols-1 md:grid-cols-2 gap-3 items-end">
+                                <div id="jiraEpicFilter" class="space-y-1.5">
                                     <div class="flex items-center justify-between gap-2"><label class="text-xs font-bold text-slate-700"><i class="fa-solid fa-sitemap text-indigo-500 mr-1.5"></i>Epic (Game)</label><span id="jiraParentCount" class="rounded-full bg-indigo-50 px-2 py-0.5 text-[10px] text-indigo-700"></span></div>
                                     <div class="relative" id="jiraParentCombo">
                                         <button type="button" id="jiraParentToggle" onclick="toggleParentDropdown()" aria-haspopup="listbox" aria-expanded="false" class="w-full h-10 flex items-center justify-between gap-2 bg-slate-50 border border-slate-300 rounded-xl px-3 text-xs text-slate-800 text-left disabled:opacity-70"><span id="jiraParentLabel" class="min-w-0 flex-1 truncate">Chọn Epic...</span><i class="fa-solid fa-chevron-down text-slate-400"></i></button>
@@ -1139,6 +1139,7 @@
                 siteToggle.title = jiraConnectedSites.length > 1 ? 'Đổi Jira Workspace' : 'Workspace Jira đã kết nối';
                 siteToggle.setAttribute('aria-label', selectedJiraSite ? `Workspace Jira hiện tại: ${formatWorkspaceName(selectedJiraSite)}. Chọn để đổi site.` : 'Chọn Jira Workspace');
             }
+            syncJiraWorkspaceLayout();
             renderJiraComboOptions('site');
             if (!selectedJiraSite) {
                 resetJiraSpaceSelection('Kết nối Jira để tải danh sách Workspace');
@@ -1205,7 +1206,7 @@
 
         // tải sẵn ticket ngay khi đã biết Epic + Target Task, bấm "Tải dữ liệu" là có ngay
         function prefetchTickets(epicKey, parentKey) {
-            if (!jiraBoardCtx || !epicKey || !parentKey) return;
+            if (!jiraBoardCtx || !epicKey || (!parentKey && !isEnotionWorkspace())) return;
             const key = epicKey + '|' + parentKey;
             if (ticketPrefetch && ticketPrefetch.key === key && Date.now() - ticketPrefetch.t < 120000) return;
             const entry = { key, t: Date.now(), promise: queryBoardTickets(epicKey, parentKey) };
@@ -1339,6 +1340,7 @@
             if (selectedJiraSite && String(selectedJiraSite.id) === String(nextSite.id)) { closeJiraCombo('site'); return; }
             selectedJiraSite = nextSite;
             saveSelectedJiraSite();
+            syncJiraWorkspaceLayout();
             const label = document.getElementById('jiraSiteLabel');
             if (label) label.textContent = formatWorkspaceName(selectedJiraSite);
             renderJiraComboOptions('site');
@@ -1622,6 +1624,17 @@
             }
             return { site: site.id };
         }
+
+        function isEnotionWorkspace() {
+            return !!selectedJiraSite && formatWorkspaceName(selectedJiraSite).toLowerCase() === 'enotion';
+        }
+
+        function syncJiraWorkspaceLayout() {
+            const epicFilter = document.getElementById('jiraEpicFilter');
+            if (epicFilter) epicFilter.style.gridColumn = isEnotionWorkspace() ? '1 / -1' : '';
+            const targetSection = document.getElementById('jiraTargetParentSection');
+            if (targetSection && isEnotionWorkspace()) targetSection.classList.add('hidden');
+        }
         
         function jiraQuery(siteParams, jql, timeoutMs = 30000, extraParams = {}) {
             return new Promise((resolve, reject) => {
@@ -1657,8 +1670,8 @@
         async function fetchJiraDataFromUrl(forceRefresh = false) {
             if (!loggedInUser) { showToast('Yêu cầu đăng nhập', 'Vui lòng Đăng nhập tài khoản Google trước khi tải dữ liệu!', true); return; }
             if (!jiraOAuthConnected) { showToast('Chưa kết nối Jira', 'Bật công tắc Jira và cấp quyền bằng tài khoản Atlassian, rồi tải lại dữ liệu.', true); return; }
-            if (!jiraBoardCtx || !selectedParentValue || !selectedTargetParentValue) {
-                showToast('Chọn bộ lọc trước', 'Hãy chọn Jira Space, project, Epic và Parent / Target Task trước khi tải ticket.', true);
+            if (!jiraBoardCtx || !selectedParentValue || (!selectedTargetParentValue && !isEnotionWorkspace())) {
+                showToast('Chọn bộ lọc trước', isEnotionWorkspace() ? 'Hãy chọn Project và Epic trước khi tải ticket.' : 'Hãy chọn Jira Space, project, Epic và Parent / Target Task trước khi tải ticket.', true);
                 return;
             }
         
@@ -1687,17 +1700,17 @@
                     if (forceRefresh) {
                         currentBoardId = jiraBoardCtx.boardId || json.boardId || null;
                         currentProjectKey = jiraBoardCtx.projectKey;
-                        currentParentKey = selectedTargetParentValue;
+                        currentParentKey = selectedTargetParentValue || selectedParentValue;
                         rawJiraData = [];
                         buildDynamicStatusFilters();
                         processData();
                     }
-                    showToast('Không tìm thấy ticket', `Không có Bug/Defect, Improvement hoặc Q&A thuộc ${selectedTargetParentValue}.`, true);
+                    showToast('Không tìm thấy ticket', `Không có ticket phù hợp trong ${selectedTargetParentValue || selectedParentValue}.`, true);
                     return;
                 }
                 currentBoardId = jiraBoardCtx.boardId || json.boardId || null;
                 currentProjectKey = jiraBoardCtx.projectKey;
-                currentParentKey = selectedTargetParentValue;
+                currentParentKey = selectedTargetParentValue || selectedParentValue;
                 applyProjectName(jiraBoardCtx.projectName);
                 rawJiraData = issues.map(item => {
                     const fields = item.fields || {};
@@ -1711,18 +1724,18 @@
                 const projectName = jiraBoardCtx.projectName || jiraBoardCtx.projectKey;
                 const nameElement = document.getElementById('jiraProjectName');
                 nameElement.textContent = projectName;
-                nameElement.title = `${projectName} · ${selectedParentValue} · ${selectedTargetParentValue}`;
+                nameElement.title = `${projectName} · ${selectedParentValue}${selectedTargetParentValue ? ' · ' + selectedTargetParentValue : ''}`;
                 document.getElementById('fileInfo').classList.remove('hidden');
                 document.getElementById('jiraUrlSection').classList.add('hidden');
                 document.getElementById('reportDashboard').classList.remove('hidden');
                 buildDynamicStatusFilters();
                 processData();
                 showMalformedTagTicketsPopup(rawJiraData);
-                showToast('Tải Thành Công', `Đã tải ${rawJiraData.length} ticket thuộc ${selectedTargetParentValue} (${types.join(', ')})` + (dropped.length ? `. Project không có loại: ${dropped.join(', ')}.` : '.'));
+                showToast('Tải Thành Công', `Đã tải ${rawJiraData.length} ticket thuộc ${selectedTargetParentValue || selectedParentValue} (${types.join(', ')})` + (dropped.length ? `. Project không có loại: ${dropped.join(', ')}.` : '.'));
             } catch (err) {
                 showToast('Lỗi tải dữ liệu Jira', err.message || 'Không kết nối được Proxy.', true);
             } finally {
-                btn.disabled = !selectedTargetParentValue;
+                btn.disabled = !(jiraBoardCtx && selectedParentValue && (selectedTargetParentValue || isEnotionWorkspace()));
                 btn.innerHTML = origHtml;
                 if (refreshBtn) {
                     refreshBtn.disabled = false;
@@ -1766,6 +1779,15 @@
             jiraTargetParents = [];
             jiraTargetParentError = '';
             currentParentKey = null;
+            if (isEnotionWorkspace()) {
+                document.getElementById('jiraTargetParentSection').classList.add('hidden');
+                document.getElementById('jiraSelectedEpicLabel').textContent = value;
+                document.getElementById('jiraTargetParentCount').textContent = '';
+                updateParentLabel();
+                updateReportLoadButton();
+                prefetchTickets(value, null);
+                return;
+            }
             document.getElementById('jiraTargetParentSection').classList.remove('hidden');
             document.getElementById('jiraTargetParentList').innerHTML = '<li class="px-4 py-3 text-xs text-slate-500"><i class="fa-solid fa-spinner fa-spin mr-2"></i>Đang tải Parent thuộc Epic...</li>';
             document.getElementById('jiraTargetParentLabel').textContent = 'Đang tải Parent thuộc Epic...';
@@ -1810,12 +1832,12 @@
 
         async function queryBoardTickets(epicKey, parentKey) {
             const ctx = jiraBoardCtx;
-            const workspaceName = selectedJiraSite ? formatWorkspaceName(selectedJiraSite).toLowerCase() : '';
-            const jql = workspaceName === 'enotion'
+            const enotion = isEnotionWorkspace();
+            const jql = enotion
                 ? `project = ${ctx.projectKey} AND parent = ${epicKey} AND type IN (Bug, Improvement, Question) ORDER BY cf[10019] ASC`
                 : `project = ${ctx.projectKey} AND type IN ("Bug/Defect", Improvement, "Q&A") AND parent IN (${epicKey}, ${parentKey}) ORDER BY cf[10019] ASC`;
             const json = await jiraQuery(ctx.siteParams, jql);
-            return { json, types: DEFAULT_TICKET_TYPES, dropped: [] };
+            return { json, types: enotion ? ['Bug', 'Improvement', 'Question'] : DEFAULT_TICKET_TYPES, dropped: [] };
         }
 
         async function selectJiraTargetParent(value) {
@@ -1829,7 +1851,7 @@
 
         function updateReportLoadButton() {
             const button = document.getElementById('btnFetchJira');
-            if (button) button.disabled = !(jiraBoardCtx && selectedParentValue && selectedTargetParentValue) || parentLoading;
+            if (button) button.disabled = !(jiraBoardCtx && selectedParentValue && (selectedTargetParentValue || isEnotionWorkspace())) || parentLoading;
         }
         
         function changeJiraProject() {
