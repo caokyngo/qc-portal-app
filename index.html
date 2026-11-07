@@ -1812,7 +1812,7 @@
             const ctx = jiraBoardCtx;
             const workspaceName = selectedJiraSite ? formatWorkspaceName(selectedJiraSite).toLowerCase() : '';
             const jql = workspaceName === 'enotion'
-                ? `project = ${ctx.projectKey} AND parent = ${parentKey} AND type IN (Bug, Improvement, Question) ORDER BY cf[10019] ASC`
+                ? `project = ${ctx.projectKey} AND parent = ${epicKey} AND type IN (Bug, Improvement, Question) ORDER BY cf[10019] ASC`
                 : `project = ${ctx.projectKey} AND type IN ("Bug/Defect", Improvement, "Q&A") AND parent IN (${epicKey}, ${parentKey}) ORDER BY cf[10019] ASC`;
             const json = await jiraQuery(ctx.siteParams, jql);
             return { json, types: DEFAULT_TICKET_TYPES, dropped: [] };
