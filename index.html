@@ -218,8 +218,8 @@
             <div class="app-header-actions flex justify-end items-center gap-4">
                 <div id="fileInfo" class="app-header-project hidden flex items-center gap-3 bg-indigo-50 px-4 py-2 rounded-xl border border-indigo-100 text-xs shadow-sm">
                     <div class="app-header-project-copy"><span class="text-indigo-400 font-medium">Jira Project:</span> <strong id="jiraProjectName" class="app-header-project-name text-indigo-800 font-bold">---</strong></div>
-                    <button type="button" onclick="changeJiraProject()" title="Đổi link Jira" aria-label="Đổi link Jira" class="app-header-change-link px-2.5 py-1.5 bg-indigo-600 hover:bg-indigo-500 text-white text-[11px] font-bold rounded-lg transition flex items-center gap-1.5 shadow-sm">
-                        <i class="fa-solid fa-arrows-rotate" aria-hidden="true"></i><span class="app-header-change-link-label">Đổi link</span>
+                    <button type="button" onclick="changeJiraProject()" title="Đổi bộ lọc Jira" aria-label="Đổi bộ lọc Jira" class="app-header-change-link px-2.5 py-1.5 bg-indigo-600 hover:bg-indigo-500 text-white text-[11px] font-bold rounded-lg transition flex items-center gap-1.5 shadow-sm">
+                        <i class="fa-solid fa-arrows-rotate" aria-hidden="true"></i><span class="app-header-change-link-label">Đổi bộ lọc</span>
                     </button>
                 </div>
                 
@@ -258,7 +258,7 @@
                         </div>
                         <div class="min-w-0">
                             <h2 class="text-lg sm:text-xl font-bold text-slate-800">Tải dữ liệu báo cáo từ Jira</h2>
-                            <p class="mt-1 text-xs text-slate-500">Dán link board Jira. Hệ thống sẽ lấy danh sách Parent của board để bạn chọn.</p>
+                            <p class="mt-1 text-xs text-slate-500">Chọn Jira space, project, Epic và Target Task để lọc ticket.</p>
                         </div>
                         </div>
                         <div class="inline-flex self-start sm:self-auto items-center gap-2 rounded-full border border-slate-200 bg-white px-2.5 py-1.5 shadow-sm shrink-0">
@@ -272,64 +272,50 @@
                     </div>
 
                     <div class="space-y-4">
-                        <div>
-                            <div class="flex flex-wrap items-center justify-between gap-2 mb-2">
-                                <label for="jiraUrlInput" class="text-xs font-bold text-slate-700"><i class="fa-solid fa-link text-indigo-500 mr-1.5"></i>Link Jira <span class="text-rose-500">*</span></label>
-                                <button type="button" onclick="pasteReportFromClipboard()" class="inline-flex items-center gap-1.5 rounded-lg border border-indigo-100 bg-indigo-50 px-2.5 py-1.5 text-[11px] font-bold text-indigo-700 hover:bg-indigo-100 transition">
-                                    <i class="fa-solid fa-wand-magic-sparkles" aria-hidden="true"></i> Tự điền từ Clipboard
-                                </button>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                            <div class="space-y-1.5">
+                                <label class="text-xs font-bold text-slate-700"><i class="fa-solid fa-cloud text-indigo-500 mr-1.5"></i>Jira Space</label>
+                                <div class="relative" id="jiraSiteCombo">
+                                    <button type="button" id="jiraSiteToggle" onclick="toggleJiraCombo('site')" class="w-full h-10 flex items-center justify-between gap-2 bg-slate-50 border border-slate-300 rounded-xl px-3 text-xs text-slate-800 text-left disabled:opacity-60" disabled><span id="jiraSiteLabel" class="min-w-0 flex-1 truncate">Đang tải Jira Space...</span><i class="fa-solid fa-chevron-down text-slate-400"></i></button>
+                                    <div id="jiraSitePanel" class="hidden absolute z-40 mt-1 w-full overflow-hidden rounded-xl border border-slate-200 bg-white shadow-xl">
+                                        <input id="jiraSiteSearch" oninput="renderJiraComboOptions('site')" placeholder="Tìm Jira Space..." class="h-9 w-full border-b border-slate-100 px-3 text-xs outline-none">
+                                        <ul id="jiraSiteOptions" class="max-h-52 overflow-y-auto py-1"></ul>
+                                    </div>
+                                </div>
                             </div>
-                            <input type="url" id="jiraUrlInput" placeholder="https://vvortech.atlassian.net/jira/software/c/projects/GAM/boards/1794" class="w-full h-11 bg-slate-50 border border-slate-300 text-slate-800 text-sm font-medium rounded-xl px-3.5 focus:ring-2 focus:ring-indigo-500 focus:bg-white focus:border-indigo-400 outline-none transition">
-                            <p class="mt-1.5 text-[11px] text-slate-500">Hỗ trợ link board Scrum/Kanban. Mặc định lấy ticket loại Bug/Defect, Improvement, Q&amp;A.</p>
+                            <div class="space-y-1.5">
+                                <label class="text-xs font-bold text-slate-700"><i class="fa-solid fa-diagram-project text-indigo-500 mr-1.5"></i>Project</label>
+                                <div class="relative" id="jiraProjectCombo">
+                                    <button type="button" id="jiraProjectToggle" onclick="toggleJiraCombo('project')" class="w-full h-10 flex items-center justify-between gap-2 bg-slate-50 border border-slate-300 rounded-xl px-3 text-xs text-slate-800 text-left disabled:opacity-60" disabled><span id="jiraProjectLabel" class="min-w-0 flex-1 truncate">Chọn Jira Space trước</span><i class="fa-solid fa-chevron-down text-slate-400"></i></button>
+                                    <div id="jiraProjectPanel" class="hidden absolute z-40 mt-1 w-full overflow-hidden rounded-xl border border-slate-200 bg-white shadow-xl">
+                                        <input id="jiraProjectSearch" oninput="renderJiraComboOptions('project')" placeholder="Tìm project..." class="h-9 w-full border-b border-slate-100 px-3 text-xs outline-none">
+                                        <ul id="jiraProjectOptions" class="max-h-52 overflow-y-auto py-1"></ul>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
-
-                        <button type="button" id="btnFetchJira" onclick="fetchJiraDataFromUrl()" class="w-full h-11 bg-indigo-600 hover:bg-indigo-700 active:bg-indigo-800 text-white font-bold rounded-xl shadow-sm hover:shadow-md transition flex items-center justify-center gap-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2">
-                            <i class="fa-solid fa-cloud-arrow-down" aria-hidden="true"></i> Tải dữ liệu từ Jira
-                        </button>
                         <div id="jiraParentSection" class="hidden space-y-2 border-t border-slate-100 pt-4">
-                            <div class="flex items-center justify-between gap-2">
-                                <label class="text-xs font-bold text-slate-700"><i class="fa-solid fa-sitemap text-indigo-500 mr-1.5"></i>Epic (Game) <span id="jiraParentCount" class="ml-1 rounded-full bg-indigo-50 px-2 py-0.5 text-[10px] text-indigo-700"></span></label>
-                                <span id="jiraBoardLabel" class="text-[11px] text-slate-500"></span>
-                            </div>
-                            <div class="relative" id="jiraParentCombo">
-                                <button type="button" id="jiraParentToggle" onclick="toggleParentDropdown()" aria-haspopup="listbox" aria-expanded="false" class="w-full h-11 flex items-center justify-between gap-3 bg-slate-50 border border-slate-300 rounded-xl px-3.5 text-sm text-slate-800 text-left hover:border-indigo-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 disabled:opacity-70">
-                                    <span id="jiraParentLabel" class="min-w-0 flex-1 truncate">Chọn Epic...</span>
-                                    <i class="fa-solid fa-chevron-down text-slate-400 text-xs"></i>
-                                </button>
-                                <div id="jiraParentPanel" class="hidden absolute z-30 mt-2 w-full overflow-hidden rounded-xl border border-slate-200 bg-white shadow-xl">
-                                    <div class="border-b border-slate-100 p-2">
-                                        <div class="relative">
-                                            <i class="fa-solid fa-magnifying-glass absolute left-3 top-1/2 -translate-y-1/2 text-xs text-slate-400"></i>
-                                            <input id="jiraParentSearch" type="text" autocomplete="off" oninput="renderParentOptions()" onkeydown="handleParentSearchKey(event)" placeholder="Tìm theo key hoặc tên Epic..." class="h-9 w-full rounded-lg border border-slate-200 bg-slate-50 pl-8 pr-3 text-xs outline-none focus:ring-2 focus:ring-indigo-200">
-                                        </div>
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-3 items-end">
+                                <div class="space-y-1.5">
+                                    <div class="flex items-center justify-between gap-2"><label class="text-xs font-bold text-slate-700"><i class="fa-solid fa-sitemap text-indigo-500 mr-1.5"></i>Epic (Game)</label><span id="jiraParentCount" class="rounded-full bg-indigo-50 px-2 py-0.5 text-[10px] text-indigo-700"></span></div>
+                                    <div class="relative" id="jiraParentCombo">
+                                        <button type="button" id="jiraParentToggle" onclick="toggleParentDropdown()" aria-haspopup="listbox" aria-expanded="false" class="w-full h-10 flex items-center justify-between gap-2 bg-slate-50 border border-slate-300 rounded-xl px-3 text-xs text-slate-800 text-left disabled:opacity-70"><span id="jiraParentLabel" class="min-w-0 flex-1 truncate">Chọn Epic...</span><i class="fa-solid fa-chevron-down text-slate-400"></i></button>
+                                        <div id="jiraParentPanel" class="hidden absolute z-40 mt-1 w-full overflow-hidden rounded-xl border border-slate-200 bg-white shadow-xl"><input id="jiraParentSearch" oninput="renderParentOptions()" onkeydown="handleParentSearchKey(event)" placeholder="Tìm Epic..." class="h-9 w-full border-b border-slate-100 px-3 text-xs outline-none"><ul id="jiraParentList" role="listbox" class="max-h-56 overflow-y-auto py-1"></ul></div>
                                     </div>
-                                    <ul id="jiraParentList" role="listbox" class="max-h-64 overflow-y-auto py-1"></ul>
+                                </div>
+                                <div id="jiraTargetParentSection" class="hidden space-y-1.5">
+                                    <div class="flex items-center justify-between gap-2"><label class="text-xs font-bold text-slate-700"><i class="fa-solid fa-list-check text-indigo-500 mr-1.5"></i>Parent / Target Task</label><span id="jiraTargetParentCount" class="rounded-full bg-indigo-50 px-2 py-0.5 text-[10px] text-indigo-700"></span></div>
+                                    <div class="relative" id="jiraTargetParentCombo">
+                                        <button type="button" id="jiraTargetParentToggle" onclick="toggleTargetParentDropdown()" aria-haspopup="listbox" aria-expanded="false" class="w-full h-10 flex items-center justify-between gap-2 bg-slate-50 border border-slate-300 rounded-xl px-3 text-xs text-slate-800 text-left disabled:opacity-70"><span id="jiraTargetParentLabel" class="min-w-0 flex-1 truncate">Chọn Parent...</span><i class="fa-solid fa-chevron-down text-slate-400"></i></button>
+                                        <div id="jiraTargetParentPanel" class="hidden absolute z-40 mt-1 w-full overflow-hidden rounded-xl border border-slate-200 bg-white shadow-xl"><input id="jiraTargetParentSearch" oninput="renderTargetParentOptions()" onkeydown="handleTargetParentSearchKey(event)" placeholder="Tìm Parent / task..." class="h-9 w-full border-b border-slate-100 px-3 text-xs outline-none"><ul id="jiraTargetParentList" role="listbox" class="max-h-56 overflow-y-auto py-1"></ul></div>
+                                    </div>
                                 </div>
                             </div>
-                            <p class="text-[11px] text-slate-500">Chọn Epic (Game) trước, sau đó chọn Parent chứa danh sách ticket cần lấy.</p>
+                            <div class="flex items-center justify-between gap-2 text-[10px] text-slate-500"><a id="jiraBoardLabel" target="_blank" rel="noopener noreferrer" class="truncate hover:text-indigo-600 hover:underline">Chọn Jira Space và project.</a><span id="jiraSelectedEpicLabel"></span></div>
                         </div>
-                        <div id="jiraTargetParentSection" class="hidden space-y-2 border-t border-slate-100 pt-4">
-                            <div class="flex items-center justify-between gap-2">
-                                <label class="text-xs font-bold text-slate-700"><i class="fa-solid fa-list-check text-indigo-500 mr-1.5"></i>Target Task (QC Bugs List) <span id="jiraTargetParentCount" class="ml-1 rounded-full bg-indigo-50 px-2 py-0.5 text-[10px] text-indigo-700"></span></label>
-                                <span id="jiraSelectedEpicLabel" class="text-[11px] text-slate-500"></span>
-                            </div>
-                            <div class="relative" id="jiraTargetParentCombo">
-                                <button type="button" id="jiraTargetParentToggle" onclick="toggleTargetParentDropdown()" aria-haspopup="listbox" aria-expanded="false" class="w-full h-11 flex items-center justify-between gap-3 bg-slate-50 border border-slate-300 rounded-xl px-3.5 text-sm text-slate-800 text-left hover:border-indigo-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 disabled:opacity-70">
-                                    <span id="jiraTargetParentLabel" class="min-w-0 flex-1 truncate">Chọn Target Task...</span>
-                                    <i class="fa-solid fa-chevron-down text-slate-400 text-xs"></i>
-                                </button>
-                                <div id="jiraTargetParentPanel" class="hidden absolute z-30 mt-2 w-full overflow-hidden rounded-xl border border-slate-200 bg-white shadow-xl">
-                                    <div class="border-b border-slate-100 p-2">
-                                        <div class="relative">
-                                            <i class="fa-solid fa-magnifying-glass absolute left-3 top-1/2 -translate-y-1/2 text-xs text-slate-400"></i>
-                                            <input id="jiraTargetParentSearch" type="text" autocomplete="off" oninput="renderTargetParentOptions()" onkeydown="handleTargetParentSearchKey(event)" placeholder="Tìm theo key hoặc tên task..." class="h-9 w-full rounded-lg border border-slate-200 bg-slate-50 pl-8 pr-3 text-xs outline-none focus:ring-2 focus:ring-indigo-200">
-                                        </div>
-                                    </div>
-                                    <ul id="jiraTargetParentList" role="listbox" class="max-h-64 overflow-y-auto py-1"></ul>
-                                </div>
-                            </div>
-                            <p class="text-[11px] text-slate-500">Chọn target để tải ticket Bug/Defect, Improvement và Q&amp;A thuộc task đó.</p>
-                        </div>
+                        <button type="button" id="btnFetchJira" onclick="fetchJiraDataFromUrl()" class="w-full h-10 bg-indigo-600 hover:bg-indigo-700 active:bg-indigo-800 text-white font-bold rounded-xl shadow-sm hover:shadow-md transition flex items-center justify-center gap-2 text-xs focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2" disabled>
+                            <i class="fa-solid fa-cloud-arrow-down" aria-hidden="true"></i> Tải dữ liệu ticket
+                        </button>
                     </div>
                 </section>
 
@@ -765,6 +751,11 @@
         let jiraOAuthConnected = false;
         let jiraOAuthPopup = null;
         let jiraConnectedSites = [];
+        let selectedJiraSite = null;
+        let jiraProjects = [];
+        let selectedJiraProject = null;
+        let jiraProjectsLoadedForSite = '';
+        let jiraProjectsLoadingForSite = '';
         let jiraConnectionPending = false;
         let jiraOAuthMessageReceived = false;
         let jiraOAuthPopupCheckTimer = null;
@@ -1131,40 +1122,216 @@
                     ? 'h-2.5 w-2.5 rounded-full bg-emerald-500'
                     : (jiraConnectionPending ? 'h-2.5 w-2.5 rounded-full bg-indigo-500 animate-pulse' : 'h-2.5 w-2.5 rounded-full bg-slate-300');
             }
+            if (jiraOAuthConnected && selectedJiraSite && jiraProjectsLoadedForSite !== String(selectedJiraSite.id) && jiraProjectsLoadingForSite !== String(selectedJiraSite.id)) {
+                resetJiraProjectSelection('Đang tải project...');
+                loadJiraProjects();
+            }
         }
 
         function renderJiraSites(sites) {
             jiraConnectedSites = Array.isArray(sites) ? sites : [];
-            const panel = document.getElementById('jiraConnectedSitesPanel');
-            const select = document.getElementById('jiraSiteSelect');
-            const help = document.getElementById('jiraSitesHelp');
-            if (!panel || !select) return;
-
             const previouslySelected = localStorage.getItem('jira_selected_site') || '';
-            select.innerHTML = '<option value="">Tự nhận diện site theo link Jira</option>';
-            jiraConnectedSites.forEach(site => {
-                const option = document.createElement('option');
-                option.value = String(site.id || '');
-                option.textContent = `${site.name || 'Jira site'} — ${site.url || ''}`;
-                option.dataset.url = site.url || '';
-                select.appendChild(option);
-            });
-            const hasSavedSite = jiraConnectedSites.some(site => String(site.id) === previouslySelected);
-            select.value = hasSavedSite ? previouslySelected : '';
-            if (!hasSavedSite) localStorage.removeItem('jira_selected_site');
-            panel.classList.toggle('hidden', jiraConnectedSites.length === 0);
-            if (help) {
-                help.textContent = jiraConnectedSites.length > 1
-                    ? `${jiraConnectedSites.length} site đã được cấp quyền. Chọn site cụ thể hoặc để portal tự nhận diện từ link.`
-                    : 'Link Jira cần thuộc site đã được cấp quyền.';
+            const oldSiteId = selectedJiraSite ? String(selectedJiraSite.id) : '';
+            selectedJiraSite = jiraConnectedSites.find(site => String(site.id) === previouslySelected) || jiraConnectedSites[0] || null;
+            if (selectedJiraSite) localStorage.setItem('jira_selected_site', String(selectedJiraSite.id));
+            else localStorage.removeItem('jira_selected_site');
+            const label = document.getElementById('jiraSiteLabel');
+            const toggle = document.getElementById('jiraSiteToggle');
+            if (label) label.textContent = selectedJiraSite ? `${selectedJiraSite.name || 'Jira Space'} · ${selectedJiraSite.url || ''}` : 'Chưa có Jira Space được cấp quyền';
+            if (toggle) toggle.disabled = !selectedJiraSite;
+            if (!selectedJiraSite) resetJiraProjectSelection('Kết nối Jira để tải danh sách space');
+            if (!selectedJiraSite) jiraProjectsLoadedForSite = '';
+            renderJiraComboOptions('site');
+            if (selectedJiraSite && (oldSiteId !== String(selectedJiraSite.id) || jiraProjectsLoadedForSite !== String(selectedJiraSite.id)) && jiraOAuthConnected) {
+                resetJiraProjectSelection('Đang tải project...');
+                loadJiraProjects();
             }
         }
 
         function saveSelectedJiraSite() {
-            const select = document.getElementById('jiraSiteSelect');
-            if (!select) return;
-            if (select.value) localStorage.setItem('jira_selected_site', select.value);
-            else localStorage.removeItem('jira_selected_site');
+            if (selectedJiraSite) localStorage.setItem('jira_selected_site', String(selectedJiraSite.id));
+        }
+
+        function resetJiraProjectSelection(message = 'Chọn Jira Space trước') {
+            jiraProjects = [];
+            selectedJiraProject = null;
+            jiraBoardCtx = null;
+            jiraParents = [];
+            jiraTargetParents = [];
+            selectedParentValue = null;
+            selectedTargetParentValue = null;
+            const projectLabel = document.getElementById('jiraProjectLabel');
+            const projectToggle = document.getElementById('jiraProjectToggle');
+            if (projectLabel) projectLabel.textContent = message;
+            if (projectToggle) projectToggle.disabled = true;
+            document.getElementById('jiraParentSection')?.classList.add('hidden');
+            document.getElementById('jiraTargetParentSection')?.classList.add('hidden');
+            const boardLabel = document.getElementById('jiraBoardLabel');
+            if (boardLabel) { boardLabel.textContent = message; boardLabel.removeAttribute('href'); }
+            updateReportLoadButton();
+            renderJiraComboOptions('project');
+        }
+
+        function closeJiraCombo(kind) {
+            document.getElementById(kind === 'site' ? 'jiraSitePanel' : 'jiraProjectPanel')?.classList.add('hidden');
+        }
+
+        function toggleJiraCombo(kind) {
+            const panel = document.getElementById(kind === 'site' ? 'jiraSitePanel' : 'jiraProjectPanel');
+            if (!panel) return;
+            const wasHidden = panel.classList.contains('hidden');
+            closeJiraCombo('site');
+            closeJiraCombo('project');
+            if (!wasHidden) return;
+            panel.classList.remove('hidden');
+            const search = document.getElementById(kind === 'site' ? 'jiraSiteSearch' : 'jiraProjectSearch');
+            if (search) { search.value = ''; renderJiraComboOptions(kind); search.focus(); }
+        }
+
+        function renderJiraComboOptions(kind) {
+            const isSite = kind === 'site';
+            const list = document.getElementById(isSite ? 'jiraSiteOptions' : 'jiraProjectOptions');
+            const search = document.getElementById(isSite ? 'jiraSiteSearch' : 'jiraProjectSearch');
+            if (!list) return;
+            const term = foldText(search ? search.value.trim() : '');
+            const source = isSite ? jiraConnectedSites.map(site => ({
+                value: String(site.id), label: site.name || 'Jira Space', detail: site.url || '', item: site
+            })) : jiraProjects.map(project => ({
+                value: project.key, label: `${project.key} · ${project.name}`, detail: '', item: project
+            }));
+            const rows = source.filter(row => !term || foldText(row.label + ' ' + row.detail).includes(term));
+            list.replaceChildren();
+            if (!rows.length) {
+                const empty = document.createElement('li');
+                empty.className = 'px-3 py-2.5 text-xs text-slate-400';
+                empty.textContent = isSite ? 'Không tìm thấy Jira Space' : (selectedJiraSite ? 'Không tìm thấy project có dữ liệu Epic' : 'Chọn Jira Space trước');
+                list.appendChild(empty);
+                return;
+            }
+            rows.forEach(row => {
+                const option = document.createElement('li');
+                option.className = 'cursor-pointer px-3 py-2.5 text-xs text-slate-700 hover:bg-indigo-50';
+                const title = document.createElement('div');
+                title.className = 'font-semibold';
+                title.textContent = row.label;
+                option.appendChild(title);
+                if (row.detail) {
+                    const detail = document.createElement('div');
+                    detail.className = 'mt-0.5 truncate text-[10px] text-slate-400';
+                    detail.textContent = row.detail;
+                    option.appendChild(detail);
+                }
+                option.onclick = () => isSite ? selectJiraSite(row.value) : selectJiraProject(row.value);
+                list.appendChild(option);
+            });
+        }
+
+        async function selectJiraSite(siteId) {
+            const nextSite = jiraConnectedSites.find(site => String(site.id) === String(siteId)) || null;
+            if (!nextSite) return;
+            if (selectedJiraSite && String(selectedJiraSite.id) === String(nextSite.id)) { closeJiraCombo('site'); return; }
+            selectedJiraSite = nextSite;
+            jiraProjectsLoadedForSite = '';
+            saveSelectedJiraSite();
+            const label = document.getElementById('jiraSiteLabel');
+            if (label) label.textContent = `${selectedJiraSite.name || 'Jira Space'} · ${selectedJiraSite.url || ''}`;
+            closeJiraCombo('site');
+            resetJiraProjectSelection('Đang tải project...');
+            await loadJiraProjects();
+        }
+
+        async function loadJiraProjects() {
+            if (!selectedJiraSite || !jiraOAuthConnected) return;
+            const requestedSiteId = String(selectedJiraSite.id);
+            if (jiraProjectsLoadingForSite === requestedSiteId || jiraProjectsLoadedForSite === requestedSiteId) return;
+            jiraProjectsLoadingForSite = requestedSiteId;
+            let lastPageSignature = '';
+            const toggle = document.getElementById('jiraProjectToggle');
+            const label = document.getElementById('jiraProjectLabel');
+            if (toggle) toggle.disabled = true;
+            if (label) label.innerHTML = '<i class="fa-solid fa-spinner fa-spin mr-2"></i>Đang tải project...';
+            try {
+                const projectsByKey = new Map();
+                let startAt = 0;
+                let total = Infinity;
+                let pages = 0;
+                while (startAt < total && pages < 20) {
+                    const json = await jiraQuery({ site: requestedSiteId }, 'ORDER BY project ASC', 30000, { startAt, maxResults: 100 });
+                    if (!selectedJiraSite || String(selectedJiraSite.id) !== requestedSiteId) return;
+                    const issues = json.issues || [];
+                    const signature = issues.map(issue => issue.key || '').join('|');
+                    if (pages && signature && signature === lastPageSignature) break;
+                    lastPageSignature = signature;
+                    issues.forEach(issue => {
+                        const project = issue.fields && issue.fields.project;
+                        if (project && project.key) projectsByKey.set(String(project.key), { key: String(project.key), name: project.name || String(project.key) });
+                    });
+                    if (Array.isArray(json.projects)) json.projects.forEach(project => {
+                        if (project && project.key) projectsByKey.set(String(project.key), { key: String(project.key), name: project.name || String(project.key) });
+                    });
+                    total = Number(json.total || (issues.length < 100 ? startAt + issues.length : Infinity));
+                    if (!issues.length) break;
+                    startAt += issues.length;
+                    pages++;
+                }
+                jiraProjects = Array.from(projectsByKey.values()).sort((a, b) => a.key.localeCompare(b.key));
+                if (!jiraProjects.length) throw new Error('Không lấy được danh sách project từ dữ liệu Jira có quyền truy cập.');
+                jiraProjectsLoadedForSite = requestedSiteId;
+                if (label) label.textContent = 'Chọn project...';
+                if (toggle) toggle.disabled = false;
+                renderJiraComboOptions('project');
+                showToast('Đã tải project', `Tìm thấy ${jiraProjects.length} project trong ${selectedJiraSite.name || 'Jira Space'}.`);
+            } catch (err) {
+                if (label) label.textContent = 'Không tải được project';
+                showToast('Lỗi tải project Jira', err.message || 'Không truy vấn được dữ liệu project.', true);
+            } finally {
+                if (jiraProjectsLoadingForSite === requestedSiteId) jiraProjectsLoadingForSite = '';
+            }
+        }
+
+        async function selectJiraProject(projectKey) {
+            selectedJiraProject = jiraProjects.find(project => project.key === projectKey) || null;
+            if (!selectedJiraProject || !selectedJiraSite) return;
+            closeJiraCombo('project');
+            selectedParentValue = null;
+            selectedTargetParentValue = null;
+            jiraParents = [];
+            jiraTargetParents = [];
+            currentParentKey = null;
+            const label = document.getElementById('jiraProjectLabel');
+            const toggle = document.getElementById('jiraProjectToggle');
+            if (label) label.textContent = `${selectedJiraProject.key} · ${selectedJiraProject.name}`;
+            if (toggle) toggle.disabled = true;
+            updateReportLoadButton();
+            jiraBoardCtx = { domain: String(selectedJiraSite.url || '').replace(/\/$/, ''), projectKey: selectedJiraProject.key, boardId: '', siteParams: { site: selectedJiraSite.id }, projectName: selectedJiraProject.name };
+            document.getElementById('jiraBoardLabel').innerHTML = '<i class="fa-solid fa-spinner fa-spin mr-1"></i>Đang tải Epic và board...';
+            document.getElementById('jiraBoardLabel').removeAttribute('href');
+            document.getElementById('jiraParentSection').classList.remove('hidden');
+            document.getElementById('jiraTargetParentSection').classList.add('hidden');
+            try {
+                const json = await jiraQuery(jiraBoardCtx.siteParams, `project = "${jiraBoardCtx.projectKey}" AND issuetype = Epic ORDER BY created DESC`);
+                if (selectedJiraProject.key !== projectKey) return;
+                jiraBoardCtx.boardId = json.boardId || json.board && json.board.id || '';
+                jiraBoardCtx.projectName = selectedJiraProject.name || extractProjectName(json) || projectKey;
+                jiraParents = (json.issues || []).filter(issue => issue.key).map(issue => {
+                    const fields = issue.fields || {};
+                    return { key: issue.key, summary: fields.summary || '', status: fields.status ? fields.status.name : '' };
+                });
+                selectedParentValue = null;
+                selectedTargetParentValue = null;
+                jiraTargetParents = [];
+                renderParentSection();
+                updateReportLoadButton();
+                const link = jiraBoardCtx.boardId ? `${jiraBoardCtx.domain}/jira/software/c/projects/${encodeURIComponent(projectKey)}/boards/${jiraBoardCtx.boardId}` : '';
+                document.getElementById('jiraBoardLabel').textContent = link || `${projectKey} · chưa nhận được board ID`;
+                if (link) document.getElementById('jiraBoardLabel').href = link;
+                showToast('Đã tải Epic', `${jiraParents.length} Epic trong project ${projectKey}.`);
+            } catch (err) {
+                document.getElementById('jiraBoardLabel').textContent = 'Không tải được Epic / board';
+                showToast('Lỗi tải Epic', err.message || 'Không truy vấn được Epic của project.', true);
+            } finally {
+                if (toggle) toggle.disabled = false;
+            }
         }
 
         function requestJiraJsonp(params, onSuccess, onError, timeoutMs = 15000) {
@@ -1318,29 +1485,18 @@
         let targetParentLoadToken = 0;
         let parentLoading = false;
         
-        function parseJiraBoardUrl(urlStr) {
-            try {
-                const url = new URL(urlStr);
-                const m = url.pathname.match(/\/projects\/([^\/]+)\/boards\/(\d+)/i);
-                const projectKey = m ? decodeURIComponent(m[1]).toUpperCase() : '';
-                const boardId = m ? m[2] : (url.searchParams.get('rapidView') || '');
-                return projectKey ? { domain: url.origin, projectKey, boardId } : null;
-            } catch (e) { return null; }
-        }
-        
         function getJiraSiteParams(domain) {
-            const select = document.getElementById('jiraSiteSelect');
-            const siteId = select ? select.value : '';
-            const site = siteId ? jiraConnectedSites.find(s => String(s.id) === siteId) : null;
-            if (site && String(site.url || '').replace(/\/+$/, '').toLowerCase() !== domain.toLowerCase()) {
+            const site = selectedJiraSite;
+            if (!site) throw new Error('Chọn Jira Space trước khi tải dữ liệu.');
+            if (domain && String(site.url || '').replace(/\/+$/, '').toLowerCase() !== domain.toLowerCase()) {
                 throw new Error('Link Jira không thuộc site bạn đã chọn.');
             }
-            return site ? { site: site.id } : { domain };
+            return { site: site.id };
         }
         
-        function jiraQuery(siteParams, jql, timeoutMs = 30000) {
+        function jiraQuery(siteParams, jql, timeoutMs = 30000, extraParams = {}) {
             return new Promise((resolve, reject) => {
-                requestJiraJsonp({ ...siteParams, jql }, data => {
+                requestJiraJsonp({ ...siteParams, ...extraParams, jql }, data => {
                     if (!data) reject(new Error('Google Script trả về dữ liệu rỗng!'));
                     else if (data.error) reject(new Error(String(data.error)));
                     else resolve(data);
@@ -1371,37 +1527,48 @@
         
         async function fetchJiraDataFromUrl() {
             if (!loggedInUser) { showToast('Yêu cầu đăng nhập', 'Vui lòng Đăng nhập tài khoản Google trước khi tải dữ liệu!', true); return; }
-            const rawUrl = document.getElementById('jiraUrlInput').value.trim();
-            if (!rawUrl) { showToast('Cảnh báo', 'Vui lòng dán đường link board Jira!', true); return; }
-            const board = parseJiraBoardUrl(rawUrl);
-            if (!board) { showToast('Lỗi Link Jira', 'Hãy dán link board, ví dụ: https://xxx.atlassian.net/jira/software/c/projects/GAM/boards/1794', true); return; }
             if (!jiraOAuthConnected) { showToast('Chưa kết nối Jira', 'Bật công tắc Jira và cấp quyền bằng tài khoản Atlassian, rồi tải lại dữ liệu.', true); return; }
+            if (!jiraBoardCtx || !selectedParentValue || !selectedTargetParentValue) {
+                showToast('Chọn bộ lọc trước', 'Hãy chọn Jira Space, project, Epic và Parent / Target Task trước khi tải ticket.', true);
+                return;
+            }
         
             const btn = document.getElementById('btnFetchJira');
             const origHtml = btn.innerHTML;
             btn.disabled = true;
-            btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Đang tải danh sách parent...';
-            localStorage.setItem('jira_last_url', rawUrl);
+            btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Đang tải ticket...';
             try {
-                const siteParams = getJiraSiteParams(board.domain);
-                const json = await jiraQuery(siteParams, `project = "${board.projectKey}" AND issuetype = Epic ORDER BY created DESC`);
-                jiraBoardCtx = { ...board, siteParams, projectName: extractProjectName(json) };
-                jiraParents = (json.issues || []).filter(i => i.key).map(i => {
-                    const f = i.fields || {};
-                    return { key: i.key, summary: f.summary || '', status: f.status ? f.status.name : '' };
+                const { json, types, dropped } = await queryBoardTickets(selectedTargetParentValue);
+                const issues = json.issues || [];
+                if (!issues.length) { showToast('Không tìm thấy ticket', `Không có Bug/Defect, Improvement hoặc Q&A thuộc ${selectedTargetParentValue}.`, true); return; }
+                currentBoardId = jiraBoardCtx.boardId || json.boardId || null;
+                currentProjectKey = jiraBoardCtx.projectKey;
+                currentParentKey = selectedTargetParentValue;
+                currentJiraDomain = jiraBoardCtx.domain;
+                applyProjectName(jiraBoardCtx.projectName);
+                rawJiraData = issues.map(item => {
+                    const fields = item.fields || {};
+                    return {
+                        'Issue key': item.key || '', 'Summary': fields.summary || '',
+                        'Priority': fields.priority ? fields.priority.name : 'Unassigned',
+                        'Status': fields.status ? fields.status.name : 'N/A',
+                        'Assignee': fields.assignee ? fields.assignee.displayName : 'Unassigned'
+                    };
                 });
-                selectedParentValue = null;
-                selectedTargetParentValue = null;
-                jiraTargetParents = [];
-                document.getElementById('jiraTargetParentSection').classList.add('hidden');
-                const named = applyProjectName(jiraBoardCtx.projectName);
-                renderParentSection();
-                openParentDropdown();
-                showToast('Đã tải danh sách Epic', `${jiraParents.length} Epic từ project ${board.projectKey}. Chọn Epic để tải Target Task.` + (named ? '' : ' Chưa lấy được tên dự án, hãy nhập tay ở ID & Game Name.'), !named && jiraParents.length === 0);
+                const projectName = jiraBoardCtx.projectName || jiraBoardCtx.projectKey;
+                const nameElement = document.getElementById('jiraProjectName');
+                nameElement.textContent = projectName;
+                nameElement.title = `${projectName} · ${selectedParentValue} · ${selectedTargetParentValue}`;
+                document.getElementById('fileInfo').classList.remove('hidden');
+                document.getElementById('jiraUrlSection').classList.add('hidden');
+                document.getElementById('reportDashboard').classList.remove('hidden');
+                buildDynamicStatusFilters();
+                processData();
+                showToast('Tải Thành Công', `Đã tải ${rawJiraData.length} ticket thuộc ${selectedTargetParentValue} (${types.join(', ')})` + (dropped.length ? `. Project không có loại: ${dropped.join(', ')}.` : '.'));
             } catch (err) {
                 showToast('Lỗi tải dữ liệu Jira', err.message || 'Không kết nối được Proxy.', true);
             } finally {
-                btn.disabled = false;
+                btn.disabled = !selectedTargetParentValue;
                 btn.innerHTML = origHtml;
             }
         }
@@ -1445,6 +1612,7 @@
             document.getElementById('jiraTargetParentLabel').textContent = 'Đang tải Parent thuộc Epic...';
             document.getElementById('jiraSelectedEpicLabel').textContent = value;
             document.getElementById('jiraTargetParentCount').textContent = '';
+            updateReportLoadButton();
             const epicKey = value;
             const token = ++parentLoadToken;
             parentLoading = true;
@@ -1456,6 +1624,8 @@
                     const f = i.fields || {};
                     return { key: i.key, summary: f.summary || '', status: f.status ? f.status.name : '', issueType: f.issuetype ? f.issuetype.name : '' };
                 });
+                const defaultTarget = jiraTargetParents.find(item => /bug\s*lists?/i.test(`${item.key} ${item.summary}`));
+                selectedTargetParentValue = defaultTarget ? defaultTarget.key : null;
                 renderTargetParentOptions();
                 if (!jiraTargetParents.length) {
                     document.getElementById('jiraTargetParentLabel').textContent = 'Epic này chưa có Parent/Target Task';
@@ -1471,7 +1641,7 @@
                     parentLoading = false;
                     updateParentLabel();
                     updateTargetParentLabel();
-                    if (jiraTargetParents.length) openTargetParentDropdown();
+                    updateReportLoadButton();
                 }
             }
         }
@@ -1484,53 +1654,13 @@
             closeTargetParentDropdown();
             if (!jiraBoardCtx || parentLoading || !selectedParentValue) return;
             selectedTargetParentValue = value;
-            const targetKey = value;
-            const token = ++targetParentLoadToken;
-            parentLoading = true;
             updateTargetParentLabel();
-            try {
-                const { json, types, dropped } = await queryBoardTickets(targetKey);
-                if (token !== targetParentLoadToken) return;
-                const issues = json.issues || [];
-                if (!issues.length) { showToast('Không tìm thấy ticket', `Không có Bug/Defect, Improvement hoặc Q&A thuộc ${targetKey}.`, true); return; }
-        
-                currentBoardId = jiraBoardCtx.boardId || json.boardId || null;
-                currentProjectKey = jiraBoardCtx.projectKey;
-                currentParentKey = targetKey;
-                currentJiraDomain = jiraBoardCtx.domain;
-                if (!jiraBoardCtx.projectName) {
-                    jiraBoardCtx.projectName = extractProjectName(json);
-                    applyProjectName(jiraBoardCtx.projectName);
-                }
-        
-                rawJiraData = issues.map(item => {
-                    const f = item.fields || {};
-                    return {
-                        'Issue key': item.key || '', 'Summary': f.summary || '',
-                        'Priority': f.priority ? f.priority.name : 'Unassigned',
-                        'Status': f.status ? f.status.name : 'N/A',
-                        'Assignee': f.assignee ? f.assignee.displayName : 'Unassigned'
-                    };
-                });
-        
-                const label = jiraBoardCtx.projectName || jiraBoardCtx.projectKey;
-                const nameEl = document.getElementById('jiraProjectName');
-                nameEl.textContent = label;
-                nameEl.title = label + ' · ' + selectedParentValue + ' · ' + targetKey;
-                document.getElementById('fileInfo').classList.remove('hidden');
-                document.getElementById('jiraUrlSection').classList.add('hidden');
-                document.getElementById('reportDashboard').classList.remove('hidden');
-                buildDynamicStatusFilters();
-                processData();
-                showToast('Tải Thành Công', `Đã tải ${rawJiraData.length} ticket thuộc ${targetKey} (${types.join(', ')})` + (dropped.length ? `. Project không có loại: ${dropped.join(', ')}.` : '.'));
-            } catch (err) {
-                showToast('Lỗi tải ticket', err.message || 'Không kết nối được Proxy.', true);
-            } finally {
-                if (token === targetParentLoadToken) {
-                    parentLoading = false;
-                    updateTargetParentLabel();
-                }
-            }
+            updateReportLoadButton();
+        }
+
+        function updateReportLoadButton() {
+            const button = document.getElementById('btnFetchJira');
+            if (button) button.disabled = !(jiraBoardCtx && selectedParentValue && selectedTargetParentValue) || parentLoading;
         }
         
         function changeJiraProject() {
@@ -1557,6 +1687,7 @@
             document.getElementById('jiraParentSearch').value = '';
             updateParentLabel();
             renderParentOptions();
+            updateReportLoadButton();
         }
         
         function updateParentLabel() {
@@ -1720,6 +1851,10 @@
             if (hidden) openParentDropdown(); else closeParentDropdown();
         }
         document.addEventListener('click', e => {
+            const siteCombo = document.getElementById('jiraSiteCombo');
+            if (siteCombo && !siteCombo.contains(e.target)) closeJiraCombo('site');
+            const projectCombo = document.getElementById('jiraProjectCombo');
+            if (projectCombo && !projectCombo.contains(e.target)) closeJiraCombo('project');
             const combo = document.getElementById('jiraParentCombo');
             if (combo && !combo.contains(e.target)) closeParentDropdown();
             const targetCombo = document.getElementById('jiraTargetParentCombo');
@@ -1821,9 +1956,6 @@
             calculateMondaysLeft();
             loadHeaderConfig();
             
-            const savedJiraUrl = localStorage.getItem('jira_last_url') || '';
-            if (savedJiraUrl && document.getElementById('jiraUrlInput')) document.getElementById('jiraUrlInput').value = savedJiraUrl;
-
             initializeScopePicker();
 
             const savedSheetName = localStorage.getItem('jira_sheet_name');
@@ -3039,13 +3171,10 @@
                 const linkAppname = document.getElementById('reportLinkAppnameInput') ? document.getElementById('reportLinkAppnameInput').value.trim() : '';
                 
                 let generatedJiraLink = "";
-                if (currentParentKey && currentJiraDomain) {
+                if (currentProjectKey && currentJiraDomain && currentBoardId) {
+                    generatedJiraLink = `${currentJiraDomain}/jira/software/c/projects/${encodeURIComponent(currentProjectKey)}/boards/${currentBoardId}`;
+                } else if (currentParentKey && currentJiraDomain) {
                     generatedJiraLink = `${currentJiraDomain}/browse/${encodeURIComponent(currentParentKey)}`;
-                } else if (currentProjectKey && currentJiraDomain) {
-                    const boardIdForLink = currentBoardId || '[boardId]';
-                    generatedJiraLink = `${currentJiraDomain}/jira/software/projects/${currentProjectKey}/boards/${boardIdForLink}`;
-                } else {
-                    generatedJiraLink = document.getElementById("jiraUrlInput")?.value.trim() || "";
                 }
 
                 
