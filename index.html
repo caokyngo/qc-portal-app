@@ -258,7 +258,7 @@
                         </div>
                         <div class="min-w-0">
                             <h2 class="text-lg sm:text-xl font-bold text-slate-800">Tải dữ liệu báo cáo từ Jira</h2>
-                            <p class="mt-1 text-xs text-slate-500">Dán link project, list hoặc filter. Hãy kết nối Jira bằng tài khoản Atlassian của bạn để tải ticket.</p>
+                            <p class="mt-1 text-xs text-slate-500">Dán link board Jira. Hệ thống sẽ lấy danh sách Parent của board để bạn chọn.</p>
                         </div>
                         </div>
                         <div class="inline-flex self-start sm:self-auto items-center gap-2 rounded-full border border-slate-200 bg-white px-2.5 py-1.5 shadow-sm shrink-0">
@@ -279,13 +279,35 @@
                                     <i class="fa-solid fa-wand-magic-sparkles" aria-hidden="true"></i> Tự điền từ Clipboard
                                 </button>
                             </div>
-                            <input type="url" id="jiraUrlInput" placeholder="https://enotion.atlassian.net/jira/software/projects/PROJECT/list?jql=..." class="w-full h-11 bg-slate-50 border border-slate-300 text-slate-800 text-sm font-medium rounded-xl px-3.5 focus:ring-2 focus:ring-indigo-500 focus:bg-white focus:border-indigo-400 outline-none transition">
-                            <p class="mt-1.5 text-[11px] text-slate-500">Hỗ trợ link project, danh sách ticket và Jira Filter đã được chia sẻ với bạn.</p>
+                            <input type="url" id="jiraUrlInput" placeholder="https://vvortech.atlassian.net/jira/software/c/projects/GAM/boards/1794" class="w-full h-11 bg-slate-50 border border-slate-300 text-slate-800 text-sm font-medium rounded-xl px-3.5 focus:ring-2 focus:ring-indigo-500 focus:bg-white focus:border-indigo-400 outline-none transition">
+                            <p class="mt-1.5 text-[11px] text-slate-500">Hỗ trợ link board Scrum/Kanban. Mặc định lấy ticket loại Bug/Defect, Improvement, Q&amp;A.</p>
                         </div>
 
                         <button type="button" id="btnFetchJira" onclick="fetchJiraDataFromUrl()" class="w-full h-11 bg-indigo-600 hover:bg-indigo-700 active:bg-indigo-800 text-white font-bold rounded-xl shadow-sm hover:shadow-md transition flex items-center justify-center gap-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2">
                             <i class="fa-solid fa-cloud-arrow-down" aria-hidden="true"></i> Tải dữ liệu từ Jira
                         </button>
+                        <div id="jiraParentSection" class="hidden space-y-2 border-t border-slate-100 pt-4">
+                            <div class="flex items-center justify-between gap-2">
+                                <label class="text-xs font-bold text-slate-700"><i class="fa-solid fa-sitemap text-indigo-500 mr-1.5"></i>Parent của board <span id="jiraParentCount" class="ml-1 rounded-full bg-indigo-50 px-2 py-0.5 text-[10px] text-indigo-700"></span></label>
+                                <span id="jiraBoardLabel" class="text-[11px] text-slate-500"></span>
+                            </div>
+                            <div class="relative" id="jiraParentCombo">
+                                <button type="button" id="jiraParentToggle" onclick="toggleParentDropdown()" aria-haspopup="listbox" aria-expanded="false" class="w-full h-11 flex items-center justify-between gap-3 bg-slate-50 border border-slate-300 rounded-xl px-3.5 text-sm text-slate-800 text-left hover:border-indigo-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 disabled:opacity-70">
+                                    <span id="jiraParentLabel" class="min-w-0 flex-1 truncate">Chọn parent...</span>
+                                    <i class="fa-solid fa-chevron-down text-slate-400 text-xs"></i>
+                                </button>
+                                <div id="jiraParentPanel" class="hidden absolute z-30 mt-2 w-full overflow-hidden rounded-xl border border-slate-200 bg-white shadow-xl">
+                                    <div class="border-b border-slate-100 p-2">
+                                        <div class="relative">
+                                            <i class="fa-solid fa-magnifying-glass absolute left-3 top-1/2 -translate-y-1/2 text-xs text-slate-400"></i>
+                                            <input id="jiraParentSearch" type="text" autocomplete="off" oninput="renderParentOptions()" onkeydown="handleParentSearchKey(event)" placeholder="Tìm theo key hoặc tên parent..." class="h-9 w-full rounded-lg border border-slate-200 bg-slate-50 pl-8 pr-3 text-xs outline-none focus:ring-2 focus:ring-indigo-200">
+                                        </div>
+                                    </div>
+                                    <ul id="jiraParentList" role="listbox" class="max-h-64 overflow-y-auto py-1"></ul>
+                                </div>
+                            </div>
+                            <p class="text-[11px] text-slate-500">Chọn parent để tải ngay các ticket Bug/Defect, Improvement, Q&amp;A thuộc parent đó.</p>
+                        </div>
                     </div>
                 </section>
 
@@ -1046,13 +1068,7 @@
             }
         }
 
-        function changeJiraProject() {
-            document.getElementById('fileInfo').classList.add('hidden');
-            document.getElementById('reportDashboard').classList.add('hidden');
-            document.getElementById('jiraUrlSection').classList.remove('hidden');
-            rawJiraData = [];
-            currentParentKey = null;
-        }
+
 
         function toggleJiraConnection() {
             if (jiraConnectionPending) return;
@@ -1268,180 +1284,268 @@
             });
         }
 
-        function parseJiraUrl(urlStr) {
+        /* ================= JIRA BOARD LOGIC (thay parseJiraUrl + fetchJiraDataFromUrl + changeJiraProject) ================= */
+        const DEFAULT_TICKET_TYPES = ['Bug', 'Defect', 'Improvement', 'Q&A'];
+        const ALL_PARENTS_VALUE = '__ALL__';
+        let jiraParents = [];
+        let jiraBoardCtx = null;
+        let selectedParentValue = null;
+        let parentLoadToken = 0;
+        let parentLoading = false;
+        
+        function parseJiraBoardUrl(urlStr) {
             try {
                 const url = new URL(urlStr);
-                const domain = url.origin;
-                let jql = "";
-                let projectName = "";
-                const filterPathMatch = url.pathname.match(/\/filters?\/(\d+)/i);
-                const filterId = url.searchParams.get('filter') || (filterPathMatch ? filterPathMatch[1] : '');
-                const boardPathMatch = url.pathname.match(/\/boards\/(\d+)(?:\/|$)/i);
-                const boardId = url.searchParams.get('rapidView') || url.searchParams.get('boardId') || (boardPathMatch ? boardPathMatch[1] : '');
-
-                if (url.searchParams.has('jql')) {
-                    jql = url.searchParams.get('jql').replace(/[\r\n]+/g, ' ').trim();
-                    const projMatch = jql.match(/project\s*=\s*["']?([a-zA-Z0-9_]+)["']?/i);
-                    if (projMatch && projMatch[1]) projectName = projMatch[1];
-                } else {
-                    const projectMatch = url.pathname.match(/\/projects\/([^\/]+)/i);
-                    if (projectMatch && projectMatch[1]) {
-                        projectName = projectMatch[1];
-                        jql = 'project = "' + projectName + '" ORDER BY created DESC';
-                    }
-                }
-                const parentMatch = jql.match(/\bparent\s*=\s*["']?([A-Za-z][A-Za-z0-9_]*-\d+)["']?/i);
-                const parentKey = parentMatch ? parentMatch[1].toUpperCase() : "";
-                return { domain, jql, filterId, boardId, parentKey, projectName: projectName || "Jira Filter" };
+                const m = url.pathname.match(/\/projects\/([^\/]+)\/boards\/(\d+)/i);
+                const projectKey = m ? decodeURIComponent(m[1]).toUpperCase() : '';
+                const boardId = m ? m[2] : (url.searchParams.get('rapidView') || '');
+                return projectKey ? { domain: url.origin, projectKey, boardId } : null;
             } catch (e) { return null; }
         }
-
-        function fetchJiraDataFromUrl() {
-            if (!loggedInUser) {
-                showToast("Yêu cầu đăng nhập", "Vui lòng Đăng nhập tài khoản Google trước khi tải dữ liệu!", true);
-                return;
+        
+        function getJiraSiteParams(domain) {
+            const select = document.getElementById('jiraSiteSelect');
+            const siteId = select ? select.value : '';
+            const site = siteId ? jiraConnectedSites.find(s => String(s.id) === siteId) : null;
+            if (site && String(site.url || '').replace(/\/+$/, '').toLowerCase() !== domain.toLowerCase()) {
+                throw new Error('Link Jira không thuộc site bạn đã chọn.');
             }
-
+            return site ? { site: site.id } : { domain };
+        }
+        
+        function jiraQuery(siteParams, jql, timeoutMs = 30000) {
+            return new Promise((resolve, reject) => {
+                requestJiraJsonp({ ...siteParams, jql }, data => {
+                    if (!data) reject(new Error('Google Script trả về dữ liệu rỗng!'));
+                    else if (data.error) reject(new Error(String(data.error)));
+                    else resolve(data);
+                }, reject, timeoutMs);
+            });
+        }
+        
+        function cleanProjectTitle(raw) {
+            return String(raw || '').replace(/^\s*\d+\s+sprints?\s*-\s*/i, '').replace(/\s*-\s*(Scrum|Kanban)\s+Board.*$/i, '').replace(/\s*-\s*Jira\s*$/i, '').trim();
+        }
+        
+        function extractProjectName(json) {
+            if (!json) return '';
+            const direct = json.projectName || (json.project && json.project.name) || json.boardName;
+            if (direct) return cleanProjectTitle(direct);
+            const issue = (json.issues || []).find(i => i.fields && i.fields.project && i.fields.project.name);
+            return issue ? cleanProjectTitle(issue.fields.project.name) : '';
+        }
+        
+        function applyProjectName(name) {
+            const input = document.getElementById('reportGameNameInput');
+            if (!name || !input) return false;
+            input.value = name;
+            saveHeaderConfig();
+            autoUpdateSheetName();
+            return true;
+        }
+        
+        async function fetchJiraDataFromUrl() {
+            if (!loggedInUser) { showToast('Yêu cầu đăng nhập', 'Vui lòng Đăng nhập tài khoản Google trước khi tải dữ liệu!', true); return; }
             const rawUrl = document.getElementById('jiraUrlInput').value.trim();
-            if (!rawUrl) {
-                showToast("Cảnh báo", "Vui lòng dán đường link Jira của dự án!", true);
-                return;
-            }
-
-            const parsed = parseJiraUrl(rawUrl);
-            if (!parsed || !parsed.domain || (!parsed.jql && !parsed.filterId)) {
-                showToast("Lỗi Link Jira", "Không nhận diện được JQL hoặc Filter ID trong link. Hãy dùng link Jira có JQL, project hoặc saved filter.", true);
-                return;
-            }
-
-            if (!jiraOAuthConnected) {
-                showToast("Chưa kết nối Jira", "Bật công tắc Jira và cấp quyền bằng tài khoản Atlassian, rồi tải lại dữ liệu.", true);
-                return;
-            }
-
-            const siteSelect = document.getElementById('jiraSiteSelect');
-            const selectedSiteId = siteSelect ? siteSelect.value : '';
-            const selectedSite = selectedSiteId ? jiraConnectedSites.find(site => String(site.id) === selectedSiteId) : null;
-            if (selectedSiteId && !selectedSite) {
-                showToast('Jira site không còn được cấp quyền', 'Làm mới trạng thái kết nối rồi chọn lại site.', true);
-                return;
-            }
-            if (selectedSite && String(selectedSite.url || '').replace(/\/+$/, '').toLowerCase() !== parsed.domain.replace(/\/+$/, '').toLowerCase()) {
-                showToast('Link không khớp Jira site', 'Link Jira không thuộc site bạn đã chọn. Chọn “Tự nhận diện site theo link Jira” hoặc dán link của site đã chọn.', true);
-                return;
-            }
-
+            if (!rawUrl) { showToast('Cảnh báo', 'Vui lòng dán đường link board Jira!', true); return; }
+            const board = parseJiraBoardUrl(rawUrl);
+            if (!board) { showToast('Lỗi Link Jira', 'Hãy dán link board, ví dụ: https://xxx.atlassian.net/jira/software/c/projects/GAM/boards/1794', true); return; }
+            if (!jiraOAuthConnected) { showToast('Chưa kết nối Jira', 'Bật công tắc Jira và cấp quyền bằng tài khoản Atlassian, rồi tải lại dữ liệu.', true); return; }
+        
             const btn = document.getElementById('btnFetchJira');
-            const origBtnHtml = btn.innerHTML;
-
+            const origHtml = btn.innerHTML;
             btn.disabled = true;
-            btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Đang tải toàn bộ dữ liệu từ Jira...';
-
+            btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Đang tải danh sách parent...';
             localStorage.setItem('jira_last_url', rawUrl);
-
-            let isFinished = false;
-            const fetchTimeout = setTimeout(() => {
-                if (!isFinished) {
-                    isFinished = true;
-                    btn.disabled = false;
-                    btn.innerHTML = origBtnHtml;
-                    
-                    const scriptEl = document.getElementById('jiraJsonpScript');
-                    if (scriptEl) scriptEl.remove();
-
-                    showToast("Thời gian chờ quá lâu", "Không nhận được phản hồi từ Proxy. Vui lòng thử lại!", true);
-                }
-            }, 30000);
-
-            window.handleJiraResponse = function(json) {
-                if (isFinished) return;
-                isFinished = true;
-                clearTimeout(fetchTimeout);
-
+            try {
+                const siteParams = getJiraSiteParams(board.domain);
+                const json = await jiraQuery(siteParams, `project = "${board.projectKey}" AND issuetype = Epic ORDER BY created DESC`);
+                jiraBoardCtx = { ...board, siteParams, projectName: extractProjectName(json) };
+                jiraParents = (json.issues || []).filter(i => i.key).map(i => {
+                    const f = i.fields || {};
+                    return { key: i.key, summary: f.summary || '', status: f.status ? f.status.name : '' };
+                });
+                selectedParentValue = null;
+                const named = applyProjectName(jiraBoardCtx.projectName);
+                renderParentSection();
+                openParentDropdown();
+                showToast('Đã tải danh sách parent', `${jiraParents.length} parent từ board ${board.projectKey}.` + (named ? '' : ' Chưa lấy được tên dự án, hãy nhập tay ở ID & Game Name.'), !named && jiraParents.length === 0);
+            } catch (err) {
+                showToast('Lỗi tải dữ liệu Jira', err.message || 'Không kết nối được Proxy.', true);
+            } finally {
                 btn.disabled = false;
-                btn.innerHTML = origBtnHtml;
-
-                const scriptEl = document.getElementById('jiraJsonpScript');
-                if (scriptEl) scriptEl.remove();
-
-                if (!json) {
-                    showToast("Lỗi Dữ Liệu", "Google Script trả về dữ liệu rỗng!", true);
-                    return;
+                btn.innerHTML = origHtml;
+            }
+        }
+        
+        async function queryBoardTickets(parentKey) {
+            const ctx = jiraBoardCtx;
+            let types = [...DEFAULT_TICKET_TYPES];
+            const dropped = [];
+            let parentField = 'parent';
+            for (let attempt = 0; attempt < 8; attempt++) {
+                const parts = [`project = "${ctx.projectKey}"`, `issuetype in (${types.map(t => `"${t}"`).join(', ')})`];
+                if (parentKey) parts.push(parentField === 'parent' ? `parent = "${parentKey}"` : `"Epic Link" = "${parentKey}"`);
+                try {
+                    const json = await jiraQuery(ctx.siteParams, parts.join(' AND ') + ' ORDER BY created DESC');
+                    return { json, types, dropped };
+                } catch (err) {
+                    const msg = String(err.message || '');
+                    const bad = msg.match(/value ['"‘’]([^'"‘’]+)['"‘’] does not exist for the field ['"‘’]?(?:issuetype|issue type|type)/i);
+                    if (bad && types.length > 1) {
+                        const next = types.filter(t => t.toLowerCase() !== bad[1].toLowerCase());
+                        if (next.length < types.length) { dropped.push(bad[1]); types = next; continue; }
+                    }
+                    if (parentKey && parentField === 'parent' && /\bparent\b/i.test(msg)) { parentField = 'epic'; continue; }
+                    throw err;
                 }
-
-                if (json.error) {
-                    showToast("Lỗi tải dữ liệu Jira", json.error, true);
-                    return;
-                }
-
-                // Ưu tiên boardId có sẵn trong URL người dùng dán để giữ đúng board; nếu không có thì dùng boardId từ Apps Script.
-                currentBoardId = parsed.boardId || json.boardId || null;
-                currentProjectKey = json.projectKey || (parsed.projectName !== "Jira Filter" ? parsed.projectName : null);
-                currentParentKey = parsed.parentKey || null;
-                currentJiraDomain = parsed.domain;
-                if (!currentBoardId && currentProjectKey) {
-                    showToast('Chưa lấy được Board ID', json.boardIdError || 'Apps Script không trả về boardId. Hãy triển khai bản Code.gs mới và cấp quyền Jira board.', true);
-                }
-
+            }
+            throw new Error('Không dựng được JQL hợp lệ cho board này.');
+        }
+        
+        async function selectJiraParent(value) {
+            closeParentDropdown();
+            if (!jiraBoardCtx || parentLoading) return;
+            selectedParentValue = value;
+            const parentKey = value === ALL_PARENTS_VALUE ? '' : value;
+            const token = ++parentLoadToken;
+            parentLoading = true;
+            updateParentLabel();
+            try {
+                const { json, types, dropped } = await queryBoardTickets(parentKey);
+                if (token !== parentLoadToken) return;
                 const issues = json.issues || [];
-                if (issues.length === 0) {
-                    showToast("Thông báo", "Không tìm thấy ticket nào từ đường link Jira này!", true);
-                    return;
+                if (!issues.length) { showToast('Thông báo', 'Không có ticket Bug/Defect, Improvement, Q&A nào thuộc parent này!', true); return; }
+        
+                currentBoardId = jiraBoardCtx.boardId || json.boardId || null;
+                currentProjectKey = jiraBoardCtx.projectKey;
+                currentParentKey = parentKey || null;
+                currentJiraDomain = jiraBoardCtx.domain;
+                if (!jiraBoardCtx.projectName) {
+                    jiraBoardCtx.projectName = extractProjectName(json);
+                    applyProjectName(jiraBoardCtx.projectName);
                 }
-
+        
                 rawJiraData = issues.map(item => {
-                    const fields = item.fields || {};
+                    const f = item.fields || {};
                     return {
-                        "Issue key": item.key || "",
-                        "Summary": fields.summary || "",
-                        "Priority": fields.priority ? fields.priority.name : "Unassigned",
-                        "Status": fields.status ? fields.status.name : "N/A",
-                        "Assignee": fields.assignee ? fields.assignee.displayName : "Unassigned"
+                        'Issue key': item.key || '', 'Summary': f.summary || '',
+                        'Priority': f.priority ? f.priority.name : 'Unassigned',
+                        'Status': f.status ? f.status.name : 'N/A',
+                        'Assignee': f.assignee ? f.assignee.displayName : 'Unassigned'
                     };
                 });
-
-                const projectName = currentProjectKey || "Jira Filter";
-                const projectNameElement = document.getElementById('jiraProjectName');
-                projectNameElement.textContent = projectName;
-                projectNameElement.title = projectName;
+        
+                const label = jiraBoardCtx.projectName || jiraBoardCtx.projectKey;
+                const nameEl = document.getElementById('jiraProjectName');
+                nameEl.textContent = label;
+                nameEl.title = label + (parentKey ? ' · ' + parentKey : '');
                 document.getElementById('fileInfo').classList.remove('hidden');
                 document.getElementById('jiraUrlSection').classList.add('hidden');
                 document.getElementById('reportDashboard').classList.remove('hidden');
-
                 buildDynamicStatusFilters();
                 processData();
-
-                showToast("Tải Thành Công", `Đã tải thành công ${rawJiraData.length} ticket từ Jira.`);
-            };
-
-            const existingScript = document.getElementById('jiraJsonpScript');
-            if (existingScript) existingScript.remove();
-
-            const script = document.createElement('script');
-            script.id = 'jiraJsonpScript';
-            
-            const requestParams = new URLSearchParams();
-            if (selectedSite) requestParams.set('site', selectedSite.id);
-            else requestParams.set('domain', parsed.domain);
-            if (parsed.jql) requestParams.set('jql', parsed.jql);
-            if (parsed.filterId) requestParams.set('filterId', parsed.filterId);
-            requestParams.set('callback', 'handleJiraResponse');
-            requestParams.set('_t', Date.now());
-            script.src = JIRA_PROXY_API_URL + (JIRA_PROXY_API_URL.includes('?') ? '&' : '?') + requestParams.toString();
-            
-            script.onerror = function() {
-                if (isFinished) return;
-                isFinished = true;
-                clearTimeout(fetchTimeout);
-
-                btn.disabled = false;
-                btn.innerHTML = origBtnHtml;
-                script.remove();
-                showToast("Lỗi Kết Nối", "Không thể tải Script từ Proxy. Vui lòng kiểm tra lại quyền đăng nhập!", true);
-            };
-
-            document.body.appendChild(script);
+                showToast('Tải Thành Công', `Đã tải ${rawJiraData.length} ticket (${types.join(', ')})` + (dropped.length ? `. Project không có loại: ${dropped.join(', ')}.` : '.'));
+            } catch (err) {
+                showToast('Lỗi tải ticket', err.message || 'Không kết nối được Proxy.', true);
+            } finally {
+                parentLoading = false;
+                updateParentLabel();
+            }
         }
+        
+        function changeJiraProject() {
+            document.getElementById('fileInfo').classList.add('hidden');
+            document.getElementById('reportDashboard').classList.add('hidden');
+            document.getElementById('jiraUrlSection').classList.remove('hidden');
+            rawJiraData = [];
+            currentParentKey = null;
+            if (jiraBoardCtx) renderParentSection();
+        }
+        
+        /* ---------- Dropdown parent có ô tìm kiếm ---------- */
+        function foldText(s) { return String(s || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/đ/gi, 'd').toLowerCase(); }
+        
+        function renderParentSection() {
+            document.getElementById('jiraParentSection').classList.remove('hidden');
+            document.getElementById('jiraParentCount').textContent = jiraParents.length + ' parent';
+            document.getElementById('jiraBoardLabel').textContent = jiraBoardCtx.projectKey + (jiraBoardCtx.boardId ? ' · board ' + jiraBoardCtx.boardId : '');
+            document.getElementById('jiraParentSearch').value = '';
+            updateParentLabel();
+            renderParentOptions();
+        }
+        
+        function updateParentLabel() {
+            const label = document.getElementById('jiraParentLabel');
+            const toggle = document.getElementById('jiraParentToggle');
+            if (!label || !toggle) return;
+            toggle.disabled = parentLoading;
+            if (parentLoading) { label.innerHTML = '<i class="fa-solid fa-spinner fa-spin mr-2"></i>Đang tải ticket...'; return; }
+            if (selectedParentValue === null) label.textContent = 'Chọn parent...';
+            else if (selectedParentValue === ALL_PARENTS_VALUE) label.textContent = 'Tất cả parent (không lọc)';
+            else {
+                const p = jiraParents.find(x => x.key === selectedParentValue);
+                label.textContent = p ? p.key + ' · ' + p.summary : selectedParentValue;
+            }
+        }
+        
+        function renderParentOptions() {
+            const list = document.getElementById('jiraParentList');
+            if (!list) return;
+            const term = foldText(document.getElementById('jiraParentSearch').value.trim());
+            list.replaceChildren();
+            const rows = [{ value: ALL_PARENTS_VALUE, key: '', summary: 'Tất cả parent (không lọc)', status: '' }]
+                .concat(jiraParents.map(p => ({ value: p.key, ...p })))
+                .filter(r => !term || foldText(r.key + ' ' + r.summary).includes(term));
+            if (!rows.length) {
+                const empty = document.createElement('li');
+                empty.className = 'px-4 py-3 text-xs text-slate-400';
+                empty.textContent = 'Không tìm thấy parent phù hợp';
+                list.appendChild(empty);
+                return;
+            }
+            rows.forEach(r => {
+                const li = document.createElement('li');
+                li.setAttribute('role', 'option');
+                li.dataset.value = r.value;
+                const active = r.value === selectedParentValue;
+                li.className = 'jira-parent-option flex items-center gap-2 px-4 py-2.5 text-xs cursor-pointer hover:bg-indigo-50 ' + (active ? 'bg-indigo-50 font-bold text-indigo-700' : 'text-slate-700');
+                if (r.key) { const k = document.createElement('span'); k.className = 'shrink-0 font-bold text-indigo-600'; k.textContent = r.key; li.appendChild(k); }
+                const s = document.createElement('span'); s.className = 'min-w-0 flex-1 truncate'; s.textContent = r.summary || '(không có tiêu đề)'; s.title = r.summary; li.appendChild(s);
+                if (r.status) { const b = document.createElement('span'); b.className = 'shrink-0 rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-bold text-slate-500'; b.textContent = r.status; li.appendChild(b); }
+                li.onclick = () => selectJiraParent(r.value);
+                list.appendChild(li);
+            });
+        }
+        
+        function handleParentSearchKey(event) {
+            if (event.key === 'Escape') closeParentDropdown();
+            else if (event.key === 'Enter') {
+                event.preventDefault();
+                const first = document.querySelector('#jiraParentList .jira-parent-option');
+                if (first) selectJiraParent(first.dataset.value);
+            }
+        }
+        
+        function openParentDropdown() {
+            document.getElementById('jiraParentPanel').classList.remove('hidden');
+            document.getElementById('jiraParentToggle').setAttribute('aria-expanded', 'true');
+            const search = document.getElementById('jiraParentSearch');
+            search.value = ''; renderParentOptions(); search.focus();
+        }
+        function closeParentDropdown() {
+            document.getElementById('jiraParentPanel')?.classList.add('hidden');
+            document.getElementById('jiraParentToggle')?.setAttribute('aria-expanded', 'false');
+        }
+        function toggleParentDropdown() {
+            if (parentLoading) return;
+            const hidden = document.getElementById('jiraParentPanel').classList.contains('hidden');
+            if (hidden) openParentDropdown(); else closeParentDropdown();
+        }
+        document.addEventListener('click', e => {
+            const combo = document.getElementById('jiraParentCombo');
+            if (combo && !combo.contains(e.target)) closeParentDropdown();
+        });
 
         function updateAuthUI() {
             const storedUser = localStorage.getItem('jira_google_user');
