@@ -275,12 +275,8 @@
                         <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
                             <div class="space-y-1.5">
                                 <label class="text-xs font-bold text-slate-700"><i class="fa-solid fa-cloud text-indigo-500 mr-1.5"></i>Workspace</label>
-                                <div class="relative" id="jiraSiteCombo">
-                                    <button type="button" id="jiraSiteToggle" onclick="toggleJiraCombo('site')" class="w-full h-10 flex items-center justify-between gap-2 bg-slate-50 border border-slate-300 rounded-xl px-3 text-xs text-slate-800 text-left disabled:opacity-60" disabled><span id="jiraSiteLabel" class="min-w-0 flex-1 truncate">Đang tải Workspace...</span><i class="fa-solid fa-chevron-down text-slate-400"></i></button>
-                                    <div id="jiraSitePanel" class="hidden absolute z-40 mt-1 w-full overflow-hidden rounded-xl border border-slate-200 bg-white shadow-xl">
-                                        <input id="jiraSiteSearch" oninput="renderJiraComboOptions('site')" placeholder="Tìm Workspace..." class="h-9 w-full border-b border-slate-100 px-3 text-xs outline-none">
-                                        <ul id="jiraSiteOptions" class="max-h-52 overflow-y-auto py-1"></ul>
-                                    </div>
+                                <div id="jiraSiteCombo" class="w-full h-10 flex items-center gap-2 bg-slate-50 border border-slate-300 rounded-xl px-3 text-xs text-slate-800" role="status" aria-live="polite">
+                                    <i class="fa-solid fa-lock text-slate-400" aria-hidden="true"></i><span id="jiraSiteLabel" class="min-w-0 flex-1 truncate">Đang tải Workspace...</span>
                                 </div>
                             </div>
                             <div class="space-y-1.5">
@@ -1149,14 +1145,13 @@
             if (selectedJiraSite) localStorage.setItem('jira_selected_site', String(selectedJiraSite.id));
             else localStorage.removeItem('jira_selected_site');
             const label = document.getElementById('jiraSiteLabel');
-            const toggle = document.getElementById('jiraSiteToggle');
-            if (label) label.textContent = selectedJiraSite ? formatWorkspaceName(selectedJiraSite) : (jiraConnectedSites.length ? 'Chọn Workspace Jira...' : 'Chưa có Workspace được cấp quyền');
-            if (toggle) toggle.disabled = jiraConnectedSites.length === 0;
+            if (label) label.textContent = selectedJiraSite
+                ? formatWorkspaceName(selectedJiraSite)
+                : (jiraConnectedSites.length > 1 ? 'Không xác định được Workspace từ kết nối OAuth' : 'Chưa có Workspace được cấp quyền');
             if (!selectedJiraSite) {
                 resetJiraSpaceSelection('Kết nối Jira để tải danh sách Workspace');
                 jiraSpacesLoadedForSite = '';
             }
-            renderJiraComboOptions('site');
             if (selectedJiraSite && oldSiteId !== String(selectedJiraSite.id)) {
                 resetJiraSpaceSelection('Đang tải Space...');
                 if (jiraOAuthConnected) loadJiraSpaces();
@@ -1696,7 +1691,9 @@
                     const f = i.fields || {};
                     return { key: i.key, summary: f.summary || '', status: f.status ? f.status.name : '', issueType: f.issuetype ? f.issuetype.name : '' };
                 });
-                const defaultTarget = jiraTargetParents.find(item => /bug\s*lists?/i.test(`${item.key} ${item.summary}`));
+                // Jira issue is commonly named "[QC] BUGS LIST" (plural BUGS).
+                // Match both "Bug List" and "Bugs List", including punctuation/separators.
+                const defaultTarget = jiraTargetParents.find(item => /bugs?\s*[-_:]?\s*lists?/i.test(`${item.key} ${item.summary}`));
                 selectedTargetParentValue = defaultTarget ? defaultTarget.key : null;
                 renderTargetParentOptions();
                 if (!jiraTargetParents.length) {
