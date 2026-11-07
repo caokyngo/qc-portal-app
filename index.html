@@ -66,8 +66,7 @@
         #fileInfo { height: 48px; padding-top: 4px; padding-bottom: 4px; }
         #authSection { height: 48px; min-height: 48px; }
         #loginOption, #userProfileBtn { height: 48px; min-width: 0; flex-wrap: nowrap; }
-        #userProfileBtn { max-width: 190px; }
-        #userNameDisplay { max-width: 104px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        #userProfileBtn { width: 48px; padding: 0; justify-content: center; border-radius: 9999px; }
         .app-header-change-link { flex: 0 0 auto; min-width: 78px; justify-content: center; white-space: nowrap; }
         @media (max-width: 1279px) {
             .app-header { grid-template-columns: minmax(0, 1fr) auto; }
@@ -232,10 +231,8 @@
                             <div class="g_id_signin" data-type="standard" data-size="large" data-theme="outline" data-text="sign_in_with" data-shape="rectangular" data-logo_alignment="left"></div>
                         </div>
                     </div>
-                    <button type="button" id="userProfileBtn" aria-haspopup="true" aria-expanded="false" aria-controls="userDropdown" class="hidden relative cursor-pointer flex items-center gap-2.5 px-3 py-1.5 bg-slate-100 hover:bg-slate-200 rounded-xl border border-slate-200 transition text-left" onclick="toggleUserDropdown(event)">
-                        <img id="userAvatar" src="" class="w-8 h-8 rounded-full border border-slate-300 bg-white object-cover" alt="Avatar">
-                        <span id="userNameDisplay" class="text-slate-700 font-bold text-sm hidden sm:block"></span>
-                        <i class="fa-solid fa-caret-down text-slate-500 ml-1 text-xs"></i>
+                    <button type="button" id="userProfileBtn" aria-label="Tài khoản người dùng" title="Tài khoản người dùng" aria-haspopup="true" aria-expanded="false" aria-controls="userDropdown" class="hidden relative cursor-pointer flex items-center justify-center p-0 bg-transparent hover:bg-transparent rounded-full border-0 transition focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2" onclick="toggleUserDropdown(event)">
+                        <img id="userAvatar" src="" class="w-10 h-10 rounded-full border border-slate-300 bg-white object-cover" alt="User avatar">
                     </button>
                     <div id="userDropdown" role="menu" class="hidden absolute right-0 top-full mt-2 w-48 bg-white rounded-xl shadow-xl border border-slate-200 overflow-hidden z-[70]">
                         <button type="button" role="menuitem" onclick="handleLogout()" class="w-full flex items-center gap-3 px-4 py-3.5 text-left text-rose-600 hover:bg-rose-50 text-sm font-bold transition">
@@ -382,25 +379,12 @@
                                         </div>
                                     </div>
                                 </div>
-
-                                <!-- Card 2: Environment Chips (Thay thế Textarea) -->
-                                <div>
-                                    <h4 class="text-[11px] font-bold text-slate-400 uppercase tracking-widest mb-3 border-b border-slate-100 pb-1">2. Môi trường Test (Env)</h4>
-                                    <div class="flex flex-wrap gap-2.5" id="envChipContainer">
-                                        <!-- Các nút Chips -->
-                                        <button type="button" onclick="toggleEnvChip(this)" data-value="Iframe" class="env-chip px-4 py-2 rounded-xl text-xs font-bold border transition-all duration-200 bg-slate-100 text-slate-500 border-slate-200 hover:bg-slate-200">Iframe</button>
-                                        <button type="button" onclick="toggleEnvChip(this)" data-value="App" class="env-chip px-4 py-2 rounded-xl text-xs font-bold border transition-all duration-200 bg-slate-100 text-slate-500 border-slate-200 hover:bg-slate-200">App</button>
-                                        <button type="button" onclick="toggleEnvChip(this)" data-value="WebApp" class="env-chip px-4 py-2 rounded-xl text-xs font-bold border transition-all duration-200 bg-slate-100 text-slate-500 border-slate-200 hover:bg-slate-200">WebApp</button>
-                                        <button type="button" onclick="toggleEnvChip(this)" data-value="Preprod" class="env-chip px-4 py-2 rounded-xl text-xs font-bold border transition-all duration-200 bg-slate-100 text-slate-500 border-slate-200 hover:bg-slate-200">Preprod</button>
-                                    </div>
-                                    <!-- Ô lưu trữ logic ngầm -->
-                                    <input type="hidden" id="reportEnvInput">
-                                </div>
+                                <input type="hidden" id="reportEnvInput">
 
                                 <!-- Card 3: Cấu hình Link (Smart Inputs) -->
                                 <div>
                                     <div class="flex justify-between items-center mb-3 border-b border-slate-100 pb-1">
-                                        <h4 class="text-[11px] font-bold text-slate-400 uppercase tracking-widest">3. Liên kết (Links)</h4>
+                                        <h4 class="text-[11px] font-bold text-slate-400 uppercase tracking-widest">2. Liên kết (Links)</h4>
                                         <span class="text-[10px] text-indigo-400 font-medium italic"><i class="fa-solid fa-circle-info"></i> Để trống nếu không muốn hiện trong report</span>
                                     </div>
                                     
@@ -850,41 +834,17 @@
             'Low': '#3B82F6', 'Lowest': '#10B981', 'Unassigned': '#64748B'
         };
 
-        function toggleEnvChip(btn) {
-            btn.classList.toggle('bg-slate-100');
-            btn.classList.toggle('text-slate-500');
-            btn.classList.toggle('border-slate-200');
-            
-            btn.classList.toggle('bg-indigo-600');
-            btn.classList.toggle('text-white');
-            btn.classList.toggle('border-indigo-600');
-            btn.classList.toggle('active-chip');
-            
-            updateEnvField();
-            saveHeaderConfig();
-        }
-
         function updateEnvField() {
-            const container = document.getElementById('envChipContainer');
-            if (!container) return;
-            
-            const activeChips = Array.from(container.querySelectorAll('.active-chip')).map(btn => btn.dataset.value);
-            
-            let internalParts = [];
-            if (activeChips.includes("Iframe")) internalParts.push("Iframe");
-            if (activeChips.includes("App")) internalParts.push("App");
-            if (activeChips.includes("WebApp")) internalParts.push("WebApp");
+            const internalParts = [];
+            if (document.getElementById('reportLinkIframeInput')?.value.trim()) internalParts.push('Iframe');
+            if (document.getElementById('reportLinkAppnameInput')?.value.trim()) internalParts.push('App');
+            if (document.getElementById('reportLinkWebappInput')?.value.trim()) internalParts.push('WebApp');
 
-            let envLines = [];
-            if (internalParts.length > 0) envLines.push(internalParts.join('/') + " - Internal Staging");
-            if (activeChips.includes("Preprod")) envLines.push("Preproduction - External Staging");
-
+            const envLines = [];
+            if (internalParts.length) envLines.push(internalParts.join('/') + ' - Internal Staging');
+            if (document.getElementById('reportLinkPreprodInput')?.value.trim()) envLines.push('Preproduction - External Staging');
             const envInput = document.getElementById('reportEnvInput');
-            if (envInput) {
-                if (envLines.length === 0) envInput.value = "";
-                else if (envLines.length === 1) envInput.value = envLines[0];
-                else envInput.value = "- " + envLines.join("\n- ");
-            }
+            if (envInput) envInput.value = envLines.length > 1 ? '- ' + envLines.join('\n- ') : (envLines[0] || '');
         }
 
         function toggleLinkInputs() {
@@ -921,8 +881,7 @@
         }
 
         function saveHeaderConfig() {
-            const container = document.getElementById('envChipContainer');
-            const activeChips = container ? Array.from(container.querySelectorAll('.active-chip')).map(btn => btn.dataset.value) : [];
+            updateEnvField();
 
             const config = {
                 gameName: document.getElementById('reportGameNameInput')?.value || '',
@@ -930,7 +889,6 @@
                 versionApp: document.getElementById('reportVersionAppInput')?.value || '',
                 testingStatus: document.getElementById('reportTestingStatusInput')?.value || 'In-testing',
                 env: document.getElementById('reportEnvInput')?.value || '',
-                envChips: activeChips,
 
                 linkIframe: document.getElementById('reportLinkIframeInput')?.value || '',
                 linkPreprod: document.getElementById('reportLinkPreprodInput')?.value || '',
@@ -958,23 +916,13 @@
                 if (config.linkPreprod !== undefined && document.getElementById('reportLinkPreprodInput')) document.getElementById('reportLinkPreprodInput').value = config.linkPreprod;
                 if (config.linkWebapp !== undefined && document.getElementById('reportLinkWebappInput')) document.getElementById('reportLinkWebappInput').value = config.linkWebapp;
                 if (config.linkAppname !== undefined && document.getElementById('reportLinkAppnameInput')) document.getElementById('reportLinkAppnameInput').value = config.linkAppname;
+                updateEnvField();
 
                 if (config.linkTestcase !== undefined && document.getElementById('reportTestcaseInput')) document.getElementById('reportTestcaseInput').value = config.linkTestcase;
                 if (config.notes !== undefined && document.getElementById('reportNotesInput')) document.getElementById('reportNotesInput').value = config.notes;
                 if (config.metadata !== undefined && document.getElementById('reportMetadataInput')) document.getElementById('reportMetadataInput').value = config.metadata;
 
-                if (config.envChips && config.envChips.length > 0) {
-                    const container = document.getElementById('envChipContainer');
-                    if (container) {
-                        const buttons = container.querySelectorAll('.env-chip');
-                        buttons.forEach(btn => {
-                            if (config.envChips.includes(btn.dataset.value)) {
-                                btn.classList.remove('bg-slate-100', 'text-slate-500', 'border-slate-200');
-                                btn.classList.add('bg-indigo-600', 'text-white', 'border-indigo-600', 'active-chip');
-                            }
-                        });
-                    }
-                }
+
             } catch(e) {
                 console.error("Lỗi khôi phục cấu hình từ localStorage:", e);
             }
@@ -1564,7 +1512,7 @@
         }
 
         /* ================= JIRA BOARD LOGIC (thay parseJiraUrl + fetchJiraDataFromUrl + changeJiraProject) ================= */
-        const DEFAULT_TICKET_TYPES = ['Bug', 'Defect', 'Improvement', 'Q&A'];
+        const DEFAULT_TICKET_TYPES = ['Bug/Defect', 'Improvement', 'Q&A'];
         let jiraParents = [];
         let jiraTargetParents = [];
         let jiraBoardCtx = null;
@@ -1628,13 +1576,16 @@
             btn.disabled = true;
             btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Đang tải ticket...';
             try {
-                const { json, types, dropped } = await queryBoardTickets(selectedTargetParentValue);
+                const { json, types, dropped } = await queryBoardTickets(selectedParentValue, selectedTargetParentValue);
+                currentJiraDomain = jiraBoardCtx.domain;
                 const issues = json.issues || [];
-                if (!issues.length) { showToast('Không tìm thấy ticket', `Không có Bug/Defect, Improvement hoặc Q&A thuộc ${selectedTargetParentValue}.`, true); return; }
+                if (!issues.length) {
+                    showToast('Không tìm thấy ticket', `Không có Bug/Defect, Improvement hoặc Q&A thuộc ${selectedTargetParentValue}.`, true);
+                    return;
+                }
                 currentBoardId = jiraBoardCtx.boardId || json.boardId || null;
                 currentProjectKey = jiraBoardCtx.projectKey;
                 currentParentKey = selectedTargetParentValue;
-                currentJiraDomain = jiraBoardCtx.domain;
                 applyProjectName(jiraBoardCtx.projectName);
                 rawJiraData = issues.map(item => {
                     const fields = item.fields || {};
@@ -1673,8 +1624,9 @@
                 if (currentTypes && currentTypes.length) parts.push(`issuetype in (${currentTypes.map(t => `"${t}"`).join(', ')})`);
                 if (parentKey) parts.push(parentField === 'parent' ? `parent = "${parentKey}"` : `"Epic Link" = "${parentKey}"`);
                 try {
-                    const json = await jiraQuery(ctx.siteParams, parts.join(' AND ') + ' ORDER BY created DESC');
-                    return { json, types: currentTypes || [], dropped };
+                    const jql = parts.join(' AND ') + ' ORDER BY created DESC';
+                    const json = await jiraQuery(ctx.siteParams, jql);
+                    return { json, types: currentTypes || [], dropped, jql, parentField };
                 } catch (err) {
                     const msg = String(err.message || '');
                     const bad = msg.match(/value ['"‘’]([^'"‘’]+)['"‘’] does not exist for the field ['"‘’]?(?:issuetype|issue type|type)/i);
@@ -1738,8 +1690,11 @@
             }
         }
 
-        async function queryBoardTickets(parentKey) {
-            return queryJiraChildren(parentKey, DEFAULT_TICKET_TYPES);
+        async function queryBoardTickets(epicKey, parentKey) {
+            const ctx = jiraBoardCtx;
+            const jql = `project = ${ctx.projectKey} AND type IN ("Bug/Defect", Improvement, "Q&A") AND parent IN (${epicKey}, ${parentKey}) ORDER BY cf[10019] ASC`;
+            const json = await jiraQuery(ctx.siteParams, jql);
+            return { json, types: DEFAULT_TICKET_TYPES, dropped: [] };
         }
 
         async function selectJiraTargetParent(value) {
@@ -1969,7 +1924,8 @@
                 setJiraConnectionUI(false, 'Đang kiểm tra kết nối Jira...');
                 if(loginOption) loginOption.classList.add('hidden');
                 if(userProfileBtn) userProfileBtn.classList.remove('hidden');
-                document.getElementById('userNameDisplay').innerText = loggedInUser.name;
+                userProfileBtn.title = loggedInUser.name || 'Tài khoản người dùng';
+                userProfileBtn.setAttribute('aria-label', userProfileBtn.title);
                 document.getElementById('userAvatar').src = loggedInUser.picture;
                 closeUserDropdown();
                 checkJiraConnection();
@@ -3265,10 +3221,10 @@
                 const linkAppname = document.getElementById('reportLinkAppnameInput') ? document.getElementById('reportLinkAppnameInput').value.trim() : '';
                 
                 let generatedJiraLink = "";
-                if (currentProjectKey && currentJiraDomain && currentBoardId) {
-                    generatedJiraLink = `${currentJiraDomain}/jira/software/c/projects/${encodeURIComponent(currentProjectKey)}/boards/${currentBoardId}`;
-                } else if (currentParentKey && currentJiraDomain) {
+                if (currentParentKey && currentJiraDomain) {
                     generatedJiraLink = `${currentJiraDomain}/browse/${encodeURIComponent(currentParentKey)}`;
+                } else if (currentProjectKey && currentJiraDomain && currentBoardId) {
+                    generatedJiraLink = `${currentJiraDomain}/jira/software/c/projects/${encodeURIComponent(currentProjectKey)}/boards/${currentBoardId}`;
                 }
 
                 
