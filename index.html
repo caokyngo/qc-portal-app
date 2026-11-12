@@ -192,7 +192,7 @@
                             <div class="travel-marquee-group">
                                 <span class="travel-marquee-message soft-text">
                                     <i class="fa-solid fa-plane-departure" aria-hidden="true"></i>
-                                    Chỉ còn <strong class="mondayCountText travel-marquee-count">...</strong> Thứ 2 nữa là đi Trùng Khánh nhoa cả nhà iu! 🇨🇳
+                                     Have a good trip!!!
                                 </span>
                                 <span class="travel-marquee-message soft-text">
                                     <i class="fa-solid fa-plane-departure" aria-hidden="true"></i>
@@ -202,7 +202,7 @@
                             <div class="travel-marquee-group" aria-hidden="true">
                                 <span class="travel-marquee-message soft-text">
                                     <i class="fa-solid fa-plane-departure" aria-hidden="true"></i>
-                                    Chỉ còn <strong class="mondayCountText travel-marquee-count">...</strong> Thứ 2 nữa là đi Trùng Khánh nhoa cả nhà iu! 🇨🇳
+                                    Have a good trip!!!
                                 </span>
                                 <span class="travel-marquee-message soft-text">
                                     <i class="fa-solid fa-plane-departure" aria-hidden="true"></i>
@@ -3685,27 +3685,33 @@
                         reportLines.push(toRoman(index + 1) + '. [' + (tag || '').toUpperCase() + ']');
                         const ticketsList = tagDataMap[tag].tickets;
 
-                        const priorityGroups = {};
-                        ticketsList.forEach(t => {
-                            if (!priorityGroups[t.priority]) priorityGroups[t.priority] = [];
-                            priorityGroups[t.priority].push(t);
-                        });
+                        const isSpecialTag = specialTagsList.includes(tag.toLowerCase().trim());
 
-                        const isSpecialTag = specialTagsList.includes(tag.toLowerCase());
+                        if (isSpecialTag) {
+                            // Improvement / Q&A / Question: show only ticket ID and title, without priority labels or counts.
+                            ticketsList.forEach(t => {
+                                reportLines.push('  + ' + t.fullKey + ': ' + t.cleanSummary);
+                            });
+                        } else {
+                            const priorityGroups = {};
+                            ticketsList.forEach(t => {
+                                if (!priorityGroups[t.priority]) priorityGroups[t.priority] = [];
+                                priorityGroups[t.priority].push(t);
+                            });
 
-                        ['Highest', 'High', 'Medium', 'Low', 'Lowest', 'Unassigned'].forEach(p => {
-                            if (priorityGroups[p] && priorityGroups[p].length > 0) {
-                                reportLines.push('- ' + p + ': ' + priorityGroups[p].length);
-                                
-                                const isMajorPriority = ['Highest', 'High'].includes(p);
-                                
-                                if (isTotalLessThan5 || isMajorPriority || isSpecialTag) {
-                                    priorityGroups[p].forEach(t => {
-                                        reportLines.push('  + ' + t.fullKey + ': ' + t.cleanSummary);
-                                    });
+                            ['Highest', 'High', 'Medium', 'Low', 'Lowest', 'Unassigned'].forEach(p => {
+                                if (priorityGroups[p] && priorityGroups[p].length > 0) {
+                                    reportLines.push('- ' + p + ': ' + priorityGroups[p].length);
+
+                                    const isMajorPriority = ['Highest', 'High'].includes(p);
+                                    if (isTotalLessThan5 || isMajorPriority) {
+                                        priorityGroups[p].forEach(t => {
+                                            reportLines.push('  + ' + t.fullKey + ': ' + t.cleanSummary);
+                                        });
+                                    }
                                 }
-                            }
-                        });
+                            });
+                        }
 
                         if (index < tagOrder.length - 1) reportLines.push('----------');
                     });
