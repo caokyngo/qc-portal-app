@@ -85,8 +85,10 @@
         .travel-marquee { width: 100%; max-width: 460px; overflow: hidden; mask-image: linear-gradient(to right, transparent, black 8%, black 92%, transparent); -webkit-mask-image: linear-gradient(to right, transparent, black 8%, black 92%, transparent); }
         .travel-marquee-track { display: flex; width: max-content; animation: travel-marquee-scroll 18s linear infinite; will-change: transform; }
         .travel-marquee-group { display: flex; flex: 0 0 auto; align-items: center; padding-right: 2.5rem; gap: 2.5rem; }
-        .travel-marquee-message { display: inline-flex; items-center; gap: 0.4rem; white-space: nowrap; font-family: 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; font-size: 16px; font-weight: 800; background: linear-gradient(90deg, #ea580c 0%, #d97706 50%, #ca8a04 100%); -webkit-background-clip: text; background-clip: text; color: transparent; animation: travel-blink 1.2s infinite ease-in-out; }
+        .travel-marquee-message { display: inline-flex; align-items: center; gap: 0.4rem; white-space: nowrap; font-family: 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; font-size: 16px; font-weight: 800; background: linear-gradient(90deg, #ea580c 0%, #d97706 50%, #ca8a04 100%); -webkit-background-clip: text; background-clip: text; color: transparent; animation: travel-blink 1.2s infinite ease-in-out; }
         .travel-marquee-message i { color: #ea580c; font-size: 15.5px; }
+        .update-marquee-message { display: inline-flex; align-items: center; gap: 0.4rem; white-space: nowrap; font-family: 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; font-size: 16px; font-weight: 800; background: linear-gradient(90deg, #0284c7 0%, #4f46e5 50%, #7c3aed 100%); -webkit-background-clip: text; background-clip: text; color: transparent; animation: travel-blink 1.2s infinite ease-in-out; }
+        .update-marquee-message i { color: #4f46e5; font-size: 15.5px; }
         .travel-marquee-count { font-size: 17px; font-weight: 900; background: linear-gradient(90deg, #c2410c 0%, #ea580c 100%); -webkit-background-clip: text; background-clip: text; color: transparent; padding: 0 2px; }
         @keyframes travel-marquee-scroll { to { transform: translateX(-50%); } }
         @keyframes travel-blink { 0%, 100% { opacity: 1; filter: drop-shadow(0 0 1px rgba(234, 88, 12, 0.4)); } 50% { opacity: 0.45; filter: drop-shadow(0 0 5px rgba(234, 88, 12, 0.7)); } }
@@ -192,11 +194,11 @@
                             <div class="travel-marquee-group">
                                 <span class="travel-marquee-message soft-text">
                                     <i class="fa-solid fa-plane-departure" aria-hidden="true"></i>
-                                     Have a good trip!!!
+                                    Have a good trip!!!
                                 </span>
-                                <span class="travel-marquee-message soft-text">
-                                    <i class="fa-solid fa-plane-departure" aria-hidden="true"></i>
-                                    Chạy task lẹ tay để còn kịp nhoa! 🇨🇳
+                                <span class="update-marquee-message soft-text">
+                                    <i class="fa-solid fa-arrows-rotate" aria-hidden="true"></i>
+                                    Reload the page to get new update!
                                 </span>
                             </div>
                             <div class="travel-marquee-group" aria-hidden="true">
@@ -204,9 +206,9 @@
                                     <i class="fa-solid fa-plane-departure" aria-hidden="true"></i>
                                     Have a good trip!!!
                                 </span>
-                                <span class="travel-marquee-message soft-text">
-                                    <i class="fa-solid fa-plane-departure" aria-hidden="true"></i>
-                                    Chạy task lẹ tay để còn kịp nhoa! 🇨🇳
+                                <span class="update-marquee-message soft-text">
+                                    <i class="fa-solid fa-arrows-rotate" aria-hidden="true"></i>
+                                    Reload the page to get new update!
                                 </span>
                             </div>
                         </div>
@@ -754,7 +756,6 @@
     <!-- HÀM XỬ LÝ TOAST VÀ CÁC LOGIC KHÁC -->
     <script>
         const JIRA_PROXY_API_URL = "https://script.google.com/a/macros/enotion.io/s/AKfycbwsjm9uO59mD-Ad6EUoo2WPxMql-ObwERoCPOcRXvcKx8XkYBZ_pkxBFDr0u95_6tec/exec";
-        // If OAuth Code.gs is deployed from a different Apps Script project, replace the URL above with its Web app /exec URL.
         const URL_REPORT_API = "https://script.google.com/a/macros/enotion.io/s/AKfycbzynUh65kMWVtwRdYdg8x35-6LViA_JwMPrWhEoMdDXFDP7tpcheilYrReQSIrQ6zAtIQ/exec"; 
         let currentBoardId = null;
         let currentProjectKey = null;
@@ -919,6 +920,16 @@
             }
         }
 
+        function saveQCMembers() {
+            const val = document.getElementById('qcMembersInput')?.value.trim() || '';
+            localStorage.setItem('jira_qc_members', val);
+        }
+
+        function saveScopeTesting() {
+            const val = document.getElementById('scopeOfTestingInput')?.value.trim() || '';
+            localStorage.setItem('jira_scope_testing', val);
+        }
+
         function saveHeaderConfig() {
             updateEnvField();
 
@@ -960,8 +971,6 @@
                 if (config.linkTestcase !== undefined && document.getElementById('reportTestcaseInput')) document.getElementById('reportTestcaseInput').value = config.linkTestcase;
                 if (config.notes !== undefined && document.getElementById('reportNotesInput')) document.getElementById('reportNotesInput').value = config.notes;
                 if (config.metadata !== undefined && document.getElementById('reportMetadataInput')) document.getElementById('reportMetadataInput').value = config.metadata;
-
-
             } catch(e) {
                 console.error("Lỗi khôi phục cấu hình từ localStorage:", e);
             }
@@ -1084,8 +1093,6 @@
             }
         }
 
-
-
         function toggleJiraConnection() {
             if (jiraConnectionPending) return;
             if (jiraOAuthConnected) disconnectJiraAccount();
@@ -1200,7 +1207,6 @@
             return pending;
         }
 
-        // sites + spaces về chung 1 lần gọi Apps Script
         function applyPrefetchedSpaces(data) {
             if (!data || !Array.isArray(data.spaces) || !data.spaces.length || !selectedJiraSite) return;
             const siteId = String(selectedJiraSite.id);
@@ -1214,7 +1220,6 @@
             renderJiraComboOptions('space');
         }
 
-        // tải sẵn ticket ngay khi đã biết Epic + Target Task, bấm "Tải dữ liệu" là có ngay
         function prefetchTickets(epicKey, parentKey) {
             if (!jiraBoardCtx || !epicKey || (!parentKey && !isEnotionWorkspace())) return;
             const key = epicKey + '|' + parentKey;
@@ -1615,7 +1620,7 @@
             });
         }
 
-        /* ================= JIRA BOARD LOGIC (thay parseJiraUrl + fetchJiraDataFromUrl + changeJiraProject) ================= */
+        /* ================= JIRA BOARD LOGIC ================= */
         const DEFAULT_TICKET_TYPES = ['Bug/Defect', 'Improvement', 'Q&A'];
         let jiraParents = [];
         let jiraTargetParents = [];
@@ -1820,8 +1825,6 @@
                     const f = i.fields || {};
                     return { key: i.key, summary: f.summary || '', status: f.status ? f.status.name : '', issueType: f.issuetype ? f.issuetype.name : '' };
                 });
-                // Jira issue is commonly named "[QC] BUGS LIST" (plural BUGS).
-                // Match both "Bug List" and "Bugs List", including punctuation/separators.
                 const defaultTarget = jiraTargetParents.find(item => /bugs?\s*[-_:]?\s*lists?/i.test(`${item.key} ${item.summary}`));
                 selectedTargetParentValue = defaultTarget ? defaultTarget.key : null;
                 if (selectedTargetParentValue) prefetchTickets(epicKey, selectedTargetParentValue);
@@ -2916,10 +2919,6 @@
                     status === 'in progress' || status === 'doing' || status === 'failed' ||
                     status === 'testing' || status === 'in test' || status === 'in testing'
                 ) {
-                    // Phân nhóm theo Status cột G.
-                    // IN PROGRESS: status "in progress" hiển thị % cột E;
-                    // status "failed" chỉ hiển thị ": failed".
-                    // val được rollupTree dùng để gộp nhánh cha/con khi nội dung giống nhau.
                     const displayValue = status === 'failed'
                         ? 'failed'
                         : 'remain ' + (item.colE || '0%');
@@ -2939,8 +2938,6 @@
 
             const classifiedTotal = doneRaw.length + inProgressRaw.length + remainingRaw.length;
             const percentFor = count => classifiedTotal ? (count * 100 / classifiedTotal).toFixed(2).replace(/\.00$/, '') + '%' : '0%';
-            // Ưu tiên phần trăm tính sẵn ở cột J theo nhãn cột I.
-            // Nếu sheet không có các dòng tổng hợp này thì mới fallback sang tỷ lệ đếm task.
             const doneOverall = summaryPercentages.done || percentFor(doneRaw.length);
             const inProgressOverall = summaryPercentages.inProgress || percentFor(inProgressRaw.length);
             const remainingOverall = summaryPercentages.remaining || percentFor(remainingRaw.length);
@@ -2999,7 +2996,6 @@
                 const timeoutId = setTimeout(() => {
                     if (!isResolved) {
                         isResolved = true;
-                        // Leave a temporary no-op so a late JSONP response won't throw ReferenceError.
                         window[callbackName] = function() { delete window[callbackName]; };
                         if (script.parentNode) script.parentNode.removeChild(script);
                         setTimeout(() => { delete window[callbackName]; }, 60000);
@@ -3041,7 +3037,7 @@
                     await navigator.clipboard.writeText(text);
                     return true;
                 } catch (e) {
-                    // The user may have switched windows while the Sheet API was loading.
+                    // Fallback below if focus changed during async fetch
                 }
             }
 
@@ -3059,7 +3055,7 @@
                 textarea.remove();
                 if (copied) return true;
             } catch (e) {
-                // Fall through to the manual copy dialog.
+                // Fall through to manual copy dialog
             }
             return false;
         }
@@ -3533,9 +3529,10 @@
                     const status = (getColumnValue(row, ['Status', 'Trạng thái']) || 'N/A').toString().trim();
                     const sUpper = status.toUpperCase();
                     
+                    // Đếm ticket ở cột Deployed và In-Testing độc lập với filter UI (không tính In progress / To Do)
                     if (sUpper.includes('DEPLOYED')) {
                         countDeployed++;
-                    } else if (sUpper.includes('TESTING') || sUpper.includes('IN TEST') || sUpper.includes('IN-TEST')) {
+                    } else if (sUpper.includes('TESTING') || sUpper === 'IN TEST' || sUpper === 'IN-TEST') {
                         countInTesting++;
                     }
 
@@ -3688,7 +3685,6 @@
                         const isSpecialTag = specialTagsList.includes(tag.toLowerCase().trim());
 
                         if (isSpecialTag) {
-                            // Improvement / Q&A / Question: show only ticket ID and title, without priority labels or counts.
                             ticketsList.forEach(t => {
                                 reportLines.push('  + ' + t.fullKey + ': ' + t.cleanSummary);
                             });
