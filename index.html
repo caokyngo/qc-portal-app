@@ -270,7 +270,7 @@
                         </div>
                     </div>
 
-                    <div class="space-y-4">
+                    <div id="jiraControlsRegion" class="relative space-y-4">
                         <div class="rounded-xl border border-slate-200 bg-slate-50/70 p-4 sm:p-5">
                             <div class="mb-4 flex items-center gap-3">
                                 <span class="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-indigo-100 text-xs font-bold text-indigo-700">1</span>
@@ -341,6 +341,7 @@
                         <button type="button" id="btnFetchJira" onclick="fetchJiraDataFromUrl()" class="w-full h-12 bg-indigo-600 hover:bg-indigo-700 active:bg-indigo-800 text-white font-bold rounded-xl shadow-sm hover:shadow-md transition flex items-center justify-center gap-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50" disabled>
                             <i class="fa-solid fa-cloud-arrow-down" aria-hidden="true"></i> Tải dữ liệu ticket
                         </button>
+                        <div id="jiraConnectionLockOverlay" class="hidden absolute inset-0 z-30 cursor-wait rounded-xl" onclick="showJiraConnectionWaitToast()" aria-hidden="true"></div>
                     </div>
                 </section>
 
@@ -778,6 +779,7 @@
         let jiraProjectsLoadedForSpace = '';
         let jiraProjectsLoadingForSpace = '';
         let jiraConnectionPending = false;
+        let jiraConnectionCheckPending = false;
         let jiraOAuthMessageReceived = false;
         let jiraOAuthPopupCheckTimer = null;
         let jiraOAuthProbeInFlight = false;
@@ -1169,6 +1171,28 @@
             else connectJiraAccount();
         }
 
+        function showJiraConnectionWaitToast() {
+            showToast('Đang kết nối Jira', 'Vui lòng chờ Jira kết nối xong rồi thao tác tiếp nhé.');
+        }
+
+        function syncJiraControlsLock() {
+            const locked = !jiraOAuthConnected || jiraConnectionPending || jiraConnectionCheckPending;
+            const overlay = document.getElementById('jiraConnectionLockOverlay');
+            const region = document.getElementById('jiraControlsRegion');
+            if (overlay) overlay.classList.toggle('hidden', !locked);
+            if (region) region.setAttribute('aria-busy', String(locked));
+            document.querySelectorAll('#jiraControlsRegion button').forEach(button => {
+                if (button.id === 'jiraConnectionToggle') return;
+                if (locked) {
+                    if (!button.hasAttribute('data-jira-lock-disabled')) button.setAttribute('data-jira-lock-disabled', String(button.disabled));
+                    button.disabled = true;
+                } else if (button.hasAttribute('data-jira-lock-disabled')) {
+                    button.disabled = button.getAttribute('data-jira-lock-disabled') === 'true';
+                    button.removeAttribute('data-jira-lock-disabled');
+                }
+            });
+        }
+
         function setJiraConnectionUI(connected, message) {
             jiraOAuthConnected = Boolean(connected);
             const workspaceToggle = document.getElementById('jiraSiteToggle');
@@ -1204,6 +1228,7 @@
                     ? 'h-2.5 w-2.5 rounded-full bg-emerald-500'
                     : (jiraConnectionPending ? 'h-2.5 w-2.5 rounded-full bg-indigo-500 animate-pulse' : 'h-2.5 w-2.5 rounded-full bg-slate-300');
             }
+            syncJiraControlsLock();
             if (jiraOAuthConnected && selectedJiraSite && jiraSpacesLoadedForSite !== String(selectedJiraSite.id) && jiraSpacesLoadingForSite !== String(selectedJiraSite.id)) {
                 loadJiraSpaces();
             }
@@ -1641,6 +1666,7 @@
             }
             if (jiraConnectionPending) return;
 
+            jiraConnectionCheckPending = true;
             setJiraConnectionUI(jiraOAuthConnected, 'Đang kiểm tra kết nối Jira...');
             requestJiraJsonp({ action: 'sites', withSpaces: '1', site: localStorage.getItem('jira_selected_site') || '' }, data => {
                 if (data && !data.error && Array.isArray(data.sites)) {
@@ -1651,14 +1677,17 @@
                     const message = connected
                         ? `Đã kết nối Jira · ${siteCount} site được cấp quyền`
                         : 'Chưa có Jira site nào được cấp quyền';
+                    jiraConnectionCheckPending = false;
                     setJiraConnectionUI(connected, message);
                     if (typeof done === 'function') done(connected, data.sites);
                     return;
                 }
                 renderJiraSites([]);
+                jiraConnectionCheckPending = false;
                 setJiraConnectionUI(false, (data && data.error) ? 'Chưa kết nối Jira. Hãy bật công tắc để cấp quyền.' : 'Không nhận được danh sách Jira site');
                 if (typeof done === 'function') done(false, []);
             }, error => {
+                jiraConnectionCheckPending = false;
                 setJiraConnectionUI(jiraOAuthConnected, 'Không kiểm tra được kết nối. Hãy thử làm mới trạng thái.');
                 if (typeof done === 'function') done(jiraOAuthConnected, jiraConnectedSites);
                 console.warn('Không kiểm tra được Jira OAuth:', error);
@@ -2155,6 +2184,7 @@
             if (storedUser) {
                 loggedInUser = JSON.parse(storedUser);
                 jiraOAuthConnected = false;
+                jiraConnectionCheckPending = true;
                 jiraConnectedSites = [];
                 renderJiraSites([]);
                 setJiraConnectionUI(false, 'Đang kiểm tra kết nối Jira...');
@@ -2169,6 +2199,7 @@
                 loggedInUser = null;
                 jiraConnectionPending = false;
                 jiraOAuthConnected = false;
+                jiraConnectionCheckPending = false;
                 jiraConnectedSites = [];
                 renderJiraSites([]);
                 if(loginOption) loginOption.classList.remove('hidden');
