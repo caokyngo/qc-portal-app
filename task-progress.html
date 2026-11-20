@@ -199,17 +199,6 @@
     .chart-legend-swatch { width:9px; height:9px; border-radius:50%; }
     .chart-instruction { color:var(--muted); font-size:10px; }
     .task-chart-empty { padding:28px 16px; color:var(--muted); text-align:center; font-size:12px; }
-    .status-confirm-backdrop { position:fixed; inset:0; z-index:110; display:none; place-items:center; padding:18px; background:#0f172a80; backdrop-filter:blur(3px); }
-    .status-confirm-backdrop.show { display:grid; }
-    .status-confirm-dialog { width:min(440px,100%); border:1px solid var(--line); border-radius:16px; padding:20px; background:var(--surface); color:var(--text); box-shadow:0 24px 80px #0f172a40; }
-    .status-confirm-head { display:flex; align-items:flex-start; gap:12px; }
-    .status-confirm-icon { width:36px; height:36px; display:grid; place-items:center; flex:none; border-radius:11px; background:#eef2ff; color:#4f46e5; }
-    .status-confirm-head h2 { margin:0; font-size:16px; }
-    .status-confirm-head p { margin:5px 0 0; color:var(--muted); font-size:12px; line-height:1.5; }
-    .status-confirm-change { display:flex; align-items:center; gap:9px; margin:16px 0; border:1px solid var(--line); border-radius:11px; padding:11px 12px; background:var(--soft); font-size:12px; font-weight:750; }
-    .status-confirm-current { color:var(--muted); text-transform:capitalize; }
-    .status-confirm-next { color:var(--text); text-transform:capitalize; }
-    .status-confirm-actions { display:flex; justify-content:flex-end; gap:8px; margin-top:16px; }
     .config-fields { display:grid; grid-template-columns:minmax(0,1.5fr) minmax(0,1fr) 115px 145px; gap:9px; }
     .formula-preview { margin-top:9px; border-radius:8px; padding:8px 10px; background:var(--surface); color:var(--muted); font-family:ui-monospace,SFMono-Regular,Consolas,monospace; font-size:11px; overflow-wrap:anywhere; }
     .config-empty { padding:24px; color:var(--muted); text-align:center; font-size:13px; }
@@ -220,6 +209,9 @@
     .config-modal-head { display:flex; align-items:center; justify-content:space-between; gap:12px; padding:15px 20px; border-bottom:1px solid var(--line); background:var(--surface); }
     .config-modal-head h2 { margin:0; font-size:16px; }
     .config-modal-body { flex:1; min-height:0; overflow:auto; overscroll-behavior:contain; padding:4px 14px 18px; }
+    .config-modal-footer { display:flex; align-items:center; justify-content:space-between; gap:12px; padding:12px 20px; border-top:1px solid var(--line); background:var(--surface); box-shadow:0 -5px 16px #0f172a0a; }
+    .config-modal-footer[hidden] { display:none; }
+    .config-modal-footer-note { color:var(--muted); font-size:11px; }
     .config-modal-body .lookup-panel { margin-top:12px; }
     .config-modal-body .config-panel { margin-top:12px; }
     #toast-container { position:fixed; z-index:120; top:16px; right:16px; display:flex; flex-direction:column; gap:10px; pointer-events:none; }
@@ -340,6 +332,8 @@
       .config-modal { max-height:96vh; }
       .config-modal-head { padding:12px 14px; }
       .config-modal-body { padding:3px 8px 12px; }
+      .config-modal-footer { align-items:stretch; flex-direction:column; padding:11px 12px; }
+      .config-modal-footer .button { width:100%; }
       .data-summary-grid { grid-template-columns:minmax(0,1fr); gap:9px; }
       .data-summary:nth-child(2) { grid-column:auto; }
       .task-chart-axis { display:none; }
@@ -461,8 +455,7 @@
         </section>
         <section id="configPanel" class="panel config-panel" hidden>
           <header class="config-panel-head">
-            <div><h2 id="configPanelTitle">Cấu hình sheet</h2><p>Cập nhật sẽ ghi data và status trực tiếp xuống report.</p></div>
-            <button type="button" id="refreshDataButton" class="button button-primary" onclick="refreshExistingData()"><i class="fa-solid fa-rotate"></i> Cập nhật &amp; lưu</button>
+            <div><h2 id="configPanelTitle">Cấu hình sheet</h2><p>Chỉnh status trên biểu đồ; chỉ lưu vào sheet khi bấm “Cập nhật &amp; lưu”.</p></div>
           </header>
           <div class="config-panel-body">
             <div class="field config-folder"><label for="configFolderUrl">Link folder Test Case (ô A1)</label><input id="configFolderUrl" type="url" placeholder="https://drive.google.com/drive/folders/…"></div>
@@ -470,20 +463,10 @@
           </div>
         </section>
       </div>
-    </section>
-  </div>
-
-  <div id="statusConfirmModal" class="status-confirm-backdrop" role="presentation" onclick="handleStatusConfirmBackdrop(event)">
-    <section class="status-confirm-dialog" role="dialog" aria-modal="true" aria-labelledby="statusConfirmTitle" aria-describedby="statusConfirmDescription">
-      <div class="status-confirm-head">
-        <span class="status-confirm-icon"><i class="fa-solid fa-rotate"></i></span>
-        <div><h2 id="statusConfirmTitle">Xác nhận đổi status</h2><p id="statusConfirmDescription">Status mới sẽ được lưu trực tiếp vào Google Sheet.</p></div>
-      </div>
-      <div class="status-confirm-change"><span id="statusConfirmTask"></span><span class="status-confirm-current" id="statusConfirmFrom"></span><i class="fa-solid fa-arrow-right text-slate-400"></i><span class="status-confirm-next" id="statusConfirmTo"></span></div>
-      <div class="status-confirm-actions">
-        <button type="button" id="cancelStatusChangeButton" class="button button-secondary" onclick="cancelTaskStatusChange()">Hủy</button>
-        <button type="button" id="confirmStatusChangeButton" class="button button-primary" onclick="confirmTaskStatusChange()"><i class="fa-solid fa-floppy-disk"></i> Xác nhận &amp; lưu</button>
-      </div>
+      <footer id="configModalFooter" class="config-modal-footer" hidden>
+        <span id="configModalFooterNote" class="config-modal-footer-note">Chưa có thay đổi status chưa lưu.</span>
+        <button type="button" id="refreshDataButton" class="button button-primary" onclick="refreshExistingData()"><i class="fa-solid fa-rotate"></i> Cập nhật &amp; lưu</button>
+      </footer>
     </section>
   </div>
 
@@ -844,11 +827,28 @@
     const TASK_STATUS_ORDER = ['in progress', 'done', 'failed', 'remaining'];
     const TASK_STATUS_COLORS = { 'in progress': '#eab308', done: '#16a34a', failed: '#dc2626', remaining: '#f97316' };
     const TASK_STATUS_LABELS = { 'in progress': 'In Progress', done: 'Done', failed: 'Failed', remaining: 'Remaining' };
-    let pendingTaskStatusChange = null;
+    let savedTaskStatuses = new Map();
+    const pendingTaskStatusRows = new Set();
+
+    function snapshotSavedTaskStatuses(config) {
+      savedTaskStatuses = new Map((config.suites || []).map(item => [Number(item.row), String(item.status || 'remaining').trim().toLowerCase()]));
+      pendingTaskStatusRows.clear();
+      updatePendingStatusUI();
+    }
+
+    function updatePendingStatusUI() {
+      const footer = document.getElementById('configModalFooter');
+      const note = document.getElementById('configModalFooterNote');
+      if (footer) footer.hidden = !loadedReportConfig;
+      if (note) note.textContent = pendingTaskStatusRows.size
+        ? pendingTaskStatusRows.size + ' task có status chưa lưu. Bấm “Cập nhật & lưu” để ghi status và làm mới data.'
+        : 'Status hiện tại đã lưu. Bấm “Cập nhật & lưu” để làm mới data từ folder Test Case.';
+    }
 
     function renderExistingConfig(config) {
       loadedReportConfig = config;
       document.getElementById('configPanel').hidden = false;
+      updatePendingStatusUI();
       document.getElementById('configPanelTitle').textContent = 'Cấu hình sheet · ' + config.sheetName;
       document.getElementById('configFolderUrl').value = config.folderUrl || '';
       const rows = Array.isArray(config.suites) ? config.suites : [];
@@ -865,7 +865,7 @@
       const legend = TASK_STATUS_ORDER.map(status => '<span class="chart-legend-item"><i class="chart-legend-swatch" style="background:' + TASK_STATUS_COLORS[status] + '"></i>' + escapeHtml(TASK_STATUS_LABELS[status]) + '</span>').join('');
       const groups = statuses.map(status => ({ status, items: rows.filter(item => normalizeStatus(item.status) === status) })).filter(group => group.items.length);
 
-      root.innerHTML = '<div class="task-chart-toolbar"><div class="chart-legend" aria-label="Chú giải status">' + legend + '</div><span class="chart-instruction">Bấm vào dòng task để mở lựa chọn status. Mỗi thay đổi cần xác nhận trước khi lưu.</span></div>' +
+      root.innerHTML = '<div class="task-chart-toolbar"><div class="chart-legend" aria-label="Chú giải status">' + legend + '</div><span class="chart-instruction">Status chỉ đổi tạm thời; bấm nút bên dưới để lưu cùng dữ liệu mới.</span></div>' +
         '<div class="task-chart-axis"><span>Task</span><span class="task-chart-axis-label"><span>Số lượng test case</span><span>0 — ' + maxTotal.toLocaleString('vi-VN') + '</span></span></div>' +
         '<div class="task-chart-groups">' + groups.map(group => {
           const groupTotal = group.items.reduce((sum, item) => sum + getTotal(item), 0);
@@ -879,7 +879,7 @@
             return '<article class="task-chart-row" data-config-row="' + rowNumber + '" data-suite-name="' + escapeHtml(name) + '" data-status="' + escapeHtml(status) + '" tabindex="0" aria-label="' + escapeHtml(name) + ', ' + escapeHtml(groupLabel) + '. Bấm để đổi status." aria-expanded="false" onclick="toggleTaskStatusEditor(event,' + rowNumber + ')" onkeydown="handleTaskStatusRowKey(event,' + rowNumber + ')">' +
               '<div class="task-chart-name-wrap"><strong class="task-chart-name" title="' + escapeHtml(name) + '">' + escapeHtml(name) + '</strong><span class="task-chart-meta">Remaining / total: ' + escapeHtml(item.value || '—') + ' · Sheet nguồn: ' + escapeHtml(item.sourceTab || 'Chưa cập nhật') + '</span></div>' +
               '<div class="task-chart-measure"><div class="task-chart-track" aria-hidden="true"><span class="task-chart-bar" style="width:' + width + '%;background:' + color + '"></span></div><strong class="task-chart-total">' + total.toLocaleString('vi-VN') + '</strong></div>' +
-              '<div class="task-status-editor" onclick="event.stopPropagation()"><label for="taskStatus' + rowNumber + '">Status mới</label><select id="taskStatus' + rowNumber + '" class="task-status-select" data-config-field="status" onchange="requestTaskStatusChange(this)">' + options.map(value => '<option value="' + escapeHtml(value) + '" ' + (value === status ? 'selected' : '') + '>' + escapeHtml(TASK_STATUS_LABELS[value] || value) + '</option>').join('') + '</select><span class="task-status-editor-hint">Chọn status để xem xác nhận lưu</span></div>' +
+              '<div class="task-status-editor" onclick="event.stopPropagation()"><label for="taskStatus' + rowNumber + '">Status</label><select id="taskStatus' + rowNumber + '" class="task-status-select" data-config-field="status" onchange="updateTaskChartStatus(this)">' + options.map(value => '<option value="' + escapeHtml(value) + '" ' + (value === status ? 'selected' : '') + '>' + escapeHtml(TASK_STATUS_LABELS[value] || value) + '</option>').join('') + '</select><span class="task-status-editor-hint">Thay đổi chưa lưu vào sheet</span></div>' +
             '</article>';
           }).join('');
           return '<section class="task-chart-group" aria-label="Nhóm ' + escapeHtml(groupLabel) + '"><header class="task-chart-group-head"><strong class="task-chart-group-title"><i class="task-chart-group-dot" style="background:' + groupColor + '"></i>' + escapeHtml(groupLabel) + '</strong><span class="task-chart-group-summary">' + group.items.length + ' task · ' + groupTotal.toLocaleString('vi-VN') + ' test case</span></header><div class="task-chart-rows">' + taskRows + '</div></section>';
@@ -901,54 +901,19 @@
       if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); toggleTaskStatusEditor(event, rowNumber); }
     }
 
-    function requestTaskStatusChange(select) {
+    function updateTaskChartStatus(select) {
       const row = select && select.closest('.task-chart-row');
       if (!row) return;
-      const previousStatus = String(row.dataset.status || 'remaining').toLowerCase();
-      const nextStatus = String(select.value || previousStatus).toLowerCase();
-      select.value = previousStatus;
-      if (nextStatus === previousStatus) return;
-      pendingTaskStatusChange = { row: Number(row.dataset.configRow), taskName: row.dataset.suiteName, previousStatus, nextStatus };
-      document.getElementById('statusConfirmTask').textContent = pendingTaskStatusChange.taskName;
-      document.getElementById('statusConfirmFrom').textContent = TASK_STATUS_LABELS[previousStatus] || previousStatus;
-      document.getElementById('statusConfirmTo').textContent = TASK_STATUS_LABELS[nextStatus] || nextStatus;
-      document.getElementById('statusConfirmModal').classList.add('show');
-      document.getElementById('confirmStatusChangeButton').focus();
-    }
-
-    function handleStatusConfirmBackdrop(event) {
-      if (event.target && event.target.id === 'statusConfirmModal') cancelTaskStatusChange();
-    }
-
-    function cancelTaskStatusChange() {
-      pendingTaskStatusChange = null;
-      document.getElementById('statusConfirmModal').classList.remove('show');
-    }
-
-    async function confirmTaskStatusChange() {
-      if (!pendingTaskStatusChange || !loadedReportConfig) return;
-      const change = pendingTaskStatusChange;
-      const button = document.getElementById('confirmStatusChangeButton');
-      const original = button.innerHTML;
-      button.disabled = true;
-      document.getElementById('cancelStatusChangeButton').disabled = true;
-      button.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Đang lưu…';
-      try {
-        const result = await jsonp({ action: 'saveReportTaskStatus', sheetName: loadedReportConfig.sheetName, row: String(change.row), taskName: change.taskName, status: change.nextStatus });
-        const suite = (loadedReportConfig.suites || []).find(item => Number(item.row) === change.row);
-        if (suite) suite.status = result.status || change.nextStatus;
-        pendingTaskStatusChange = null;
-        document.getElementById('statusConfirmModal').classList.remove('show');
-        renderExistingConfig(loadedReportConfig);
-        showToast('Đã lưu status', change.taskName + ' đã chuyển sang ' + (TASK_STATUS_LABELS[change.nextStatus] || change.nextStatus) + '.');
-      } catch (error) {
-        cancelTaskStatusChange();
-        showToast('Không lưu được status', error?.message || 'Không thể cập nhật status trong Google Sheet.', true);
-      } finally {
-        button.disabled = false;
-        document.getElementById('cancelStatusChangeButton').disabled = false;
-        button.innerHTML = original;
-      }
+      const rowNumber = Number(row.dataset.configRow);
+      const status = String(select.value || 'remaining').trim().toLowerCase();
+      const suite = (loadedReportConfig?.suites || []).find(item => Number(item.row) === rowNumber);
+      if (!suite || String(suite.status || 'remaining').trim().toLowerCase() === status) return;
+      suite.status = status;
+      row.dataset.status = status;
+      if (savedTaskStatuses.get(rowNumber) === status) pendingTaskStatusRows.delete(rowNumber);
+      else pendingTaskStatusRows.add(rowNumber);
+      renderExistingConfig(loadedReportConfig);
+      updatePendingStatusUI();
     }
     function fmtElapsed(ms) {
       const s = ms / 1000;
@@ -990,6 +955,7 @@
       button.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Đang tải…';
       try {
         const config = await jsonp({ action: 'getReportSheetConfig', sheetName });
+        snapshotSavedTaskStatuses(config);
         renderExistingConfig(config);
         showToast('Đã tải cấu hình', 'Đã tải sheet “' + config.sheetName + '” với ' + (config.suites || []).length + ' task.');
       } catch (error) {
@@ -1245,6 +1211,7 @@
         await Promise.all(Array.from({ length: Math.min(MAX_PARALLEL, batches.length) }, worker));
         loadedReportConfig.folderUrl = folderUrl || loadedReportConfig.folderUrl;
 
+        snapshotSavedTaskStatuses(loadedReportConfig);
         renderExistingConfig(loadedReportConfig);
         const lines = buildRefreshSummary(aggregate, Date.now() - refreshStartedAt);
         const hasErrors = aggregate.errors.length > 0;
@@ -1265,7 +1232,6 @@
 
       document.getElementById('setupModal').addEventListener('keydown', event => { if (event.key === 'Escape') closeSetupModal(); });
       document.getElementById('sheetConfigModal').addEventListener('keydown', event => { if (event.key === 'Escape') closeSheetConfigModal(); });
-      document.getElementById('statusConfirmModal').addEventListener('keydown', event => { if (event.key === 'Escape' && pendingTaskStatusChange) cancelTaskStatusChange(); });
       document.getElementById('mappingModal').addEventListener('keydown', event => { if (event.key === 'Escape') closeMappingModal(); });
       document.getElementById('configSheetName').addEventListener('keydown', event => { if (event.key === 'Enter') loadExistingConfig(); });
       document.addEventListener('click', event => {
