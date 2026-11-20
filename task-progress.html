@@ -166,12 +166,19 @@
     .config-folder { margin-bottom:14px; }
     .config-list { display:grid; gap:0; overflow:hidden; border:1px solid var(--line); border-radius:14px; background:var(--surface); }
     .task-chart-toolbar { display:flex; flex-wrap:wrap; align-items:center; justify-content:space-between; gap:12px; padding:13px 15px; border-bottom:1px solid var(--line); background:var(--soft); }
-    .task-chart-axis { display:grid; grid-template-columns:minmax(150px,.8fr) minmax(0,1.8fr) 148px; align-items:center; gap:14px; color:var(--muted); font-size:10px; font-weight:750; }
+    .task-chart-axis { display:grid; grid-template-columns:minmax(150px,.8fr) minmax(0,1.8fr); align-items:center; gap:14px; padding:9px 15px; color:var(--muted); font-size:10px; font-weight:750; }
     .task-chart-axis-label { display:flex; justify-content:space-between; gap:10px; }
+    .task-chart-groups { display:grid; }
+    .task-chart-group + .task-chart-group { border-top:1px solid var(--line); }
+    .task-chart-group-head { display:flex; align-items:center; justify-content:space-between; gap:12px; padding:10px 15px; background:var(--soft); }
+    .task-chart-group-title { display:flex; align-items:center; gap:8px; font-size:11px; font-weight:800; color:var(--text); text-transform:uppercase; letter-spacing:.04em; }
+    .task-chart-group-dot { width:9px; height:9px; border-radius:50%; }
+    .task-chart-group-summary { color:var(--muted); font-size:10px; font-weight:650; }
     .task-chart-rows { display:grid; }
-    .task-chart-row { display:grid; grid-template-columns:minmax(150px,.8fr) minmax(0,1.8fr) 148px; align-items:center; gap:14px; min-height:54px; padding:8px 15px; border-bottom:1px solid var(--line); }
+    .task-chart-row { display:grid; grid-template-columns:minmax(150px,.8fr) minmax(0,1.8fr); align-items:center; gap:14px; min-height:54px; padding:9px 15px; border-bottom:1px solid var(--line); cursor:pointer; transition:background .14s ease; }
     .task-chart-row:last-child { border-bottom:0; }
     .task-chart-row:nth-child(even) { background:color-mix(in srgb,var(--soft) 45%,var(--surface)); }
+    .task-chart-row:hover,.task-chart-row:focus-visible { background:color-mix(in srgb,#6366f1 7%,var(--surface)); outline:none; }
     .task-chart-name-wrap { min-width:0; display:grid; gap:3px; }
     .task-chart-name { min-width:0; overflow-wrap:anywhere; color:var(--text); font-size:12px; font-weight:700; }
     .task-chart-meta { min-width:0; overflow:hidden; color:var(--muted); font-size:10px; text-overflow:ellipsis; white-space:nowrap; }
@@ -181,14 +188,28 @@
     .task-chart-bar { display:block; height:100%; min-width:8px; border-radius:7px; opacity:.9; transition:width .28s ease,filter .15s ease; }
     .task-chart-track:hover .task-chart-bar { filter:brightness(.92); }
     .task-chart-total { min-width:42px; color:var(--text); font-size:12px; font-variant-numeric:tabular-nums; text-align:right; }
-    .task-status-control { display:grid; gap:4px; }
-    .task-status-control label { color:var(--muted); font-size:9px; font-weight:750; }
+    .task-status-editor { display:none; grid-column:1 / -1; align-items:center; gap:10px; border-top:1px solid var(--line); padding-top:9px; }
+    .task-chart-row.is-editing .task-status-editor { display:flex; }
+    .task-status-editor label { color:var(--muted); font-size:10px; font-weight:750; }
     .task-status-select { width:100%; height:34px; border:1px solid var(--line); border-radius:9px; padding:0 9px; background:var(--surface); color:var(--text); font-size:11px; font-weight:700; text-transform:capitalize; }
+    .task-status-editor .task-status-select { width:min(220px,60%); }
+    .task-status-editor-hint { color:var(--muted); font-size:10px; }
     .chart-legend { display:flex; flex-wrap:wrap; align-items:center; gap:8px 13px; }
     .chart-legend-item { display:inline-flex; align-items:center; gap:6px; color:var(--muted); font-size:10px; font-weight:650; white-space:nowrap; }
     .chart-legend-swatch { width:9px; height:9px; border-radius:50%; }
     .chart-instruction { color:var(--muted); font-size:10px; }
     .task-chart-empty { padding:28px 16px; color:var(--muted); text-align:center; font-size:12px; }
+    .status-confirm-backdrop { position:fixed; inset:0; z-index:110; display:none; place-items:center; padding:18px; background:#0f172a80; backdrop-filter:blur(3px); }
+    .status-confirm-backdrop.show { display:grid; }
+    .status-confirm-dialog { width:min(440px,100%); border:1px solid var(--line); border-radius:16px; padding:20px; background:var(--surface); color:var(--text); box-shadow:0 24px 80px #0f172a40; }
+    .status-confirm-head { display:flex; align-items:flex-start; gap:12px; }
+    .status-confirm-icon { width:36px; height:36px; display:grid; place-items:center; flex:none; border-radius:11px; background:#eef2ff; color:#4f46e5; }
+    .status-confirm-head h2 { margin:0; font-size:16px; }
+    .status-confirm-head p { margin:5px 0 0; color:var(--muted); font-size:12px; line-height:1.5; }
+    .status-confirm-change { display:flex; align-items:center; gap:9px; margin:16px 0; border:1px solid var(--line); border-radius:11px; padding:11px 12px; background:var(--soft); font-size:12px; font-weight:750; }
+    .status-confirm-current { color:var(--muted); text-transform:capitalize; }
+    .status-confirm-next { color:var(--text); text-transform:capitalize; }
+    .status-confirm-actions { display:flex; justify-content:flex-end; gap:8px; margin-top:16px; }
     .config-fields { display:grid; grid-template-columns:minmax(0,1.5fr) minmax(0,1fr) 115px 145px; gap:9px; }
     .formula-preview { margin-top:9px; border-radius:8px; padding:8px 10px; background:var(--surface); color:var(--muted); font-family:ui-monospace,SFMono-Regular,Consolas,monospace; font-size:11px; overflow-wrap:anywhere; }
     .config-empty { padding:24px; color:var(--muted); text-align:center; font-size:13px; }
@@ -323,10 +344,11 @@
       .data-summary:nth-child(2) { grid-column:auto; }
       .task-chart-axis { display:none; }
       .task-chart-row { grid-template-columns:minmax(0,1fr) 112px; gap:8px 12px; padding:11px 12px; }
-      .task-chart-name-wrap { grid-column:1 / -1; }
-      .task-chart-measure { grid-column:1; grid-row:2; }
-      .task-status-control { grid-column:2; grid-row:2; }
-      .task-status-control label { display:none; }
+      .task-chart-axis { grid-template-columns:minmax(0,1fr); padding:8px 12px; }
+      .task-chart-axis > span:first-child { display:none; }
+      .task-chart-row { grid-template-columns:minmax(0,1fr); gap:8px; padding:11px 12px; }
+      .task-chart-name-wrap,.task-chart-measure { grid-column:1; }
+      .task-status-editor { flex-wrap:wrap; }
       .task-chart-toolbar { align-items:flex-start; flex-direction:column; }
     }
   </style>
@@ -447,6 +469,20 @@
             <div id="configRows" class="config-list"></div>
           </div>
         </section>
+      </div>
+    </section>
+  </div>
+
+  <div id="statusConfirmModal" class="status-confirm-backdrop" role="presentation" onclick="handleStatusConfirmBackdrop(event)">
+    <section class="status-confirm-dialog" role="dialog" aria-modal="true" aria-labelledby="statusConfirmTitle" aria-describedby="statusConfirmDescription">
+      <div class="status-confirm-head">
+        <span class="status-confirm-icon"><i class="fa-solid fa-rotate"></i></span>
+        <div><h2 id="statusConfirmTitle">Xác nhận đổi status</h2><p id="statusConfirmDescription">Status mới sẽ được lưu trực tiếp vào Google Sheet.</p></div>
+      </div>
+      <div class="status-confirm-change"><span id="statusConfirmTask"></span><span class="status-confirm-current" id="statusConfirmFrom"></span><i class="fa-solid fa-arrow-right text-slate-400"></i><span class="status-confirm-next" id="statusConfirmTo"></span></div>
+      <div class="status-confirm-actions">
+        <button type="button" id="cancelStatusChangeButton" class="button button-secondary" onclick="cancelTaskStatusChange()">Hủy</button>
+        <button type="button" id="confirmStatusChangeButton" class="button button-primary" onclick="confirmTaskStatusChange()"><i class="fa-solid fa-floppy-disk"></i> Xác nhận &amp; lưu</button>
       </div>
     </section>
   </div>
@@ -805,6 +841,11 @@
         button.innerHTML = '<i class="fa-solid fa-file-circle-plus"></i> Tạo sheet';
       }
     }
+    const TASK_STATUS_ORDER = ['in progress', 'done', 'failed', 'remaining'];
+    const TASK_STATUS_COLORS = { 'in progress': '#eab308', done: '#16a34a', failed: '#dc2626', remaining: '#f97316' };
+    const TASK_STATUS_LABELS = { 'in progress': 'In Progress', done: 'Done', failed: 'Failed', remaining: 'Remaining' };
+    let pendingTaskStatusChange = null;
+
     function renderExistingConfig(config) {
       loadedReportConfig = config;
       document.getElementById('configPanel').hidden = false;
@@ -812,62 +853,102 @@
       document.getElementById('configFolderUrl').value = config.folderUrl || '';
       const rows = Array.isArray(config.suites) ? config.suites : [];
       const root = document.getElementById('configRows');
-      if (!rows.length) {
-        root.innerHTML = '<div class="task-chart-empty">Sheet chưa có task nào để hiển thị.</div>';
-        return;
-      }
-      const statusOrder = ['in progress', 'done', 'failed', 'remaining'];
-      const statusColors = { 'in progress': '#eab308', done: '#16a34a', failed: '#dc2626', remaining: '#f97316' };
+      if (!rows.length) { root.innerHTML = '<div class="task-chart-empty">Sheet chưa có task nào để hiển thị.</div>'; return; }
+
       const getTotal = item => {
         const match = String(item.value || '').replace(/,/g, '').match(/\/\s*(\d+)/);
         return match ? Number(match[1]) : 0;
       };
+      const normalizeStatus = status => String(status || 'remaining').trim().toLowerCase();
       const maxTotal = Math.max(1, ...rows.map(getTotal));
-      const legend = statusOrder.map(status => '<span class="chart-legend-item"><i class="chart-legend-swatch" style="background:' + statusColors[status] + '"></i>' + escapeHtml(status) + '</span>').join('');
-      root.innerHTML = '<div class="task-chart-toolbar"><div class="chart-legend" aria-label="Chú giải status">' + legend + '</div><span class="chart-instruction">Bấm vào cột để chuyển status · hoặc chọn status ở bên phải</span></div>' +
-        '<div class="task-chart-axis"><span>Task</span><span class="task-chart-axis-label"><span>Số lượng test case</span><span>0 — ' + maxTotal.toLocaleString('vi-VN') + '</span></span><span>Status</span></div>' +
-        '<div class="task-chart-rows">' + rows.map(item => {
-          const rowNumber = Number(item.row);
-          const name = String(item.name || '');
-          const status = String(item.status || 'remaining').trim().toLowerCase();
-          const total = getTotal(item);
-          const width = total ? Math.max(1.5, total / maxTotal * 100) : 1.5;
-          const color = statusColors[status] || statusColors.remaining;
-          const statuses = [...new Set([...statusOrder, status])];
-          return '<article class="task-chart-row" data-config-row="' + rowNumber + '" data-suite-name="' + escapeHtml(name) + '">' +
-            '<div class="task-chart-name-wrap"><strong class="task-chart-name" title="' + escapeHtml(name) + '">' + escapeHtml(name) + '</strong><span class="task-chart-meta">Remaining / total: ' + escapeHtml(item.value || '—') + ' · Sheet nguồn: ' + escapeHtml(item.sourceTab || 'Chưa cập nhật') + '</span></div>' +
-            '<div class="task-chart-measure"><button type="button" class="task-chart-track" data-chart-track aria-label="' + escapeHtml(name) + ': ' + total.toLocaleString('vi-VN') + ' test case, status ' + escapeHtml(status) + '. Bấm để chuyển status." title="Bấm để chuyển status" onclick="cycleConfigStatus(' + rowNumber + ')"><span class="task-chart-bar" data-chart-bar style="width:' + width + '%;background:' + color + '"></span></button><strong class="task-chart-total" data-chart-total>' + total.toLocaleString('vi-VN') + '</strong></div>' +
-            '<div class="task-status-control"><label for="taskStatus' + rowNumber + '">Trạng thái</label><select id="taskStatus' + rowNumber + '" class="task-status-select" data-config-field="status" onchange="updateTaskChartStatus(this)">' + statuses.map(value => '<option value="' + escapeHtml(value) + '" ' + (value === status ? 'selected' : '') + '>' + escapeHtml(value) + '</option>').join('') + '</select></div>' +
-          '</article>';
+      const statuses = [...new Set([...TASK_STATUS_ORDER, ...rows.map(item => normalizeStatus(item.status))])];
+      const legend = TASK_STATUS_ORDER.map(status => '<span class="chart-legend-item"><i class="chart-legend-swatch" style="background:' + TASK_STATUS_COLORS[status] + '"></i>' + escapeHtml(TASK_STATUS_LABELS[status]) + '</span>').join('');
+      const groups = statuses.map(status => ({ status, items: rows.filter(item => normalizeStatus(item.status) === status) })).filter(group => group.items.length);
+
+      root.innerHTML = '<div class="task-chart-toolbar"><div class="chart-legend" aria-label="Chú giải status">' + legend + '</div><span class="chart-instruction">Bấm vào dòng task để mở lựa chọn status. Mỗi thay đổi cần xác nhận trước khi lưu.</span></div>' +
+        '<div class="task-chart-axis"><span>Task</span><span class="task-chart-axis-label"><span>Số lượng test case</span><span>0 — ' + maxTotal.toLocaleString('vi-VN') + '</span></span></div>' +
+        '<div class="task-chart-groups">' + groups.map(group => {
+          const groupTotal = group.items.reduce((sum, item) => sum + getTotal(item), 0);
+          const groupColor = TASK_STATUS_COLORS[group.status] || TASK_STATUS_COLORS.remaining;
+          const groupLabel = TASK_STATUS_LABELS[group.status] || group.status;
+          const taskRows = group.items.map(item => {
+            const rowNumber = Number(item.row), name = String(item.name || ''), status = normalizeStatus(item.status), total = getTotal(item);
+            const width = total ? Math.max(1.5, total / maxTotal * 100) : 1.5;
+            const color = TASK_STATUS_COLORS[status] || TASK_STATUS_COLORS.remaining;
+            const options = [...new Set([...TASK_STATUS_ORDER, status])];
+            return '<article class="task-chart-row" data-config-row="' + rowNumber + '" data-suite-name="' + escapeHtml(name) + '" data-status="' + escapeHtml(status) + '" tabindex="0" aria-label="' + escapeHtml(name) + ', ' + escapeHtml(groupLabel) + '. Bấm để đổi status." aria-expanded="false" onclick="toggleTaskStatusEditor(event,' + rowNumber + ')" onkeydown="handleTaskStatusRowKey(event,' + rowNumber + ')">' +
+              '<div class="task-chart-name-wrap"><strong class="task-chart-name" title="' + escapeHtml(name) + '">' + escapeHtml(name) + '</strong><span class="task-chart-meta">Remaining / total: ' + escapeHtml(item.value || '—') + ' · Sheet nguồn: ' + escapeHtml(item.sourceTab || 'Chưa cập nhật') + '</span></div>' +
+              '<div class="task-chart-measure"><div class="task-chart-track" aria-hidden="true"><span class="task-chart-bar" style="width:' + width + '%;background:' + color + '"></span></div><strong class="task-chart-total">' + total.toLocaleString('vi-VN') + '</strong></div>' +
+              '<div class="task-status-editor" onclick="event.stopPropagation()"><label for="taskStatus' + rowNumber + '">Status mới</label><select id="taskStatus' + rowNumber + '" class="task-status-select" data-config-field="status" onchange="requestTaskStatusChange(this)">' + options.map(value => '<option value="' + escapeHtml(value) + '" ' + (value === status ? 'selected' : '') + '>' + escapeHtml(TASK_STATUS_LABELS[value] || value) + '</option>').join('') + '</select><span class="task-status-editor-hint">Chọn status để xem xác nhận lưu</span></div>' +
+            '</article>';
+          }).join('');
+          return '<section class="task-chart-group" aria-label="Nhóm ' + escapeHtml(groupLabel) + '"><header class="task-chart-group-head"><strong class="task-chart-group-title"><i class="task-chart-group-dot" style="background:' + groupColor + '"></i>' + escapeHtml(groupLabel) + '</strong><span class="task-chart-group-summary">' + group.items.length + ' task · ' + groupTotal.toLocaleString('vi-VN') + ' test case</span></header><div class="task-chart-rows">' + taskRows + '</div></section>';
         }).join('') + '</div>';
     }
 
-    function updateTaskChartStatus(select) {
-      const row = select && select.closest('.task-chart-row');
+    function toggleTaskStatusEditor(event, rowNumber) {
+      if (event && event.target && event.target.closest('.task-status-editor')) return;
+      const row = document.querySelector('[data-config-row="' + Number(rowNumber) + '"]');
       if (!row) return;
-      const colors = { 'in progress': '#eab308', done: '#16a34a', failed: '#dc2626', remaining: '#f97316' };
-      const status = String(select.value || 'remaining').toLowerCase();
-      const bar = row.querySelector('[data-chart-bar]');
-      const track = row.querySelector('[data-chart-track]');
-      if (bar) bar.style.background = colors[status] || colors.remaining;
-      if (track) {
-        track.setAttribute('aria-label', row.dataset.suiteName + ': ' + (row.querySelector('[data-chart-total]')?.textContent || '0') + ' test case, status ' + status + '. Bấm để chuyển status.');
-      }
-      select.title = 'Status: ' + status;
+      document.querySelectorAll('.task-chart-row.is-editing').forEach(other => { if (other !== row) { other.classList.remove('is-editing'); other.setAttribute('aria-expanded', 'false'); } });
+      const open = !row.classList.contains('is-editing');
+      row.classList.toggle('is-editing', open);
+      row.setAttribute('aria-expanded', String(open));
     }
 
-    function cycleConfigStatus(rowNumber) {
-      const row = document.querySelector('[data-config-row="' + Number(rowNumber) + '"]');
-      const select = row && row.querySelector('[data-config-field="status"]');
-      if (!select) return;
-      const order = ['in progress', 'done', 'failed', 'remaining'];
-      const current = String(select.value || 'remaining').toLowerCase();
-      const next = order[(order.indexOf(current) + 1 + order.length) % order.length];
-      if (!Array.from(select.options).some(option => option.value === next)) {
-        const option = document.createElement('option'); option.value = next; option.textContent = next; select.appendChild(option);
+    function handleTaskStatusRowKey(event, rowNumber) {
+      if (event.target && event.target.closest('.task-status-editor')) return;
+      if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); toggleTaskStatusEditor(event, rowNumber); }
+    }
+
+    function requestTaskStatusChange(select) {
+      const row = select && select.closest('.task-chart-row');
+      if (!row) return;
+      const previousStatus = String(row.dataset.status || 'remaining').toLowerCase();
+      const nextStatus = String(select.value || previousStatus).toLowerCase();
+      select.value = previousStatus;
+      if (nextStatus === previousStatus) return;
+      pendingTaskStatusChange = { row: Number(row.dataset.configRow), taskName: row.dataset.suiteName, previousStatus, nextStatus };
+      document.getElementById('statusConfirmTask').textContent = pendingTaskStatusChange.taskName;
+      document.getElementById('statusConfirmFrom').textContent = TASK_STATUS_LABELS[previousStatus] || previousStatus;
+      document.getElementById('statusConfirmTo').textContent = TASK_STATUS_LABELS[nextStatus] || nextStatus;
+      document.getElementById('statusConfirmModal').classList.add('show');
+      document.getElementById('confirmStatusChangeButton').focus();
+    }
+
+    function handleStatusConfirmBackdrop(event) {
+      if (event.target && event.target.id === 'statusConfirmModal') cancelTaskStatusChange();
+    }
+
+    function cancelTaskStatusChange() {
+      pendingTaskStatusChange = null;
+      document.getElementById('statusConfirmModal').classList.remove('show');
+    }
+
+    async function confirmTaskStatusChange() {
+      if (!pendingTaskStatusChange || !loadedReportConfig) return;
+      const change = pendingTaskStatusChange;
+      const button = document.getElementById('confirmStatusChangeButton');
+      const original = button.innerHTML;
+      button.disabled = true;
+      document.getElementById('cancelStatusChangeButton').disabled = true;
+      button.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Đang lưu…';
+      try {
+        const result = await jsonp({ action: 'saveReportTaskStatus', sheetName: loadedReportConfig.sheetName, row: String(change.row), taskName: change.taskName, status: change.nextStatus });
+        const suite = (loadedReportConfig.suites || []).find(item => Number(item.row) === change.row);
+        if (suite) suite.status = result.status || change.nextStatus;
+        pendingTaskStatusChange = null;
+        document.getElementById('statusConfirmModal').classList.remove('show');
+        renderExistingConfig(loadedReportConfig);
+        showToast('Đã lưu status', change.taskName + ' đã chuyển sang ' + (TASK_STATUS_LABELS[change.nextStatus] || change.nextStatus) + '.');
+      } catch (error) {
+        cancelTaskStatusChange();
+        showToast('Không lưu được status', error?.message || 'Không thể cập nhật status trong Google Sheet.', true);
+      } finally {
+        button.disabled = false;
+        document.getElementById('cancelStatusChangeButton').disabled = false;
+        button.innerHTML = original;
       }
-      select.value = next;
-      updateTaskChartStatus(select);
     }
     function fmtElapsed(ms) {
       const s = ms / 1000;
@@ -1184,6 +1265,7 @@
 
       document.getElementById('setupModal').addEventListener('keydown', event => { if (event.key === 'Escape') closeSetupModal(); });
       document.getElementById('sheetConfigModal').addEventListener('keydown', event => { if (event.key === 'Escape') closeSheetConfigModal(); });
+      document.getElementById('statusConfirmModal').addEventListener('keydown', event => { if (event.key === 'Escape' && pendingTaskStatusChange) cancelTaskStatusChange(); });
       document.getElementById('mappingModal').addEventListener('keydown', event => { if (event.key === 'Escape') closeMappingModal(); });
       document.getElementById('configSheetName').addEventListener('keydown', event => { if (event.key === 'Enter') loadExistingConfig(); });
       document.addEventListener('click', event => {
