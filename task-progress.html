@@ -164,13 +164,31 @@
     .config-panel-head p { margin:4px 0 0; color:var(--muted); font-size:11px; }
     .config-panel-body { padding:17px 20px 20px; }
     .config-folder { margin-bottom:14px; }
-    .config-list { display:grid; gap:0; overflow:visible; border:1px solid var(--line); border-radius:12px; }
-    .config-card { padding:13px; border:0; border-radius:0; background:#f7f8fa; }
-    .config-card + .config-card { border-top:1px solid #d7e0ee; }
-    .config-card:nth-child(odd) { background:#a6c4f4; }
-    .config-card-head { display:flex; justify-content:space-between; align-items:center; gap:10px; margin-bottom:10px; }
-    .config-card-head strong { font-size:13px; }
-    .config-card-head span { color:var(--muted); font-size:11px; }
+    .config-list { display:grid; gap:0; overflow:hidden; border:1px solid var(--line); border-radius:14px; background:var(--surface); }
+    .task-chart-toolbar { display:flex; flex-wrap:wrap; align-items:center; justify-content:space-between; gap:12px; padding:13px 15px; border-bottom:1px solid var(--line); background:var(--soft); }
+    .task-chart-axis { display:grid; grid-template-columns:minmax(150px,.8fr) minmax(0,1.8fr) 148px; align-items:center; gap:14px; color:var(--muted); font-size:10px; font-weight:750; }
+    .task-chart-axis-label { display:flex; justify-content:space-between; gap:10px; }
+    .task-chart-rows { display:grid; }
+    .task-chart-row { display:grid; grid-template-columns:minmax(150px,.8fr) minmax(0,1.8fr) 148px; align-items:center; gap:14px; min-height:54px; padding:8px 15px; border-bottom:1px solid var(--line); }
+    .task-chart-row:last-child { border-bottom:0; }
+    .task-chart-row:nth-child(even) { background:color-mix(in srgb,var(--soft) 45%,var(--surface)); }
+    .task-chart-name-wrap { min-width:0; display:grid; gap:3px; }
+    .task-chart-name { min-width:0; overflow-wrap:anywhere; color:var(--text); font-size:12px; font-weight:700; }
+    .task-chart-meta { min-width:0; overflow:hidden; color:var(--muted); font-size:10px; text-overflow:ellipsis; white-space:nowrap; }
+    .task-chart-measure { display:flex; align-items:center; gap:9px; min-width:0; }
+    .task-chart-track { height:24px; display:flex; align-items:center; flex:1; min-width:0; border:0; border-radius:7px; padding:0; background:var(--soft); overflow:hidden; cursor:pointer; }
+    .task-chart-track:hover,.task-chart-track:focus-visible { outline:2px solid #6366f155; outline-offset:1px; }
+    .task-chart-bar { display:block; height:100%; min-width:8px; border-radius:7px; opacity:.9; transition:width .28s ease,filter .15s ease; }
+    .task-chart-track:hover .task-chart-bar { filter:brightness(.92); }
+    .task-chart-total { min-width:42px; color:var(--text); font-size:12px; font-variant-numeric:tabular-nums; text-align:right; }
+    .task-status-control { display:grid; gap:4px; }
+    .task-status-control label { color:var(--muted); font-size:9px; font-weight:750; }
+    .task-status-select { width:100%; height:34px; border:1px solid var(--line); border-radius:9px; padding:0 9px; background:var(--surface); color:var(--text); font-size:11px; font-weight:700; text-transform:capitalize; }
+    .chart-legend { display:flex; flex-wrap:wrap; align-items:center; gap:8px 13px; }
+    .chart-legend-item { display:inline-flex; align-items:center; gap:6px; color:var(--muted); font-size:10px; font-weight:650; white-space:nowrap; }
+    .chart-legend-swatch { width:9px; height:9px; border-radius:50%; }
+    .chart-instruction { color:var(--muted); font-size:10px; }
+    .task-chart-empty { padding:28px 16px; color:var(--muted); text-align:center; font-size:12px; }
     .config-fields { display:grid; grid-template-columns:minmax(0,1.5fr) minmax(0,1fr) 115px 145px; gap:9px; }
     .formula-preview { margin-top:9px; border-radius:8px; padding:8px 10px; background:var(--surface); color:var(--muted); font-family:ui-monospace,SFMono-Regular,Consolas,monospace; font-size:11px; overflow-wrap:anywhere; }
     .config-empty { padding:24px; color:var(--muted); text-align:center; font-size:13px; }
@@ -238,9 +256,7 @@
     html.dark-mode { color-scheme:dark; --page:#0f172a; --surface:#172033; --soft:#1e293b; --text:#e2e8f0; --muted:#a8b4c5; --line:#334155; --accent:#6366f1; --accent-light:#25234b; }
     html.dark-mode .field label { color:#cbd5e1; }
     html.dark-mode .custom-suite input,html.dark-mode .field input,html.dark-mode .field select { background:#111c2e; border-color:#475569; }
-    html.dark-mode .config-card { background:#1e293b; }
-    html.dark-mode .config-card:nth-child(odd) { background:#293d5d; }
-    html.dark-mode .config-card + .config-card { border-top-color:#475569; }
+    html.dark-mode .task-chart-bar { opacity:1; }
     html.dark-mode .message.error { color:#fecaca; background:#451a1a; border-color:#7f1d1d; }
     html.dark-mode .message.info { color:#bfdbfe; background:#172554; border-color:#1e40af; }
     html.dark-mode .modal-message { color:#fecaca; background:#451a1a; border-color:#7f1d1d; }
@@ -305,6 +321,13 @@
       .config-modal-body { padding:3px 8px 12px; }
       .data-summary-grid { grid-template-columns:minmax(0,1fr); gap:9px; }
       .data-summary:nth-child(2) { grid-column:auto; }
+      .task-chart-axis { display:none; }
+      .task-chart-row { grid-template-columns:minmax(0,1fr) 112px; gap:8px 12px; padding:11px 12px; }
+      .task-chart-name-wrap { grid-column:1 / -1; }
+      .task-chart-measure { grid-column:1; grid-row:2; }
+      .task-status-control { grid-column:2; grid-row:2; }
+      .task-status-control label { display:none; }
+      .task-chart-toolbar { align-items:flex-start; flex-direction:column; }
     }
   </style>
 </head>
@@ -790,20 +813,61 @@
       const rows = Array.isArray(config.suites) ? config.suites : [];
       const root = document.getElementById('configRows');
       if (!rows.length) {
-        root.innerHTML = '<div class="config-empty">Sheet chưa có dòng Test Suit nào để cấu hình.</div>';
+        root.innerHTML = '<div class="task-chart-empty">Sheet chưa có task nào để hiển thị.</div>';
         return;
       }
-      root.innerHTML = rows.map(item => {
-        const status = String(item.status || 'remaining').toLowerCase();
-        const statuses = [...new Set(['done', 'in progress', 'remaining', 'failed', status])];
-        return '<article class="config-card" data-config-row="' + Number(item.row) + '" data-suite-name="' + escapeHtml(item.name) + '">' +
-          '<div class="config-card-head"><strong>' + escapeHtml(item.name) + '</strong><span>Google Sheet · dòng ' + Number(item.row) + '</span></div>' +
-          '<div class="data-summary-grid">' +
-            '<div class="data-summary"><span>Remaining / total · cột B</span><strong>' + escapeHtml(item.value || '—') + '</strong></div>' +
-            '<div class="data-summary"><span>Sheet nguồn · cột H</span><strong class="source-chip">' + escapeHtml(item.sourceTab || 'Chưa cập nhật') + '</strong></div>' +
-            '<div class="field status-field"><label>Status · cột G</label><select data-config-field="status">' + statuses.map(value => '<option value="' + escapeHtml(value) + '" ' + (value === status ? 'selected' : '') + '>' + escapeHtml(value) + '</option>').join('') + '</select></div>' +
-          '</div></article>';
-      }).join('');
+      const statusOrder = ['in progress', 'done', 'failed', 'remaining'];
+      const statusColors = { 'in progress': '#eab308', done: '#16a34a', failed: '#dc2626', remaining: '#f97316' };
+      const getTotal = item => {
+        const match = String(item.value || '').replace(/,/g, '').match(/\/\s*(\d+)/);
+        return match ? Number(match[1]) : 0;
+      };
+      const maxTotal = Math.max(1, ...rows.map(getTotal));
+      const legend = statusOrder.map(status => '<span class="chart-legend-item"><i class="chart-legend-swatch" style="background:' + statusColors[status] + '"></i>' + escapeHtml(status) + '</span>').join('');
+      root.innerHTML = '<div class="task-chart-toolbar"><div class="chart-legend" aria-label="Chú giải status">' + legend + '</div><span class="chart-instruction">Bấm vào cột để chuyển status · hoặc chọn status ở bên phải</span></div>' +
+        '<div class="task-chart-axis"><span>Task</span><span class="task-chart-axis-label"><span>Số lượng test case</span><span>0 — ' + maxTotal.toLocaleString('vi-VN') + '</span></span><span>Status</span></div>' +
+        '<div class="task-chart-rows">' + rows.map(item => {
+          const rowNumber = Number(item.row);
+          const name = String(item.name || '');
+          const status = String(item.status || 'remaining').trim().toLowerCase();
+          const total = getTotal(item);
+          const width = total ? Math.max(1.5, total / maxTotal * 100) : 1.5;
+          const color = statusColors[status] || statusColors.remaining;
+          const statuses = [...new Set([...statusOrder, status])];
+          return '<article class="task-chart-row" data-config-row="' + rowNumber + '" data-suite-name="' + escapeHtml(name) + '">' +
+            '<div class="task-chart-name-wrap"><strong class="task-chart-name" title="' + escapeHtml(name) + '">' + escapeHtml(name) + '</strong><span class="task-chart-meta">Remaining / total: ' + escapeHtml(item.value || '—') + ' · Sheet nguồn: ' + escapeHtml(item.sourceTab || 'Chưa cập nhật') + '</span></div>' +
+            '<div class="task-chart-measure"><button type="button" class="task-chart-track" data-chart-track aria-label="' + escapeHtml(name) + ': ' + total.toLocaleString('vi-VN') + ' test case, status ' + escapeHtml(status) + '. Bấm để chuyển status." title="Bấm để chuyển status" onclick="cycleConfigStatus(' + rowNumber + ')"><span class="task-chart-bar" data-chart-bar style="width:' + width + '%;background:' + color + '"></span></button><strong class="task-chart-total" data-chart-total>' + total.toLocaleString('vi-VN') + '</strong></div>' +
+            '<div class="task-status-control"><label for="taskStatus' + rowNumber + '">Trạng thái</label><select id="taskStatus' + rowNumber + '" class="task-status-select" data-config-field="status" onchange="updateTaskChartStatus(this)">' + statuses.map(value => '<option value="' + escapeHtml(value) + '" ' + (value === status ? 'selected' : '') + '>' + escapeHtml(value) + '</option>').join('') + '</select></div>' +
+          '</article>';
+        }).join('') + '</div>';
+    }
+
+    function updateTaskChartStatus(select) {
+      const row = select && select.closest('.task-chart-row');
+      if (!row) return;
+      const colors = { 'in progress': '#eab308', done: '#16a34a', failed: '#dc2626', remaining: '#f97316' };
+      const status = String(select.value || 'remaining').toLowerCase();
+      const bar = row.querySelector('[data-chart-bar]');
+      const track = row.querySelector('[data-chart-track]');
+      if (bar) bar.style.background = colors[status] || colors.remaining;
+      if (track) {
+        track.setAttribute('aria-label', row.dataset.suiteName + ': ' + (row.querySelector('[data-chart-total]')?.textContent || '0') + ' test case, status ' + status + '. Bấm để chuyển status.');
+      }
+      select.title = 'Status: ' + status;
+    }
+
+    function cycleConfigStatus(rowNumber) {
+      const row = document.querySelector('[data-config-row="' + Number(rowNumber) + '"]');
+      const select = row && row.querySelector('[data-config-field="status"]');
+      if (!select) return;
+      const order = ['in progress', 'done', 'failed', 'remaining'];
+      const current = String(select.value || 'remaining').toLowerCase();
+      const next = order[(order.indexOf(current) + 1 + order.length) % order.length];
+      if (!Array.from(select.options).some(option => option.value === next)) {
+        const option = document.createElement('option'); option.value = next; option.textContent = next; select.appendChild(option);
+      }
+      select.value = next;
+      updateTaskChartStatus(select);
     }
     function fmtElapsed(ms) {
       const s = ms / 1000;
