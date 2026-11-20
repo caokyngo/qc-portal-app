@@ -787,9 +787,13 @@
         function getRecentJiraProjects() {
             try { const value = JSON.parse(localStorage.getItem(JIRA_RECENT_PROJECTS_KEY) || '[]'); return Array.isArray(value) ? value : []; } catch (e) { return []; }
         }
-        function saveRecentJiraProject() {
+        function saveRecentJiraProject(jql) {
             if (!selectedJiraSite || !selectedJiraSpace || !selectedJiraProject || !jiraBoardCtx || !selectedParentValue) return;
-            const item = { siteId: String(selectedJiraSite.id), siteName: formatWorkspaceName(selectedJiraSite), siteUrl: selectedJiraSite.url || '', spaceId: String(selectedJiraSpace.id), spaceKey: selectedJiraSpace.key || '', spaceName: selectedJiraSpace.name || '', projectId: String(selectedJiraProject.id), projectName: selectedJiraProject.name || '', projectKey: jiraBoardCtx.projectKey || '', epicKey: selectedParentValue, parentKey: selectedTargetParentValue || '', usedAt: Date.now() };
+            const enotion = isEnotionWorkspace();
+            const savedJql = jql || (enotion
+                ? `project = ${jiraBoardCtx.projectKey} AND parent = ${selectedParentValue} AND type IN (Bug, Improvement, Question) ORDER BY cf[10019] ASC`
+                : `project = ${jiraBoardCtx.projectKey} AND type IN ("Bug/Defect", Improvement, "Q&A") AND parent IN (${selectedParentValue}, ${selectedTargetParentValue}) ORDER BY cf[10019] ASC`);
+            const item = { siteId: String(selectedJiraSite.id), siteName: formatWorkspaceName(selectedJiraSite), siteUrl: selectedJiraSite.url || '', spaceId: String(selectedJiraSpace.id), spaceKey: selectedJiraSpace.key || '', spaceName: selectedJiraSpace.name || '', projectId: String(selectedJiraProject.id), projectName: selectedJiraProject.name || '', projectKey: jiraBoardCtx.projectKey || '', epicKey: selectedParentValue, parentKey: selectedTargetParentValue || '', jql: savedJql, usedAt: Date.now() };
             const key = [item.siteId, item.spaceId, item.projectId].join('|');
             const next = [item, ...getRecentJiraProjects().filter(row => [row.siteId, row.spaceId, row.projectId].join('|') !== key)].slice(0, 2);
             try { localStorage.setItem(JIRA_RECENT_PROJECTS_KEY, JSON.stringify(next)); } catch (e) {}
@@ -822,27 +826,24 @@
             jiraRecentProjectLoadInFlight = true; if (button) button.disabled = true;
             try {
                 if (!jiraOAuthConnected) throw new Error('Hãy kết nối Jira trước khi tải project gần đây.');
-                if (!selectedJiraSite || String(selectedJiraSite.id) !== String(item.siteId)) {
-                    if (!jiraConnectedSites.some(site => String(site.id) === String(item.siteId))) throw new Error('Workspace này không còn trong danh sách được cấp quyền.');
-                    await selectJiraSite(item.siteId);
-                }
-                await waitForJiraState(() => jiraSpacesLoadedForSite === String(item.siteId));
-                const space = jiraSpaces.find(row => String(row.id) === String(item.spaceId));
-                if (!space) throw new Error('Jira Space này không còn được cấp quyền.');
-                if (!selectedJiraSpace || String(selectedJiraSpace.id) !== String(item.spaceId)) await selectJiraSpace(item.spaceId);
-                await waitForJiraState(() => jiraProjectsLoadedForSpace === String(item.spaceId));
-                const project = jiraProjects.find(row => String(row.id) === String(item.projectId));
-                if (!project) throw new Error('Project này không còn được cấp quyền trong Jira Space.');
-                await selectJiraProject(item.projectId);
-                if (!jiraBoardCtx) throw new Error('Không tải được thông tin project Jira.');
-                await waitForJiraState(() => !parentLoading && jiraParents.some(row => row.key === item.epicKey));
-                await selectJiraParent(item.epicKey);
-                if (item.parentKey && !isEnotionWorkspace()) {
-                    await waitForJiraState(() => !parentLoading && jiraTargetParents.some(row => row.key === item.parentKey));
-                    await selectJiraTargetParent(item.parentKey);
-                }
-                await waitForJiraState(() => { const btn = document.getElementById('btnFetchJira'); return btn && !btn.disabled; });
-                await fetchJiraDataFromUrl(true);
+                const site = jiraConnectedSites.find(row => String(row.id) === String(item.siteId));
+                if (!site) throw new Error('Workspace này không còn trong danh sách được cấp quyền.');
+                selectedJiraSite = site;
+                selectedJiraSpace = { id: item.spaceId, key: item.spaceKey || item.projectKey, name: item.spaceName || item.spaceKey || '' };
+                selectedJiraProject = { id: item.projectId, name: item.projectName || item.projectKey || 'Project' };
+                selectedParentValue = item.epicKey || '';
+                selectedTargetParentValue = item.parentKey || null;
+                jiraBoardCtx = { domain: String(site.url || item.siteUrl || '').replace(/\/+$/, ''), projectKey: item.projectKey || item.spaceKey, boardId: item.projectId, siteParams: { site: site.id }, projectName: item.projectName || item.projectKey };
+                const jql = item.jql || (String(item.siteName || '').toLowerCase() === 'enotion'
+                    ? `project = ${item.projectKey} AND parent = ${item.epicKey} AND type IN (Bug, Improvement, Question) ORDER BY cf[10019] ASC`
+                    : `project = ${item.projectKey} AND type IN ("Bug/Defect", Improvement, "Q&A") AND parent IN (${item.epicKey}, ${item.parentKey}) ORDER BY cf[10019] ASC`);
+                saveRecentJiraProject(jql);
+                const siteLabel = document.getElementById('jiraSiteLabel'); if (siteLabel) siteLabel.textContent = formatWorkspaceName(site);
+                const spaceLabel = document.getElementById('jiraSpaceLabel'); if (spaceLabel) spaceLabel.textContent = selectedJiraSpace.name;
+                const projectLabel = document.getElementById('jiraProjectLabel'); if (projectLabel) projectLabel.textContent = selectedJiraProject.name;
+                const epicLabel = document.getElementById('jiraSelectedEpicLabel'); if (epicLabel) epicLabel.textContent = item.epicKey || '';
+                document.getElementById('jiraUrlSection').classList.remove('hidden');
+                await fetchJiraDataFromUrl(true, jql);
             } catch (err) { showToast('Không tải được project gần đây', err.message || 'Vui lòng chọn lại Workspace, Space và Project.', true); }
             finally { jiraRecentProjectLoadInFlight = false; if (button && button.isConnected) button.disabled = false; }
         }
@@ -1757,7 +1758,7 @@
             return true;
         }
         
-        async function fetchJiraDataFromUrl(forceRefresh = false) {
+        async function fetchJiraDataFromUrl(forceRefresh = false, jqlOverride = '') {
             if (!loggedInUser) { showToast('Yêu cầu đăng nhập', 'Vui lòng Đăng nhập tài khoản Google trước khi tải dữ liệu!', true); return; }
             if (!jiraOAuthConnected) { showToast('Chưa kết nối Jira', 'Bật công tắc Jira và cấp quyền bằng tài khoản Atlassian, rồi tải lại dữ liệu.', true); return; }
             if (!jiraBoardCtx || !selectedParentValue || (!selectedTargetParentValue && !isEnotionWorkspace())) {
@@ -1780,11 +1781,13 @@
             btn.disabled = true;
             btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Đang tải ticket...';
             try {
-                const queryPromise = forceRefresh || typeof takeTicketPrefetch !== 'function'
-                    ? queryBoardTickets(selectedParentValue, selectedTargetParentValue)
-                    : takeTicketPrefetch(selectedParentValue, selectedTargetParentValue);
-                const { json, types, dropped } = await queryPromise;
-                saveRecentJiraProject();
+                const queryPromise = jqlOverride
+                    ? jiraQuery(jiraBoardCtx.siteParams, jqlOverride).then(json => ({ json, types: isEnotionWorkspace() ? ['Bug', 'Improvement', 'Question'] : DEFAULT_TICKET_TYPES, dropped: [], jql: jqlOverride }))
+                    : (forceRefresh || typeof takeTicketPrefetch !== 'function'
+                        ? queryBoardTickets(selectedParentValue, selectedTargetParentValue)
+                        : takeTicketPrefetch(selectedParentValue, selectedTargetParentValue));
+                const { json, types, dropped, jql } = await queryPromise;
+                saveRecentJiraProject(jql);
                 currentJiraDomain = jiraBoardCtx.domain;
                 const issues = json.issues || [];
                 if (!issues.length) {
@@ -1926,7 +1929,7 @@
                 ? `project = ${ctx.projectKey} AND parent = ${epicKey} AND type IN (Bug, Improvement, Question) ORDER BY cf[10019] ASC`
                 : `project = ${ctx.projectKey} AND type IN ("Bug/Defect", Improvement, "Q&A") AND parent IN (${epicKey}, ${parentKey}) ORDER BY cf[10019] ASC`;
             const json = await jiraQuery(ctx.siteParams, jql);
-            return { json, types: enotion ? ['Bug', 'Improvement', 'Question'] : DEFAULT_TICKET_TYPES, dropped: [] };
+            return { json, types: enotion ? ['Bug', 'Improvement', 'Question'] : DEFAULT_TICKET_TYPES, dropped: [], jql };
         }
 
         async function selectJiraTargetParent(value) {
