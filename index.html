@@ -270,7 +270,8 @@
                         </div>
                     </div>
 
-                    <div id="jiraControlsRegion" class="relative space-y-4">
+                    <div id="jiraControlsRegion" class="relative">
+                        <div id="jiraControlsContent" class="space-y-4">
                         <div class="rounded-xl border border-slate-200 bg-slate-50/70 p-4 sm:p-5">
                             <div class="mb-4 flex items-center gap-3">
                                 <span class="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-indigo-100 text-xs font-bold text-indigo-700">1</span>
@@ -341,6 +342,7 @@
                         <button type="button" id="btnFetchJira" onclick="fetchJiraDataFromUrl()" class="w-full h-12 bg-indigo-600 hover:bg-indigo-700 active:bg-indigo-800 text-white font-bold rounded-xl shadow-sm hover:shadow-md transition flex items-center justify-center gap-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50" disabled>
                             <i class="fa-solid fa-cloud-arrow-down" aria-hidden="true"></i> Tải dữ liệu ticket
                         </button>
+                        </div>
                         <div id="jiraConnectionLockOverlay" class="hidden absolute inset-0 z-30 cursor-wait rounded-xl" onclick="showJiraConnectionWaitToast()" aria-hidden="true"></div>
                     </div>
                 </section>
@@ -1179,18 +1181,17 @@
             const locked = !jiraOAuthConnected || jiraConnectionPending || jiraConnectionCheckPending;
             const overlay = document.getElementById('jiraConnectionLockOverlay');
             const region = document.getElementById('jiraControlsRegion');
+            const content = document.getElementById('jiraControlsContent');
             if (overlay) overlay.classList.toggle('hidden', !locked);
-            if (region) region.setAttribute('aria-busy', String(locked));
-            document.querySelectorAll('#jiraControlsRegion button').forEach(button => {
-                if (button.id === 'jiraConnectionToggle') return;
-                if (locked) {
-                    if (!button.hasAttribute('data-jira-lock-disabled')) button.setAttribute('data-jira-lock-disabled', String(button.disabled));
-                    button.disabled = true;
-                } else if (button.hasAttribute('data-jira-lock-disabled')) {
-                    button.disabled = button.getAttribute('data-jira-lock-disabled') === 'true';
-                    button.removeAttribute('data-jira-lock-disabled');
-                }
-            });
+            if (region) {
+                // Keep each control's own disabled state intact; project/Space controls
+                // may still be loading when the connection lock is first applied.
+                region.setAttribute('aria-busy', String(locked));
+            }
+            if (content) {
+                content.inert = locked;
+                region.classList.toggle('opacity-60', locked);
+            }
         }
 
         function setJiraConnectionUI(connected, message) {
