@@ -605,10 +605,7 @@
 
     function isBlockingJiraStatus(statusName) {
       const s = String(statusName || '').trim().toLowerCase();
-      return s === 'to do' || s === 'todo' ||
-             s === 'in progress' || s === 'inprogress' ||
-             s === 'fixed/done' || s === 'fixed / done' || s === 'fixed' ||
-             s === 'reopened' || s === 'reopen';
+      return s !== 'closed';
     }
 
     function normalizeTaskKey(name) {
@@ -792,11 +789,11 @@
             const note = rem !== null ? (isZeroRem ? ' (0 rem → Failed)' : ' (' + rem + ' rem → In Progress)') : '';
             return '<span class="' + cls + '"><i class="fa-solid ' + icon + '"></i> ' + escapeHtml(t) + note + '</span>';
           }).join('');
-          info.innerHTML = '<div><strong>' + projName + '</strong>: Đã tải <strong>' + loadedJiraIssues.length + '</strong> ticket. Phát hiện <strong>' + blockingIssues.length + '</strong> ticket chưa Closed (To Do, In progress, Fixed/Done) liên quan đến:</div>' +
+          info.innerHTML = '<div><strong>' + projName + '</strong>: Đã tải <strong>' + loadedJiraIssues.length + '</strong> ticket. Phát hiện <strong>' + blockingIssues.length + '</strong> ticket chưa Closed liên quan đến:</div>' +
             '<div style="margin:6px 0;">' + taskBadges + '</div>' +
-            '<div style="color:var(--muted);font-size:10px;"><i class="fa-solid fa-circle-info"></i> Quy tắc: Task có bug Jira chưa Closed chỉ chuyển sang <strong style="color:#dc2626;">Failed</strong> khi <strong style="color:#dc2626;">remaining = 0</strong>. Nếu remaining &gt; 0 thì task vẫn giữ nguyên tiến độ.</div>';
+            '<div style="color:var(--muted);font-size:10px;"><i class="fa-solid fa-circle-info"></i> Quy tắc: Task chỉ chuyển sang <strong style="color:#059669;">Done</strong> khi Passed + N/A + Not Tested + Warning = Total và không có ticket Jira chưa Closed. Task có ticket Jira chưa Closed sẽ chuyển sang <strong style="color:#dc2626;">Failed</strong> khi <strong style="color:#dc2626;">remaining = 0</strong>.</div>';
         } else {
-          info.innerHTML = '<div><strong>' + projName + '</strong>: Đã tải <strong>' + loadedJiraIssues.length + '</strong> ticket. <span style="color:#059669;font-weight:650;"><i class="fa-solid fa-circle-check"></i> Không có ticket nào đang To Do, In progress, Fixed/Done gắn tag của các task trong report.</span></div>';
+          info.innerHTML = '<div><strong>' + projName + '</strong>: Đã tải <strong>' + loadedJiraIssues.length + '</strong> ticket. <span style="color:#059669;font-weight:650;"><i class="fa-solid fa-circle-check"></i> Không có ticket nào chưa Closed gắn tag của các task trong report.</span></div>';
         }
       }
 
