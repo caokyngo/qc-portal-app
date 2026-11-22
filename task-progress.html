@@ -164,6 +164,26 @@
     .config-panel-head p { margin:4px 0 0; color:var(--muted); font-size:11px; }
     .config-panel-body { padding:17px 20px 20px; }
     .config-folder { margin-bottom:14px; }
+    .jira-sync-section { margin-bottom:14px; padding:12px 14px; border:1px solid #cbd5e1; border-radius:12px; background:var(--soft); }
+    .jira-sync-head { display:flex; align-items:center; justify-content:space-between; gap:10px; margin-bottom:6px; }
+    .jira-sync-title { display:flex; align-items:center; gap:8px; font-size:12px; font-weight:750; color:var(--text); }
+    .jira-sync-title i { color:#2563eb; font-size:15px; }
+    .jira-status-badge { font-size:11px; padding:2px 8px; border-radius:6px; background:#e2e8f0; color:var(--muted); font-weight:600; }
+    .jira-status-badge.active { background:#dbeafe; color:#1d4ed8; }
+    .jira-status-badge.has-bugs { background:#fee2e2; color:#b91c1c; font-weight:700; }
+    .jira-sync-desc { margin:0 0 10px; font-size:11px; color:var(--muted); line-height:1.45; }
+    .jira-recent-list { display:flex; flex-wrap:wrap; gap:8px; }
+    .jira-project-btn { display:inline-flex; align-items:center; gap:7px; padding:6px 11px; border:1px solid #cbd5e1; border-radius:8px; background:var(--surface); font-size:11px; font-weight:650; color:var(--text); cursor:pointer; transition:.15s; }
+    .jira-project-btn:hover { border-color:#818cf8; background:var(--accent-light); }
+    .jira-project-btn.is-active { border-color:#4f46e5; background:#4f46e5; color:#fff; }
+    .jira-project-btn small { opacity:.75; font-size:10px; }
+    .jira-active-info { margin-top:10px; padding:9px 12px; border-radius:8px; background:var(--surface); border:1px solid var(--line); font-size:11px; line-height:1.5; }
+    .jira-active-info strong { color:var(--text); }
+    .jira-tag-badge { display:inline-block; margin:2px 3px; padding:1px 6px; border-radius:5px; background:#fee2e2; color:#b91c1c; font-weight:700; font-size:10px; border:1px solid #fecaca; }
+    .jira-task-alert-icon { color:#dc2626; margin-left:6px; font-size:11px; }
+    html.dark-mode .jira-sync-section { border-color:#334155; }
+    html.dark-mode .jira-project-btn { border-color:#475569; }
+    html.dark-mode .jira-tag-badge { background:#451a1a; color:#fca5a5; border-color:#7f1d1d; }
     .config-list { display:grid; gap:0; overflow:hidden; border:1px solid var(--line); border-radius:14px; background:var(--surface); }
     .task-chart-toolbar { display:flex; flex-wrap:wrap; align-items:center; justify-content:space-between; gap:12px; padding:13px 15px; border-bottom:1px solid var(--line); background:var(--soft); }
     .task-chart-axis { display:grid; grid-template-columns:minmax(150px,.8fr) minmax(0,1.8fr); align-items:center; gap:14px; padding:9px 15px; color:var(--muted); font-size:10px; font-weight:750; }
@@ -459,6 +479,18 @@
           </header>
           <div class="config-panel-body">
             <div class="field config-folder"><label for="configFolderUrl">Link folder Test Case (ô A1)</label><input id="configFolderUrl" type="url" placeholder="https://drive.google.com/drive/folders/…"></div>
+            <section class="jira-sync-section" id="jiraSyncSection">
+              <div class="jira-sync-head">
+                <div class="jira-sync-title">
+                  <i class="fa-brands fa-jira"></i>
+                  <span>Project Jira gần đây (Kiểm tra Bug)</span>
+                </div>
+                <span id="jiraSyncStatusBadge" class="jira-status-badge">Chưa chọn project</span>
+              </div>
+              <p class="jira-sync-desc">Chọn project Jira gần đây để tải ticket. Ticket có status <strong>To Do, In progress, Fixed/Done</strong> có tag tương ứng sẽ làm task đó chuyển thành <strong>Failed</strong> (kể cả khi remaining = 0).</p>
+              <div id="jiraRecentProjectsList" class="jira-recent-list"></div>
+              <div id="jiraActiveProjectInfo" class="jira-active-info" hidden></div>
+            </section>
             <div id="configRows" class="config-list"></div>
           </div>
         </section>
@@ -522,6 +554,244 @@
     let reportTemplateTasks = [];
     let taskMappings = [];
     let editingTaskMappingTask = '';
+
+    const JIRA_PROXY_API_URL = 'https://script.google.com/a/macros/enotion.io/s/AKfycbwsjm9uO59mD-Ad6EUoo2WPxMql-ObwERoCPOcRXvcKx8XkYBZ_pkxBFDr0u95_6tec/exec';
+    const JIRA_RECENT_PROJECTS_KEY = 'jira_recent_projects_v1';
+    let selectedRecentJiraProject = null;
+    let loadedJiraIssues = [];
+    let activeJiraBlockingTasks = new Set();
+    let jiraIssuesLoading = false;
+
+    function getRecentJiraProjects() {
+      try {
+        const val = JSON.parse(localStorage.getItem(JIRA_RECENT_PROJECTS_KEY) || '[]');
+        return Array.isArray(val) ? val : [];
+      } catch (e) { return []; }
+    }
+
+    function requestJiraJsonp(params, onSuccess, onError, timeoutMs = 25000) {
+      const callbackName = 'jiraJsonp_' + Date.now() + '_' + Math.floor(Math.random() * 100000);
+      const script = document.createElement('script');
+      let finished = false;
+      const cleanup = () => {
+        clearTimeout(timeoutId);
+        delete window[callbackName];
+        if (script.parentNode) script.parentNode.removeChild(script);
+      };
+      const finish = (callback, value) => {
+        if (finished) return;
+        finished = true;
+        cleanup();
+        callback(value);
+      };
+      const timeoutId = setTimeout(() => finish(onError, new Error('Hết thời gian chờ Jira Proxy.')), timeoutMs);
+      window[callbackName] = data => finish(onSuccess, data);
+      script.onerror = () => finish(onError, new Error('Không kết nối được Jira Proxy.'));
+      const query = new URLSearchParams(params || {});
+      query.set('callback', callbackName);
+      query.set('_t', Date.now());
+      script.src = JIRA_PROXY_API_URL + (JIRA_PROXY_API_URL.includes('?') ? '&' : '?') + query.toString();
+      document.body.appendChild(script);
+    }
+
+    function parseTagsFromSummary(summaryText) {
+      if (!summaryText || typeof summaryText !== 'string') return [];
+      const matches = summaryText.match(/\[(.*?)\]/g);
+      if (!matches || matches.length === 0) return [];
+      return matches.map(m => m.replace(/^\[|\]$/g, '').trim()).filter(t => t.length > 0);
+    }
+
+    function isBlockingJiraStatus(statusName) {
+      const s = String(statusName || '').trim().toLowerCase();
+      return s === 'to do' || s === 'todo' ||
+             s === 'in progress' || s === 'inprogress' ||
+             s === 'fixed/done' || s === 'fixed / done' || s === 'fixed' ||
+             s === 'reopened' || s === 'reopen';
+    }
+
+    function normalizeTaskKey(name) {
+      return String(name || '').toLowerCase().replace(/[^a-z0-9]/g, '');
+    }
+
+    function findAffectedTasksForTicket(ticketSummary, taskNames) {
+      const tags = parseTagsFromSummary(ticketSummary);
+      const matchedTasks = new Set();
+      tags.forEach(tag => {
+        const normTag = normalizeTaskKey(tag);
+        if (!normTag) return;
+        taskNames.forEach(taskName => {
+          const normTask = normalizeTaskKey(taskName);
+          if (normTag === normTask) {
+            matchedTasks.add(taskName);
+            return;
+          }
+          if (normTag === 'logic' && normTask === 'logic') matchedTasks.add(taskName);
+          else if (normTag === 'ui' && normTask === 'ui') matchedTasks.add(taskName);
+          else if (normTag === 'logicui' && normTask === 'logicui') matchedTasks.add(taskName);
+          else if (normTag === 'uat' && normTask.indexOf('uat') !== -1) matchedTasks.add(taskName);
+          else if (normTag.indexOf('interruption') !== -1 && normTask.indexOf('interruption') !== -1) {
+            const hasIos = normTag.indexOf('ios') !== -1;
+            const hasAndroid = normTag.indexOf('android') !== -1;
+            const hasPc = normTag.indexOf('pc') !== -1;
+            if (!hasIos && !hasAndroid && !hasPc) matchedTasks.add(taskName);
+            else {
+              if (hasPc && normTask.indexOf('pc') !== -1) matchedTasks.add(taskName);
+              if (hasIos && normTask.indexOf('ios') !== -1) matchedTasks.add(taskName);
+              if (hasAndroid && normTask.indexOf('android') !== -1) matchedTasks.add(taskName);
+            }
+          }
+          else if (normTag.indexOf('compatibility') !== -1 && normTask.indexOf('compatibility') !== -1) {
+            const hasIframe = normTag.indexOf('iframe') !== -1;
+            const hasApp = normTag.indexOf('app') !== -1;
+            const hasIos = normTag.indexOf('ios') !== -1;
+            const hasAndroid = normTag.indexOf('android') !== -1;
+            if (!hasIframe && !hasApp && !hasIos && !hasAndroid) matchedTasks.add(taskName);
+            else {
+              var match = true;
+              if (hasIframe && normTask.indexOf('iframe') === -1) match = false;
+              if (hasApp && normTask.indexOf('app') === -1) match = false;
+              if (hasIos && normTask.indexOf('ios') === -1) match = false;
+              if (hasAndroid && normTask.indexOf('android') === -1) match = false;
+              if (match) matchedTasks.add(taskName);
+            }
+          }
+          else if (normTag.indexOf('commonbehaviour') !== -1 && normTask.indexOf('commonbehaviour') !== -1) {
+            matchedTasks.add(taskName);
+          }
+          else if (normTag.indexOf('bettinghistory') !== -1 && normTask.indexOf('bettinghistory') !== -1) {
+            matchedTasks.add(taskName);
+          }
+          else if ((normTag.indexOf('ban') !== -1 || normTag.indexOf('maintenance') !== -1) && normTask.indexOf('ban') !== -1) {
+            matchedTasks.add(taskName);
+          }
+          else if ((normTag.indexOf('tutorial') !== -1 || normTag.indexOf('trial') !== -1) && normTask.indexOf('tutorial') !== -1) {
+            matchedTasks.add(taskName);
+          }
+        });
+      });
+      return Array.from(matchedTasks);
+    }
+
+    function renderRecentJiraProjects() {
+      const container = document.getElementById('jiraRecentProjectsList');
+      const badge = document.getElementById('jiraSyncStatusBadge');
+      if (!container) return;
+      const recents = getRecentJiraProjects();
+      if (!recents.length) {
+        container.innerHTML = '<span style="font-size:11px;color:var(--muted);"><i class="fa-solid fa-circle-info"></i> Chưa có project gần đây trong localStorage. Mở trang Báo Cáo Daily để kết nối Jira và chọn project.</span>';
+        if (badge) { badge.textContent = 'Chưa có project'; badge.className = 'jira-status-badge'; }
+        return;
+      }
+      container.innerHTML = recents.map((item, idx) => {
+        const isSelected = selectedRecentJiraProject && selectedRecentJiraProject.projectId === item.projectId && selectedRecentJiraProject.epicKey === item.epicKey;
+        const name = escapeHtml(item.projectName || item.projectKey || 'Project');
+        const detail = escapeHtml((item.projectKey || '') + (item.epicKey ? ' · ' + item.epicKey : ''));
+        return '<button type="button" class="jira-project-btn' + (isSelected ? ' is-active' : '') + '" onclick="selectRecentJiraProject(' + idx + ', this)">' +
+          '<i class="fa-solid fa-folder-tree"></i> <span>' + name + '</span> <small>(' + detail + ')</small>' +
+        '</button>';
+      }).join('') + (selectedRecentJiraProject ? '<button type="button" class="jira-project-btn" style="color:#e11d48;" onclick="deselectRecentJiraProject()"><i class="fa-solid fa-xmark"></i> Bỏ chọn Jira</button>' : '');
+    }
+
+    async function selectRecentJiraProject(index, btn) {
+      const recents = getRecentJiraProjects();
+      const item = recents[index];
+      if (!item || jiraIssuesLoading) return;
+      selectedRecentJiraProject = item;
+      renderRecentJiraProjects();
+      const badge = document.getElementById('jiraSyncStatusBadge');
+      const info = document.getElementById('jiraActiveProjectInfo');
+      if (badge) { badge.textContent = 'Đang tải ticket…'; badge.className = 'jira-status-badge active'; }
+      if (info) { info.hidden = false; info.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Đang tải danh sách ticket từ Jira project “' + escapeHtml(item.projectName || item.projectKey) + '”…'; }
+      jiraIssuesLoading = true;
+      try {
+        const jql = item.jql || (String(item.siteName || '').toLowerCase() === 'enotion'
+          ? 'project = ' + item.projectKey + ' AND parent = ' + item.epicKey + ' AND type IN (Bug, Improvement, Question) ORDER BY cf[10019] ASC'
+          : 'project = ' + item.projectKey + ' AND type IN ("Bug/Defect", Improvement, "Q&A") AND parent IN (' + item.epicKey + ', ' + (item.parentKey || item.epicKey) + ') ORDER BY cf[10019] ASC');
+        const data = await new Promise((resolve, reject) => {
+          requestJiraJsonp({ skipBoard: '1', site: item.siteId, jql }, res => {
+            if (!res) reject(new Error('Phản hồi từ Jira Proxy rỗng.'));
+            else if (res.error) reject(new Error(String(res.error)));
+            else resolve(res);
+          }, reject, 30000);
+        });
+        loadedJiraIssues = Array.isArray(data.issues) ? data.issues : [];
+        analyzeJiraTickets();
+        showToast('Tải ticket Jira thành công', 'Đã tải ' + loadedJiraIssues.length + ' ticket từ project ' + (item.projectName || item.projectKey) + '.');
+      } catch (err) {
+        loadedJiraIssues = [];
+        activeJiraBlockingTasks.clear();
+        if (badge) { badge.textContent = 'Lỗi tải ticket'; badge.className = 'jira-status-badge'; }
+        if (info) { info.hidden = false; info.innerHTML = '<span style="color:#dc2626;"><i class="fa-solid fa-circle-exclamation"></i> Không tải được ticket Jira: ' + escapeHtml(err.message || 'Lỗi không xác định') + '</span>'; }
+        showToast('Lỗi Jira', err.message || 'Không tải được ticket Jira.', true);
+      } finally {
+        jiraIssuesLoading = false;
+        renderRecentJiraProjects();
+      }
+    }
+
+    function deselectRecentJiraProject() {
+      selectedRecentJiraProject = null;
+      loadedJiraIssues = [];
+      activeJiraBlockingTasks.clear();
+      const badge = document.getElementById('jiraSyncStatusBadge');
+      const info = document.getElementById('jiraActiveProjectInfo');
+      if (badge) { badge.textContent = 'Chưa chọn project'; badge.className = 'jira-status-badge'; }
+      if (info) { info.hidden = true; info.replaceChildren(); }
+      renderRecentJiraProjects();
+      if (loadedReportConfig) renderExistingConfig(loadedReportConfig);
+      showToast('Đã bỏ chọn Jira', 'Cập nhật report sẽ không kiểm tra bug từ Jira.');
+    }
+
+    function analyzeJiraTickets() {
+      activeJiraBlockingTasks.clear();
+      const badge = document.getElementById('jiraSyncStatusBadge');
+      const info = document.getElementById('jiraActiveProjectInfo');
+      const taskNames = (loadedReportConfig?.suites || []).map(s => s.name);
+      const blockingIssues = [];
+      loadedJiraIssues.forEach(issue => {
+        const fields = issue.fields || {};
+        const status = String(fields.status?.name || '');
+        if (!isBlockingJiraStatus(status)) return;
+        const summary = String(fields.summary || '');
+        const matched = findAffectedTasksForTicket(summary, taskNames);
+        if (matched.length > 0) {
+          matched.forEach(t => activeJiraBlockingTasks.add(t));
+          blockingIssues.push({ key: issue.key, summary, status, matchedTasks: matched });
+        }
+      });
+
+      if (badge) {
+        if (activeJiraBlockingTasks.size > 0) {
+          badge.textContent = activeJiraBlockingTasks.size + ' task có bug Jira';
+          badge.className = 'jira-status-badge has-bugs';
+        } else {
+          badge.textContent = 'Đã tải ' + loadedJiraIssues.length + ' ticket · 0 bug';
+          badge.className = 'jira-status-badge active';
+        }
+      }
+
+      if (info) {
+        info.hidden = false;
+        const projName = escapeHtml(selectedRecentJiraProject?.projectName || selectedRecentJiraProject?.projectKey || 'Project');
+        if (activeJiraBlockingTasks.size > 0) {
+          const taskBadges = Array.from(activeJiraBlockingTasks).map(t => '<span class="jira-tag-badge"><i class="fa-solid fa-triangle-exclamation"></i> ' + escapeHtml(t) + '</span>').join('');
+          info.innerHTML = '<div><strong>' + projName + '</strong>: Đã tải <strong>' + loadedJiraIssues.length + '</strong> ticket. Phát hiện <strong>' + blockingIssues.length + '</strong> ticket (To Do, In progress, Fixed/Done) liên quan đến:</div>' +
+            '<div style="margin:6px 0;">' + taskBadges + '</div>' +
+            '<div style="color:var(--muted);font-size:10px;"><i class="fa-solid fa-circle-info"></i> Các task trên sẽ được đặt status là <strong style="color:#dc2626;">Failed</strong> khi bấm “Cập nhật & lưu” (dù remaining = 0).</div>';
+        } else {
+          info.innerHTML = '<div><strong>' + projName + '</strong>: Đã tải <strong>' + loadedJiraIssues.length + '</strong> ticket. <span style="color:#059669;font-weight:650;"><i class="fa-solid fa-circle-check"></i> Không có ticket nào đang To Do, In progress, Fixed/Done gắn tag của các task trong report.</span></div>';
+        }
+      }
+
+      if (loadedReportConfig) {
+        loadedReportConfig.suites.forEach(suite => {
+          if (activeJiraBlockingTasks.has(suite.name)) {
+            suite.status = 'failed';
+          }
+        });
+        renderExistingConfig(loadedReportConfig);
+      }
+    }
 
     function toggleTheme() {
       const dark = document.documentElement.classList.toggle('dark-mode');
@@ -608,6 +878,7 @@
       showToast('Đăng xuất Google', 'Bạn đã đăng xuất khỏi QC Portal.');
     }
     function openSheetConfigModal() {
+      renderRecentJiraProjects();
       document.getElementById('sheetConfigModal').classList.add('show');
       setTimeout(() => document.getElementById('configSheetName').focus(), 0);
     }
@@ -851,6 +1122,8 @@
       updatePendingStatusUI();
       document.getElementById('configPanelTitle').textContent = 'Cấu hình sheet · ' + config.sheetName;
       document.getElementById('configFolderUrl').value = config.folderUrl || '';
+      renderRecentJiraProjects();
+      if (loadedJiraIssues.length > 0) { analyzeJiraTickets(); }
       const rows = Array.isArray(config.suites) ? config.suites : [];
       const root = document.getElementById('configRows');
       if (!rows.length) { root.innerHTML = '<div class="task-chart-empty">Sheet chưa có task nào để hiển thị.</div>'; return; }
@@ -1174,6 +1447,7 @@
             folderUrl,                          // mọi lô đều biết folder → không phải chờ lô đầu
             writeLink: index === 0 ? '1' : '0', // chỉ lô đầu ghi link vào A1
             rows: JSON.stringify(rows),
+            jiraFailedTasks: JSON.stringify(Array.from(activeJiraBlockingTasks)),
             statusUpdates: JSON.stringify(statuses)
           }, 90000);
         } finally {
@@ -1183,11 +1457,16 @@
 
         (result.updatedRows || []).forEach(u => {
           const t = byRow.get(Number(u.row));
-          if (t) { t.value = u.value; t.sourceTab = u.sourceTab; }
+          if (t) {
+            t.value = u.value;
+            t.sourceTab = u.sourceTab;
+            if (u.status) t.status = u.status;
+          }
         });
+        const updatedRowSet = new Set((result.updatedRows || []).map(u => Number(u.row)));
         statuses.forEach(s => {
           const t = byRow.get(Number(s.row));
-          if (t) t.status = s.status;
+          if (t && !updatedRowSet.has(Number(s.row))) t.status = s.status;
         });
 
         aggregate.updated += Number(result.updated || 0);
