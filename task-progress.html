@@ -738,11 +738,17 @@
       if (badge) { badge.textContent = 'Chưa chọn project'; badge.className = 'jira-status-badge'; }
       if (info) { info.hidden = true; info.replaceChildren(); }
       renderRecentJiraProjects();
-      if (loadedReportConfig) renderExistingConfig(loadedReportConfig);
+      if (loadedReportConfig) {
+        loadedReportConfig.suites.forEach(suite => {
+          const original = savedTaskStatuses.get(Number(suite.row));
+          if (original) suite.status = original;
+        });
+        renderExistingConfig(loadedReportConfig, false);
+      }
       showToast('Đã bỏ chọn Jira', 'Cập nhật report sẽ không kiểm tra bug từ Jira.');
     }
 
-    function analyzeJiraTickets() {
+    function analyzeJiraTickets(shouldRender = true) {
       activeJiraBlockingTasks.clear();
       const badge = document.getElementById('jiraSyncStatusBadge');
       const info = document.getElementById('jiraActiveProjectInfo');
@@ -789,7 +795,9 @@
             suite.status = 'failed';
           }
         });
-        renderExistingConfig(loadedReportConfig);
+        if (shouldRender) {
+          renderExistingConfig(loadedReportConfig, false);
+        }
       }
     }
 
@@ -1116,14 +1124,14 @@
         : 'Status hiện tại đã lưu. Bấm “Cập nhật & lưu” để làm mới data từ folder Test Case.';
     }
 
-    function renderExistingConfig(config) {
+    function renderExistingConfig(config, shouldAnalyzeJira = true) {
       loadedReportConfig = config;
       document.getElementById('configPanel').hidden = false;
       updatePendingStatusUI();
       document.getElementById('configPanelTitle').textContent = 'Cấu hình sheet · ' + config.sheetName;
       document.getElementById('configFolderUrl').value = config.folderUrl || '';
       renderRecentJiraProjects();
-      if (loadedJiraIssues.length > 0) { analyzeJiraTickets(); }
+      if (shouldAnalyzeJira && loadedJiraIssues.length > 0) { analyzeJiraTickets(false); }
       const rows = Array.isArray(config.suites) ? config.suites : [];
       const root = document.getElementById('configRows');
       if (!rows.length) { root.innerHTML = '<div class="task-chart-empty">Sheet chưa có task nào để hiển thị.</div>'; return; }
@@ -1185,7 +1193,7 @@
       row.dataset.status = status;
       if (savedTaskStatuses.get(rowNumber) === status) pendingTaskStatusRows.delete(rowNumber);
       else pendingTaskStatusRows.add(rowNumber);
-      renderExistingConfig(loadedReportConfig);
+      renderExistingConfig(loadedReportConfig, false);
       updatePendingStatusUI();
     }
     function fmtElapsed(ms) {
