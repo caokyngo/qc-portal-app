@@ -180,10 +180,12 @@
     .jira-active-info { margin-top:10px; padding:9px 12px; border-radius:8px; background:var(--surface); border:1px solid var(--line); font-size:11px; line-height:1.5; }
     .jira-active-info strong { color:var(--text); }
     .jira-tag-badge { display:inline-block; margin:2px 3px; padding:1px 6px; border-radius:5px; background:#fee2e2; color:#b91c1c; font-weight:700; font-size:10px; border:1px solid #fecaca; }
+    .jira-tag-badge.is-pending { background:#fef3c7; color:#b45309; border-color:#fde68a; }
     .jira-task-alert-icon { color:#dc2626; margin-left:6px; font-size:11px; }
     html.dark-mode .jira-sync-section { border-color:#334155; }
     html.dark-mode .jira-project-btn { border-color:#475569; }
     html.dark-mode .jira-tag-badge { background:#451a1a; color:#fca5a5; border-color:#7f1d1d; }
+    html.dark-mode .jira-tag-badge.is-pending { background:#452b14; color:#fcd34d; border-color:#78350f; }
     .config-list { display:grid; gap:0; overflow:hidden; border:1px solid var(--line); border-radius:14px; background:var(--surface); }
     .task-chart-toolbar { display:flex; flex-wrap:wrap; align-items:center; justify-content:space-between; gap:12px; padding:13px 15px; border-bottom:1px solid var(--line); background:var(--soft); }
     .task-chart-axis { display:grid; grid-template-columns:minmax(150px,.8fr) minmax(0,1.8fr); align-items:center; gap:14px; padding:9px 15px; color:var(--muted); font-size:10px; font-weight:750; }
@@ -487,7 +489,7 @@
                 </div>
                 <span id="jiraSyncStatusBadge" class="jira-status-badge">Chưa chọn project</span>
               </div>
-              <p class="jira-sync-desc">Chọn project Jira gần đây để tải ticket. Ticket có status <strong>To Do, In progress, Fixed/Done</strong> có tag tương ứng sẽ làm task đó chuyển thành <strong>Failed</strong> (kể cả khi remaining = 0).</p>
+              <p class="jira-sync-desc">Chọn project Jira gần đây để tải ticket. Ticket chưa Closed (To Do, In progress, Fixed/Done) có tag tương ứng sẽ làm task đó chuyển thành <strong>Failed</strong> khi <strong>remaining = 0</strong>.</p>
               <div id="jiraRecentProjectsList" class="jira-recent-list"></div>
               <div id="jiraActiveProjectInfo" class="jira-active-info" hidden></div>
             </section>
@@ -780,10 +782,19 @@
         info.hidden = false;
         const projName = escapeHtml(selectedRecentJiraProject?.projectName || selectedRecentJiraProject?.projectKey || 'Project');
         if (activeJiraBlockingTasks.size > 0) {
-          const taskBadges = Array.from(activeJiraBlockingTasks).map(t => '<span class="jira-tag-badge"><i class="fa-solid fa-triangle-exclamation"></i> ' + escapeHtml(t) + '</span>').join('');
-          info.innerHTML = '<div><strong>' + projName + '</strong>: Đã tải <strong>' + loadedJiraIssues.length + '</strong> ticket. Phát hiện <strong>' + blockingIssues.length + '</strong> ticket (To Do, In progress, Fixed/Done) liên quan đến:</div>' +
+          const taskBadges = Array.from(activeJiraBlockingTasks).map(t => {
+            const suite = (loadedReportConfig?.suites || []).find(s => s.name === t);
+            const m = suite ? String(suite.value || '').replace(/,/g, '').match(/^\s*(\d+)/) : null;
+            const rem = m ? Number(m[1]) : null;
+            const isZeroRem = rem === 0;
+            const cls = isZeroRem ? 'jira-tag-badge' : 'jira-tag-badge is-pending';
+            const icon = isZeroRem ? 'fa-circle-xmark' : 'fa-triangle-exclamation';
+            const note = rem !== null ? (isZeroRem ? ' (0 rem → Failed)' : ' (' + rem + ' rem → In Progress)') : '';
+            return '<span class="' + cls + '"><i class="fa-solid ' + icon + '"></i> ' + escapeHtml(t) + note + '</span>';
+          }).join('');
+          info.innerHTML = '<div><strong>' + projName + '</strong>: Đã tải <strong>' + loadedJiraIssues.length + '</strong> ticket. Phát hiện <strong>' + blockingIssues.length + '</strong> ticket chưa Closed (To Do, In progress, Fixed/Done) liên quan đến:</div>' +
             '<div style="margin:6px 0;">' + taskBadges + '</div>' +
-            '<div style="color:var(--muted);font-size:10px;"><i class="fa-solid fa-circle-info"></i> Các task trên sẽ được đặt status là <strong style="color:#dc2626;">Failed</strong> khi bấm “Cập nhật & lưu” (dù remaining = 0).</div>';
+            '<div style="color:var(--muted);font-size:10px;"><i class="fa-solid fa-circle-info"></i> Quy tắc: Task có bug Jira chưa Closed chỉ chuyển sang <strong style="color:#dc2626;">Failed</strong> khi <strong style="color:#dc2626;">remaining = 0</strong>. Nếu remaining &gt; 0 thì task vẫn giữ nguyên tiến độ.</div>';
         } else {
           info.innerHTML = '<div><strong>' + projName + '</strong>: Đã tải <strong>' + loadedJiraIssues.length + '</strong> ticket. <span style="color:#059669;font-weight:650;"><i class="fa-solid fa-circle-check"></i> Không có ticket nào đang To Do, In progress, Fixed/Done gắn tag của các task trong report.</span></div>';
         }
@@ -791,8 +802,19 @@
 
       if (loadedReportConfig) {
         loadedReportConfig.suites.forEach(suite => {
-          if (activeJiraBlockingTasks.has(suite.name)) {
+          const m = String(suite.value || '').replace(/,/g, '').match(/^\s*(\d+)/);
+          const rem = m ? Number(m[1]) : null;
+          const hasJiraBug = activeJiraBlockingTasks.has(suite.name);
+
+          if (hasJiraBug && rem === 0) {
             suite.status = 'failed';
+          } else {
+            const original = savedTaskStatuses.get(Number(suite.row));
+            if (original && (original !== 'failed' || rem === 0)) {
+              suite.status = original;
+            } else if (suite.status === 'failed' && rem !== 0) {
+              suite.status = (rem !== null && rem > 0) ? 'in progress' : 'remaining';
+            }
           }
         });
         if (shouldRender) {
