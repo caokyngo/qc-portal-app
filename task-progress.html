@@ -802,11 +802,14 @@
 
       if (loadedReportConfig) {
         loadedReportConfig.suites.forEach(suite => {
-          const m = String(suite.value || '').replace(/,/g, '').match(/^\s*(\d+)/);
+          const m = String(suite.value || '').replace(/,/g, '').match(/^\s*(\d+)\s*(?:\/\s*(\d+))?/);
           const rem = m ? Number(m[1]) : null;
+          const total = m && m[2] ? Number(m[2]) : null;
           const hasJiraBug = activeJiraBlockingTasks.has(suite.name);
 
-          if (hasJiraBug && rem === 0) {
+          if (rem !== null && total !== null && total > 0 && rem === total) {
+            suite.status = 'remaining';
+          } else if (hasJiraBug && rem === 0) {
             suite.status = 'failed';
           } else {
             const original = savedTaskStatuses.get(Number(suite.row));
@@ -1132,7 +1135,17 @@
     const pendingTaskStatusRows = new Set();
 
     function snapshotSavedTaskStatuses(config) {
-      savedTaskStatuses = new Map((config.suites || []).map(item => [Number(item.row), String(item.status || 'remaining').trim().toLowerCase()]));
+      savedTaskStatuses = new Map((config.suites || []).map(item => {
+        const m = String(item.value || '').replace(/,/g, '').match(/^\s*(\d+)\s*(?:\/\s*(\d+))?/);
+        const rem = m ? Number(m[1]) : null;
+        const total = m && m[2] ? Number(m[2]) : null;
+        let st = String(item.status || 'remaining').trim().toLowerCase();
+        if (rem !== null && total !== null && total > 0 && rem === total) {
+          st = 'remaining';
+          item.status = 'remaining';
+        }
+        return [Number(item.row), st];
+      }));
       pendingTaskStatusRows.clear();
       updatePendingStatusUI();
     }
@@ -1148,6 +1161,14 @@
 
     function renderExistingConfig(config, shouldAnalyzeJira = true) {
       loadedReportConfig = config;
+      (config.suites || []).forEach(suite => {
+        const m = String(suite.value || '').replace(/,/g, '').match(/^\s*(\d+)\s*(?:\/\s*(\d+))?/);
+        const rem = m ? Number(m[1]) : null;
+        const total = m && m[2] ? Number(m[2]) : null;
+        if (rem !== null && total !== null && total > 0 && rem === total) {
+          suite.status = 'remaining';
+        }
+      });
       document.getElementById('configPanel').hidden = false;
       updatePendingStatusUI();
       document.getElementById('configPanelTitle').textContent = 'Cấu hình sheet · ' + config.sheetName;
