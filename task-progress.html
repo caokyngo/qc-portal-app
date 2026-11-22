@@ -1015,10 +1015,10 @@
       const feed = document.getElementById('refreshProgressCurrent');
       const live = ensureLiveLine();
       const line = document.createElement('div');
-      line.className = 'progress-line ' + (state === 'error' ? 'is-error' : 'is-done');
+      line.className = 'progress-line ' + (state === 'error' ? 'is-error' : state === 'skip' ? 'is-skip' : 'is-done');
       const icon = document.createElement('span');
       icon.className = 'progress-line-icon';
-      icon.innerHTML = state === 'error' ? '<i class="fa-solid fa-circle-exclamation"></i>' : '<i class="fa-solid fa-circle-check"></i>';
+      icon.innerHTML = state === 'error' ? '<i class="fa-solid fa-circle-exclamation"></i>' : state === 'skip' ? '<i class="fa-solid fa-triangle-exclamation"></i>' : '<i class="fa-solid fa-circle-check"></i>';
       const copy = document.createElement('span');
       copy.className = 'progress-line-copy';
       copy.textContent = text;
@@ -1196,10 +1196,16 @@
         completed += batch.length;
         setRefreshProgress(completed, tasks.length, aggregate.errors.length > 0);
         const firstError = (result.errors || [])[0];
+        const firstSkipped = (result.skipped || [])[0];
         const took = fmtElapsed(Date.now() - batchStart);
         console.info('[refresh] ' + label + ': ' + took + ' (Apps Script ' + fmtElapsed(Number(result.serverMs || 0)) + ')');
-        addRefreshLog(label[0].toUpperCase() + label.slice(1) + ' — ' + (firstError ? (firstError.task + ': ' + firstError.error) : 'Đã lưu ' + Number(result.updated || 0) + ' task') + ' · ' + took,
-          firstError ? 'error' : 'done');
+        const lotMessage = firstError
+          ? firstError.task + ': ' + firstError.error
+          : firstSkipped
+            ? 'Cảnh báo ' + firstSkipped.task + ': ' + firstSkipped.reason
+            : 'Đã lưu ' + Number(result.updated || 0) + ' task';
+        addRefreshLog(label[0].toUpperCase() + label.slice(1) + ' — ' + lotMessage + ' · ' + took,
+          firstError ? 'error' : firstSkipped ? 'skip' : 'done');
       }
 
       try {
