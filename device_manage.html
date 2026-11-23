@@ -350,6 +350,14 @@
         let isListenersInitialized = false;
 
         function escapeSingleQuotes(str) { return str ? String(str).replace(/'/g, "\\'") : ''; }
+        const RETURN_ALL_USER_IDS = new Set(['927', '124', '217']);
+        function getUserIdFromDisplayName(name) {
+            const match = String(name || '').match(/^\s*(\d+)\s*-/);
+            return match ? match[1] : '';
+        }
+        function canReturnAllDevices(user) {
+            return !!user && RETURN_ALL_USER_IDS.has(getUserIdFromDisplayName(user.name));
+        }
 
         function updateAuthUI() {
             const storedUser = localStorage.getItem('jira_google_user');
@@ -547,6 +555,7 @@
                 const isReturned = String(r.trangThai || '').toLowerCase().includes('đã trả');
                 const currentUserName = loggedInUser ? loggedInUser.name : '';
                 const isOwner = (currentUserName === r.nguoiMuon) || (currentUserName === r.nguoiThaoTac);
+                const canReturnThisLog = isOwner || canReturnAllDevices(loggedInUser);
 
                 let statusBadge = '<span class="bg-amber-100 text-amber-800 px-2.5 py-1 rounded-md text-[11px] font-bold shadow-sm">Đang Mượn</span>';
                 let actionButton = '';
@@ -555,9 +564,9 @@
                     statusBadge = '<span class="bg-emerald-100 text-emerald-800 px-2.5 py-1 rounded-md text-[11px] font-bold shadow-sm">Đã Trả</span>';
                     actionButton = '<span class="text-slate-500 text-[11px] italic font-medium"><i class="fa-solid fa-check mr-1"></i>Hoàn tất</span>';
                 } else {
-                    if (isOwner) {
-                        const safeId = escapeSingleQuotes(r.id); const safeDevice = escapeSingleQuotes(r.thietBi); const safeBorrower = escapeSingleQuotes(r.nguoiMuon);
-                        actionButton = '<button onclick="submitReturnDevice(\'' + safeId + '\', \'' + safeDevice + '\', \'' + safeBorrower + '\')" class="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white text-[11px] font-bold rounded-md shadow-sm transition inline-flex items-center gap-1.5"><i class="fa-solid fa-rotate-left"></i> Trả Device</button>';
+                    if (canReturnThisLog) {
+                        const safeId = escapeSingleQuotes(r.id); const safeDevice = escapeSingleQuotes(r.thietBi); const safeBorrower = escapeSingleQuotes(r.nguoiMuon); const safeOperator = escapeSingleQuotes(r.nguoiThaoTac);
+                        actionButton = '<button onclick="submitReturnDevice(\'' + safeId + '\', \'' + safeDevice + '\', \'' + safeBorrower + '\', \'' + safeOperator + '\')" class="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white text-[11px] font-bold rounded-md shadow-sm transition inline-flex items-center gap-1.5"><i class="fa-solid fa-rotate-left"></i> Trả Device</button>';
                     } else {
                         actionButton = '<button disabled class="px-3 py-1.5 bg-slate-200/80 text-slate-400 text-[11px] font-bold rounded-md shadow-sm inline-flex items-center gap-1.5 cursor-not-allowed" title="Chỉ tài khoản mượn mới được phép trả thiết bị"><i class="fa-solid fa-lock"></i> Trả Device</button>';
                     }
@@ -614,7 +623,11 @@
             }
         }
 
-        function submitReturnDevice(docId, deviceName, borrowerName) {
+        function submitReturnDevice(docId, deviceName, borrowerName, originalOperatorName) {
+            if (!loggedInUser) { showCustomAlert("Yêu cầu đăng nhập", "Vui lòng đăng nhập để trả thiết bị!", true); return; }
+            const operatorName = loggedInUser.name || "";
+            const canReturnThisLog = operatorName === borrowerName || operatorName === originalOperatorName || canReturnAllDevices(loggedInUser);
+            if (!canReturnThisLog) { showCustomAlert("Không có quyền", "Bạn chỉ có thể trả lượt mượn của mình.", true); return; }
             if (!confirm("Xác nhận trả thiết bị: [" + deviceName + "]?")) return;
             const now = new Date(); const pad = (n) => n.toString().padStart(2, '0');
             const exactTimeStr = pad(now.getDate()) + "/" + pad(now.getMonth()+1) + "/" + now.getFullYear() + " " + pad(now.getHours()) + ":" + pad(now.getMinutes()) + ":" + pad(now.getSeconds());
@@ -623,7 +636,8 @@
             if (db) {
                 db.collection("device_logs").doc(docId).update({ trangThai: "Đã Trả", gioTra: nowStr }).then(() => {
                     showCustomAlert('Thành Công!', "Đã xác nhận trả thiết bị [" + deviceName + "].");
-                    sendDiscordNotification({ title: "✅ THÔNG BÁO TRẢ THIẾT BỊ", color: 3066993, fields: [{ name: "👤 Người thực hiện", value: "**" + borrowerName + "**", inline: true }, { name: "📱 Thiết bị", value: "`" + deviceName + "`", inline: true }, { name: "⏰ Thời gian trả", value: exactTimeStr, inline: false }, { name: "📌 Trạng thái", value: "🟢 **Đã Trả**", inline: false }], timestamp: now.toISOString(), footer: { text: "QC Internal Portal System" } });
+                    const returnActorText = operatorName === borrowerName ? "**" + borrowerName + "**" : "**" + borrowerName + "**\n*(Trả hộ bởi: " + operatorName + ")*";
+                    sendDiscordNotification({ title: "✅ THÔNG BÁO TRẢ THIẾT BỊ", color: 3066993, fields: [{ name: "👤 Người mượn / người trả hộ", value: returnActorText, inline: true }, { name: "📱 Thiết bị", value: "`" + deviceName + "`", inline: true }, { name: "⏰ Thời gian trả", value: exactTimeStr, inline: false }, { name: "📌 Trạng thái", value: "🟢 **Đã Trả**", inline: false }], timestamp: now.toISOString(), footer: { text: "QC Internal Portal System" } });
                 }).catch((err) => {
                     console.error("Lỗi cập nhật trả:", err); showCustomAlert("Lỗi Server", "Không thể cập nhật trạng thái trả!", true);
                 });
