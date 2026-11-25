@@ -819,6 +819,8 @@
                 const site = jiraConnectedSites.find(row => String(row.id) === String(item.siteId));
                 if (!site) throw new Error('Workspace này không còn trong danh sách được cấp quyền.');
                 selectedJiraSite = site;
+                saveSelectedJiraSite();
+                syncJiraWorkspaceLayout();
                 selectedJiraSpace = { id: item.spaceId, key: item.spaceKey || item.projectKey, name: item.spaceName || item.spaceKey || '' };
                 selectedJiraProject = { id: item.projectId, name: item.projectName || item.projectKey || 'Project' };
                 selectedParentValue = item.epicKey || '';
@@ -1184,11 +1186,15 @@
         function renderJiraSites(sites) {
             jiraConnectedSites = Array.isArray(sites) ? sites : [];
             renderRecentJiraProjects();
-            const previouslySelected = localStorage.getItem('jira_selected_site') || '';
+            const isDashboardOpen = !document.getElementById('reportDashboard')?.classList.contains('hidden');
+            const activeSiteId = isDashboardOpen
+                ? ((selectedJiraSite && String(selectedJiraSite.id)) || (activeJiraSession && activeJiraSession.site && String(activeJiraSession.site.id)) || '')
+                : '';
+            const previouslySelected = activeSiteId || localStorage.getItem('jira_selected_site') || '';
             const oldSiteId = selectedJiraSite ? String(selectedJiraSite.id) : '';
             selectedJiraSite = jiraConnectedSites.find(site => String(site.id) === previouslySelected) || (jiraConnectedSites.length === 1 ? jiraConnectedSites[0] : null);
             if (selectedJiraSite) localStorage.setItem('jira_selected_site', String(selectedJiraSite.id));
-            else localStorage.removeItem('jira_selected_site');
+            else if (!isDashboardOpen) localStorage.removeItem('jira_selected_site');
             const label = document.getElementById('jiraSiteLabel');
             const siteToggle = document.getElementById('jiraSiteToggle');
             if (label) label.textContent = selectedJiraSite
@@ -1202,10 +1208,14 @@
             syncJiraWorkspaceLayout();
             renderJiraComboOptions('site');
             if (!selectedJiraSite) {
-                resetJiraSpaceSelection('Kết nối Jira để tải danh sách Workspace');
-                jiraSpacesLoadedForSite = '';
+                if (!isDashboardOpen) {
+                    resetJiraSpaceSelection('Kết nối Jira để tải danh sách Workspace');
+                    jiraSpacesLoadedForSite = '';
+                }
+                return;
             }
-            if (selectedJiraSite && oldSiteId !== String(selectedJiraSite.id)) {
+            const matchesActiveDashboardSite = isDashboardOpen && activeJiraSession && activeJiraSession.site && String(activeJiraSession.site.id) === String(selectedJiraSite.id);
+            if (oldSiteId !== String(selectedJiraSite.id) && !matchesActiveDashboardSite) {
                 resetJiraSpaceSelection('Đang tải Space...');
                 if (jiraOAuthConnected) loadJiraSpaces();
             }
@@ -1228,6 +1238,7 @@
         const jiraInflight = {};
         let lastJiraCheckAt = 0;
         let ticketPrefetch = null;
+        let activeJiraSession = null;
 
         function jiraCacheKey(p) { return JIRA_CACHE_PREFIX + ((loggedInUser && loggedInUser.email) || 'anon') + ':' + [p.action, p.site || '', p.projectKey || '', p.boardId || ''].join('|'); }
         function purgeJiraCache() { try { Object.keys(localStorage).filter(k => k.indexOf(JIRA_CACHE_PREFIX) === 0).forEach(k => localStorage.removeItem(k)); } catch (e) {} }
@@ -1550,6 +1561,7 @@
             }
             const connectUrl = JIRA_PROXY_API_URL + (JIRA_PROXY_API_URL.includes('?') ? '&' : '?') + 'action=connect';
             purgeJiraCache();
+            activeJiraSession = null;
             localStorage.removeItem('jira_selected_site');
             selectedJiraSite = null;
             resetJiraSpaceSelection('Chọn Workspace sau khi kết nối');
@@ -1612,9 +1624,11 @@
             }
             if (jiraConnectionPending) return;
 
+            lastJiraCheckAt = Date.now();
             jiraConnectionCheckPending = true;
             setJiraConnectionUI(jiraOAuthConnected, 'Đang kiểm tra kết nối Jira...');
-            requestJiraJsonp({ action: 'sites', withSpaces: '1', site: localStorage.getItem('jira_selected_site') || '' }, data => {
+            const preferredSite = (selectedJiraSite && String(selectedJiraSite.id)) || localStorage.getItem('jira_selected_site') || '';
+            requestJiraJsonp({ action: 'sites', withSpaces: '1', site: preferredSite }, data => {
                 if (data && !data.error && Array.isArray(data.sites)) {
                     renderJiraSites(data.sites);
                     applyPrefetchedSpaces(data);
@@ -1650,6 +1664,7 @@
             requestJiraJsonp({ action: 'disconnect' }, data => {
                 jiraConnectionPending = false;
                 if (data && data.success) {
+                    activeJiraSession = null;
                     renderJiraSites([]);
                     localStorage.removeItem('jira_selected_site');
                     setJiraConnectionUI(false, 'Đã ngắt kết nối Jira khỏi portal');
@@ -1717,6 +1732,24 @@
         async function fetchJiraDataFromUrl(forceRefresh = false, jqlOverride = '') {
             if (!loggedInUser) { showToast('Yêu cầu đăng nhập', 'Vui lòng Đăng nhập tài khoản Google trước khi tải dữ liệu!', true); return; }
             if (!jiraOAuthConnected) { showToast('Chưa kết nối Jira', 'Bật công tắc Jira và cấp quyền bằng tài khoản Atlassian, rồi tải lại dữ liệu.', true); return; }
+            if (forceRefresh && activeJiraSession && (!jiraBoardCtx || !selectedParentValue || (!selectedTargetParentValue && !isEnotionWorkspace()))) {
+                if (activeJiraSession.site) {
+                    selectedJiraSite = jiraConnectedSites.find(s => String(s.id) === String(activeJiraSession.site.id)) || activeJiraSession.site;
+                    saveSelectedJiraSite();
+                    syncJiraWorkspaceLayout();
+                }
+                if (activeJiraSession.space) selectedJiraSpace = { ...activeJiraSession.space };
+                if (activeJiraSession.project) selectedJiraProject = { ...activeJiraSession.project };
+                if (activeJiraSession.boardCtx) {
+                    jiraBoardCtx = {
+                        ...activeJiraSession.boardCtx,
+                        siteParams: { ...(activeJiraSession.boardCtx.siteParams || {}) }
+                    };
+                }
+                selectedParentValue = activeJiraSession.parentValue;
+                selectedTargetParentValue = activeJiraSession.targetParentValue;
+                if (!jqlOverride && activeJiraSession.jql) jqlOverride = activeJiraSession.jql;
+            }
             if (!jiraBoardCtx || !selectedParentValue || (!selectedTargetParentValue && !isEnotionWorkspace())) {
                 showToast('Chọn bộ lọc trước', isEnotionWorkspace() ? 'Hãy chọn Project và Epic trước khi tải ticket.' : 'Hãy chọn Jira Space, project, Epic và Parent / Target Task trước khi tải ticket.', true);
                 return;
@@ -1744,6 +1777,15 @@
                         : takeTicketPrefetch(selectedParentValue, selectedTargetParentValue));
                 const { json, types, dropped, jql } = await queryPromise;
                 saveRecentJiraProject(jql);
+                activeJiraSession = {
+                    site: selectedJiraSite ? { ...selectedJiraSite } : null,
+                    space: selectedJiraSpace ? { ...selectedJiraSpace } : null,
+                    project: selectedJiraProject ? { ...selectedJiraProject } : null,
+                    boardCtx: jiraBoardCtx ? { ...jiraBoardCtx, siteParams: { ...(jiraBoardCtx.siteParams || {}) } } : null,
+                    parentValue: selectedParentValue,
+                    targetParentValue: selectedTargetParentValue,
+                    jql: jql || ''
+                };
                 currentJiraDomain = jiraBoardCtx.domain;
                 const issues = json.issues || [];
                 if (!issues.length) {
@@ -1903,6 +1945,7 @@
         }
         
         function changeJiraProject() {
+            activeJiraSession = null;
             document.getElementById('fileInfo').classList.add('hidden');
             document.getElementById('reportDashboard').classList.add('hidden');
             document.getElementById('jiraUrlSection').classList.remove('hidden');
@@ -2154,6 +2197,7 @@
 
         function handleLogout() {
             google.accounts.id.disableAutoSelect();
+            activeJiraSession = null;
             localStorage.removeItem('jira_google_user');
             purgeJiraCache();
             updateAuthUI();
