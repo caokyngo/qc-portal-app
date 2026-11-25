@@ -2970,6 +2970,30 @@
             // Tìm nhãn phần trăm ở các cột I:M và đọc giá trị ngay bên phải nhãn.
             // Dữ liệu này độc lập với phân loại từng task theo Status ở cột G.
             const summaryPercentages = { done: '', inProgress: '', remaining: '' };
+            const progressBreakdowns = [];
+            const progressLabelMap = new Map([
+                ['passed', 'Passed'], ['failed', 'Failed'], ['blocked', 'Blocked'],
+                ['incompleted', 'In-completed'], ['incomplete', 'In-completed']
+            ]);
+            const normalizeProgressLabel = value => String(value || '').toLowerCase().replace(/[%\s_-]+/g, '').trim();
+            const formatProgressPercent = value => {
+                const text = String(value == null ? '' : value).trim();
+                if (!text) return '';
+                return /%$/.test(text) ? text : text + '%';
+            };
+            rows.forEach(r => {
+                if (!r) return;
+                const categoryName = getCell(r, 0) || getCell(r, 1) || getCell(r, 2);
+                if (!categoryName || /^(stt|module|feature|summary|total)$/i.test(categoryName)) return;
+                const values = {};
+                for (let labelCol = 0; labelCol < r.length - 1; labelCol++) {
+                    const label = normalizeProgressLabel(getCell(r, labelCol));
+                    const statusName = progressLabelMap.get(label);
+                    const value = getCell(r, labelCol + 1);
+                    if (statusName && value) values[statusName] = formatProgressPercent(value);
+                }
+                if (Object.keys(values).length) progressBreakdowns.push({ name: categoryName, values });
+            });
 
             rows.forEach((r, rowIndex) => {
                 for (let labelCol = 8; labelCol <= 12; labelCol++) {
@@ -3075,7 +3099,26 @@
 
             const lines = [];
             if (doneRaw.length > 0) { lines.push('- DONE: ' + doneOverall); lines.push(...consolidate(doneRaw, true)); }
-            if (inProgressRaw.length > 0) { lines.push('- IN PROGRESS: ' + inProgressOverall); lines.push(...consolidate(inProgressRaw, false)); }
+            if (progressBreakdowns.length > 0) {
+                const progressTotal = summaryPercentages.inProgress || inProgressOverall;
+                lines.push('- IN-PROGRESS: ' + progressTotal + ' (failed cũng tính là in progress)');
+                progressBreakdowns.forEach(group => {
+                    const parts = ['Passed', 'Failed', 'Blocked', 'In-completed']
+                        .filter(label => {
+                            const value = group.values[label];
+                            if (!value) return false;
+                            const numeric = Number.parseFloat(value.replace(',', '.'));
+                            if (!Number.isNaN(numeric) && numeric === 0) return false;
+                            if (label === 'Passed' && !Number.isNaN(numeric) && numeric === 100) return false;
+                            return true;
+                        })
+                        .map(label => group.values[label] + ' ' + label);
+                    if (parts.length) lines.push('  + ' + group.name + ': ' + parts.join(', '));
+                });
+            } else if (inProgressRaw.length > 0) {
+                lines.push('- IN-PROGRESS: ' + inProgressOverall + ' (failed cũng tính là in progress)');
+                lines.push(...consolidate(inProgressRaw, false));
+            }
             if (remainingRaw.length > 0) { lines.push('- REMAINS: ' + remainingOverall); lines.push(...consolidate(remainingRaw, true)); }
 
             if (lines.length === 0) {
