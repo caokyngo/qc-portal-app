@@ -2870,7 +2870,7 @@
             const progressLabelMap = new Map([
                 ['passed', 'Passed'], ['failed', 'Failed'], ['blocked', 'Blocked'],
                 ['incompleted', 'Incomplete'], ['incomplete', 'Incomplete'],
-                ['na', 'PassedExtra'], ['nottested', 'PassedExtra']
+                ['na', 'PassedExtra'], ['nottested', 'PassedExtra'], ['warning', 'PassedExtra']
             ]);
             const normalizeProgressLabel = value => String(value || '').toLowerCase().replace(/[^a-z0-9]/g, '');
             const toProgressPercentNumber = value => {
@@ -2878,43 +2878,74 @@
                 return Number.isFinite(number) ? number : 0;
             };
 
-            // Giá trị tương ứng của các nhãn nằm cách 1 ô (labelCol + 2), fallback labelCol + 1.
+            // Quét dự phòng nếu trên dòng có bảng % trực tiếp (lấy ở ô cách nhãn 1 ô: labelCol + 2, bỏ qua cột G status index 6)
             rows.forEach(r => {
                 if (!r) return;
                 const categoryName = getCell(r, 0) || getCell(r, 1) || getCell(r, 2);
                 if (!categoryName || /^(stt|module|feature|summary|total)$/i.test(categoryName)) return;
                 const values = {};
                 for (let labelCol = 0; labelCol < r.length - 2; labelCol++) {
+                    if (labelCol === 6) continue;
                     const label = normalizeProgressLabel(getCell(r, labelCol));
                     const statusName = progressLabelMap.get(label);
-                    const value = getCell(r, labelCol + 2) || getCell(r, labelCol + 1);
-                    if (statusName && value) values[statusName] = (values[statusName] || 0) + toProgressPercentNumber(value);
+                    const value = getCell(r, labelCol + 2);
+                    if (statusName && value && value.includes('%')) {
+                        values[statusName] = (values[statusName] || 0) + toProgressPercentNumber(value);
+                    }
                 }
                 if (Object.keys(values).length) progressBreakdowns.push({ name: categoryName, values });
             });
 
-            const normalizeTaskLookupName = name => {
-                const plainName = String(name || '').trim().toLowerCase().replace(/[^a-z0-9]/g, '');
-                const baseName = parseItemName(String(name || '')).base.toLowerCase().replace(/[^a-z0-9]/g, '');
-                return [plainName, baseName].filter(Boolean);
-            };
+            const getPlainTaskKey = name => String(name || '').trim().toLowerCase().replace(/[^a-z0-9]/g, '');
+            const getBaseTaskKey = name => parseItemName(String(name || '')).base.toLowerCase().replace(/[^a-z0-9]/g, '');
+
             const progressBreakdownByTask = new Map();
             progressBreakdowns.forEach(group => {
-                normalizeTaskLookupName(group.name).forEach(key => progressBreakdownByTask.set(key, group.values));
+                const plainKey = getPlainTaskKey(group.name);
+                const baseKey = getBaseTaskKey(group.name);
+                if (plainKey) progressBreakdownByTask.set(plainKey, group.values);
+                if (baseKey && !progressBreakdownByTask.has(baseKey)) progressBreakdownByTask.set(baseKey, group.values);
             });
-            const sourceSummaryByTask = new Map();
+
+            const sourceSummaryByExactTask = new Map();
+            const sourceSummaryByBaseTask = new Map();
             (Array.isArray(taskSummaries) ? taskSummaries : []).forEach(item => {
-                if (!item || !item.task || !item.summary) return;
-                normalizeTaskLookupName(item.task).forEach(key => sourceSummaryByTask.set(key, item));
+                if (!item || !item.task) return;
+                const plainKey = getPlainTaskKey(item.task);
+                const baseKey = getBaseTaskKey(item.task);
+                if (plainKey) sourceSummaryByExactTask.set(plainKey, item);
+                if (baseKey && !sourceSummaryByBaseTask.has(baseKey)) sourceSummaryByBaseTask.set(baseKey, item);
             });
+
             const formatPercent = value => {
                 const rounded = Number(Number(value).toFixed(2));
                 return String(rounded) + '%';
             };
+
             const getTaskProgressBreakdown = taskName => {
-                const keys = normalizeTaskLookupName(taskName);
-                const source = keys.map(key => sourceSummaryByTask.get(key)).find(Boolean);
-                if (source && Number(source.total) > 0) {
+                const plainKey = getPlainTaskKey(taskName);
+                const baseKey = getBaseTaskKey(taskName);
+                const source = (plainKey && sourceSummaryByExactTask.get(plainKey)) || (baseKey && sourceSummaryByBaseTask.get(baseKey));
+
+                // 1. Ưu tiên lấy trực tiếp % ở ô cách nhãn 1 ô (c + 2) từ file testcase được mapping trong folder
+                if (source && source.percentages) {
+                    const pct = source.percentages;
+                    const parts = [];
+                    const addPct = (label, val) => {
+                        const amount = Number(val) || 0;
+                        if (!(amount > 0)) return;
+                        if (label === 'Passed' && amount >= 100) return;
+                        parts.push(formatPercent(amount) + ' ' + label);
+                    };
+                    addPct('Passed', (pct.passed || 0) + (pct.na || 0) + (pct.notTested || 0) + (pct.warning || 0));
+                    addPct('Failed', pct.failed);
+                    addPct('Blocked', pct.blocked);
+                    addPct('Incomplete', pct.incomplete);
+                    return parts.join(', ');
+                }
+
+                // 2. Dự phòng: tính theo count / total của REMAINING/TOTAL nếu file testcase không có cột % ở c + 2
+                if (source && source.summary && Number(source.total) > 0) {
                     const summary = source.summary;
                     const total = Number(source.total);
                     const parts = [];
@@ -2931,7 +2962,9 @@
                     addCount('Incomplete', summary.incomplete);
                     return parts.join(', ');
                 }
-                const values = keys.map(key => progressBreakdownByTask.get(key)).find(Boolean);
+
+                // 3. Dự phòng cuối: bảng breakdown trực tiếp trên sheet report (nếu có)
+                const values = (plainKey && progressBreakdownByTask.get(plainKey)) || (baseKey && progressBreakdownByTask.get(baseKey));
                 if (!values) return '';
                 const parts = [];
                 const addPart = (label, number) => {
