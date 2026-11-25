@@ -2897,24 +2897,19 @@
             });
 
             const getPlainTaskKey = name => String(name || '').trim().toLowerCase().replace(/[^a-z0-9]/g, '');
-            const getBaseTaskKey = name => parseItemName(String(name || '')).base.toLowerCase().replace(/[^a-z0-9]/g, '');
 
             const progressBreakdownByTask = new Map();
             progressBreakdowns.forEach(group => {
                 const plainKey = getPlainTaskKey(group.name);
-                const baseKey = getBaseTaskKey(group.name);
                 if (plainKey) progressBreakdownByTask.set(plainKey, group.values);
-                if (baseKey && !progressBreakdownByTask.has(baseKey)) progressBreakdownByTask.set(baseKey, group.values);
             });
 
+            // Mỗi sub-task (Iframe / Webapp / App theo từng OS/Browser) có sheet riêng nên khớp chính xác theo tên task
             const sourceSummaryByExactTask = new Map();
-            const sourceSummaryByBaseTask = new Map();
             (Array.isArray(taskSummaries) ? taskSummaries : []).forEach(item => {
                 if (!item || !item.task) return;
                 const plainKey = getPlainTaskKey(item.task);
-                const baseKey = getBaseTaskKey(item.task);
                 if (plainKey) sourceSummaryByExactTask.set(plainKey, item);
-                if (baseKey && !sourceSummaryByBaseTask.has(baseKey)) sourceSummaryByBaseTask.set(baseKey, item);
             });
 
             const formatPercent = value => {
@@ -2924,8 +2919,7 @@
 
             const getTaskProgressBreakdown = taskName => {
                 const plainKey = getPlainTaskKey(taskName);
-                const baseKey = getBaseTaskKey(taskName);
-                const source = (plainKey && sourceSummaryByExactTask.get(plainKey)) || (baseKey && sourceSummaryByBaseTask.get(baseKey));
+                const source = plainKey ? sourceSummaryByExactTask.get(plainKey) : null;
 
                 // 1. Ưu tiên lấy trực tiếp % ở ô cách nhãn 1 ô (c + 2) từ file testcase được mapping trong folder
                 if (source && source.percentages) {
@@ -2964,7 +2958,7 @@
                 }
 
                 // 3. Dự phòng cuối: bảng breakdown trực tiếp trên sheet report (nếu có)
-                const values = (plainKey && progressBreakdownByTask.get(plainKey)) || (baseKey && progressBreakdownByTask.get(baseKey));
+                const values = plainKey ? progressBreakdownByTask.get(plainKey) : null;
                 if (!values) return '';
                 const parts = [];
                 const addPart = (label, number) => {
