@@ -93,7 +93,6 @@
         @keyframes travel-marquee-scroll { to { transform: translateX(-50%); } }
         @keyframes travel-blink { 0%, 100% { opacity: 1; filter: drop-shadow(0 0 1px rgba(234, 88, 12, 0.4)); } 50% { opacity: 0.45; filter: drop-shadow(0 0 5px rgba(234, 88, 12, 0.7)); } }
         
-        /* Hiệu ứng Toast trượt từ phải vào */
         @keyframes slideInRight {
             from { transform: translateX(100%); opacity: 0; }
             to { transform: translateX(0); opacity: 1; }
@@ -105,11 +104,9 @@
         .create-update-loading-sweep { animation: create-update-loading-sweep 1.25s ease-in-out infinite; }
         .toast-enter { animation: slideInRight 0.3s ease-out forwards; }
         
-        /* Ẩn scrollbar nhưng vẫn scroll được */
         .no-scrollbar::-webkit-scrollbar { display: none; }
         .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
 
-        /* Chế độ tối: đổi các bề mặt trung tính của Tailwind, giữ màu nhấn để dễ nhận biết. */
         html.dark-mode body, html.dark-mode main, html.dark-mode .bg-slate-50, html.dark-mode [class~="bg-slate-50/50"], html.dark-mode [class~="bg-slate-50/80"], html.dark-mode [class~="bg-slate-50/90"] { background-color: #0f172a !important; color: #e2e8f0 !important; }
         html.dark-mode .bg-white, html.dark-mode [class~="bg-white/90"] { background-color: #172033 !important; }
         html.dark-mode .bg-slate-100, html.dark-mode .bg-slate-200 { background-color: #253247 !important; }
@@ -133,7 +130,6 @@
 </head>
 <body class="bg-slate-50 text-slate-800 font-sans h-screen w-full flex flex-col md:flex-row overflow-hidden relative">
 
-    <!-- KHUNG CHỨA TOAST NOTIFICATION -->
     <div id="toast-container" class="fixed top-5 right-5 z-[100] flex flex-col gap-3 pointer-events-none"></div>
 
     <div id="sidebarOverlay" onclick="toggleSidebar()" class="fixed inset-0 bg-slate-900/60 z-40 hidden md:hidden backdrop-blur-sm transition-opacity opacity-0"></div>
@@ -353,7 +349,6 @@
                         <div id="reportSetupGrid" class="grid grid-cols-1 xl:grid-cols-2 gap-6 items-stretch">
                         <!-- ================= GIAO DIỆN FORM CẤU HÌNH HIỆN ĐẠI ================= -->
                         <section id="reportInfoCard" class="report-setup-card bg-white rounded-2xl shadow-sm border border-slate-200 w-full h-full flex flex-col overflow-hidden">
-                            <!-- Header của Form -->
                             <div class="flex flex-col sm:flex-row sm:items-center justify-between border-b border-slate-100 px-5 py-4 bg-slate-50/50">
                                 <h3 class="text-base font-bold text-slate-800 flex items-center gap-2 mb-3 sm:mb-0">
                                     <i class="fa-solid fa-file-signature text-indigo-600"></i> Thông tin Báo Cáo
@@ -364,11 +359,9 @@
                             </div>
 
                             <div class="p-5 space-y-6 flex-1">
-                                <!-- Card 1: Thông tin chung -->
                                 <div>
                                     <h4 class="text-[11px] font-bold text-slate-400 uppercase tracking-widest mb-3 border-b border-slate-100 pb-1">1. Thông tin chung</h4>
                                     <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                                        <!-- Smart Input: Floating Label -->
                                         <div class="relative group">
                                             <input type="text" id="reportGameNameInput" oninput="saveHeaderConfig(); autoUpdateSheetName();" class="block w-full h-[48px] px-3.5 pt-5 pb-1.5 text-sm text-slate-900 bg-slate-50/50 border border-slate-300 rounded-xl appearance-none focus:outline-none focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 peer transition-all shadow-sm" placeholder=" " />
                                             <label class="absolute text-xs font-bold text-slate-400 duration-300 transform -translate-y-3 scale-75 top-3.5 z-10 origin-[0] left-3.5 peer-focus:text-indigo-600 peer-placeholder-shown:scale-100 peer-placeholder-shown:translate-y-0 peer-placeholder-shown:font-medium peer-focus:scale-75 peer-focus:-translate-y-3 pointer-events-none">
@@ -403,7 +396,6 @@
                                 </div>
                                 <input type="hidden" id="reportEnvInput">
 
-                                <!-- Card 3: Cấu hình Link (Smart Inputs) -->
                                 <div>
                                     <div class="flex justify-between items-center mb-3 border-b border-slate-100 pb-1">
                                         <h4 class="text-[11px] font-bold text-slate-400 uppercase tracking-widest">2. Liên kết (Links)</h4>
@@ -411,7 +403,6 @@
                                     </div>
                                     
                                     <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                                        <!-- Smart Input có Icon -->
                                         <div class="relative group">
                                             <div class="absolute inset-y-0 left-0 flex items-center pl-3.5 pointer-events-none">
                                                 <i class="fa-solid fa-earth-americas text-slate-400 group-focus-within:text-indigo-500 transition-colors"></i>
@@ -452,11 +443,9 @@
                                             </label>
                                         </div>
                                     </div>
-                                    <!-- Ô ẨN để chứa Testcase (từ clipboard/sheet) cho logic không bị đứt -->
                                     <input type="hidden" id="reportTestcaseInput" oninput="saveHeaderConfig()">
                                 </div>
 
-                                <!-- Card 4: Accordion Ghi chú & Meta -->
                                 <details class="bg-slate-50/50 rounded-xl border border-slate-200 overflow-hidden group">
                                     <summary class="p-3.5 px-4 cursor-pointer font-bold text-sm text-slate-700 flex justify-between items-center hover:bg-slate-100 transition-colors select-none">
                                         <span class="flex items-center gap-2"><i class="fa-solid fa-feather-pointed text-amber-500"></i> Thêm Ghi chú & Metadata (Section C)</span>
@@ -544,8 +533,6 @@
 
                         </div>
 
-                        <!-- KPI, biểu đồ và dữ liệu chi tiết luôn nằm toàn chiều ngang bên dưới cấu hình -->
-                        <!-- KPI Cards -->
                         <section class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 w-full">
                             <div class="bg-white p-5 rounded-xl shadow-sm border border-slate-200 flex items-center gap-4">
                                 <div class="p-3 bg-indigo-100 text-indigo-600 rounded-lg text-xl"><i class="fa-solid fa-list-check"></i></div>
@@ -760,7 +747,6 @@
         </div>
     </div>
 
-    <!-- HÀM XỬ LÝ TOAST VÀ CÁC LOGIC KHÁC -->
     <script>
         const JIRA_PROXY_API_URL = "https://script.google.com/a/macros/enotion.io/s/AKfycbwsjm9uO59mD-Ad6EUoo2WPxMql-ObwERoCPOcRXvcKx8XkYBZ_pkxBFDr0u95_6tec/exec";
         const URL_REPORT_API = "https://script.google.com/a/macros/enotion.io/s/AKfycbzynUh65kMWVtwRdYdg8x35-6LViA_JwMPrWhEoMdDXFDP7tpcheilYrReQSIrQ6zAtIQ/exec"; 
@@ -852,7 +838,6 @@
             finally { jiraRecentProjectLoadInFlight = false; if (button && button.isConnected) button.disabled = false; }
         }
 
-        // HÀM HIỂN THỊ TOAST THÔNG BÁO HIỆN ĐẠI (THAY THẾ MODAL)
         function showToast(title, message, isError = false) {
             const container = document.getElementById('toast-container');
             if (!container) return;
@@ -879,7 +864,6 @@
             }, 3500);
         }
 
-        // Tương thích ngược với các lệnh gọi Alert cũ
         function showCustomAlert(title, message, isError = false) {
             showToast(title, message, isError);
         }
@@ -961,27 +945,6 @@
             syncVersionGameValue(false);
         }
 
-        function toggleLinkInputs() {
-            const linkConfigs = [
-                { cb: 'cbIframe', field: 'fieldIframe' },
-                { cb: 'cbPreprod', field: 'fieldPreprod' },
-                { cb: 'cbWebapp', field: 'fieldWebapp' },
-                { cb: 'cbAppname', field: 'fieldAppname' }
-            ];
-
-            linkConfigs.forEach(item => {
-                const cb = document.getElementById(item.cb);
-                const field = document.getElementById(item.field);
-                if (cb && field) {
-                    if (cb.checked) {
-                        field.classList.remove('hidden');
-                    } else {
-                        field.classList.add('hidden');
-                    }
-                }
-            });
-        }
-
         function autoUpdateSheetName() {
             const gameName = document.getElementById('reportGameNameInput')?.value.trim();
             const sheetInput = document.getElementById('sheetNameInput');
@@ -997,11 +960,6 @@
         function saveQCMembers() {
             const val = document.getElementById('qcMembersInput')?.value.trim() || '';
             localStorage.setItem('jira_qc_members', val);
-        }
-
-        function saveScopeTesting() {
-            const val = document.getElementById('scopeOfTestingInput')?.value.trim() || '';
-            localStorage.setItem('jira_scope_testing', val);
         }
 
         function saveHeaderConfig() {
@@ -1047,16 +1005,6 @@
                 if (config.metadata !== undefined && document.getElementById('reportMetadataInput')) document.getElementById('reportMetadataInput').value = config.metadata;
             } catch(e) {
                 console.error("Lỗi khôi phục cấu hình từ localStorage:", e);
-            }
-        }
-
-        function cleanJiraUrlForReport(urlStr) {
-            if (!urlStr) return '';
-            try {
-                let decoded = decodeURIComponent(urlStr).replace(/[\r\n]+/g, ' ').replace(/\s+/g, ' ').trim();
-                return decoded;
-            } catch(e) {
-                return urlStr;
             }
         }
 
@@ -1184,8 +1132,6 @@
             const content = document.getElementById('jiraControlsContent');
             if (overlay) overlay.classList.toggle('hidden', !locked);
             if (region) {
-                // Keep each control's own disabled state intact; project/Space controls
-                // may still be loading when the connection lock is first applied.
                 region.setAttribute('aria-busy', String(locked));
             }
             if (content) {
@@ -1277,7 +1223,6 @@
             return workspace.charAt(0).toUpperCase() + workspace.slice(1);
         }
 
-        /* ===== Jira speed: cache localStorage + prefetch ticket ===== */
         const JIRA_CACHE_PREFIX = 'jira_cache_v1:';
         const JIRA_CACHE_TTL = { spaces: 600000, projects: 600000, epics: 180000 };
         const jiraInflight = {};
@@ -1721,7 +1666,6 @@
             });
         }
 
-        /* ================= JIRA BOARD LOGIC ================= */
         const DEFAULT_TICKET_TYPES = ['Bug/Defect', 'Improvement', 'Q&A'];
         let jiraParents = [];
         let jiraTargetParents = [];
@@ -1730,17 +1674,7 @@
         let selectedTargetParentValue = null;
         let jiraTargetParentError = '';
         let parentLoadToken = 0;
-        let targetParentLoadToken = 0;
         let parentLoading = false;
-        
-        function getJiraSiteParams(domain) {
-            const site = selectedJiraSite;
-            if (!site) throw new Error('Chọn Jira Space trước khi tải dữ liệu.');
-            if (domain && String(site.url || '').replace(/\/+$/, '').toLowerCase() !== domain.toLowerCase()) {
-                throw new Error('Link Jira không thuộc site bạn đã chọn.');
-            }
-            return { site: site.id };
-        }
 
         function isEnotionWorkspace() {
             return !!selectedJiraSite && formatWorkspaceName(selectedJiraSite).toLowerCase() === 'enotion';
@@ -1769,14 +1703,6 @@
         
         function cleanProjectTitle(raw) {
             return String(raw || '').replace(/^\s*\d+\s+sprints?\s*-\s*/i, '').replace(/\s*-\s*(Scrum|Kanban)\s+Board.*$/i, '').replace(/\s*-\s*Jira\s*$/i, '').trim();
-        }
-        
-        function extractProjectName(json) {
-            if (!json) return '';
-            const direct = json.projectName || (json.project && json.project.name) || json.boardName;
-            if (direct) return cleanProjectTitle(direct);
-            const issue = (json.issues || []).find(i => i.fields && i.fields.project && i.fields.project.name);
-            return issue ? cleanProjectTitle(issue.fields.project.name) : '';
         }
         
         function applyProjectName(name) {
@@ -1990,7 +1916,6 @@
             if (jiraBoardCtx) renderParentSection();
         }
         
-        /* ---------- Dropdown parent có ô tìm kiếm ---------- */
         function foldText(s) { return String(s || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/đ/gi, 'd').toLowerCase(); }
         
         function renderParentSection() {
@@ -2578,7 +2503,6 @@
                 checkbox.type = 'checkbox';
                 checkbox.className = 'status-dynamic-cb text-indigo-600 rounded';
                 checkbox.value = status;
-                // Chỉ bật mặc định những status thuộc 3 nhóm yêu cầu và thực sự xuất hiện trong ticket.
                 checkbox.checked = Boolean(getStatusGroup(status));
                 checkbox.onchange = () => processData();
                 const caption = document.createElement('span');
@@ -2844,23 +2768,6 @@
             document.querySelectorAll('.tag-select-cb').forEach(cb => cb.checked = checked);
         }
 
-        // HÀM FORMAT GIỮ NGUYÊN % TỪ GOOGLE SHEET (KHÔNG LÀM TRÒN)
-        function formatPctDisplayFixed(val) {
-            if (val === null || val === undefined || val === '') return '0%';
-            let s = String(val).trim();
-            if (s.includes('<<')) s = s.split('<<')[0].trim();
-            if (s.endsWith('%')) return s;
-            let num = parseFloat(s);
-            if (!isNaN(num)) {
-                if (num > 0 && num <= 1) {
-                    let pct = Math.round(num * 10000) / 100;
-                    return pct + '%';
-                }
-                return s + '%';
-            }
-            return s;
-        }
-
         function parsePctNum(val) {
             let s = String(val || '').trim();
             if (s.includes('<<')) s = s.split('<<')[0].trim();
@@ -2868,14 +2775,6 @@
             const num = parseFloat(s.replace('%', ''));
             if (isNaN(num)) return null;
             return (s.endsWith('%') || num < 0 || num > 1) ? num : num * 100;
-        }
-
-        function isZeroPct(valStr) {
-            if (!valStr) return true;
-            let s = String(valStr).trim().replace('%', '');
-            if (s.includes('<<')) s = s.split('<<')[0].trim();
-            const num = parseFloat(s);
-            return !isNaN(num) ? num === 0 : (s === '0' || s === '0.0');
         }
 
         function parseItemName(name) {
@@ -2926,7 +2825,6 @@
         function parseProgressDataFromMatrix(rows, taskSummaries = []) {
             let testcaseLinkFromSheet = "";
             if (rows && rows.length > 0) {
-                // Ô A1 trong report sheet chứa link folder Test Case; ưu tiên đúng ô này.
                 const a1Value = rows[0] && rows[0][0] !== undefined ? String(rows[0][0]).trim() : '';
                 const a1Url = a1Value.match(/https?:\/\/[^\s]+/i);
                 if (a1Url && /drive\.google\.com|docs\.google\.com/i.test(a1Url[0])) testcaseLinkFromSheet = a1Url[0];
@@ -2967,8 +2865,6 @@
             const allParsedItems = [];
             const getCell = (r, colIdx) => (r && r[colIdx] !== undefined && r[colIdx] !== null) ? String(r[colIdx]).trim() : '';
 
-            // Tìm nhãn phần trăm ở các cột I:M và đọc giá trị ngay bên phải nhãn.
-            // Dữ liệu này độc lập với phân loại từng task theo Status ở cột G.
             const summaryPercentages = { done: '', inProgress: '', remaining: '' };
             const progressBreakdowns = [];
             const progressLabelMap = new Map([
@@ -2981,19 +2877,22 @@
                 const number = Number.parseFloat(String(value == null ? '' : value).replace(/[%\s]/g, '').replace(',', '.'));
                 return Number.isFinite(number) ? number : 0;
             };
+
+            // Giá trị tương ứng của các nhãn nằm cách 1 ô (labelCol + 2), fallback labelCol + 1.
             rows.forEach(r => {
                 if (!r) return;
                 const categoryName = getCell(r, 0) || getCell(r, 1) || getCell(r, 2);
                 if (!categoryName || /^(stt|module|feature|summary|total)$/i.test(categoryName)) return;
                 const values = {};
-                for (let labelCol = 0; labelCol < r.length - 1; labelCol++) {
+                for (let labelCol = 0; labelCol < r.length - 2; labelCol++) {
                     const label = normalizeProgressLabel(getCell(r, labelCol));
                     const statusName = progressLabelMap.get(label);
-                    const value = getCell(r, labelCol + 1);
+                    const value = getCell(r, labelCol + 2) || getCell(r, labelCol + 1);
                     if (statusName && value) values[statusName] = (values[statusName] || 0) + toProgressPercentNumber(value);
                 }
                 if (Object.keys(values).length) progressBreakdowns.push({ name: categoryName, values });
             });
+
             const normalizeTaskLookupName = name => {
                 const plainName = String(name || '').trim().toLowerCase().replace(/[^a-z0-9]/g, '');
                 const baseName = parseItemName(String(name || '')).base.toLowerCase().replace(/[^a-z0-9]/g, '');
@@ -3045,6 +2944,7 @@
                 addPart('Incomplete', values.Incomplete || 0);
                 return parts.join(', ');
             };
+
             rows.forEach((r, rowIndex) => {
                 for (let labelCol = 8; labelCol <= 12; labelCol++) {
                     const summaryLabel = getCell(r, labelCol).toLowerCase().replace(/\s+/g, ' ').trim();
@@ -3086,8 +2986,6 @@
                 globalTree[parsed.base][parsed.platform][parsed.os][parsed.browser] = true;
             });
 
-            // Phân loại task dựa trên Status cột G, không dựa vào % ở cột E.
-            // "failed" được xếp vào IN PROGRESS vì task chưa hoàn tất.
             const doneRaw = [], inProgressRaw = [], remainingRaw = [];
             allParsedItems.forEach(item => {
                 const status = item.lowerG;
@@ -3214,6 +3112,7 @@
                 document.body.appendChild(script);
             });
         }
+
         function fetchGSheetProgressReport(gasUrl, sheetName) {
             return new Promise((resolve) => {
                 if (!gasUrl.includes("script.google.com")) return resolve(null);
@@ -3269,9 +3168,7 @@
                 try {
                     await navigator.clipboard.writeText(text);
                     return true;
-                } catch (e) {
-                    // Fallback below if focus changed during async fetch
-                }
+                } catch (e) {}
             }
 
             try {
@@ -3287,9 +3184,7 @@
                 const copied = document.execCommand('copy');
                 textarea.remove();
                 if (copied) return true;
-            } catch (e) {
-                // Fall through to manual copy dialog
-            }
+            } catch (e) {}
             return false;
         }
 
@@ -3743,7 +3638,6 @@
                     generatedJiraLink = `${currentJiraDomain}/jira/software/c/projects/${encodeURIComponent(currentProjectKey)}/boards/${currentBoardId}`;
                 }
 
-                
                 const customNotes = document.getElementById('reportNotesInput') ? document.getElementById('reportNotesInput').value.trim() : '';
                 const metadataText = document.getElementById('reportMetadataInput') ? document.getElementById('reportMetadataInput').value.trim() : '';
 
@@ -3762,7 +3656,6 @@
                     const status = (getColumnValue(row, ['Status', 'Trạng thái']) || 'N/A').toString().trim();
                     const sUpper = status.toUpperCase();
                     
-                    // Đếm ticket ở cột Deployed và In-Testing độc lập với filter UI (không tính In progress / To Do)
                     if (sUpper.includes('DEPLOYED')) {
                         countDeployed++;
                     } else if (sUpper.includes('TESTING') || sUpper === 'IN TEST' || sUpper === 'IN-TEST') {
@@ -3808,7 +3701,6 @@
 
                 let reportLines = [];
 
-                // HEADER REPORT
                 if (gameName) reportLines.push('Report for ' + gameName + (dateStr ? ' (' + dateStr + ')' : ''));
                 if (verGame) reportLines.push('Version game: ' + verGame);
                 if (verApp) reportLines.push('Version App: ' + verApp);
@@ -3821,7 +3713,6 @@
                     }
                 }
                 
-                // SECTION LINKS
                 const hasSubLinks = linkIframe || linkPreprod || linkWebapp || linkAppname;
 
                 if (hasSubLinks) {
@@ -3836,7 +3727,6 @@
                 if (testcaseLinkToUse) reportLines.push('Test case: ' + testcaseLinkToUse);
                 reportLines.push('---------------------------------------------');
 
-                // A. [SUMMARY]
                 reportLines.push('```');
                 reportLines.push('A. [SUMMARY]');
                 if (scopeText) reportLines.push('- Scope of testing: ' + scopeText);
@@ -3850,7 +3740,6 @@
                 }
                 reportLines.push('---------------------------------------------');
 
-                // B. [TICKETS]
                 const specialTagsList = ['improvement', 'question', 'q&a', 'q & a'];
                 const tagDataMap = {}; 
                 const tagOrder = [];
@@ -3951,7 +3840,6 @@
 
                 reportLines.push('---------------------------------------------');
                 
-                // C. [NOTES]
                 reportLines.push('C. [NOTES]');
                 if (customNotes) {
                     customNotes.split('\n').forEach(line => {
@@ -3959,7 +3847,6 @@
                     });
                 }
 
-                // LOGIC NOTE CỘT DEPLOYED & IN-TESTING LINH HOẠT
                 const totalUnverified = countDeployed + countInTesting;
                 if (totalUnverified > 0) {
                     const unverifiedCols = [];
