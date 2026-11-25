@@ -2923,7 +2923,7 @@
             localStorage.setItem('jira_sheet_name', document.getElementById('sheetNameInput').value.trim()); 
         }
 
-        function parseProgressDataFromMatrix(rows) {
+        function parseProgressDataFromMatrix(rows, taskSummaries = []) {
             let testcaseLinkFromSheet = "";
             if (rows && rows.length > 0) {
                 // Ô A1 trong report sheet chứa link folder Test Case; ưu tiên đúng ô này.
@@ -2970,7 +2970,81 @@
             // Tìm nhãn phần trăm ở các cột I:M và đọc giá trị ngay bên phải nhãn.
             // Dữ liệu này độc lập với phân loại từng task theo Status ở cột G.
             const summaryPercentages = { done: '', inProgress: '', remaining: '' };
-
+            const progressBreakdowns = [];
+            const progressLabelMap = new Map([
+                ['passed', 'Passed'], ['failed', 'Failed'], ['blocked', 'Blocked'],
+                ['incompleted', 'Incomplete'], ['incomplete', 'Incomplete'],
+                ['na', 'PassedExtra'], ['nottested', 'PassedExtra']
+            ]);
+            const normalizeProgressLabel = value => String(value || '').toLowerCase().replace(/[^a-z0-9]/g, '');
+            const toProgressPercentNumber = value => {
+                const number = Number.parseFloat(String(value == null ? '' : value).replace(/[%\s]/g, '').replace(',', '.'));
+                return Number.isFinite(number) ? number : 0;
+            };
+            rows.forEach(r => {
+                if (!r) return;
+                const categoryName = getCell(r, 0) || getCell(r, 1) || getCell(r, 2);
+                if (!categoryName || /^(stt|module|feature|summary|total)$/i.test(categoryName)) return;
+                const values = {};
+                for (let labelCol = 0; labelCol < r.length - 1; labelCol++) {
+                    const label = normalizeProgressLabel(getCell(r, labelCol));
+                    const statusName = progressLabelMap.get(label);
+                    const value = getCell(r, labelCol + 1);
+                    if (statusName && value) values[statusName] = (values[statusName] || 0) + toProgressPercentNumber(value);
+                }
+                if (Object.keys(values).length) progressBreakdowns.push({ name: categoryName, values });
+            });
+            const normalizeTaskLookupName = name => {
+                const plainName = String(name || '').trim().toLowerCase().replace(/[^a-z0-9]/g, '');
+                const baseName = parseItemName(String(name || '')).base.toLowerCase().replace(/[^a-z0-9]/g, '');
+                return [plainName, baseName].filter(Boolean);
+            };
+            const progressBreakdownByTask = new Map();
+            progressBreakdowns.forEach(group => {
+                normalizeTaskLookupName(group.name).forEach(key => progressBreakdownByTask.set(key, group.values));
+            });
+            const sourceSummaryByTask = new Map();
+            (Array.isArray(taskSummaries) ? taskSummaries : []).forEach(item => {
+                if (!item || !item.task || !item.summary) return;
+                normalizeTaskLookupName(item.task).forEach(key => sourceSummaryByTask.set(key, item));
+            });
+            const formatPercent = value => {
+                const rounded = Number(Number(value).toFixed(2));
+                return String(rounded) + '%';
+            };
+            const getTaskProgressBreakdown = taskName => {
+                const keys = normalizeTaskLookupName(taskName);
+                const source = keys.map(key => sourceSummaryByTask.get(key)).find(Boolean);
+                if (source && Number(source.total) > 0) {
+                    const summary = source.summary;
+                    const total = Number(source.total);
+                    const parts = [];
+                    const addCount = (label, count) => {
+                        const amount = Number(count) || 0;
+                        if (!(amount > 0)) return;
+                        const percentage = amount * 100 / total;
+                        if (label === 'Passed' && percentage >= 100) return;
+                        parts.push(formatPercent(percentage) + ' ' + label);
+                    };
+                    addCount('Passed', (summary.passed || 0) + (summary.na || 0) + (summary.notTested || 0) + (summary.warning || 0));
+                    addCount('Failed', summary.failed);
+                    addCount('Blocked', summary.blocked);
+                    addCount('Incomplete', summary.incomplete);
+                    return parts.join(', ');
+                }
+                const values = keys.map(key => progressBreakdownByTask.get(key)).find(Boolean);
+                if (!values) return '';
+                const parts = [];
+                const addPart = (label, number) => {
+                    if (!(number > 0) || (label === 'Passed' && number >= 100)) return;
+                    parts.push(formatPercent(number) + ' ' + label);
+                };
+                addPart('Passed', (values.Passed || 0) + (values.PassedExtra || 0));
+                addPart('Failed', values.Failed || 0);
+                addPart('Blocked', values.Blocked || 0);
+                addPart('Incomplete', values.Incomplete || 0);
+                return parts.join(', ');
+            };
             rows.forEach((r, rowIndex) => {
                 for (let labelCol = 8; labelCol <= 12; labelCol++) {
                     const summaryLabel = getCell(r, labelCol).toLowerCase().replace(/\s+/g, ' ').trim();
@@ -3075,9 +3149,15 @@
 
             const lines = [];
             if (doneRaw.length > 0) { lines.push('- DONE: ' + doneOverall); lines.push(...consolidate(doneRaw, true)); }
-            if (inProgressRaw.length > 0) { lines.push('- IN PROGRESS: ' + inProgressOverall); lines.push(...consolidate(inProgressRaw, false)); }
+            if (inProgressRaw.length > 0) {
+                lines.push('- IN PROGRESS: ' + inProgressOverall);
+                const inProgressWithBreakdowns = inProgressRaw.map(item => {
+                    const breakdown = getTaskProgressBreakdown(item.name);
+                    return breakdown ? { ...item, val: breakdown } : item;
+                });
+                lines.push(...consolidate(inProgressWithBreakdowns, false));
+            }
             if (remainingRaw.length > 0) { lines.push('- REMAINS: ' + remainingOverall); lines.push(...consolidate(remainingRaw, true)); }
-
             if (lines.length === 0) {
                 lines.push('- Tiến độ: Chưa cập nhật (Hoặc sai định dạng) trong Sheet');
             }
@@ -3089,6 +3169,51 @@
             };
         }
 
+        function extractInProgressTaskNames(rows) {
+            const names = [];
+            const seen = new Set();
+            (rows || []).forEach((row, index) => {
+                if (index < 2 || !row) return;
+                const name = String(row[0] || row[1] || row[2] || '').trim();
+                const status = String(row[6] || '').toLowerCase().replace(/[_-]+/g, ' ').replace(/\s+/g, ' ').trim();
+                if (!name || /^(stt|module|feature|summary|total)$/i.test(name)) return;
+                if (!['in progress', 'doing', 'failed', 'testing', 'in test', 'in testing'].includes(status)) return;
+                const key = name.toLowerCase();
+                if (seen.has(key)) return;
+                seen.add(key);
+                names.push(name);
+            });
+            return names;
+        }
+
+        function fetchTaskProgressSummaries(gasUrl, sheetName, taskNames) {
+            return new Promise(resolve => {
+                if (!gasUrl || !gasUrl.includes('script.google.com') || !taskNames.length) return resolve([]);
+                const callbackName = 'taskSummaryCallback_' + Date.now() + '_' + Math.floor(Math.random() * 100000);
+                const fetchUrl = new URL(gasUrl);
+                fetchUrl.searchParams.set('action', 'getTaskProgressSummaries');
+                fetchUrl.searchParams.set('sheetName', sheetName || '');
+                fetchUrl.searchParams.set('tasks', JSON.stringify(taskNames));
+                fetchUrl.searchParams.set('callback', callbackName);
+                fetchUrl.searchParams.set('_t', Date.now());
+                let isResolved = false;
+                let script;
+                const finish = result => {
+                    if (isResolved) return;
+                    isResolved = true;
+                    clearTimeout(timeoutId);
+                    delete window[callbackName];
+                    if (script && script.parentNode) script.parentNode.removeChild(script);
+                    resolve(result);
+                };
+                const timeoutId = setTimeout(() => finish([]), 45000);
+                window[callbackName] = data => finish(data && data.success !== false && Array.isArray(data.summaries) ? data.summaries : []);
+                script = document.createElement('script');
+                script.onerror = () => finish([]);
+                script.src = fetchUrl.toString();
+                document.body.appendChild(script);
+            });
+        }
         function fetchGSheetProgressReport(gasUrl, sheetName) {
             return new Promise((resolve) => {
                 if (!gasUrl.includes("script.google.com")) return resolve(null);
@@ -3109,7 +3234,7 @@
                     }
                 }, 15000);
 
-                window[callbackName] = function(data) {
+                window[callbackName] = async function(data) {
                     if (isResolved) return;
                     isResolved = true;
                     clearTimeout(timeoutId);
@@ -3118,7 +3243,9 @@
                     if (!data || data.success === false || !Array.isArray(data.values)) {
                         resolve(null);
                     } else {
-                        resolve(parseProgressDataFromMatrix(data.values));
+                        const taskNames = extractInProgressTaskNames(data.values);
+                        const taskSummaries = await fetchTaskProgressSummaries(gasUrl, sheetName, taskNames);
+                        resolve(parseProgressDataFromMatrix(data.values, taskSummaries));
                     }
                 };
 
