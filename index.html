@@ -3444,7 +3444,7 @@
         }
 
         function stripTestcaseGamePrefix(name) {
-            return String(name || '').replace(/^\s*\[[^\]]+\]\s*/, '').trim();
+            return String(name || '').replace(/^(?:\s*\[[^\]]*\])+\s*/, '').trim();
         }
 
         function addCreateUpdateTaskRow(name = '', status = 'review', detailValue = '') {
@@ -3582,7 +3582,11 @@
         }
 
         function normalizeCreateUpdateTaskName(name) {
-            return stripTestcaseGamePrefix(name).toLowerCase().replace(/[^a-z0-9]/g, '');
+            return stripTestcaseGamePrefix(name)
+                .toLowerCase()
+                .replace(/devices/g, 'device')
+                .replace(/behavior/g, 'behaviour')
+                .replace(/[^a-z0-9]/g, '');
         }
 
         function parseCreateUpdateClipboardStatuses(text) {
