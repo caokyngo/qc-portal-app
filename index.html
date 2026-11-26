@@ -510,11 +510,22 @@
                                 </div>
                             </div>
 
-                            <div class="bg-slate-50 border border-slate-200 rounded-lg p-3 sm:p-4 flex flex-col sm:flex-row sm:items-center gap-3">
-                                <label class="text-xs font-bold text-slate-700 flex items-center gap-1.5 whitespace-nowrap">
-                                    <i class="fa-solid fa-table text-indigo-600"></i> Nguồn dữ liệu Tiến Độ Sheet (API):
-                                </label>
-                                <input type="text" id="sheetNameInput" oninput="saveGSheetApiData()" placeholder="VD: 9684" class="w-full sm:w-[200px] bg-white border border-slate-300 text-slate-700 text-xs font-medium rounded-lg p-2 outline-none">
+                            <div class="bg-slate-50 border border-slate-200 rounded-lg p-3 sm:p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                                <div class="flex flex-col sm:flex-row sm:items-center gap-3 flex-1 min-w-0">
+                                    <label for="sheetNameInput" class="text-xs font-bold text-slate-700 flex items-center gap-1.5 whitespace-nowrap">
+                                        <i class="fa-solid fa-table text-indigo-600"></i> Nguồn dữ liệu Tiến Độ Sheet (API):
+                                    </label>
+                                    <input type="text" id="sheetNameInput" oninput="saveGSheetApiData()" placeholder="VD: 9684" class="w-full sm:w-[180px] bg-white border border-slate-300 text-slate-700 text-xs font-medium rounded-lg p-2 outline-none">
+                                </div>
+                                <div class="flex items-center gap-2 shrink-0">
+                                    <span id="reportGasAuthBadge" class="inline-flex items-center gap-1.5 rounded-full border border-slate-200 bg-white px-2.5 py-1 text-[11px] font-semibold text-slate-500">
+                                        <span id="reportGasAuthDot" class="h-2 w-2 rounded-full bg-slate-300"></span>
+                                        <span id="reportGasAuthLabel">Đang kiểm tra quyền...</span>
+                                    </span>
+                                    <button type="button" id="btnAuthorizeReportGas" onclick="authorizeReportGasPopup()" class="hidden rounded-lg border border-amber-300 bg-amber-50 hover:bg-amber-100 px-3 py-1.5 text-xs font-bold text-amber-800 transition shadow-sm whitespace-nowrap">
+                                        <i class="fa-solid fa-key mr-1"></i>Cấp quyền Sheet/Drive
+                                    </button>
+                                </div>
                             </div>
 
                             <div>
@@ -668,7 +679,7 @@
                     <div class="self-end rounded-lg bg-slate-50 px-3 py-2 text-xs text-slate-600">Chọn trạng thái cho từng Task ở danh sách bên dưới.</div>
                 </div>
                 <div>
-                    <div class="mb-2 flex flex-wrap items-center justify-between gap-2"><div><h4 class="text-xs font-bold text-slate-700">File testcase trong folder</h4><p class="mt-1 text-[11px] text-slate-500">Dán report cũ để áp status cho các file trùng tên.</p></div><div class="flex flex-wrap gap-2"><button type="button" id="pasteCreateUpdateClipboardButton" onclick="pasteCreateUpdateStatusesFromClipboard()" class="shrink-0 rounded-lg border border-indigo-200 bg-indigo-50 px-3 py-2 text-xs font-bold text-indigo-700 hover:bg-indigo-100"><i class="fa-solid fa-paste mr-1"></i>Dán từ Clipboard</button><button type="button" id="createUpdateReloadFilesButton" onclick="loadCreateUpdateFilesFromFolder()" class="shrink-0 rounded-lg border border-emerald-200 px-3 py-2 text-xs font-bold text-emerald-700 hover:bg-emerald-50"><i class="fa-solid fa-rotate mr-1"></i>Tải lại file</button><button type="button" onclick="addCreateUpdateTaskRow()" class="shrink-0 rounded-lg border border-indigo-200 px-3 py-2 text-xs font-bold text-indigo-700 hover:bg-indigo-50"><i class="fa-solid fa-plus mr-1"></i>Thêm task</button></div></div>
+                    <div class="mb-2 flex flex-wrap items-center justify-between gap-2"><div><h4 class="text-xs font-bold text-slate-700">File testcase trong folder</h4><p class="mt-1 text-[11px] text-slate-500">Dán report cũ để áp status cho các file trùng tên.</p></div><div class="flex flex-wrap gap-2"><button type="button" id="btnModalAuthorizeReportGas" onclick="authorizeReportGasPopup(() => loadCreateUpdateFilesFromFolder())" class="hidden shrink-0 rounded-lg border border-amber-300 bg-amber-50 px-3 py-2 text-xs font-bold text-amber-800 hover:bg-amber-100"><i class="fa-solid fa-key mr-1"></i>Cấp quyền Sheet/Drive</button><button type="button" id="pasteCreateUpdateClipboardButton" onclick="pasteCreateUpdateStatusesFromClipboard()" class="shrink-0 rounded-lg border border-indigo-200 bg-indigo-50 px-3 py-2 text-xs font-bold text-indigo-700 hover:bg-indigo-100"><i class="fa-solid fa-paste mr-1"></i>Dán từ Clipboard</button><button type="button" id="createUpdateReloadFilesButton" onclick="loadCreateUpdateFilesFromFolder()" class="shrink-0 rounded-lg border border-emerald-200 px-3 py-2 text-xs font-bold text-emerald-700 hover:bg-emerald-50"><i class="fa-solid fa-rotate mr-1"></i>Tải lại file</button><button type="button" onclick="addCreateUpdateTaskRow()" class="shrink-0 rounded-lg border border-indigo-200 px-3 py-2 text-xs font-bold text-indigo-700 hover:bg-indigo-50"><i class="fa-solid fa-plus mr-1"></i>Thêm task</button></div></div>
                     <p id="createUpdateLoadStatus" class="mb-2 text-[11px] text-slate-500" aria-live="polite"></p>
                     <div id="createUpdateLoadingPanel" class="hidden mb-3 rounded-xl border border-indigo-200 bg-indigo-50/70 p-4" role="status" aria-live="polite">
                         <div class="flex items-center gap-3"><span class="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-white text-indigo-600 shadow-sm"><i class="fa-solid fa-spinner fa-spin text-xl"></i></span><div class="min-w-0"><p class="text-sm font-bold text-indigo-900">Đang tải danh sách testcase…</p><p class="mt-0.5 text-xs text-indigo-700">Đọc link A1, kết nối Drive và quét các file Google Sheets trong folder.</p></div></div>
@@ -1239,6 +1250,122 @@
         let lastJiraCheckAt = 0;
         let ticketPrefetch = null;
         let activeJiraSession = null;
+        let reportGasAuthorized = false;
+        let reportGasAuthChecking = false;
+        let reportGasPopup = null;
+        let reportGasPopupTimer = null;
+
+        function setReportGasAuthUI(state, detail = '') {
+            reportGasAuthorized = (state === 'authorized');
+            const badge = document.getElementById('reportGasAuthBadge');
+            const dot = document.getElementById('reportGasAuthDot');
+            const label = document.getElementById('reportGasAuthLabel');
+            const btn = document.getElementById('btnAuthorizeReportGas');
+            const modalBtn = document.getElementById('btnModalAuthorizeReportGas');
+
+            if (badge) badge.title = detail || '';
+            if (state === 'authorized') {
+                if (dot) dot.className = 'h-2 w-2 rounded-full bg-emerald-500';
+                if (label) { label.textContent = 'Sheet/Drive Ready'; label.className = 'text-emerald-700'; }
+                if (btn) btn.classList.add('hidden');
+                if (modalBtn) modalBtn.classList.add('hidden');
+            } else if (state === 'checking') {
+                if (dot) dot.className = 'h-2 w-2 rounded-full bg-indigo-500 animate-pulse';
+                if (label) { label.textContent = 'Đang kiểm tra...'; label.className = 'text-slate-500'; }
+                if (btn) btn.classList.add('hidden');
+            } else if (state === 'logged_out') {
+                if (dot) dot.className = 'h-2 w-2 rounded-full bg-slate-300';
+                if (label) { label.textContent = 'Chưa đăng nhập'; label.className = 'text-slate-500'; }
+                if (btn) btn.classList.add('hidden');
+                if (modalBtn) modalBtn.classList.add('hidden');
+            } else {
+                if (dot) dot.className = 'h-2 w-2 rounded-full bg-amber-500';
+                if (label) { label.textContent = 'Cần cấp quyền'; label.className = 'text-amber-700'; }
+                if (btn) btn.classList.remove('hidden');
+                if (modalBtn) modalBtn.classList.remove('hidden');
+            }
+        }
+
+        function checkReportGasAuth(done) {
+            if (!loggedInUser) {
+                setReportGasAuthUI('logged_out', 'Đăng nhập Google để kiểm tra quyền Sheet/Drive');
+                if (typeof done === 'function') done(false);
+                return;
+            }
+            if (reportGasAuthChecking) return;
+            reportGasAuthChecking = true;
+            if (!reportGasAuthorized) setReportGasAuthUI('checking', 'Đang kiểm tra quyền truy cập Google Sheet & Drive...');
+
+            const callback = 'reportGasPing_' + Date.now() + '_' + Math.floor(Math.random() * 1e6);
+            const url = new URL(URL_REPORT_API);
+            url.searchParams.set('action', 'ping');
+            url.searchParams.set('callback', callback);
+            url.searchParams.set('_t', Date.now());
+            const script = document.createElement('script');
+            let settled = false;
+            const finish = (ok, userEmail = '') => {
+                if (settled) return;
+                settled = true;
+                reportGasAuthChecking = false;
+                clearTimeout(timer);
+                delete window[callback];
+                if (script.parentNode) script.parentNode.removeChild(script);
+                if (ok) {
+                    setReportGasAuthUI('authorized', userEmail ? `Đã cấp quyền Sheet/Drive (${userEmail})` : 'Đã cấp quyền Sheet/Drive');
+                } else {
+                    setReportGasAuthUI('unauthorized', 'Bấm "Cấp quyền Sheet/Drive" để cho phép tài khoản đọc/ghi báo cáo.');
+                }
+                if (typeof done === 'function') done(ok);
+            };
+            const timer = setTimeout(() => finish(false), 12000);
+            window[callback] = (data) => finish(Boolean(data && data.success), data?.user || '');
+            script.onerror = () => finish(false);
+            script.src = url.toString();
+            document.body.appendChild(script);
+        }
+
+        function authorizeReportGasPopup(onAuthorized) {
+            if (!loggedInUser) {
+                showToast('Yêu cầu đăng nhập Google', 'Hãy đăng nhập Google trước khi cấp quyền Sheet/Drive.', true);
+                return;
+            }
+            const authUrl = URL_REPORT_API + (URL_REPORT_API.includes('?') ? '&' : '?') + 'action=authorize';
+            reportGasPopup = window.open(authUrl, '_blank', 'width=520,height=680');
+            if (!reportGasPopup) {
+                showToast('Cho phép Popup', 'Trình duyệt đang chặn cửa sổ cấp quyền. Hãy cho phép popup rồi bấm lại.', true);
+                return;
+            }
+            setReportGasAuthUI('checking', 'Đang chờ xác nhận quyền trên cửa sổ Google...');
+            if (reportGasPopupTimer) clearInterval(reportGasPopupTimer);
+
+            const onMessage = (event) => {
+                const senderHost = (() => { try { return new URL(event.origin).hostname; } catch (e) { return ''; } })();
+                if (!['script.google.com', 'script.googleusercontent.com'].includes(senderHost)) return;
+                if (!event.data || event.data.type !== 'report-gas-auth-complete') return;
+                window.removeEventListener('message', onMessage);
+                if (reportGasPopupTimer) { clearInterval(reportGasPopupTimer); reportGasPopupTimer = null; }
+                try { if (reportGasPopup && !reportGasPopup.closed) reportGasPopup.close(); } catch (e) {}
+                setReportGasAuthUI('authorized', event.data.user ? `Đã cấp quyền Sheet/Drive (${event.data.user})` : 'Đã cấp quyền Sheet/Drive');
+                showToast('Cấp quyền thành công', 'Đã kết nối quyền đọc/ghi Google Sheet & Drive cho tài khoản của bạn.');
+                if (typeof onAuthorized === 'function') onAuthorized();
+            };
+            window.addEventListener('message', onMessage);
+
+            reportGasPopupTimer = setInterval(() => {
+                if (reportGasPopup && !reportGasPopup.closed) return;
+                clearInterval(reportGasPopupTimer);
+                reportGasPopupTimer = null;
+                window.removeEventListener('message', onMessage);
+                checkReportGasAuth((ok) => {
+                    if (ok) {
+                        showToast('Cấp quyền thành công', 'Đã kết nối quyền đọc/ghi Google Sheet & Drive.');
+                        if (typeof onAuthorized === 'function') onAuthorized();
+                    } else {
+                        showToast('Chưa hoàn tất cấp quyền', 'Nếu chưa bấm Allow, hãy bấm lại nút "Cấp quyền Sheet/Drive".', true);
+                    }
+                });
+            }, 700);
+        }
 
         function jiraCacheKey(p) { return JIRA_CACHE_PREFIX + ((loggedInUser && loggedInUser.email) || 'anon') + ':' + [p.action, p.site || '', p.projectKey || '', p.boardId || ''].join('|'); }
         function purgeJiraCache() { try { Object.keys(localStorage).filter(k => k.indexOf(JIRA_CACHE_PREFIX) === 0).forEach(k => localStorage.removeItem(k)); } catch (e) {} }
@@ -2164,6 +2291,7 @@
                 document.getElementById('userAvatar').src = loggedInUser.picture;
                 closeUserDropdown();
                 checkJiraConnection();
+                checkReportGasAuth();
             } else {
                 loggedInUser = null;
                 jiraConnectionPending = false;
@@ -2175,6 +2303,7 @@
                 if(userProfileBtn) userProfileBtn.classList.add('hidden');
                 if(userDropdown) userDropdown.classList.add('hidden');
                 setJiraConnectionUI(false, 'Đăng nhập Google để kiểm tra kết nối Jira');
+                setReportGasAuthUI('logged_out', 'Đăng nhập Google để kiểm tra quyền Sheet/Drive');
             }
         }
 
@@ -2385,7 +2514,11 @@
         });
 
         window.addEventListener('focus', () => {
-            if (loggedInUser && !jiraConnectionPending && Date.now() - lastJiraCheckAt > 60000) { lastJiraCheckAt = Date.now(); checkJiraConnection(); }
+            if (loggedInUser && !jiraConnectionPending && Date.now() - lastJiraCheckAt > 60000) {
+                lastJiraCheckAt = Date.now();
+                checkJiraConnection();
+                if (!reportGasAuthorized) checkReportGasAuth();
+            }
         });
 
         window.addEventListener('message', (event) => {
@@ -3226,6 +3359,7 @@
                     clearTimeout(timeoutId);
                     delete window[callbackName];
                     if (script.parentNode) script.parentNode.removeChild(script);
+                    setReportGasAuthUI('unauthorized', 'Cần bấm "Cấp quyền Sheet/Drive" để đọc dữ liệu tiến độ.');
                     resolve(null);
                 };
                 script.src = fetchUrl.toString();
@@ -3385,7 +3519,8 @@
                     clearTimeout(timer);
                     delete window[callback];
                     cleanup();
-                    reject(new Error('Không kết nối được Google Apps Script.'));
+                    setReportGasAuthUI('unauthorized', 'Cần bấm "Cấp quyền Sheet/Drive" để đọc folder testcase.');
+                    reject(new Error('Chưa cấp quyền Google Sheet/Drive hoặc lỗi mạng. Hãy bấm nút "Cấp quyền Sheet/Drive" rồi thử lại.'));
                 };
                 script.src = url.toString();
                 document.body.appendChild(script);
@@ -3959,7 +4094,10 @@
                     openCopyFallbackModal(reportText);
                     showToast('Báo cáo đã sẵn sàng', 'Trình duyệt yêu cầu thao tác copy trực tiếp. Nội dung đã được chọn trong hộp thoại.', true);
                 } else if (isSheetError && sheetName) {
-                    showToast('Cảnh báo Báo Cáo', 'Đã copy Báo cáo nhưng bị thiếu phần dữ liệu Google Sheet do lỗi mạng/API.', true);
+                    const sheetHint = !reportGasAuthorized
+                        ? 'Đã copy Báo cáo nhưng thiếu tiến độ Sheet. Hãy bấm "Cấp quyền Sheet/Drive" rồi xuất lại.'
+                        : 'Đã copy Báo cáo nhưng bị thiếu phần dữ liệu Google Sheet (kiểm tra tên Sheet hoặc quyền truy cập).';
+                    showToast('Cảnh báo Báo Cáo', sheetHint, true);
                 } else {
                     showToast('Copy Thành Công!', 'Báo Cáo Daily theo Mẫu Mới đã được sao chép vào Clipboard.');
                 }
