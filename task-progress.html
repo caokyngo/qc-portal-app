@@ -840,6 +840,26 @@
       return Array.from(matchedTasks);
     }
 
+    function getRecentJiraItemKey(item) {
+      if (!item) return '';
+      return [
+        String(item.siteId || ''),
+        String(item.spaceId || item.spaceKey || item.projectKey || ''),
+        String(item.projectId || ''),
+        String(item.epicKey || ''),
+        String(item.parentKey || '')
+      ].join('|');
+    }
+
+    function getRecentJiraDisplayTitle(item, nameCounts) {
+      const baseTitle = String(item?.displayName || item?.projectName || item?.epicSummary || item?.projectKey || 'Project').trim();
+      const needSub = nameCounts && (nameCounts.get(baseTitle.toLowerCase()) || 0) > 1;
+      const subLabel = item?.epicSummary && item.epicSummary.toLowerCase() !== baseTitle.toLowerCase()
+        ? item.epicSummary
+        : (item?.parentSummary || '');
+      return (needSub && subLabel) ? (baseTitle + ' (' + subLabel + ')') : baseTitle;
+    }
+
     function renderRecentJiraProjects() {
       const container = document.getElementById('jiraRecentProjectsList');
       const badge = document.getElementById('jiraSyncStatusBadge');
@@ -850,11 +870,28 @@
         if (badge) { badge.textContent = 'Chưa có project'; badge.className = 'jira-status-badge'; }
         return;
       }
+      const nameCounts = new Map();
+      const epicCounts = new Map();
+      recents.forEach(it => {
+        const base = String(it?.displayName || it?.projectName || it?.epicSummary || it?.projectKey || 'Project').trim().toLowerCase();
+        nameCounts.set(base, (nameCounts.get(base) || 0) + 1);
+        if (it?.epicKey) epicCounts.set(it.epicKey, (epicCounts.get(it.epicKey) || 0) + 1);
+      });
+      const selectedKey = getRecentJiraItemKey(selectedRecentJiraProject);
       container.innerHTML = recents.map((item, idx) => {
-        const isSelected = selectedRecentJiraProject && selectedRecentJiraProject.projectId === item.projectId && selectedRecentJiraProject.epicKey === item.epicKey;
-        const name = escapeHtml(item.projectName || item.projectKey || 'Project');
-        const detail = escapeHtml((item.projectKey || '') + (item.epicKey ? ' · ' + item.epicKey : ''));
-        return '<button type="button" class="jira-project-btn' + (isSelected ? ' is-active' : '') + '" onclick="selectRecentJiraProject(' + idx + ', this)">' +
+        const isSelected = Boolean(selectedKey && selectedKey === getRecentJiraItemKey(item));
+        const name = escapeHtml(getRecentJiraDisplayTitle(item, nameCounts));
+        const needParent = item.parentKey && (epicCounts.get(item.epicKey) || 0) > 1;
+        const detailParts = [item.projectKey || item.spaceKey || '', item.epicKey || ''];
+        if (needParent) detailParts.push(item.parentKey);
+        const detail = escapeHtml(detailParts.filter(Boolean).join(' · '));
+        const tooltip = escapeHtml([
+          item.siteName || 'Jira',
+          item.spaceName || item.spaceKey || '',
+          item.epicKey ? (item.epicSummary ? (item.epicKey + ': ' + item.epicSummary) : item.epicKey) : '',
+          item.parentKey ? (item.parentSummary ? (item.parentKey + ': ' + item.parentSummary) : item.parentKey) : ''
+        ].filter(Boolean).join(' · '));
+        return '<button type="button" title="' + tooltip + '" class="jira-project-btn' + (isSelected ? ' is-active' : '') + '" onclick="selectRecentJiraProject(' + idx + ', this)">' +
           '<i class="fa-solid fa-folder-tree"></i> <span>' + name + '</span> <small>(' + detail + ')</small>' +
         '</button>';
       }).join('') + (selectedRecentJiraProject ? '<button type="button" class="jira-project-btn" style="color:#e11d48;" onclick="deselectRecentJiraProject()"><i class="fa-solid fa-xmark"></i> Bỏ chọn Jira</button>' : '');
