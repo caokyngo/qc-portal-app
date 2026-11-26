@@ -189,17 +189,25 @@
     .jira-status-badge.has-bugs { background:#fee2e2; color:#b91c1c; font-weight:700; }
     .jira-sync-desc { margin:0 0 10px; font-size:11px; color:var(--muted); line-height:1.45; }
     .jira-recent-list { display:flex; flex-wrap:wrap; gap:8px; }
-    .jira-project-btn { display:inline-flex; align-items:center; gap:7px; padding:6px 11px; border:1px solid #cbd5e1; border-radius:8px; background:var(--surface); font-size:11px; font-weight:650; color:var(--text); cursor:pointer; transition:.15s; }
-    .jira-project-btn:hover { border-color:#818cf8; background:var(--accent-light); }
-    .jira-project-btn.is-active { border-color:#4f46e5; background:#4f46e5; color:#fff; }
-    .jira-project-btn small { opacity:.75; font-size:10px; }
+    .jira-project-chip { display:inline-flex; align-items:center; max-width:100%; border:1px solid #cbd5e1; border-radius:8px; background:var(--surface); color:var(--text); transition:.15s; overflow:hidden; }
+    .jira-project-chip:hover { border-color:#818cf8; background:var(--accent-light); }
+    .jira-project-chip.is-active { border-color:#4f46e5; background:#4f46e5; color:#fff; }
+    .jira-project-btn { display:inline-flex; align-items:center; gap:7px; min-width:0; padding:6px 8px 6px 11px; border:0; background:transparent; font-size:11px; font-weight:650; color:inherit; cursor:pointer; }
+    .jira-project-btn small { opacity:.75; font-size:10px; flex:none; }
+    .jira-project-remove { display:inline-flex; align-items:center; justify-content:center; width:22px; height:22px; margin-right:4px; border:0; border-radius:5px; background:transparent; color:var(--muted); font-size:10px; cursor:pointer; flex:none; transition:.15s; }
+    .jira-project-remove:hover { background:#ffe4e6; color:#e11d48; }
+    .jira-project-chip.is-active .jira-project-remove { color:#e0e7ff; }
+    .jira-project-chip.is-active .jira-project-remove:hover { background:#ffffff26; color:#fff; }
+    .jira-clear-btn { display:inline-flex; align-items:center; gap:6px; padding:6px 11px; border:1px solid #cbd5e1; border-radius:8px; background:var(--surface); font-size:11px; font-weight:650; color:#e11d48; cursor:pointer; transition:.15s; }
+    .jira-clear-btn:hover { border-color:#fda4af; background:#fff1f2; }
     .jira-active-info { margin-top:10px; padding:9px 12px; border-radius:8px; background:var(--surface); border:1px solid var(--line); font-size:11px; line-height:1.5; }
     .jira-active-info strong { color:var(--text); }
     .jira-tag-badge { display:inline-block; margin:2px 3px; padding:1px 6px; border-radius:5px; background:#fee2e2; color:#b91c1c; font-weight:700; font-size:10px; border:1px solid #fecaca; }
     .jira-tag-badge.is-pending { background:#fef3c7; color:#b45309; border-color:#fde68a; }
     .jira-task-alert-icon { color:#dc2626; margin-left:6px; font-size:11px; }
     html.dark-mode .jira-sync-section { border-color:#334155; }
-    html.dark-mode .jira-project-btn { border-color:#475569; }
+    html.dark-mode .jira-project-chip, html.dark-mode .jira-clear-btn { border-color:#475569; }
+    html.dark-mode .jira-project-remove:hover { background:#4c0519; color:#fda4af; }
     html.dark-mode .jira-tag-badge { background:#451a1a; color:#fca5a5; border-color:#7f1d1d; }
     html.dark-mode .jira-tag-badge.is-pending { background:#452b14; color:#fcd34d; border-color:#78350f; }
     .config-list { display:grid; gap:0; overflow:hidden; border:1px solid var(--line); border-radius:14px; background:var(--surface); }
@@ -843,12 +851,31 @@
     function getRecentJiraItemKey(item) {
       if (!item) return '';
       return [
-        String(item.siteId || ''),
-        String(item.spaceId || item.spaceKey || item.projectKey || ''),
-        String(item.projectId || ''),
-        String(item.epicKey || ''),
-        String(item.parentKey || '')
+        String(item.siteId || '').trim(),
+        String(item.spaceId || item.spaceKey || item.projectKey || '').trim(),
+        String(item.projectId || '').trim(),
+        String(item.epicKey || '').trim(),
+        String(item.parentKey || '').trim()
       ].join('|');
+    }
+
+    function removeRecentJiraProject(index, event) {
+      if (event) {
+        event.preventDefault();
+        event.stopPropagation();
+      }
+      const recents = getRecentJiraProjects();
+      const target = recents[index];
+      if (!target) return;
+      const targetKey = getRecentJiraItemKey(target);
+      const wasSelected = Boolean(selectedRecentJiraProject && getRecentJiraItemKey(selectedRecentJiraProject) === targetKey);
+      const next = recents.filter(row => getRecentJiraItemKey(row) !== targetKey);
+      try { localStorage.setItem(JIRA_RECENT_PROJECTS_KEY, JSON.stringify(next)); } catch (e) {}
+      if (wasSelected) {
+        deselectRecentJiraProject(true);
+      } else {
+        renderRecentJiraProjects();
+      }
     }
 
     function getRecentJiraDisplayTitle(item, nameCounts) {
@@ -880,7 +907,8 @@
       const selectedKey = getRecentJiraItemKey(selectedRecentJiraProject);
       container.innerHTML = recents.map((item, idx) => {
         const isSelected = Boolean(selectedKey && selectedKey === getRecentJiraItemKey(item));
-        const name = escapeHtml(getRecentJiraDisplayTitle(item, nameCounts));
+        const rawTitle = getRecentJiraDisplayTitle(item, nameCounts);
+        const name = escapeHtml(rawTitle);
         const needParent = item.parentKey && (epicCounts.get(item.epicKey) || 0) > 1;
         const detailParts = [item.projectKey || item.spaceKey || '', item.epicKey || ''];
         if (needParent) detailParts.push(item.parentKey);
@@ -891,10 +919,15 @@
           item.epicKey ? (item.epicSummary ? (item.epicKey + ': ' + item.epicSummary) : item.epicKey) : '',
           item.parentKey ? (item.parentSummary ? (item.parentKey + ': ' + item.parentSummary) : item.parentKey) : ''
         ].filter(Boolean).join(' · '));
-        return '<button type="button" title="' + tooltip + '" class="jira-project-btn' + (isSelected ? ' is-active' : '') + '" onclick="selectRecentJiraProject(' + idx + ', this)">' +
-          '<i class="fa-solid fa-folder-tree"></i> <span>' + name + '</span> <small>(' + detail + ')</small>' +
-        '</button>';
-      }).join('') + (selectedRecentJiraProject ? '<button type="button" class="jira-project-btn" style="color:#e11d48;" onclick="deselectRecentJiraProject()"><i class="fa-solid fa-xmark"></i> Bỏ chọn Jira</button>' : '');
+        return '<div class="jira-project-chip' + (isSelected ? ' is-active' : '') + '">' +
+          '<button type="button" title="' + tooltip + '" class="jira-project-btn" onclick="selectRecentJiraProject(' + idx + ', this)">' +
+            '<i class="fa-solid fa-folder-tree"></i> <span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">' + name + '</span> <small>(' + detail + ')</small>' +
+          '</button>' +
+          '<button type="button" class="jira-project-remove" title="Xóa khỏi Project gần đây" aria-label="Xóa ' + name + ' khỏi Project gần đây" onclick="removeRecentJiraProject(' + idx + ', event)">' +
+            '<i class="fa-solid fa-xmark" aria-hidden="true"></i>' +
+          '</button>' +
+        '</div>';
+      }).join('') + (selectedRecentJiraProject ? '<button type="button" class="jira-clear-btn" onclick="deselectRecentJiraProject()"><i class="fa-solid fa-ban"></i> Bỏ chọn Jira</button>' : '');
     }
 
     async function selectRecentJiraProject(index, btn) {
@@ -934,7 +967,7 @@
       }
     }
 
-    function deselectRecentJiraProject() {
+    function deselectRecentJiraProject(silent = false) {
       selectedRecentJiraProject = null;
       loadedJiraIssues = [];
       activeJiraBlockingTasks.clear();
@@ -950,7 +983,7 @@
         });
         renderExistingConfig(loadedReportConfig, false);
       }
-      showToast('Đã bỏ chọn Jira', 'Cập nhật report sẽ không kiểm tra bug từ Jira.');
+      if (!silent) showToast('Đã bỏ chọn Jira', 'Cập nhật report sẽ không kiểm tra bug từ Jira.');
     }
 
     function analyzeJiraTickets(shouldRender = true) {
@@ -1771,6 +1804,10 @@
         button.innerHTML = original;
       }
     }
+    window.addEventListener('storage', event => {
+      if (event.key === JIRA_RECENT_PROJECTS_KEY) renderRecentJiraProjects();
+    });
+
     window.addEventListener('focus', () => {
       if (loggedInUser && !reportGasAuthorized && !reportGasAuthChecking) checkReportGasAuth();
     });
