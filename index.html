@@ -785,21 +785,122 @@
         const JIRA_RECENT_PROJECTS_KEY = 'jira_recent_projects_v1';
         let jiraRecentProjectLoadInFlight = false;
 
+        const MAX_RECENT_JIRA_PROJECTS = 5;
+
+        function getRecentJiraItemKey(item) {
+            if (!item) return '';
+            return [
+                String(item.siteId || ''),
+                String(item.spaceId || item.spaceKey || item.projectKey || ''),
+                String(item.projectId || ''),
+                String(item.epicKey || ''),
+                String(item.parentKey || '')
+            ].join('|');
+        }
+
+        function hasGameIdPrefix(text) {
+            return /^\s*\[?\d{3,}\b/.test(String(text || '').trim());
+        }
+
+        function isGenericBoardName(boardName, spaceName, spaceKey) {
+            const b = cleanProjectTitle(boardName).toLowerCase();
+            const s = cleanProjectTitle(spaceName).toLowerCase();
+            const k = String(spaceKey || '').trim().toLowerCase();
+            if (!b) return true;
+            if (/^(kanban|scrum|board|default board|main board)\b/i.test(b)) return true;
+            return b === s || b === k || b === `${k} board` || b === `${s} board` || b === `${k} kanban` || b === `${k} scrum`;
+        }
+
+        function isGenericEpicSummary(summary) {
+            const e = String(summary || '').trim().toLowerCase();
+            if (!e) return true;
+            return /^(bugs?|bug\s*[-_:/]?\s*lists?|qc\b|qa\b|test(?:ing)?\b|sprint\s*\d+|phase\s*\d+|release\b|backlog\b|issues?\b)$/i.test(e);
+        }
+
+        function resolveJiraGameDisplayName({ isEnotion, spaceKey, spaceName, boardName, epicKey, epicSummary }) {
+            const cSpace = cleanProjectTitle(spaceName || '');
+            const cBoard = cleanProjectTitle(boardName || '');
+            const cEpic = cleanProjectTitle(epicSummary || '');
+            const sKey = String(spaceKey || '').trim();
+
+            if (hasGameIdPrefix(cEpic)) return cEpic;
+            if (hasGameIdPrefix(cBoard)) return cBoard;
+            if (hasGameIdPrefix(cSpace)) return cSpace;
+
+            if (!isEnotion) {
+                if (cEpic && !isGenericEpicSummary(cEpic)) return cEpic;
+                if (cBoard && !isGenericBoardName(cBoard, cSpace, sKey)) return cBoard;
+                return cEpic || cBoard || cSpace || epicKey || sKey;
+            }
+
+            if (cBoard && !isGenericBoardName(cBoard, cSpace, sKey)) return cBoard;
+            if (cEpic && !isGenericEpicSummary(cEpic)) return cEpic;
+            return cSpace || cBoard || cEpic || epicKey || sKey;
+        }
+
         function getRecentJiraProjects() {
             try { const value = JSON.parse(localStorage.getItem(JIRA_RECENT_PROJECTS_KEY) || '[]'); return Array.isArray(value) ? value : []; } catch (e) { return []; }
         }
+
         function saveRecentJiraProject(jql) {
             if (!selectedJiraSite || !selectedJiraSpace || !selectedJiraProject || !jiraBoardCtx || !selectedParentValue) return;
             const enotion = isEnotionWorkspace();
             const savedJql = jql || (enotion
                 ? `project = ${jiraBoardCtx.projectKey} AND parent = ${selectedParentValue} AND type IN (Bug, Improvement, Question) ORDER BY cf[10019] ASC`
                 : `project = ${jiraBoardCtx.projectKey} AND type IN ("Bug/Defect", Improvement, "Q&A") AND parent IN (${selectedParentValue}, ${selectedTargetParentValue}) ORDER BY cf[10019] ASC`);
-            const item = { siteId: String(selectedJiraSite.id), siteName: formatWorkspaceName(selectedJiraSite), siteUrl: selectedJiraSite.url || '', spaceId: String(selectedJiraSpace.id), spaceKey: selectedJiraSpace.key || '', spaceName: selectedJiraSpace.name || '', projectId: String(selectedJiraProject.id), projectName: selectedJiraProject.name || '', projectKey: jiraBoardCtx.projectKey || '', epicKey: selectedParentValue, parentKey: selectedTargetParentValue || '', jql: savedJql, usedAt: Date.now() };
-            const key = [item.siteId, item.spaceId, item.projectId].join('|');
-            const next = [item, ...getRecentJiraProjects().filter(row => [row.siteId, row.spaceId, row.projectId].join('|') !== key)].slice(0, 2);
+
+            const existingList = getRecentJiraProjects();
+            const draftIdentity = {
+                siteId: String(selectedJiraSite.id),
+                spaceId: String(selectedJiraSpace.id),
+                spaceKey: selectedJiraSpace.key || '',
+                projectKey: jiraBoardCtx.projectKey || '',
+                projectId: String(selectedJiraProject.id),
+                epicKey: selectedParentValue,
+                parentKey: selectedTargetParentValue || ''
+            };
+            const key = getRecentJiraItemKey(draftIdentity);
+            const prevSame = existingList.find(row => getRecentJiraItemKey(row) === key)
+                || existingList.find(row => String(row.siteId) === draftIdentity.siteId && String(row.epicKey) === draftIdentity.epicKey);
+
+            const epicObj = jiraParents.find(x => x.key === selectedParentValue);
+            const targetObj = jiraTargetParents.find(x => x.key === selectedTargetParentValue);
+            const epicSummary = (epicObj && epicObj.summary) || (jiraBoardCtx && jiraBoardCtx.epicSummary) || (prevSame && prevSame.epicSummary) || '';
+            const parentSummary = (targetObj && targetObj.summary) || (jiraBoardCtx && jiraBoardCtx.parentSummary) || (prevSame && prevSame.parentSummary) || '';
+            const boardName = (selectedJiraProject && selectedJiraProject.boardName) || (jiraBoardCtx && jiraBoardCtx.boardName) || (prevSame && prevSame.boardName) || selectedJiraProject.name || '';
+            const displayName = resolveJiraGameDisplayName({
+                isEnotion: enotion,
+                spaceKey: selectedJiraSpace.key || jiraBoardCtx.projectKey || '',
+                spaceName: selectedJiraSpace.name || '',
+                boardName,
+                epicKey: selectedParentValue,
+                epicSummary
+            });
+
+            const item = {
+                siteId: String(selectedJiraSite.id),
+                siteName: formatWorkspaceName(selectedJiraSite),
+                siteUrl: selectedJiraSite.url || '',
+                spaceId: String(selectedJiraSpace.id),
+                spaceKey: selectedJiraSpace.key || '',
+                spaceName: selectedJiraSpace.name || '',
+                projectId: String(selectedJiraProject.id),
+                boardName: boardName,
+                projectName: displayName || boardName || selectedJiraSpace.name || '',
+                displayName: displayName || '',
+                projectKey: jiraBoardCtx.projectKey || '',
+                epicKey: selectedParentValue,
+                epicSummary: epicSummary,
+                parentKey: selectedTargetParentValue || '',
+                parentSummary: parentSummary,
+                jql: savedJql,
+                usedAt: Date.now()
+            };
+            const next = [item, ...existingList.filter(row => getRecentJiraItemKey(row) !== key)].slice(0, MAX_RECENT_JIRA_PROJECTS);
             try { localStorage.setItem(JIRA_RECENT_PROJECTS_KEY, JSON.stringify(next)); } catch (e) {}
             renderRecentJiraProjects();
         }
+
         function renderRecentJiraProjects() {
             const section = document.getElementById('jiraRecentProjectsSection');
             const list = document.getElementById('jiraRecentProjectsList');
@@ -807,13 +908,40 @@
             const items = getRecentJiraProjects();
             list.replaceChildren();
             section.classList.toggle('hidden', items.length === 0);
+
+            const nameCounts = new Map();
+            const epicCounts = new Map();
+            items.forEach(it => {
+                const baseTitle = (it.displayName || it.projectName || it.projectKey || 'Project').trim();
+                nameCounts.set(baseTitle.toLowerCase(), (nameCounts.get(baseTitle.toLowerCase()) || 0) + 1);
+                if (it.epicKey) epicCounts.set(it.epicKey, (epicCounts.get(it.epicKey) || 0) + 1);
+            });
+
             items.forEach(item => {
                 const button = document.createElement('button');
                 button.type = 'button';
                 button.className = 'inline-flex max-w-full items-center gap-2 rounded-lg border border-indigo-100 bg-indigo-50 px-3 py-2 text-left text-xs text-indigo-800 transition hover:border-indigo-300 hover:bg-indigo-100 focus:outline-none focus:ring-2 focus:ring-indigo-400 disabled:cursor-wait disabled:opacity-60';
-                button.title = `${item.siteName || 'Jira'} · ${item.spaceName || item.spaceKey || ''} · ${item.epicKey || ''}`;
-                const strong = document.createElement('span'); strong.className = 'truncate font-bold'; strong.textContent = item.projectName || item.projectKey || 'Project';
-                const detail = document.createElement('span'); detail.className = 'shrink-0 text-[10px] text-indigo-500'; detail.textContent = `${item.projectKey || item.spaceKey || ''} · ${item.epicKey || ''}`;
+                const baseTitle = (item.displayName || item.projectName || item.projectKey || 'Project').trim();
+                const needSubLabel = (nameCounts.get(baseTitle.toLowerCase()) || 0) > 1;
+                const subLabel = item.epicSummary && item.epicSummary.toLowerCase() !== baseTitle.toLowerCase()
+                    ? item.epicSummary
+                    : (item.parentSummary || '');
+                const finalTitle = (needSubLabel && subLabel) ? `${baseTitle} (${subLabel})` : baseTitle;
+
+                const needParentKey = item.parentKey && (epicCounts.get(item.epicKey) || 0) > 1;
+                const detailParts = [item.projectKey || item.spaceKey || '', item.epicKey || ''];
+                if (needParentKey) detailParts.push(item.parentKey);
+
+                button.title = [
+                    item.siteName || 'Jira',
+                    item.spaceName || item.spaceKey || '',
+                    item.boardName && item.boardName !== item.spaceName ? item.boardName : '',
+                    item.epicKey ? (item.epicSummary ? `${item.epicKey}: ${item.epicSummary}` : item.epicKey) : '',
+                    item.parentKey ? (item.parentSummary ? `${item.parentKey}: ${item.parentSummary}` : item.parentKey) : ''
+                ].filter(Boolean).join(' · ');
+
+                const strong = document.createElement('span'); strong.className = 'truncate font-bold'; strong.textContent = finalTitle;
+                const detail = document.createElement('span'); detail.className = 'shrink-0 text-[10px] text-indigo-500'; detail.textContent = detailParts.filter(Boolean).join(' · ');
                 button.append(strong, detail);
                 button.onclick = () => loadRecentJiraProject(item, button);
                 list.appendChild(button);
@@ -832,18 +960,27 @@
                 selectedJiraSite = site;
                 saveSelectedJiraSite();
                 syncJiraWorkspaceLayout();
+                const boardName = item.boardName || item.projectName || item.projectKey || 'Project';
                 selectedJiraSpace = { id: item.spaceId, key: item.spaceKey || item.projectKey, name: item.spaceName || item.spaceKey || '' };
-                selectedJiraProject = { id: item.projectId, name: item.projectName || item.projectKey || 'Project' };
+                selectedJiraProject = { id: item.projectId, name: boardName, boardName: boardName };
                 selectedParentValue = item.epicKey || '';
                 selectedTargetParentValue = item.parentKey || null;
-                jiraBoardCtx = { domain: String(site.url || item.siteUrl || '').replace(/\/+$/, ''), projectKey: item.projectKey || item.spaceKey, boardId: item.projectId, siteParams: { site: site.id }, projectName: item.projectName || item.projectKey };
+                jiraBoardCtx = {
+                    domain: String(site.url || item.siteUrl || '').replace(/\/+$/, ''),
+                    projectKey: item.projectKey || item.spaceKey,
+                    boardId: item.projectId,
+                    siteParams: { site: site.id },
+                    boardName: boardName,
+                    epicSummary: item.epicSummary || '',
+                    parentSummary: item.parentSummary || '',
+                    projectName: item.displayName || item.projectName || item.projectKey
+                };
                 const jql = item.jql || (String(item.siteName || '').toLowerCase() === 'enotion'
                     ? `project = ${item.projectKey} AND parent = ${item.epicKey} AND type IN (Bug, Improvement, Question) ORDER BY cf[10019] ASC`
                     : `project = ${item.projectKey} AND type IN ("Bug/Defect", Improvement, "Q&A") AND parent IN (${item.epicKey}, ${item.parentKey}) ORDER BY cf[10019] ASC`);
-                saveRecentJiraProject(jql);
                 const siteLabel = document.getElementById('jiraSiteLabel'); if (siteLabel) siteLabel.textContent = formatWorkspaceName(site);
                 const spaceLabel = document.getElementById('jiraSpaceLabel'); if (spaceLabel) spaceLabel.textContent = selectedJiraSpace.name;
-                const projectLabel = document.getElementById('jiraProjectLabel'); if (projectLabel) projectLabel.textContent = selectedJiraProject.name;
+                const projectLabel = document.getElementById('jiraProjectLabel'); if (projectLabel) projectLabel.textContent = boardName;
                 const epicLabel = document.getElementById('jiraSelectedEpicLabel'); if (epicLabel) epicLabel.textContent = item.epicKey || '';
                 document.getElementById('jiraUrlSection').classList.remove('hidden');
                 await fetchJiraDataFromUrl(true, jql);
@@ -1575,7 +1712,7 @@
         async function selectJiraSpace(spaceId) {
             const nextSpace = jiraSpaces.find(space => String(space.id) === String(spaceId)) || null;
             if (!nextSpace) return;
-            if (selectedJiraSpace && String(selectedJiraSpace.id) === String(nextSpace.id)) { closeJiraCombo('space'); return; }
+            if (selectedJiraSpace && String(selectedJiraSpace.id) === String(nextSpace.id) && jiraProjectsLoadedForSpace === String(nextSpace.id) && jiraProjects.length > 0) { closeJiraCombo('space'); return; }
             selectedJiraSpace = nextSpace;
             jiraProjectsLoadedForSpace = '';
             if (isEnotionWorkspace()) applyProjectName(selectedJiraSpace.name || selectedJiraSpace.key);
@@ -1629,7 +1766,7 @@
             if (label) label.textContent = selectedJiraProject.name;
             if (toggle) toggle.disabled = true;
             updateReportLoadButton();
-            jiraBoardCtx = { domain: String(selectedJiraSite.url || '').replace(/\/+$/, ''), projectKey: selectedJiraSpace.key, boardId: selectedBoardId, siteParams: { site: selectedJiraSite.id }, projectName: selectedJiraProject.name };
+            jiraBoardCtx = { domain: String(selectedJiraSite.url || '').replace(/\/+$/, ''), projectKey: selectedJiraSpace.key, boardId: selectedBoardId, siteParams: { site: selectedJiraSite.id }, boardName: selectedJiraProject.name, epicSummary: '', parentSummary: '', projectName: selectedJiraProject.name };
             document.getElementById('jiraBoardLabel').innerHTML = '<i class="fa-solid fa-spinner fa-spin mr-1"></i>Đang tải Epic trên board...';
             document.getElementById('jiraBoardLabel').removeAttribute('href');
             document.getElementById('jiraParentSection').classList.remove('hidden');
@@ -1902,7 +2039,28 @@
                     : (forceRefresh || typeof takeTicketPrefetch !== 'function'
                         ? queryBoardTickets(selectedParentValue, selectedTargetParentValue)
                         : takeTicketPrefetch(selectedParentValue, selectedTargetParentValue));
-                const { json, types, dropped, jql } = await queryPromise;
+                const epicKnown = jiraParents.find(x => x.key === selectedParentValue)?.summary || jiraBoardCtx.epicSummary || '';
+                const epicLookupPromise = (!epicKnown && selectedParentValue)
+                    ? jiraQuery(jiraBoardCtx.siteParams, `key = "${selectedParentValue}"`, 10000, { fields: 'summary' }).catch(() => null)
+                    : Promise.resolve(null);
+
+                const [{ json, types, dropped, jql }, epicLookupJson] = await Promise.all([queryPromise, epicLookupPromise]);
+                if (epicLookupJson && Array.isArray(epicLookupJson.issues) && epicLookupJson.issues[0]?.fields?.summary) {
+                    jiraBoardCtx.epicSummary = epicLookupJson.issues[0].fields.summary;
+                } else if (epicKnown) {
+                    jiraBoardCtx.epicSummary = epicKnown;
+                }
+
+                const resolvedGameName = resolveJiraGameDisplayName({
+                    isEnotion: isEnotionWorkspace(),
+                    spaceKey: (selectedJiraSpace && selectedJiraSpace.key) || jiraBoardCtx.projectKey || '',
+                    spaceName: (selectedJiraSpace && selectedJiraSpace.name) || '',
+                    boardName: jiraBoardCtx.boardName || (selectedJiraProject && selectedJiraProject.name) || '',
+                    epicKey: selectedParentValue,
+                    epicSummary: jiraBoardCtx.epicSummary || ''
+                });
+                if (resolvedGameName) jiraBoardCtx.projectName = resolvedGameName;
+
                 saveRecentJiraProject(jql);
                 activeJiraSession = {
                     site: selectedJiraSite ? { ...selectedJiraSite } : null,
@@ -1930,7 +2088,7 @@
                 currentBoardId = jiraBoardCtx.boardId || json.boardId || null;
                 currentProjectKey = jiraBoardCtx.projectKey;
                 currentParentKey = selectedTargetParentValue || selectedParentValue;
-                applyProjectName(isEnotionWorkspace() && selectedJiraSpace ? (selectedJiraSpace.name || selectedJiraSpace.key) : jiraBoardCtx.projectName);
+                applyProjectName(resolvedGameName || jiraBoardCtx.projectName || jiraBoardCtx.projectKey);
                 rawJiraData = issues.map(item => {
                     const fields = item.fields || {};
                     return {
@@ -1940,7 +2098,7 @@
                         'Assignee': fields.assignee ? fields.assignee.displayName : 'Unassigned'
                     };
                 });
-                const projectName = jiraBoardCtx.projectName || jiraBoardCtx.projectKey;
+                const projectName = resolvedGameName || jiraBoardCtx.projectName || jiraBoardCtx.projectKey;
                 const nameElement = document.getElementById('jiraProjectName');
                 nameElement.textContent = projectName;
                 nameElement.title = `${projectName} · ${selectedParentValue}${selectedTargetParentValue ? ' · ' + selectedTargetParentValue : ''}`;
@@ -1995,6 +2153,9 @@
             if (!jiraBoardCtx || parentLoading) return;
             selectedParentValue = value;
             selectedTargetParentValue = null;
+            const epicItem = jiraParents.find(x => x.key === value);
+            jiraBoardCtx.epicSummary = epicItem ? (epicItem.summary || '') : '';
+            jiraBoardCtx.parentSummary = '';
             jiraTargetParents = [];
             jiraTargetParentError = '';
             currentParentKey = null;
@@ -2026,6 +2187,7 @@
                 });
                 const defaultTarget = jiraTargetParents.find(item => /bugs?\s*[-_:]?\s*lists?/i.test(`${item.key} ${item.summary}`));
                 selectedTargetParentValue = defaultTarget ? defaultTarget.key : null;
+                jiraBoardCtx.parentSummary = defaultTarget ? (defaultTarget.summary || '') : '';
                 if (selectedTargetParentValue) prefetchTickets(epicKey, selectedTargetParentValue);
                 renderTargetParentOptions();
                 if (!jiraTargetParents.length) {
@@ -2061,6 +2223,8 @@
             closeTargetParentDropdown();
             if (!jiraBoardCtx || parentLoading || !selectedParentValue) return;
             selectedTargetParentValue = value;
+            const targetItem = jiraTargetParents.find(x => x.key === value);
+            jiraBoardCtx.parentSummary = targetItem ? (targetItem.summary || '') : '';
             updateTargetParentLabel();
             updateReportLoadButton();
             prefetchTickets(selectedParentValue, value);
@@ -2071,7 +2235,7 @@
             if (button) button.disabled = !(jiraBoardCtx && selectedParentValue && (selectedTargetParentValue || isEnotionWorkspace())) || parentLoading;
         }
         
-        function changeJiraProject() {
+        async function changeJiraProject() {
             activeJiraSession = null;
             document.getElementById('fileInfo').classList.add('hidden');
             document.getElementById('reportDashboard').classList.add('hidden');
@@ -2083,6 +2247,26 @@
             jiraTargetParents = [];
             jiraTargetParentError = '';
             document.getElementById('jiraTargetParentSection').classList.add('hidden');
+
+            if (jiraOAuthConnected && selectedJiraSite) {
+                if (jiraSpacesLoadedForSite !== String(selectedJiraSite.id)) {
+                    await loadJiraSpaces();
+                }
+                if (selectedJiraSpace && jiraProjectsLoadedForSpace !== String(selectedJiraSpace.id)) {
+                    const prevBoardId = selectedJiraProject ? String(selectedJiraProject.id) : '';
+                    await loadJiraProjects();
+                    if (prevBoardId) {
+                        const matchedBoard = jiraProjects.find(p => String(p.id) === prevBoardId);
+                        if (matchedBoard) {
+                            await selectJiraProject(matchedBoard.id);
+                            return;
+                        }
+                    }
+                } else if (selectedJiraProject && !jiraParents.length) {
+                    await selectJiraProject(selectedJiraProject.id);
+                    return;
+                }
+            }
             if (jiraBoardCtx) renderParentSection();
         }
         
