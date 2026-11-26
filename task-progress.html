@@ -1612,7 +1612,7 @@
     function buildRefreshBatches(tasks, maxBatches = 6, maxSize = 20) {
       const groups = new Map();
       tasks.forEach(task => {
-        const key = String(task.testcaseFile || '').toLowerCase().replace(/[^a-z0-9]/g, '') || '__none__';
+        const key = String(task.testcaseFile || '').toLowerCase().replace(/devices/g, 'device').replace(/behavior/g, 'behaviour').replace(/[^a-z0-9]/g, '') || '__none__';
         if (!groups.has(key)) groups.set(key, []);
         groups.get(key).push(task);
       });
