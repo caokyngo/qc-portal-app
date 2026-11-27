@@ -1988,6 +1988,8 @@
             window[callbackName] = data => finish(onSuccess, data);
             script.onerror = () => finish(onError, new Error('Không kết nối được Apps Script.'));
             const query = new URLSearchParams(params || {});
+            const portalEmail = getCurrentUserEmail();
+            if (portalEmail) query.set('portalUser', portalEmail);
             query.set('callback', callbackName);
             query.set('_t', Date.now());
             script.src = JIRA_PROXY_API_URL + (JIRA_PROXY_API_URL.includes('?') ? '&' : '?') + query.toString();
@@ -1995,12 +1997,16 @@
         }
 
         function connectJiraAccount() {
-            if (!loggedInUser) {
-                setJiraConnectionUI(false, 'Đăng nhập Google để kết nối Jira');
-                showToast("Yêu cầu đăng nhập Google", "Hãy đăng nhập Google để mở Apps Script, sau đó kết nối tài khoản Atlassian của bạn.", true);
+            const portalEmail = getCurrentUserEmail();
+            if (!loggedInUser || !portalEmail) {
+                setJiraConnectionUI(false, 'Đăng nhập Google (@enotion.io) để kết nối Jira');
+                showToast("Yêu cầu đăng nhập Google", "Hãy đăng nhập bằng tài khoản @enotion.io trước khi kết nối Jira.", true);
                 return;
             }
-            const connectUrl = appendAuthUser(JIRA_PROXY_API_URL + (JIRA_PROXY_API_URL.includes('?') ? '&' : '?') + 'action=connect');
+            const connectUrlObj = new URL(JIRA_PROXY_API_URL);
+            connectUrlObj.searchParams.set('action', 'connect');
+            connectUrlObj.searchParams.set('portalUser', portalEmail);
+            const connectUrl = connectUrlObj.toString();
             purgeJiraCache();
             Object.keys(jiraInflight).forEach(k => delete jiraInflight[k]);
             ticketPrefetch = null;
@@ -2088,6 +2094,16 @@
             const preferredSite = (selectedJiraSite && String(selectedJiraSite.id)) || localStorage.getItem(getSelectedSiteStorageKey()) || '';
             requestJiraJsonp({ action: 'sites', withSpaces: '1', site: preferredSite }, data => {
                 if (sessionToken !== authSessionToken) return;
+                const currentEmail = getCurrentUserEmail();
+                if (data && data.portalUser && String(data.portalUser).toLowerCase() !== currentEmail) return;
+                if (data && data.jiraUser && data.jiraUser.email && String(data.jiraUser.email).toLowerCase() !== currentEmail) {
+                    jiraConnectionCheckPending = false;
+                    jiraOAuthConnected = false;
+                    renderJiraSites([]);
+                    setJiraConnectionUI(false, `Phiên Jira không khớp với ${currentEmail}. Hãy bấm Connect lại.`);
+                    if (typeof done === 'function') done(false, []);
+                    return;
+                }
                 if (data && !data.error && Array.isArray(data.sites)) {
                     const siteCount = data.sites.length;
                     const connected = siteCount > 0;
@@ -2095,8 +2111,9 @@
                     jiraOAuthConnected = connected;
                     renderJiraSites(data.sites);
                     applyPrefetchedSpaces(data);
+                    const jiraWho = (data.jiraUser && (data.jiraUser.email || data.jiraUser.displayName)) ? ` (${data.jiraUser.email || data.jiraUser.displayName})` : '';
                     const message = connected
-                        ? `Đã kết nối Jira · ${siteCount} site được cấp quyền`
+                        ? `Đã kết nối Jira${jiraWho} · ${siteCount} site được cấp quyền`
                         : 'Chưa có Jira site nào được cấp quyền';
                     setJiraConnectionUI(connected, message);
                     if (typeof done === 'function') done(connected, data.sites);
@@ -3016,6 +3033,14 @@
         window.addEventListener('message', (event) => {
             const senderHost = (() => { try { return new URL(event.origin).hostname; } catch (e) { return ''; } })();
             if (event.source !== jiraOAuthPopup || !['script.google.com', 'script.googleusercontent.com'].includes(senderHost)) return;
+            if (event.data && event.data.type === 'jira-oauth-mismatch') {
+                showToast(
+                    'Trình duyệt vẫn giữ phiên Jira cũ',
+                    `Cửa sổ Atlassian đang đăng nhập ${event.data.jiraIdentity || 'tài khoản khác'}. Hãy làm theo 2 bước trên cửa sổ popup để đổi sang ${getCurrentUserEmail()}.`,
+                    true
+                );
+                return;
+            }
             if (!event.data || event.data.type !== 'jira-oauth-complete' || event.data.success !== true) return;
             jiraOAuthMessageReceived = true;
             jiraConnectionPending = false;
