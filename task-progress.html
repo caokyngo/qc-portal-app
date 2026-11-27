@@ -546,7 +546,7 @@
                 </div>
                 <span id="jiraSyncStatusBadge" class="jira-status-badge">Chưa chọn project</span>
               </div>
-              <p class="jira-sync-desc">Chọn project Jira gần đây để tải ticket. Ticket chưa Closed (To Do, In progress, Fixed/Done) có tag tương ứng sẽ làm task đó chuyển thành <strong>Failed</strong> khi <strong>remaining = 0</strong>.</p>
+              <p class="jira-sync-desc">Chọn project Jira gần đây để tải ticket. Hệ thống chỉ lấy các ticket có trạng thái <strong>To Do, In Progress và Fixed/Done</strong> (giống trang Báo Cáo Daily), sau đó mới so sánh Tag với tên task để chuyển thành <strong>Failed</strong> khi <strong>remaining = 0</strong>.</p>
               <div id="jiraRecentProjectsList" class="jira-recent-list"></div>
               <div id="jiraActiveProjectInfo" class="jira-active-info" hidden></div>
             </section>
@@ -806,71 +806,203 @@
       return matches.map(m => m.replace(/^\[|\]$/g, '').trim()).filter(t => t.length > 0);
     }
 
+    function cleanTicketSummary(summary) {
+      if (!summary || typeof summary !== 'string') return '';
+      return summary.replace(/\[.*?\]/g, '').trim();
+    }
+
+    function hasUnclosedTagWithText(summary) {
+      const text = String(summary || '');
+      const stack = [];
+      for (let i = 0; i < text.length; i++) {
+        if (text[i] === '[') stack.push(i);
+        else if (text[i] === ']' && stack.length) stack.pop();
+      }
+      return stack.some(index => text.slice(index + 1).trim().length > 0);
+    }
+
+    function tagEditDistanceAtMostOne(a, b) {
+      if (a === b || Math.abs(a.length - b.length) > 1) return false;
+      let i = 0, j = 0, edits = 0;
+      while (i < a.length && j < b.length) {
+        if (a[i] === b[j]) { i++; j++; continue; }
+        if (++edits > 1) return false;
+        if (a.length > b.length) i++;
+        else if (b.length > a.length) j++;
+        else { i++; j++; }
+      }
+      if (i < a.length || j < b.length) edits++;
+      return edits === 1;
+    }
+
+    function collectInvalidTagSummaries(issues) {
+      const invalid = new Set();
+      const tagCounts = new Map();
+      (issues || []).forEach(issue => {
+        const summary = String(issue?.fields?.summary || '');
+        parseTagsFromSummary(summary).forEach(tag => {
+          const norm = normalizeTaskKey(tag);
+          if (norm.length >= 6) tagCounts.set(norm, (tagCounts.get(norm) || 0) + 1);
+        });
+      });
+      (issues || []).forEach(issue => {
+        const summary = String(issue?.fields?.summary || '');
+        if (!summary.trim()) return;
+        if (hasUnclosedTagWithText(summary)) {
+          invalid.add(summary.trim().toLowerCase());
+          return;
+        }
+        const tags = parseTagsFromSummary(summary);
+        for (const tag of tags) {
+          const norm = normalizeTaskKey(tag);
+          if (norm.length < 6 || (tagCounts.get(norm) || 0) !== 1) continue;
+          const candidates = [...tagCounts.keys()].filter(other => (tagCounts.get(other) || 0) >= 2 && tagEditDistanceAtMostOne(norm, other));
+          if (candidates.length === 1) {
+            invalid.add(summary.trim().toLowerCase());
+            break;
+          }
+        }
+      });
+      return invalid;
+    }
+
+    function hasValidTicketSummary(summary, invalidSet) {
+      return typeof summary === 'string' &&
+        cleanTicketSummary(summary).trim().length > 0 &&
+        parseTagsFromSummary(summary).length > 0 &&
+        !hasUnclosedTagWithText(summary) &&
+        !(invalidSet && invalidSet.has(summary.trim().toLowerCase()));
+    }
+
+    // Đồng bộ 100% với STATUS_GROUPS mặc định trên index.html: chỉ lấy To Do, In Progress và Fixed/Done
+    const JIRA_ACTIVE_STATUS_GROUPS = {
+      inProgress: {
+        label: 'In progress',
+        matches: value => /^(in progress|doing|in development)$/i.test(String(value || '').trim().replace(/[_-]+/g, ' ').replace(/\s+/g, ' '))
+      },
+      todo: {
+        label: 'Todo',
+        matches: value => /^(to do|todo)$/i.test(String(value || '').trim().replace(/[_-]+/g, ' ').replace(/\s+/g, ' '))
+      },
+      done: {
+        label: 'Fixed/Done',
+        matches: value => /^(fixed|done|fixed\s*\/\s*done)$/i.test(String(value || '').trim())
+      }
+    };
+
+    function getJiraStatusGroup(statusName) {
+      const val = String(statusName || '');
+      for (const [key, group] of Object.entries(JIRA_ACTIVE_STATUS_GROUPS)) {
+        if (group.matches(val)) return key;
+      }
+      return null;
+    }
+
     function isBlockingJiraStatus(statusName) {
-      const s = String(statusName || '').trim().toLowerCase();
-      return s !== 'closed';
+      return Boolean(getJiraStatusGroup(statusName));
     }
 
     function normalizeTaskKey(name) {
       return String(name || '').toLowerCase().replace(/[^a-z0-9]/g, '');
     }
 
+    const ENV_MODIFIER_TAGS = new Set([
+      'iframe', 'webapp', 'app', 'ios', 'android', 'pc', 'safari', 'chrome',
+      'iossafari', 'ioschrome', 'androidchrome', 'mobile', 'device', 'devices',
+      'internal', 'external', 'staging', 'preprod', 'preproduction'
+    ]);
+
+    function extractEnvFlags(rawText) {
+      const w = String(rawText || '').toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim();
+      return {
+        webapp: /\bwebapp\b/.test(w),
+        app: /\bapp\b/.test(w),
+        iframe: /\biframe\b/.test(w),
+        ios: /\b(ios|iossafari|ioschrome)\b/.test(w),
+        android: /\b(android|androidchrome)\b/.test(w),
+        pc: /\bpc\b/.test(w),
+        safari: /\b(safari|iossafari)\b/.test(w),
+        chrome: /\b(chrome|ioschrome|androidchrome)\b/.test(w)
+      };
+    }
+
+    function matchesTaskEnvConstraints(ticketEnv, taskName) {
+      const nk = normalizeTaskKey(taskName);
+      const tEnv = extractEnvFlags(taskName);
+      const isInterruptionIframeRow = (nk.indexOf('interruption') !== -1 && !tEnv.app && !tEnv.webapp);
+
+      if (ticketEnv.app && !tEnv.app) return false;
+      if (ticketEnv.webapp && !tEnv.webapp) return false;
+      if (ticketEnv.iframe && !(tEnv.iframe || isInterruptionIframeRow)) return false;
+      if (ticketEnv.pc && !tEnv.pc) return false;
+      if (ticketEnv.ios && !tEnv.ios) return false;
+      if (ticketEnv.android && !tEnv.android) return false;
+      if (ticketEnv.safari && !tEnv.safari) return false;
+      if (ticketEnv.chrome && !(tEnv.chrome || (ticketEnv.android && tEnv.android && !tEnv.safari))) return false;
+      return true;
+    }
+
     function findAffectedTasksForTicket(ticketSummary, taskNames) {
-      const tags = parseTagsFromSummary(ticketSummary);
-      const matchedTasks = new Set();
-      tags.forEach(tag => {
-        const normTag = normalizeTaskKey(tag);
-        if (!normTag) return;
-        taskNames.forEach(taskName => {
-          const normTask = normalizeTaskKey(taskName);
-          if (normTag === normTask) {
-            matchedTasks.add(taskName);
-            return;
-          }
-          if (normTag === 'logic' && normTask === 'logic') matchedTasks.add(taskName);
-          else if (normTag === 'ui' && normTask === 'ui') matchedTasks.add(taskName);
-          else if (normTag === 'logicui' && normTask === 'logicui') matchedTasks.add(taskName);
-          else if (normTag === 'uat' && normTask.indexOf('uat') !== -1) matchedTasks.add(taskName);
-          else if (normTag.indexOf('interruption') !== -1 && normTask.indexOf('interruption') !== -1) {
-            const hasIos = normTag.indexOf('ios') !== -1;
-            const hasAndroid = normTag.indexOf('android') !== -1;
-            const hasPc = normTag.indexOf('pc') !== -1;
-            if (!hasIos && !hasAndroid && !hasPc) matchedTasks.add(taskName);
-            else {
-              if (hasPc && normTask.indexOf('pc') !== -1) matchedTasks.add(taskName);
-              if (hasIos && normTask.indexOf('ios') !== -1) matchedTasks.add(taskName);
-              if (hasAndroid && normTask.indexOf('android') !== -1) matchedTasks.add(taskName);
-            }
-          }
-          else if (normTag.indexOf('compatibility') !== -1 && normTask.indexOf('compatibility') !== -1) {
-            const hasIframe = normTag.indexOf('iframe') !== -1;
-            const hasApp = normTag.indexOf('app') !== -1;
-            const hasIos = normTag.indexOf('ios') !== -1;
-            const hasAndroid = normTag.indexOf('android') !== -1;
-            if (!hasIframe && !hasApp && !hasIos && !hasAndroid) matchedTasks.add(taskName);
-            else {
-              var match = true;
-              if (hasIframe && normTask.indexOf('iframe') === -1) match = false;
-              if (hasApp && normTask.indexOf('app') === -1) match = false;
-              if (hasIos && normTask.indexOf('ios') === -1) match = false;
-              if (hasAndroid && normTask.indexOf('android') === -1) match = false;
-              if (match) matchedTasks.add(taskName);
-            }
-          }
-          else if ((normTag.indexOf('commonbehaviour') !== -1 || normTag.indexOf('commonbehavior') !== -1) &&
-                   (normTask.indexOf('commonbehaviour') !== -1 || normTask.indexOf('commonbehavior') !== -1)) {
-            matchedTasks.add(taskName);
-          }
-          else if (normTag.indexOf('bettinghistory') !== -1 && normTask.indexOf('bettinghistory') !== -1) {
-            matchedTasks.add(taskName);
-          }
-          else if ((normTag.indexOf('ban') !== -1 || normTag.indexOf('maintenance') !== -1) && normTask.indexOf('ban') !== -1) {
-            matchedTasks.add(taskName);
-          }
-          else if ((normTag.indexOf('tutorial') !== -1 || normTag.indexOf('trial') !== -1) && normTask.indexOf('tutorial') !== -1) {
-            matchedTasks.add(taskName);
-          }
+      const rawTags = parseTagsFromSummary(ticketSummary);
+      if (!rawTags.length) return [];
+
+      // Lấy Tag chính đầu tiên [Tag 1] giống mặc định của index.html (nếu [Tag 1] là tag môi trường thuần túy thì lấy tag danh mục kế tiếp)
+      let primaryRawTag = rawTags[0];
+      let primaryNorm = normalizeTaskKey(primaryRawTag);
+      if (!primaryNorm) return [];
+
+      if (ENV_MODIFIER_TAGS.has(primaryNorm)) {
+        const nextCategory = rawTags.slice(1).find(t => {
+          const n = normalizeTaskKey(t);
+          return n && !ENV_MODIFIER_TAGS.has(n);
         });
+        if (nextCategory) {
+          primaryRawTag = nextCategory;
+          primaryNorm = normalizeTaskKey(nextCategory);
+        }
+      }
+
+      // Kết hợp thêm các sub-tag môi trường (nếu có, ví dụ [Interruption][App][iOS]) để khoanh đúng sub-task thiết bị
+      const envRawParts = [primaryRawTag];
+      rawTags.forEach(t => {
+        if (t !== primaryRawTag && ENV_MODIFIER_TAGS.has(normalizeTaskKey(t))) {
+          envRawParts.push(t);
+        }
+      });
+      const ticketEnv = extractEnvFlags(envRawParts.join(' '));
+
+      const matchedTasks = new Set();
+      taskNames.forEach(taskName => {
+        const normTask = normalizeTaskKey(taskName);
+        if (!normTask) return;
+        if (primaryNorm === normTask) {
+          matchedTasks.add(taskName);
+          return;
+        }
+        if (primaryNorm === 'logic' && normTask === 'logic') matchedTasks.add(taskName);
+        else if ((primaryNorm === 'ui' || primaryNorm === 'specificui') && normTask === 'ui') matchedTasks.add(taskName);
+        else if (primaryNorm === 'logicui' && normTask === 'logicui') matchedTasks.add(taskName);
+        else if ((primaryNorm === 'uat' || primaryNorm === 'happycase' || primaryNorm === 'uathappycase') && normTask.indexOf('uat') !== -1) matchedTasks.add(taskName);
+        else if ((primaryNorm === 'betfail' || primaryNorm === 'walletfailed' || primaryNorm === 'walletfail') && normTask === 'betfail') matchedTasks.add(taskName);
+        else if (primaryNorm.indexOf('interruption') !== -1 && normTask.indexOf('interruption') !== -1) {
+          if (matchesTaskEnvConstraints(ticketEnv, taskName)) matchedTasks.add(taskName);
+        }
+        else if (primaryNorm.indexOf('compatibility') !== -1 && normTask.indexOf('compatibility') !== -1) {
+          if (matchesTaskEnvConstraints(ticketEnv, taskName)) matchedTasks.add(taskName);
+        }
+        else if ((primaryNorm === 'common' || primaryNorm.indexOf('commonbehaviour') !== -1 || primaryNorm.indexOf('commonbehavior') !== -1) &&
+                 (normTask.indexOf('commonbehaviour') !== -1 || normTask.indexOf('commonbehavior') !== -1)) {
+          if (matchesTaskEnvConstraints(ticketEnv, taskName)) matchedTasks.add(taskName);
+        }
+        else if (primaryNorm.indexOf('bettinghistory') !== -1 && normTask.indexOf('bettinghistory') !== -1) {
+          if (matchesTaskEnvConstraints(ticketEnv, taskName)) matchedTasks.add(taskName);
+        }
+        else if ((primaryNorm.indexOf('ban') !== -1 || primaryNorm.indexOf('maintenance') !== -1 || primaryNorm.indexOf('maintainance') !== -1) && normTask.indexOf('ban') !== -1) {
+          matchedTasks.add(taskName);
+        }
+        else if ((primaryNorm.indexOf('tutorial') !== -1 || primaryNorm.indexOf('trial') !== -1) && normTask.indexOf('tutorial') !== -1) {
+          matchedTasks.add(taskName);
+        }
       });
       return Array.from(matchedTasks);
     }
@@ -1022,16 +1154,26 @@
       const badge = document.getElementById('jiraSyncStatusBadge');
       const info = document.getElementById('jiraActiveProjectInfo');
       const taskNames = (loadedReportConfig?.suites || []).map(s => s.name);
-      const blockingIssues = [];
+      const invalidTagSummaries = collectInvalidTagSummaries(loadedJiraIssues);
+
+      // Bước 1: Chỉ lọc các ticket có status To Do, In Progress và Fixed/Done (và hợp lệ giống index.html)
+      const eligibleIssues = [];
       loadedJiraIssues.forEach(issue => {
         const fields = issue.fields || {};
-        const status = String(fields.status?.name || '');
+        const status = String(fields.status?.name || '').trim();
         if (!isBlockingJiraStatus(status)) return;
         const summary = String(fields.summary || '');
-        const matched = findAffectedTasksForTicket(summary, taskNames);
+        if (!hasValidTicketSummary(summary, invalidTagSummaries)) return;
+        eligibleIssues.push({ key: issue.key || '', summary, status });
+      });
+
+      // Bước 2: So sánh phần Tag của các ticket đã lọc với tên task trong report
+      const blockingIssues = [];
+      eligibleIssues.forEach(ticket => {
+        const matched = findAffectedTasksForTicket(ticket.summary, taskNames);
         if (matched.length > 0) {
           matched.forEach(t => activeJiraBlockingTasks.add(t));
-          blockingIssues.push({ key: issue.key, summary, status, matchedTasks: matched });
+          blockingIssues.push({ ...ticket, matchedTasks: matched });
         }
       });
 
@@ -1040,7 +1182,7 @@
           badge.textContent = activeJiraBlockingTasks.size + ' task có bug Jira';
           badge.className = 'jira-status-badge has-bugs';
         } else {
-          badge.textContent = 'Đã tải ' + loadedJiraIssues.length + ' ticket · 0 bug';
+          badge.textContent = eligibleIssues.length + '/' + loadedJiraIssues.length + ' ticket lọc · 0 bug';
           badge.className = 'jira-status-badge active';
         }
       }
@@ -1059,11 +1201,11 @@
             const note = rem !== null ? (isZeroRem ? ' (0 rem → Failed)' : ' (' + rem + ' rem → In Progress)') : '';
             return '<span class="' + cls + '"><i class="fa-solid ' + icon + '"></i> ' + escapeHtml(t) + note + '</span>';
           }).join('');
-          info.innerHTML = '<div><strong>' + projName + '</strong>: Đã tải <strong>' + loadedJiraIssues.length + '</strong> ticket. Phát hiện <strong>' + blockingIssues.length + '</strong> ticket chưa Closed liên quan đến:</div>' +
+          info.innerHTML = '<div><strong>' + projName + '</strong>: Lọc <strong>' + eligibleIssues.length + '</strong>/' + loadedJiraIssues.length + ' ticket (To Do, In Progress, Fixed/Done). Có <strong>' + blockingIssues.length + '</strong> ticket khớp tag với task:</div>' +
             '<div style="margin:6px 0;">' + taskBadges + '</div>' +
-            '<div style="color:var(--muted);font-size:10px;"><i class="fa-solid fa-circle-info"></i> Quy tắc: Task chỉ chuyển sang <strong style="color:#059669;">Done</strong> khi Passed + N/A + Not Tested + Warning = Total và không có ticket Jira chưa Closed. Task có ticket Jira chưa Closed sẽ chuyển sang <strong style="color:#dc2626;">Failed</strong> khi <strong style="color:#dc2626;">remaining = 0</strong>.</div>';
+            '<div style="color:var(--muted);font-size:10px;"><i class="fa-solid fa-circle-info"></i> Quy tắc: Chỉ xét ticket thuộc <strong style="color:var(--text);">To Do, In Progress, Fixed/Done</strong>. Task không có ticket khớp tag và hoàn tất testcase sẽ lên <strong style="color:#059669;">Done</strong>; nếu còn ticket khớp tag sẽ chuyển sang <strong style="color:#dc2626;">Failed</strong> khi <strong style="color:#dc2626;">remaining = 0</strong>.</div>';
         } else {
-          info.innerHTML = '<div><strong>' + projName + '</strong>: Đã tải <strong>' + loadedJiraIssues.length + '</strong> ticket. <span style="color:#059669;font-weight:650;"><i class="fa-solid fa-circle-check"></i> Không có ticket nào chưa Closed gắn tag của các task trong report.</span></div>';
+          info.innerHTML = '<div><strong>' + projName + '</strong>: Lọc <strong>' + eligibleIssues.length + '</strong>/' + loadedJiraIssues.length + ' ticket (To Do, In Progress, Fixed/Done). <span style="color:#059669;font-weight:650;"><i class="fa-solid fa-circle-check"></i> Không có ticket nào gắn tag của các task trong report.</span></div>';
         }
       }
 
