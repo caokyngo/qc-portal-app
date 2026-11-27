@@ -498,6 +498,9 @@
                                 <button type="button" onclick="openCreateUpdateReportModal()" class="shrink-0 inline-flex justify-center items-center gap-2 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold rounded-lg shadow-sm hover:shadow-md transition-all">
                                     <i class="fa-solid fa-file-circle-plus text-sm"></i> Tạo report testcase
                                 </button>
+                                <button type="button" id="btnReopenMalformedPopup" onclick="showMalformedTagTicketsPopup(rawJiraData, true)" class="hidden shrink-0 inline-flex justify-center items-center gap-1.5 px-3 py-2 bg-amber-500 hover:bg-amber-600 text-white text-xs font-bold rounded-lg shadow-sm hover:shadow-md transition-all" title="Xem danh sách ticket sai định dạng hoặc typo Tag">
+                                    <i class="fa-solid fa-triangle-exclamation text-sm"></i> <span id="malformedTicketCountLabel">0 ticket lỗi tag</span>
+                                </button>
                                 <button type="button" id="btnRefreshJiraData" onclick="fetchJiraDataFromUrl(true)" class="shrink-0 inline-flex justify-center items-center gap-2 px-4 py-2 bg-sky-600 hover:bg-sky-700 text-white text-xs font-bold rounded-lg shadow-sm hover:shadow-md transition-all">
                                     <i class="fa-solid fa-rotate text-sm"></i> Cập nhật
                                 </button>
@@ -2332,7 +2335,7 @@
             const refreshOrigHtml = refreshBtn ? refreshBtn.innerHTML : '';
             if (forceRefresh) {
                 if (typeof ticketPrefetch !== 'undefined') ticketPrefetch = null;
-                document.getElementById('malformedTagPopup')?.remove();
+                document.getElementById('malformedTagPopup')?.remove(); document.getElementById('btnReopenMalformedPopup')?.classList.add('hidden');
                 if (refreshBtn) {
                     refreshBtn.disabled = true;
                     refreshBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin text-sm"></i> Đang cập nhật...';
@@ -2421,9 +2424,9 @@
                 document.getElementById('fileInfo').classList.remove('hidden');
                 document.getElementById('jiraUrlSection').classList.add('hidden');
                 document.getElementById('reportDashboard').classList.remove('hidden');
+                showMalformedTagTicketsPopup(rawJiraData);
                 buildDynamicStatusFilters();
                 processData();
-                showMalformedTagTicketsPopup(rawJiraData);
                 showToast('Tải Thành Công', `Đã tải ${rawJiraData.length} ticket thuộc ${selectedTargetParentValue || selectedParentValue} (${types.join(', ')})` + (dropped.length ? `. Project không có loại: ${dropped.join(', ')}.` : '.'));
             } catch (err) {
                 showToast('Lỗi tải dữ liệu Jira', err.message || 'Không kết nối được Proxy.', true);
@@ -2823,7 +2826,7 @@
             }
 
             closeJiraCombo('site');
-            document.getElementById('malformedTagPopup')?.remove();
+            document.getElementById('malformedTagPopup')?.remove(); document.getElementById('btnReopenMalformedPopup')?.classList.add('hidden');
             document.getElementById('fileInfo')?.classList.add('hidden');
             document.getElementById('reportDashboard')?.classList.add('hidden');
             document.getElementById('detailView')?.classList.add('hidden');
@@ -2958,125 +2961,531 @@
 
         const invalidTagSummaries = new Set();
 
-        function hasTicketTitle(summary) {
-            return typeof summary === 'string' && cleanTicketSummary(summary).trim().length > 0 && parseTagsFromSummary(summary).length > 0 && !hasUnclosedTagWithText(summary) && !invalidTagSummaries.has(summary.trim().toLowerCase());
-        }
+        const STANDARD_QC_TAGS = [
+            'UI', 'Logic', 'Logic UI', 'Specific UI', 'Interruption', 'Sound', 'Audio',
+            'Promotion', 'Compatibility', 'Common', 'Common Behaviour', 'Common Behavior',
+            'Others', 'Other', 'Improvement', 'Question', 'Q&A', 'Data',
+            'Tutorial', 'Trial', 'Tutorial/Trial', 'Performance', 'Betfail', 'Wallet Failed',
+            'OBF', 'UAT', 'Happy Case', 'UAT/Happy case', 'Betting History', 'Auto Delete',
+            'Ban&Maintenance', 'Ban&Maintainance', 'Maintenance',
+            'Freegame', 'Free Game', 'Freespin', 'Free Spins', 'Basegame', 'Base Game',
+            'Bonus', 'Bonus Game', 'Jackpot', 'Respin', 'Buy Feature', 'Feature',
+            'Multiplier', 'Paytable', 'Autoplay', 'Autospin', 'Quickspin',
+            'Localization', 'Translation', 'Animation', 'Graphics',
+            'Disconnect', 'Reconnect', 'Network',
+            'Safari', 'Chrome', 'Firefox', 'Android',
+            'Iframe', 'Webapp', 'Preprod', 'Preproduction', 'Staging', 'Landscape', 'Portrait'
+        ];
 
-        function hasUnclosedTagWithText(summary) {
-            const text = String(summary || '');
-            const stack = [];
-            for (let i = 0; i < text.length; i++) {
-                if (text[i] === '[') stack.push(i);
-                else if (text[i] === ']' && stack.length) stack.pop();
-            }
-            return stack.some(index => text.slice(index + 1).trim().length > 0);
-        }
+        const VALID_EXTRA_TAG_WORDS = [
+            'Wild', 'Scatter', 'Symbol', 'Reel', 'Rules', 'Rule', 'Info', 'Turbo', 'Spin',
+            'Bet', 'Balance', 'Win', 'Bigwin', 'Megawin', 'Superwin', 'History', 'Popup',
+            'Loading', 'Splash', 'Language', 'Layout', 'Text', 'Font', 'API', 'Backend',
+            'Server', 'Security', 'Edge', 'iOS', 'PC', 'Mac', 'Windows', 'Desktop', 'Mobile',
+            'Tablet', 'iPad', 'iPhone', 'App', 'Prod', 'Production', 'Setting', 'Settings',
+            'Menu', 'Lobby', 'Login', 'Logout', 'Register', 'Help', 'Payline', 'Coin', 'Cash',
+            'Card', 'Deck', 'Chip', 'Shop', 'Store', 'Rank', 'Leaderboard', 'Tournament',
+            'Mission', 'Quest', 'Task', 'Reward', 'Prize', 'Gift', 'Mail', 'Inbox', 'Chat',
+            'News', 'Event', 'VIP', 'Avatar', 'Profile', 'Account', 'Wallet', 'Deposit',
+            'Withdraw', 'Demo', 'Live', 'Gamble', 'Cascade', 'Cascading', 'Tumble',
+            'Expanding', 'Sticky', 'Mystery', 'Wheel', 'Pick', 'Collect', 'Meter', 'Level',
+            'Timer', 'Button', 'Icon', 'Banner', 'Header', 'Footer', 'Dialog', 'Modal',
+            'Toast', 'Tooltip', 'Scroll', 'Swipe', 'Zoom', 'Rotate', 'Fullscreen', 'Mute',
+            'Unmute', 'Volume', 'Voice', 'Music', 'BGM', 'SFX', 'Effect', 'VFX', 'Spine',
+            'Mascot', 'Character', 'Background', 'Frame', 'Border', 'Color', 'Shadow',
+            'Align', 'Alignment', 'Overlap', 'Crash', 'Freeze', 'Lag', 'Slow', 'FPS',
+            'Memory', 'Cache', 'Session', 'Token', 'Error', 'Warning', 'Retry', 'Timeout',
+            'Offline', 'Online', 'UX', 'UI/UX', 'iOS/Safari', 'iOS/Chrome', 'Android/Chrome', 'PC/Chrome', 'Iframe/App'
+        ];
+
+        const COMMON_TAG_TYPOS = {
+            'iu': 'UI', 'uii': 'UI',
+            'logci': 'Logic', 'loigc': 'Logic', 'lgic': 'Logic', 'logc': 'Logic', 'logik': 'Logic',
+            'logciui': 'Logic UI', 'loigcui': 'Logic UI', 'logicu': 'Logic UI', 'logiui': 'Logic UI', 'logiciu': 'Logic UI',
+            'soudn': 'Sound', 'suond': 'Sound', 'sond': 'Sound', 'soung': 'Sound', 'soud': 'Sound',
+            'fregame': 'Freegame', 'freegmae': 'Freegame', 'freegam': 'Freegame', 'feegame': 'Freegame', 'freegme': 'Freegame', 'freeegame': 'Freegame', 'freegane': 'Freegame',
+            'basegmae': 'Basegame', 'basgame': 'Basegame',
+            'bouns': 'Bonus', 'bonu': 'Bonus',
+            'jakcpot': 'Jackpot', 'jackopt': 'Jackpot', 'jacpot': 'Jackpot',
+            'interuption': 'Interruption', 'interrupiton': 'Interruption', 'interupt': 'Interruption', 'iterruption': 'Interruption', 'interrpution': 'Interruption', 'interrupion': 'Interruption',
+            'compatibilty': 'Compatibility', 'compatability': 'Compatibility', 'compatibily': 'Compatibility', 'compability': 'Compatibility', 'compatibilitty': 'Compatibility',
+            'promtion': 'Promotion', 'promoiton': 'Promotion', 'prmotion': 'Promotion', 'poromotion': 'Promotion',
+            'tutorail': 'Tutorial', 'turtorial': 'Tutorial', 'tutotial': 'Tutorial', 'tutoral': 'Tutorial',
+            'improvment': 'Improvement', 'imporvement': 'Improvement', 'impovement': 'Improvement', 'improvemnt': 'Improvement',
+            'quesiton': 'Question', 'questoin': 'Question', 'qustion': 'Question', 'quetion': 'Question',
+            'comon': 'Common', 'commom': 'Common', 'commn': 'Common',
+            'othes': 'Others', 'ohters': 'Others', 'otehrs': 'Others',
+            'andriod': 'Android', 'andorid': 'Android', 'anroid': 'Android',
+            'safri': 'Safari', 'safrai': 'Safari',
+            'chorme': 'Chrome', 'crhome': 'Chrome',
+            'ifame': 'Iframe', 'ifarme': 'Iframe', 'irfame': 'Iframe',
+            'weabpp': 'Webapp', 'webap': 'Webapp',
+            'perfomance': 'Performance', 'perfromance': 'Performance',
+            'histroy': 'History', 'hisotry': 'History',
+            'paytabel': 'Paytable', 'patable': 'Paytable',
+            'animaiton': 'Animation', 'localizaiton': 'Localization'
+        };
 
         function normalizeTagForTypoCheck(tag) {
             return String(tag || '').toLowerCase().replace(/[^a-z0-9]/g, '');
         }
 
-        function tagEditDistanceAtMostOne(a, b) {
-            if (a === b) return false;
-            if (Math.abs(a.length - b.length) > 1) return false;
-            let i = 0, j = 0, edits = 0;
-            while (i < a.length && j < b.length) {
-                if (a[i] === b[j]) { i++; j++; continue; }
-                if (++edits > 1) return false;
-                if (a.length > b.length) i++;
-                else if (b.length > a.length) j++;
-                else { i++; j++; }
-            }
-            if (i < a.length || j < b.length) edits++;
-            return edits === 1;
-        }
-
-        function showMalformedTagTicketsPopup(rows) {
-            invalidTagSummaries.clear();
-            const items = [];
-            const tagCounts = new Map();
-            const tagsByNormalized = new Map();
-            (rows || []).forEach(row => parseTagsFromSummary(getColumnValue(row, ['Summary', 'Tóm tắt', 'Title'])).forEach(tag => {
-                const normalized = normalizeTagForTypoCheck(tag);
-                if (normalized.length >= 6) {
-                    tagCounts.set(normalized, (tagCounts.get(normalized) || 0) + 1);
-                    if (!tagsByNormalized.has(normalized)) tagsByNormalized.set(normalized, tag);
-                }
-            }));
-            (rows || []).forEach(row => {
-                const summary = String(getColumnValue(row, ['Summary', 'Tóm tắt', 'Title']) || '');
-                const key = getColumnValue(row, ['Issue key', 'Issue Key', 'Key', 'Khóa sự cố']) || 'Unknown issue';
-                if (hasUnclosedTagWithText(summary)) {
-                    items.push({ row, summary, key, issue: 'Thiếu dấu ]', correction: 'Thêm dấu ] để đóng tag.' });
-                    return;
-                }
-                const tags = parseTagsFromSummary(summary);
-                for (const tag of tags) {
-                    const normalized = normalizeTagForTypoCheck(tag);
-                    if (normalized.length < 6 || (tagCounts.get(normalized) || 0) !== 1) continue;
-                    const candidates = [...tagCounts.keys()].filter(other => (tagCounts.get(other) || 0) >= 2 && tagEditDistanceAtMostOne(normalized, other));
-                    if (candidates.length === 1) {
-                        const canonical = tagsByNormalized.get(candidates[0]);
-                        items.push({ row, summary, key, issue: `Tag có thể bị typo: [${tag}]`, correction: `Có thể muốn dùng [${canonical}].` });
-                        break;
+        function damerauLevenshteinDistance(a, b) {
+            const la = a.length, lb = b.length;
+            const dp = Array.from({ length: la + 1 }, () => new Array(lb + 1).fill(0));
+            for (let i = 0; i <= la; i++) dp[i][0] = i;
+            for (let j = 0; j <= lb; j++) dp[0][j] = j;
+            for (let i = 1; i <= la; i++) {
+                for (let j = 1; j <= lb; j++) {
+                    const cost = a[i - 1] === b[j - 1] ? 0 : 1;
+                    dp[i][j] = Math.min(dp[i - 1][j] + 1, dp[i][j - 1] + 1, dp[i - 1][j - 1] + cost);
+                    if (i > 1 && j > 1 && a[i - 1] === b[j - 2] && a[i - 2] === b[j - 1]) {
+                        dp[i][j] = Math.min(dp[i][j], dp[i - 2][j - 2] + 1);
                     }
                 }
+            }
+            return dp[la][lb];
+        }
+
+        function inspectTicketTagFormatAndTypos(rawSummary, batchTagCounts, batchCanonicalByNorm) {
+            const text = String(rawSummary || '').trim();
+            if (!text) {
+                return { valid: false, issue: 'Summary đang để trống', correction: 'Nhập tiêu đề theo mẫu [Tag] Mô tả lỗi.', suggested: '' };
+            }
+
+            const standardMap = new Map();
+            STANDARD_QC_TAGS.forEach(t => {
+                const n = normalizeTagForTypoCheck(t);
+                if (n && !standardMap.has(n)) standardMap.set(n, t);
             });
-            const uniqueItems = [...new Map(items.map(item => [String(item.key) + '|' + item.summary, item])).values()];
-            uniqueItems.forEach(item => invalidTagSummaries.add(item.summary.trim().toLowerCase()));
-            if (!uniqueItems.length || document.getElementById('malformedTagPopup')) return;
+            const allValidNorms = new Set([...standardMap.keys()]);
+            VALID_EXTRA_TAG_WORDS.forEach(w => {
+                const n = normalizeTagForTypoCheck(w);
+                if (n) allValidNorms.add(n);
+            });
+            if (Array.isArray(scopeOptions)) {
+                scopeOptions.forEach(s => {
+                    const n = normalizeTagForTypoCheck(s);
+                    if (n) { allValidNorms.add(n); if (!standardMap.has(n)) standardMap.set(n, s); }
+                });
+            }
+            if (batchCanonicalByNorm) {
+                batchCanonicalByNorm.forEach((disp, norm) => {
+                    if ((batchTagCounts?.get(norm) || 0) >= 2 && !COMMON_TAG_TYPOS[norm]) {
+                        allValidNorms.add(norm);
+                        if (!standardMap.has(norm)) standardMap.set(norm, disp);
+                    }
+                });
+            }
+
+            // 1. Quét cấu trúc cặp ngoặc [ và ]
+            const stack = [];
+            const unmatchedClose = [];
+            const nestedOpen = [];
+            const emptyPairs = [];
+            const validPairs = [];
+
+            for (let i = 0; i < text.length; i++) {
+                if (text[i] === '[') {
+                    if (stack.length > 0) nestedOpen.push([stack[stack.length - 1], i]);
+                    stack.push(i);
+                } else if (text[i] === ']') {
+                    if (stack.length === 0) {
+                        unmatchedClose.push(i);
+                    } else {
+                        const openIdx = stack.pop();
+                        const inner = text.slice(openIdx + 1, i);
+                        if (!inner.trim()) emptyPairs.push([openIdx, i]);
+                        else validPairs.push({ openIdx, closeIdx: i, tag: inner.trim() });
+                    }
+                }
+            }
+
+            if (unmatchedClose.length > 0) {
+                const idx = unmatchedClose[0];
+                const before = text.slice(0, idx);
+                const lastBracket = Math.max(before.lastIndexOf(']'), before.lastIndexOf('['));
+                const frag = before.slice(lastBracket + 1).trim();
+                if (frag) {
+                    const canon = COMMON_TAG_TYPOS[normalizeTagForTypoCheck(frag)] || frag;
+                    return {
+                        valid: false,
+                        issue: `Thiếu dấu "[" mở tag trước "${frag}]"`,
+                        correction: `Thêm dấu "[" thành "[${canon}]".`,
+                        suggested: text.slice(0, lastBracket + 1) + `[${canon}]` + text.slice(idx + 1)
+                    };
+                }
+                return {
+                    valid: false,
+                    issue: 'Dư dấu "]" hoặc thiếu dấu "[" mở tag',
+                    correction: 'Xóa dấu "]" thừa hoặc bổ sung dấu "[".',
+                    suggested: text.slice(0, idx) + text.slice(idx + 1)
+                };
+            }
+
+            if (nestedOpen.length > 0) {
+                const [firstOpen, secondOpen] = nestedOpen[0];
+                const frag = text.slice(firstOpen + 1, secondOpen).trim();
+                if (frag) {
+                    return {
+                        valid: false,
+                        issue: `Thiếu dấu "]" đóng tag sau "[${frag}"`,
+                        correction: `Đóng ngoặc thành "[${frag}]" trước dấu "[" tiếp theo.`,
+                        suggested: text.slice(0, secondOpen) + ']' + text.slice(secondOpen)
+                    };
+                }
+                return {
+                    valid: false,
+                    issue: 'Dư dấu "[" lồng nhau trong tag',
+                    correction: 'Xóa bớt 1 dấu "[" bị lặp.',
+                    suggested: text.slice(0, firstOpen) + text.slice(firstOpen + 1)
+                };
+            }
+
+            if (stack.length > 0) {
+                const openIdx = stack[0];
+                const rest = text.slice(openIdx + 1);
+                const preview = rest.trim().slice(0, 28) + (rest.trim().length > 28 ? '…' : '');
+                let suggested = '';
+                const words = rest.trim().split(/\s+/);
+                for (const count of [2, 1]) {
+                    if (words.length > count) {
+                        const candidate = words.slice(0, count).join(' ');
+                        const cn = normalizeTagForTypoCheck(candidate);
+                        if (allValidNorms.has(cn) || COMMON_TAG_TYPOS[cn]) {
+                            const canon = COMMON_TAG_TYPOS[cn] || standardMap.get(cn) || candidate;
+                            suggested = text.slice(0, openIdx) + `[${canon}] ` + words.slice(count).join(' ');
+                            break;
+                        }
+                    }
+                }
+                return {
+                    valid: false,
+                    issue: `Thiếu dấu "]" đóng tag cho "[${preview}"`,
+                    correction: 'Thêm dấu "]" vào sau tên tag.',
+                    suggested
+                };
+            }
+
+            if (emptyPairs.length > 0) {
+                return {
+                    valid: false,
+                    issue: 'Có cặp ngoặc rỗng "[]"',
+                    correction: 'Điền tên tag vào trong "[]" hoặc xóa cặp ngoặc trống.',
+                    suggested: ''
+                };
+            }
+
+            const wrongBracketMatch = text.match(/^\s*([({<])\s*([A-Za-z0-9_&\s/-]{1,25}?)\s*([)}>])(.*)$/);
+            if (wrongBracketMatch && (!validPairs.length || validPairs[0].openIdx > 0)) {
+                const inner = wrongBracketMatch[2].trim();
+                const canon = COMMON_TAG_TYPOS[normalizeTagForTypoCheck(inner)] || inner;
+                return {
+                    valid: false,
+                    issue: `Dùng sai loại ngoặc "${wrongBracketMatch[1]}${inner}${wrongBracketMatch[3]}"`,
+                    correction: `Đổi sang ngoặc vuông "[${canon}]".`,
+                    suggested: `[${canon}]` + wrongBracketMatch[4]
+                };
+            }
+
+            if (!validPairs.length) {
+                return {
+                    valid: false,
+                    issue: 'Thiếu tag [Tag] ở đầu Summary',
+                    correction: 'Bổ sung tag trong ngoặc vuông (VD: [UI], [Logic UI]) ở đầu tiêu đề.',
+                    suggested: ''
+                };
+            }
+
+            const firstOpen = validPairs[0].openIdx;
+            if (firstOpen > 0) {
+                const rawPrefix = text.slice(0, firstOpen).replace(/^\s*(?:clone\s*[-:]\s*)+/i, '').trim();
+                const cleanPrefix = rawPrefix.replace(/[-:;/|]+$/, '').trim();
+                const pNorm = normalizeTagForTypoCheck(cleanPrefix);
+                if (pNorm && (allValidNorms.has(pNorm) || COMMON_TAG_TYPOS[pNorm])) {
+                    const canon = COMMON_TAG_TYPOS[pNorm] || standardMap.get(pNorm) || cleanPrefix;
+                    return {
+                        valid: false,
+                        issue: `Thiếu cặp dấu "[ ]" quanh tag "${cleanPrefix}" ở đầu câu`,
+                        correction: `Sửa thành "[${canon}]".`,
+                        suggested: `[${canon}]` + text.slice(firstOpen)
+                    };
+                }
+            }
+
+            if (!cleanTicketSummary(text)) {
+                return {
+                    valid: false,
+                    issue: 'Chỉ có [Tag], thiếu nội dung mô tả lỗi phía sau',
+                    correction: 'Nhập thêm mô tả lỗi sau phần [Tag].',
+                    suggested: ''
+                };
+            }
+
+            // 2. Kiểm tra lỗi Typo trên các [Tag] đầu câu
+            let cursor = 0;
+            const cloneMatch = text.match(/^\s*(?:clone\s*[-:]\s*)+/i);
+            if (cloneMatch) cursor = cloneMatch[0].length;
+            const leadingPairs = [];
+            for (const pair of validPairs) {
+                if (text.slice(cursor, pair.openIdx).trim() === '') {
+                    leadingPairs.push(pair);
+                    cursor = pair.closeIdx + 1;
+                } else {
+                    break;
+                }
+            }
+            const pairsToCheck = leadingPairs.length ? leadingPairs : [validPairs[0]];
+
+            for (const pair of pairsToCheck) {
+                const nt = normalizeTagForTypoCheck(pair.tag);
+                if (!nt || /^\d+$/.test(nt)) continue;
+
+                if (/[/,&-]/.test(pair.tag)) {
+                    const subParts = pair.tag.split(/[/,&-]+/).map(normalizeTagForTypoCheck).filter(Boolean);
+                    if (subParts.length > 1 && subParts.every(sp => allValidNorms.has(sp) && !COMMON_TAG_TYPOS[sp])) continue;
+                }
+
+                if (COMMON_TAG_TYPOS[nt]) {
+                    const canon = COMMON_TAG_TYPOS[nt];
+                    return {
+                        valid: false,
+                        issue: `Tag nghi ngờ sai chính tả: [${pair.tag}]`,
+                        correction: `Gợi ý đổi thành [${canon}].`,
+                        suggested: text.slice(0, pair.openIdx) + `[${canon}]` + text.slice(pair.closeIdx + 1)
+                    };
+                }
+
+                if (allValidNorms.has(nt) || (batchTagCounts?.get(nt) || 0) >= 2) continue;
+
+                if (nt.length >= 4) {
+                    let bestSuggestion = '';
+                    let bestDist = 99;
+                    for (const [kNorm, kDisp] of standardMap.entries()) {
+                        if (Math.abs(nt.length - kNorm.length) > 2) continue;
+                        if (nt + 's' === kNorm || kNorm + 's' === nt) continue;
+                        const dist = damerauLevenshteinDistance(nt, kNorm);
+                        const maxAllowed = (nt.length >= 9 && kNorm.length >= 9 && nt[0] === kNorm[0]) ? 2 : 1;
+                        if (nt.length <= 5 && (dist > 1 || nt[0] !== kNorm[0])) continue;
+                        if (dist <= maxAllowed && dist < bestDist) {
+                            bestDist = dist;
+                            bestSuggestion = kDisp;
+                        }
+                    }
+                    if (bestSuggestion) {
+                        return {
+                            valid: false,
+                            issue: `Tag có thể bị typo: [${pair.tag}]`,
+                            correction: `Có thể bạn muốn dùng [${bestSuggestion}].`,
+                            suggested: text.slice(0, pair.openIdx) + `[${bestSuggestion}]` + text.slice(pair.closeIdx + 1)
+                        };
+                    }
+                }
+            }
+
+            return { valid: true };
+        }
+
+        function hasUnclosedTagWithText(summary) {
+            return !inspectTicketTagFormatAndTypos(summary).valid;
+        }
+
+        function hasTicketTitle(summary) {
+            if (typeof summary !== 'string' || !summary.trim()) return false;
+            if (invalidTagSummaries.has(summary.trim().toLowerCase())) return false;
+            return cleanTicketSummary(summary).trim().length > 0 && parseTagsFromSummary(summary).length > 0;
+        }
+
+        function resolveJiraTicketBrowseUrl(issueKey) {
+            const key = String(issueKey || '').trim();
+            if (!key) return '';
+            const base = String(
+                currentJiraDomain ||
+                (jiraBoardCtx && jiraBoardCtx.domain) ||
+                (selectedJiraSite && selectedJiraSite.url) ||
+                (activeJiraSession && activeJiraSession.site && activeJiraSession.site.url) ||
+                ''
+            ).replace(/\/+$/, '');
+            return base ? `${base}/browse/${encodeURIComponent(key)}` : '';
+        }
+
+        function showMalformedTagTicketsPopup(rows, forceOpen = false) {
+            invalidTagSummaries.clear();
+            const batchTagCounts = new Map();
+            const batchCanonicalByNorm = new Map();
+
+            (rows || []).forEach(row => {
+                const summary = String(getColumnValue(row, ['Summary', 'Tóm tắt', 'Title']) || '');
+                parseTagsFromSummary(summary).forEach(tag => {
+                    const norm = normalizeTagForTypoCheck(tag);
+                    if (norm.length >= 3) {
+                        batchTagCounts.set(norm, (batchTagCounts.get(norm) || 0) + 1);
+                        if (!batchCanonicalByNorm.has(norm)) batchCanonicalByNorm.set(norm, tag);
+                    }
+                });
+            });
+
+            const items = [];
+            (rows || []).forEach(row => {
+                const summary = String(getColumnValue(row, ['Summary', 'Tóm tắt', 'Title']) || '');
+                const key = String(getColumnValue(row, ['Issue key', 'Issue Key', 'Key', 'Khóa sự cố']) || '').trim();
+                const status = String(getColumnValue(row, ['Status', 'Trạng thái']) || 'N/A').trim();
+                if (!key) return;
+                const check = inspectTicketTagFormatAndTypos(summary, batchTagCounts, batchCanonicalByNorm);
+                if (!check.valid) {
+                    items.push({
+                        row, key, summary, status,
+                        issue: check.issue,
+                        correction: check.correction,
+                        suggested: check.suggested || '',
+                        isActiveStatus: Boolean(getStatusGroup(status))
+                    });
+                }
+            });
+
+            const uniqueItems = [...new Map(items.map(item => [item.key + '|' + item.summary, item])).values()]
+                .sort((a, b) => Number(b.isActiveStatus) - Number(a.isActiveStatus));
+
+            uniqueItems.forEach(item => {
+                if (item.summary.trim()) invalidTagSummaries.add(item.summary.trim().toLowerCase());
+            });
+
+            const reopenBtn = document.getElementById('btnReopenMalformedPopup');
+            const reopenLabel = document.getElementById('malformedTicketCountLabel');
+            if (reopenBtn) {
+                reopenBtn.classList.toggle('hidden', uniqueItems.length === 0);
+                if (reopenLabel) reopenLabel.textContent = `${uniqueItems.length} ticket lỗi tag`;
+            }
+
+            if (!uniqueItems.length) {
+                document.getElementById('malformedTagPopup')?.remove();
+                return;
+            }
+            if (forceOpen) document.getElementById('malformedTagPopup')?.remove();
+            else if (document.getElementById('malformedTagPopup')) return;
 
             const overlay = document.createElement('div');
             overlay.id = 'malformedTagPopup';
-            overlay.className = 'fixed inset-0 z-[120] flex items-center justify-center bg-slate-950/50 p-4';
+            overlay.className = 'fixed inset-0 z-[120] flex items-center justify-center bg-slate-950/60 backdrop-blur-sm p-4';
+
             const dialog = document.createElement('div');
-            dialog.className = 'w-full max-w-xl overflow-hidden rounded-2xl bg-white shadow-2xl';
+            dialog.className = 'w-full max-w-2xl overflow-hidden rounded-2xl bg-white shadow-2xl border border-slate-200';
+
             const header = document.createElement('div');
-            header.className = 'flex items-start gap-3 border-b border-amber-100 bg-amber-50 px-5 py-4';
-            const icon = document.createElement('div');
-            icon.className = 'mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-amber-100 text-amber-700';
-            icon.innerHTML = '<i class="fa-solid fa-triangle-exclamation"></i>';
-            const heading = document.createElement('div');
-            heading.className = 'min-w-0 flex-1';
-            const title = document.createElement('h3');
-            title.className = 'text-sm font-bold text-slate-900';
-            title.textContent = 'Phát hiện tag cần kiểm tra';
-            const description = document.createElement('p');
-            description.className = 'mt-1 text-xs leading-5 text-slate-600';
-            description.textContent = 'Ticket thiếu dấu đóng tag hoặc có tag typo sẽ được bỏ khỏi report cho đến khi bạn sửa Summary.';
-            heading.append(title, description);
-            header.append(icon, heading);
+            header.className = 'flex items-start justify-between gap-3 border-b border-amber-200 bg-amber-50 px-5 py-4';
+            header.innerHTML = `
+                <div class="flex items-start gap-3 min-w-0">
+                    <div class="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-amber-100 text-amber-700">
+                        <i class="fa-solid fa-triangle-exclamation"></i>
+                    </div>
+                    <div class="min-w-0">
+                        <h3 class="text-sm sm:text-base font-bold text-slate-900">Phát hiện ${uniqueItems.length} ticket sai định dạng hoặc typo Tag</h3>
+                        <p class="mt-1 text-xs leading-5 text-slate-600">Các ticket dưới đây đang thiếu dấu <b>[</b>, <b>]</b> hoặc nghi ngờ gõ nhầm tên Tag và sẽ tạm ẩn khỏi báo cáo cho đến khi được sửa trên Jira.</p>
+                    </div>
+                </div>
+            `;
+            const closeTop = document.createElement('button');
+            closeTop.type = 'button';
+            closeTop.className = 'text-slate-400 hover:text-rose-500 p-1';
+            closeTop.innerHTML = '<i class="fa-solid fa-xmark text-lg"></i>';
+            closeTop.onclick = () => overlay.remove();
+            header.appendChild(closeTop);
 
             const list = document.createElement('div');
-            list.className = 'max-h-72 space-y-2 overflow-y-auto p-4';
+            list.className = 'max-h-[60vh] space-y-3 overflow-y-auto p-4';
+
             uniqueItems.forEach(entry => {
-                const { key, summary } = entry;
+                const ticketUrl = resolveJiraTicketBrowseUrl(entry.key);
                 const item = document.createElement('div');
-                item.className = 'rounded-xl border border-slate-200 p-3';
-                const link = document.createElement('a');
-                link.className = 'text-sm font-bold text-indigo-700 hover:underline';
-                link.textContent = key;
-                link.href = currentJiraDomain ? `${currentJiraDomain}/browse/${encodeURIComponent(key)}` : '#';
-                link.target = '_blank';
-                link.rel = 'noopener noreferrer';
-                const summaryText = document.createElement('p');
-                summaryText.className = 'mt-1 text-xs text-slate-600';
-                summaryText.textContent = summary;
+                item.className = 'rounded-xl border border-slate-200 bg-slate-50/60 p-3.5 space-y-2';
+
+                const topRow = document.createElement('div');
+                topRow.className = 'flex flex-wrap items-center justify-between gap-2';
+
+                const leftMeta = document.createElement('div');
+                leftMeta.className = 'flex items-center gap-2';
+
+                const keyLink = document.createElement('a');
+                keyLink.className = 'text-sm font-extrabold text-indigo-700 hover:underline';
+                keyLink.textContent = entry.key;
+                if (ticketUrl) {
+                    keyLink.href = ticketUrl;
+                    keyLink.target = '_blank';
+                    keyLink.rel = 'noopener noreferrer';
+                }
+
+                const statusBadge = document.createElement('span');
+                statusBadge.className = 'rounded-full px-2 py-0.5 text-[10px] font-bold ' +
+                    (entry.isActiveStatus ? 'bg-amber-100 text-amber-800' : 'bg-slate-200 text-slate-600');
+                statusBadge.textContent = entry.status;
+                leftMeta.append(keyLink, statusBadge);
+
+                const actionGroup = document.createElement('div');
+                actionGroup.className = 'flex items-center gap-2';
+
+                if (entry.suggested) {
+                    const copySugBtn = document.createElement('button');
+                    copySugBtn.type = 'button';
+                    copySugBtn.className = 'inline-flex items-center gap-1 rounded-lg border border-emerald-200 bg-emerald-50 px-2.5 py-1 text-[11px] font-bold text-emerald-700 hover:bg-emerald-100 transition';
+                    copySugBtn.innerHTML = '<i class="fa-regular fa-copy"></i> Copy câu sửa';
+                    copySugBtn.onclick = async () => {
+                        await copyTextToClipboard(entry.suggested);
+                        showToast('Đã copy gợi ý', `Đã sao chép Summary chuẩn cho ${entry.key}.`);
+                    };
+                    actionGroup.appendChild(copySugBtn);
+                }
+
+                if (ticketUrl) {
+                    const openBtn = document.createElement('a');
+                    openBtn.href = ticketUrl;
+                    openBtn.target = '_blank';
+                    openBtn.rel = 'noopener noreferrer';
+                    openBtn.className = 'inline-flex items-center gap-1.5 rounded-lg bg-indigo-600 px-3 py-1 text-[11px] font-bold text-white hover:bg-indigo-700 transition shadow-sm';
+                    openBtn.innerHTML = 'Mở Jira sửa <i class="fa-solid fa-arrow-up-right-from-square text-[10px]"></i>';
+                    actionGroup.appendChild(openBtn);
+                }
+
+                topRow.append(leftMeta, actionGroup);
+
                 const issueText = document.createElement('p');
-                issueText.className = 'mt-1 text-xs font-semibold text-amber-700';
-                issueText.textContent = `${entry.issue} ${entry.correction}`;
-                item.append(link, issueText, summaryText);
+                issueText.className = 'text-xs font-bold text-rose-600';
+                issueText.textContent = `⚠ ${entry.issue} — ${entry.correction}`;
+
+                const summaryText = document.createElement('p');
+                summaryText.className = 'rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 font-mono text-xs text-slate-700 break-words';
+                summaryText.textContent = entry.summary || '(Trống)';
+
+                item.append(topRow, issueText, summaryText);
+
+                if (entry.suggested) {
+                    const sugRow = document.createElement('p');
+                    sugRow.className = 'text-[11px] text-emerald-700 font-medium break-words';
+                    sugRow.textContent = `✓ Gợi ý chuẩn: ${entry.suggested}`;
+                    item.appendChild(sugRow);
+                }
+
                 list.appendChild(item);
             });
 
             const footer = document.createElement('div');
-            footer.className = 'flex justify-end border-t border-slate-100 px-5 py-3';
-            const close = document.createElement('button');
-            close.type = 'button';
-            close.className = 'rounded-lg bg-indigo-600 px-4 py-2 text-xs font-bold text-white hover:bg-indigo-700';
-            close.textContent = 'Đã hiểu';
-            close.onclick = () => overlay.remove();
-            footer.appendChild(close);
+            footer.className = 'flex flex-wrap items-center justify-end gap-2 border-t border-slate-200 bg-slate-50 px-5 py-3';
+
+            const recheckBtn = document.createElement('button');
+            recheckBtn.type = 'button';
+            recheckBtn.className = 'rounded-lg bg-sky-600 px-4 py-2 text-xs font-bold text-white hover:bg-sky-700 transition';
+            recheckBtn.innerHTML = '<i class="fa-solid fa-rotate mr-1"></i> Sửa xong · Tải lại kiểm tra';
+            recheckBtn.onclick = () => {
+                overlay.remove();
+                fetchJiraDataFromUrl(true);
+            };
+
+            const closeBtn = document.createElement('button');
+            closeBtn.type = 'button';
+            closeBtn.className = 'rounded-lg border border-slate-300 bg-white px-4 py-2 text-xs font-bold text-slate-700 hover:bg-slate-100 transition';
+            closeBtn.textContent = 'Đóng tạm';
+            closeBtn.onclick = () => overlay.remove();
+
+            footer.append(recheckBtn, closeBtn);
             dialog.append(header, list, footer);
             overlay.appendChild(dialog);
             overlay.addEventListener('click', event => { if (event.target === overlay) overlay.remove(); });
