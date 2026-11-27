@@ -811,67 +811,481 @@
       return summary.replace(/\[.*?\]/g, '').trim();
     }
 
-    function hasUnclosedTagWithText(summary) {
-      const text = String(summary || '');
+    const STANDARD_QC_TAGS = [
+      'UI', 'Logic', 'Logic UI', 'Specific UI', 'Interruption', 'Sound', 'Audio',
+      'Promotion', 'Compatibility', 'Common', 'Common Behaviour', 'Common Behavior',
+      'Others', 'Other', 'Improvement', 'Question', 'Q&A', 'Data',
+      'Tutorial', 'Trial', 'Tutorial/Trial', 'Performance', 'Betfail', 'Wallet Failed',
+      'OBF', 'UAT', 'Happy Case', 'UAT/Happy case', 'Betting History', 'Auto Delete',
+      'Ban&Maintenance', 'Ban&Maintainance', 'Maintenance',
+      'Freegame', 'Free Game', 'Freespin', 'Free Spins', 'Basegame', 'Base Game',
+      'Bonus', 'Bonus Game', 'Jackpot', 'Respin', 'Buy Feature', 'Feature',
+      'Multiplier', 'Paytable', 'Autoplay', 'Autospin', 'Quickspin',
+      'Localization', 'Translation', 'Animation', 'Graphics',
+      'Disconnect', 'Reconnect', 'Network',
+      'Safari', 'Chrome', 'Firefox', 'Android',
+      'Iframe', 'Webapp', 'Preprod', 'Preproduction', 'Staging', 'Landscape', 'Portrait'
+    ];
+
+    const VALID_EXTRA_TAG_WORDS = [
+      'Wild', 'Scatter', 'Symbol', 'Reel', 'Rules', 'Rule', 'Info', 'Turbo', 'Spin',
+      'Bet', 'Balance', 'Win', 'Bigwin', 'Megawin', 'Superwin', 'History', 'Popup',
+      'Loading', 'Splash', 'Language', 'Layout', 'Text', 'Font', 'API', 'Backend',
+      'Server', 'Security', 'Edge', 'iOS', 'PC', 'Mac', 'Windows', 'Desktop', 'Mobile',
+      'Tablet', 'iPad', 'iPhone', 'App', 'Prod', 'Production', 'Setting', 'Settings',
+      'Menu', 'Lobby', 'Login', 'Logout', 'Register', 'Help', 'Payline', 'Coin', 'Cash',
+      'Card', 'Deck', 'Chip', 'Shop', 'Store', 'Rank', 'Leaderboard', 'Tournament',
+      'Mission', 'Quest', 'Task', 'Reward', 'Prize', 'Gift', 'Mail', 'Inbox', 'Chat',
+      'News', 'Event', 'VIP', 'Avatar', 'Profile', 'Account', 'Wallet', 'Deposit',
+      'Withdraw', 'Demo', 'Live', 'Gamble', 'Cascade', 'Cascading', 'Tumble',
+      'Expanding', 'Sticky', 'Mystery', 'Wheel', 'Pick', 'Collect', 'Meter', 'Level',
+      'Timer', 'Button', 'Icon', 'Banner', 'Header', 'Footer', 'Dialog', 'Modal',
+      'Toast', 'Tooltip', 'Scroll', 'Swipe', 'Zoom', 'Rotate', 'Fullscreen', 'Mute',
+      'Unmute', 'Volume', 'Voice', 'Music', 'BGM', 'SFX', 'Effect', 'VFX', 'Spine',
+      'Mascot', 'Character', 'Background', 'Frame', 'Border', 'Color', 'Shadow',
+      'Align', 'Alignment', 'Overlap', 'Crash', 'Freeze', 'Lag', 'Slow', 'FPS',
+      'Memory', 'Cache', 'Session', 'Token', 'Error', 'Warning', 'Retry', 'Timeout',
+      'Offline', 'Online', 'UX', 'UI/UX', 'iOS/Safari', 'iOS/Chrome', 'Android/Chrome', 'PC/Chrome', 'Iframe/App'
+    ];
+
+    const COMMON_TAG_TYPOS = {
+      'iu': 'UI', 'uii': 'UI',
+      'logci': 'Logic', 'loigc': 'Logic', 'lgic': 'Logic', 'logc': 'Logic', 'logik': 'Logic',
+      'logciui': 'Logic UI', 'loigcui': 'Logic UI', 'logicu': 'Logic UI', 'logiui': 'Logic UI', 'logiciu': 'Logic UI',
+      'soudn': 'Sound', 'suond': 'Sound', 'sond': 'Sound', 'soung': 'Sound', 'soud': 'Sound',
+      'fregame': 'Freegame', 'freegmae': 'Freegame', 'freegam': 'Freegame', 'feegame': 'Freegame', 'freegme': 'Freegame', 'freeegame': 'Freegame', 'freegane': 'Freegame',
+      'basegmae': 'Basegame', 'basgame': 'Basegame',
+      'bouns': 'Bonus', 'bonu': 'Bonus',
+      'jakcpot': 'Jackpot', 'jackopt': 'Jackpot', 'jacpot': 'Jackpot',
+      'interuption': 'Interruption', 'interrupiton': 'Interruption', 'interupt': 'Interruption', 'iterruption': 'Interruption', 'interrpution': 'Interruption', 'interrupion': 'Interruption',
+      'compatibilty': 'Compatibility', 'compatability': 'Compatibility', 'compatibily': 'Compatibility', 'compability': 'Compatibility', 'compatibilitty': 'Compatibility',
+      'promtion': 'Promotion', 'promoiton': 'Promotion', 'prmotion': 'Promotion', 'poromotion': 'Promotion',
+      'tutorail': 'Tutorial', 'turtorial': 'Tutorial', 'tutotial': 'Tutorial', 'tutoral': 'Tutorial',
+      'improvment': 'Improvement', 'imporvement': 'Improvement', 'impovement': 'Improvement', 'improvemnt': 'Improvement',
+      'quesiton': 'Question', 'questoin': 'Question', 'qustion': 'Question', 'quetion': 'Question',
+      'comon': 'Common', 'commom': 'Common', 'commn': 'Common',
+      'othes': 'Others', 'ohters': 'Others', 'otehrs': 'Others',
+      'andriod': 'Android', 'andorid': 'Android', 'anroid': 'Android',
+      'safri': 'Safari', 'safrai': 'Safari',
+      'chorme': 'Chrome', 'crhome': 'Chrome',
+      'ifame': 'Iframe', 'ifarme': 'Iframe', 'irfame': 'Iframe',
+      'weabpp': 'Webapp', 'webap': 'Webapp',
+      'perfomance': 'Performance', 'perfromance': 'Performance',
+      'histroy': 'History', 'hisotry': 'History',
+      'paytabel': 'Paytable', 'patable': 'Paytable',
+      'animaiton': 'Animation', 'localizaiton': 'Localization'
+    };
+
+    function damerauLevenshteinDistance(a, b) {
+      const la = a.length, lb = b.length;
+      const dp = Array.from({ length: la + 1 }, () => new Array(lb + 1).fill(0));
+      for (let i = 0; i <= la; i++) dp[i][0] = i;
+      for (let j = 0; j <= lb; j++) dp[0][j] = j;
+      for (let i = 1; i <= la; i++) {
+        for (let j = 1; j <= lb; j++) {
+          const cost = a[i - 1] === b[j - 1] ? 0 : 1;
+          dp[i][j] = Math.min(dp[i - 1][j] + 1, dp[i][j - 1] + 1, dp[i - 1][j - 1] + cost);
+          if (i > 1 && j > 1 && a[i - 1] === b[j - 2] && a[i - 2] === b[j - 1]) {
+            dp[i][j] = Math.min(dp[i][j], dp[i - 2][j - 2] + 1);
+          }
+        }
+      }
+      return dp[la][lb];
+    }
+
+    function inspectTicketTagFormatAndTypos(rawSummary, batchTagCounts, batchCanonicalByNorm) {
+      const text = String(rawSummary || '').trim();
+      if (!text) {
+        return { valid: false, issue: 'Summary đang để trống', correction: 'Nhập tiêu đề theo mẫu [Tag] Mô tả lỗi.', suggested: '' };
+      }
+
+      const standardMap = new Map();
+      STANDARD_QC_TAGS.forEach(t => {
+        const n = normalizeTaskKey(t);
+        if (n && !standardMap.has(n)) standardMap.set(n, t);
+      });
+      const allValidNorms = new Set([...standardMap.keys()]);
+      VALID_EXTRA_TAG_WORDS.forEach(w => {
+        const n = normalizeTaskKey(w);
+        if (n) allValidNorms.add(n);
+      });
+      if (batchCanonicalByNorm) {
+        batchCanonicalByNorm.forEach((disp, norm) => {
+          if ((batchTagCounts?.get(norm) || 0) >= 2 && !COMMON_TAG_TYPOS[norm]) {
+            allValidNorms.add(norm);
+            if (!standardMap.has(norm)) standardMap.set(norm, disp);
+          }
+        });
+      }
+
       const stack = [];
+      const unmatchedClose = [];
+      const nestedOpen = [];
+      const emptyPairs = [];
+      const validPairs = [];
+
       for (let i = 0; i < text.length; i++) {
-        if (text[i] === '[') stack.push(i);
-        else if (text[i] === ']' && stack.length) stack.pop();
+        if (text[i] === '[') {
+          if (stack.length > 0) nestedOpen.push([stack[stack.length - 1], i]);
+          stack.push(i);
+        } else if (text[i] === ']') {
+          if (stack.length === 0) {
+            unmatchedClose.push(i);
+          } else {
+            const openIdx = stack.pop();
+            const inner = text.slice(openIdx + 1, i);
+            if (!inner.trim()) emptyPairs.push([openIdx, i]);
+            else validPairs.push({ openIdx, closeIdx: i, tag: inner.trim() });
+          }
+        }
       }
-      return stack.some(index => text.slice(index + 1).trim().length > 0);
+
+      if (unmatchedClose.length > 0) {
+        const idx = unmatchedClose[0];
+        const before = text.slice(0, idx);
+        const lastBracket = Math.max(before.lastIndexOf(']'), before.lastIndexOf('['));
+        const frag = before.slice(lastBracket + 1).trim();
+        if (frag) {
+          const canon = COMMON_TAG_TYPOS[normalizeTaskKey(frag)] || frag;
+          return {
+            valid: false,
+            issue: 'Thiếu dấu "[" mở tag trước "' + frag + ']"',
+            correction: 'Thêm dấu "[" thành "[' + canon + ']".',
+            suggested: text.slice(0, lastBracket + 1) + '[' + canon + ']' + text.slice(idx + 1)
+          };
+        }
+        return {
+          valid: false,
+          issue: 'Dư dấu "]" hoặc thiếu dấu "[" mở tag',
+          correction: 'Xóa dấu "]" thừa hoặc bổ sung dấu "[".',
+          suggested: text.slice(0, idx) + text.slice(idx + 1)
+        };
+      }
+
+      if (nestedOpen.length > 0) {
+        const [firstOpen, secondOpen] = nestedOpen[0];
+        const frag = text.slice(firstOpen + 1, secondOpen).trim();
+        if (frag) {
+          return {
+            valid: false,
+            issue: 'Thiếu dấu "]" đóng tag sau "[' + frag + '"',
+            correction: 'Đóng ngoặc thành "[' + frag + ']" trước dấu "[" tiếp theo.',
+            suggested: text.slice(0, secondOpen) + ']' + text.slice(secondOpen)
+          };
+        }
+        return {
+          valid: false,
+          issue: 'Dư dấu "[" lồng nhau trong tag',
+          correction: 'Xóa bớt 1 dấu "[" bị lặp.',
+          suggested: text.slice(0, firstOpen) + text.slice(firstOpen + 1)
+        };
+      }
+
+      if (stack.length > 0) {
+        const openIdx = stack[0];
+        const rest = text.slice(openIdx + 1);
+        const preview = rest.trim().slice(0, 28) + (rest.trim().length > 28 ? '…' : '');
+        let suggested = '';
+        const words = rest.trim().split(/\s+/);
+        for (const count of [2, 1]) {
+          if (words.length > count) {
+            const candidate = words.slice(0, count).join(' ');
+            const cn = normalizeTaskKey(candidate);
+            if (allValidNorms.has(cn) || COMMON_TAG_TYPOS[cn]) {
+              const canon = COMMON_TAG_TYPOS[cn] || standardMap.get(cn) || candidate;
+              suggested = text.slice(0, openIdx) + '[' + canon + '] ' + words.slice(count).join(' ');
+              break;
+            }
+          }
+        }
+        return {
+          valid: false,
+          issue: 'Thiếu dấu "]" đóng tag cho "[' + preview + '"',
+          correction: 'Thêm dấu "]" vào sau tên tag.',
+          suggested
+        };
+      }
+
+      if (emptyPairs.length > 0) {
+        return {
+          valid: false,
+          issue: 'Có cặp ngoặc rỗng "[]"',
+          correction: 'Điền tên tag vào trong "[]" hoặc xóa cặp ngoặc trống.',
+          suggested: ''
+        };
+      }
+
+      const wrongBracketMatch = text.match(/^\s*([({<])\s*([A-Za-z0-9_&\s/-]{1,25}?)\s*([)}>])(.*)$/);
+      if (wrongBracketMatch && (!validPairs.length || validPairs[0].openIdx > 0)) {
+        const inner = wrongBracketMatch[2].trim();
+        const canon = COMMON_TAG_TYPOS[normalizeTaskKey(inner)] || inner;
+        return {
+          valid: false,
+          issue: 'Dùng sai loại ngoặc "' + wrongBracketMatch[1] + inner + wrongBracketMatch[3] + '"',
+          correction: 'Đổi sang ngoặc vuông "[' + canon + ']".',
+          suggested: '[' + canon + ']' + wrongBracketMatch[4]
+        };
+      }
+
+      if (!validPairs.length) {
+        return {
+          valid: false,
+          issue: 'Thiếu tag [Tag] ở đầu Summary',
+          correction: 'Bổ sung tag trong ngoặc vuông (VD: [UI], [Logic UI]) ở đầu tiêu đề.',
+          suggested: ''
+        };
+      }
+
+      const firstOpen = validPairs[0].openIdx;
+      if (firstOpen > 0) {
+        const rawPrefix = text.slice(0, firstOpen).replace(/^\s*(?:clone\s*[-:]\s*)+/i, '').trim();
+        const cleanPrefix = rawPrefix.replace(/[-:;/|]+$/, '').trim();
+        const pNorm = normalizeTaskKey(cleanPrefix);
+        if (pNorm && (allValidNorms.has(pNorm) || COMMON_TAG_TYPOS[pNorm])) {
+          const canon = COMMON_TAG_TYPOS[pNorm] || standardMap.get(pNorm) || cleanPrefix;
+          return {
+            valid: false,
+            issue: 'Thiếu cặp dấu "[ ]" quanh tag "' + cleanPrefix + '" ở đầu câu',
+            correction: 'Sửa thành "[' + canon + ']".',
+            suggested: '[' + canon + ']' + text.slice(firstOpen)
+          };
+        }
+      }
+
+      if (!cleanTicketSummary(text)) {
+        return {
+          valid: false,
+          issue: 'Chỉ có [Tag], thiếu nội dung mô tả lỗi phía sau',
+          correction: 'Nhập thêm mô tả lỗi sau phần [Tag].',
+          suggested: ''
+        };
+      }
+
+      let cursor = 0;
+      const cloneMatch = text.match(/^\s*(?:clone\s*[-:]\s*)+/i);
+      if (cloneMatch) cursor = cloneMatch[0].length;
+      const leadingPairs = [];
+      for (const pair of validPairs) {
+        if (text.slice(cursor, pair.openIdx).trim() === '') {
+          leadingPairs.push(pair);
+          cursor = pair.closeIdx + 1;
+        } else {
+          break;
+        }
+      }
+      const pairsToCheck = leadingPairs.length ? leadingPairs : [validPairs[0]];
+
+      for (const pair of pairsToCheck) {
+        const nt = normalizeTaskKey(pair.tag);
+        if (!nt || /^\d+$/.test(nt)) continue;
+
+        if (/[/,&-]/.test(pair.tag)) {
+          const subParts = pair.tag.split(/[/,&-]+/).map(normalizeTaskKey).filter(Boolean);
+          if (subParts.length > 1 && subParts.every(sp => allValidNorms.has(sp) && !COMMON_TAG_TYPOS[sp])) continue;
+        }
+
+        if (COMMON_TAG_TYPOS[nt]) {
+          const canon = COMMON_TAG_TYPOS[nt];
+          return {
+            valid: false,
+            issue: 'Tag nghi ngờ sai chính tả: [' + pair.tag + ']',
+            correction: 'Gợi ý đổi thành [' + canon + '].',
+            suggested: text.slice(0, pair.openIdx) + '[' + canon + ']' + text.slice(pair.closeIdx + 1)
+          };
+        }
+
+        if (allValidNorms.has(nt) || (batchTagCounts?.get(nt) || 0) >= 2) continue;
+
+        if (nt.length >= 4) {
+          let bestSuggestion = '';
+          let bestDist = 99;
+          for (const [kNorm, kDisp] of standardMap.entries()) {
+            if (Math.abs(nt.length - kNorm.length) > 2) continue;
+            if (nt + 's' === kNorm || kNorm + 's' === nt) continue;
+            const dist = damerauLevenshteinDistance(nt, kNorm);
+            const maxAllowed = (nt.length >= 9 && kNorm.length >= 9 && nt[0] === kNorm[0]) ? 2 : 1;
+            if (nt.length <= 5 && (dist > 1 || nt[0] !== kNorm[0])) continue;
+            if (dist <= maxAllowed && dist < bestDist) {
+              bestDist = dist;
+              bestSuggestion = kDisp;
+            }
+          }
+          if (bestSuggestion) {
+            return {
+              valid: false,
+              issue: 'Tag có thể bị typo: [' + pair.tag + ']',
+              correction: 'Có thể bạn muốn dùng [' + bestSuggestion + '].',
+              suggested: text.slice(0, pair.openIdx) + '[' + bestSuggestion + ']' + text.slice(pair.closeIdx + 1)
+            };
+          }
+        }
+      }
+
+      return { valid: true };
     }
 
-    function tagEditDistanceAtMostOne(a, b) {
-      if (a === b || Math.abs(a.length - b.length) > 1) return false;
-      let i = 0, j = 0, edits = 0;
-      while (i < a.length && j < b.length) {
-        if (a[i] === b[j]) { i++; j++; continue; }
-        if (++edits > 1) return false;
-        if (a.length > b.length) i++;
-        else if (b.length > a.length) j++;
-        else { i++; j++; }
-      }
-      if (i < a.length || j < b.length) edits++;
-      return edits === 1;
-    }
-
-    function collectInvalidTagSummaries(issues) {
-      const invalid = new Set();
-      const tagCounts = new Map();
+    function collectMalformedJiraIssues(issues) {
+      const batchTagCounts = new Map();
+      const batchCanonicalByNorm = new Map();
       (issues || []).forEach(issue => {
         const summary = String(issue?.fields?.summary || '');
         parseTagsFromSummary(summary).forEach(tag => {
           const norm = normalizeTaskKey(tag);
-          if (norm.length >= 6) tagCounts.set(norm, (tagCounts.get(norm) || 0) + 1);
+          if (norm.length >= 3) {
+            batchTagCounts.set(norm, (batchTagCounts.get(norm) || 0) + 1);
+            if (!batchCanonicalByNorm.has(norm)) batchCanonicalByNorm.set(norm, tag);
+          }
         });
       });
+
+      const malformed = [];
       (issues || []).forEach(issue => {
+        const key = String(issue?.key || '').trim();
         const summary = String(issue?.fields?.summary || '');
-        if (!summary.trim()) return;
-        if (hasUnclosedTagWithText(summary)) {
-          invalid.add(summary.trim().toLowerCase());
-          return;
+        const status = String(issue?.fields?.status?.name || 'N/A').trim();
+        if (!key) return;
+        const check = inspectTicketTagFormatAndTypos(summary, batchTagCounts, batchCanonicalByNorm);
+        if (!check.valid) {
+          malformed.push({
+            key, summary, status,
+            issue: check.issue,
+            correction: check.correction,
+            suggested: check.suggested || '',
+            isActiveStatus: Boolean(getJiraStatusGroup(status))
+          });
         }
-        const tags = parseTagsFromSummary(summary);
-        for (const tag of tags) {
-          const norm = normalizeTaskKey(tag);
-          if (norm.length < 6 || (tagCounts.get(norm) || 0) !== 1) continue;
-          const candidates = [...tagCounts.keys()].filter(other => (tagCounts.get(other) || 0) >= 2 && tagEditDistanceAtMostOne(norm, other));
-          if (candidates.length === 1) {
-            invalid.add(summary.trim().toLowerCase());
-            break;
-          }
-        }
+      });
+      return [...new Map(malformed.map(m => [m.key + '|' + m.summary, m])).values()]
+        .sort((a, b) => Number(b.isActiveStatus) - Number(a.isActiveStatus));
+    }
+
+    function collectInvalidTagSummaries(issues) {
+      const invalid = new Set();
+      collectMalformedJiraIssues(issues).forEach(m => {
+        if (m.summary.trim()) invalid.add(m.summary.trim().toLowerCase());
       });
       return invalid;
     }
 
     function hasValidTicketSummary(summary, invalidSet) {
-      return typeof summary === 'string' &&
-        cleanTicketSummary(summary).trim().length > 0 &&
-        parseTagsFromSummary(summary).length > 0 &&
-        !hasUnclosedTagWithText(summary) &&
-        !(invalidSet && invalidSet.has(summary.trim().toLowerCase()));
+      if (typeof summary !== 'string' || !summary.trim()) return false;
+      if (invalidSet && invalidSet.has(summary.trim().toLowerCase())) return false;
+      return cleanTicketSummary(summary).trim().length > 0 && parseTagsFromSummary(summary).length > 0;
+    }
+
+    function resolveTpJiraBrowseUrl(issueKey) {
+      const key = String(issueKey || '').trim();
+      if (!key) return '';
+      let base = String(selectedRecentJiraProject?.siteUrl || '').trim().replace(/\/+$/, '');
+      if (!base && selectedRecentJiraProject?.siteName) {
+        const slug = String(selectedRecentJiraProject.siteName).trim().toLowerCase().replace(/[^a-z0-9-]/g, '');
+        if (slug) base = 'https://' + slug + '.atlassian.net';
+      }
+      return base ? (base + '/browse/' + encodeURIComponent(key)) : '';
+    }
+
+    function showMalformedJiraPopupTp(issues, forceOpen = false) {
+      const items = collectMalformedJiraIssues(issues);
+      if (!items.length) {
+        document.getElementById('tpMalformedTagPopup')?.remove();
+        return;
+      }
+      if (forceOpen) document.getElementById('tpMalformedTagPopup')?.remove();
+      else if (document.getElementById('tpMalformedTagPopup')) return;
+
+      const overlay = document.createElement('div');
+      overlay.id = 'tpMalformedTagPopup';
+      overlay.style.cssText = 'position:fixed;inset:0;z-index:130;display:flex;align-items:center;justify-content:center;padding:16px;background:rgba(15,23,42,.62);backdrop-filter:blur(3px);';
+
+      const dialog = document.createElement('div');
+      dialog.style.cssText = 'width:min(100%,680px);max-height:86vh;display:flex;flex-direction:column;overflow:hidden;border:1px solid var(--line);border-radius:18px;background:var(--surface);color:var(--text);box-shadow:0 24px 70px rgba(15,23,42,.35);';
+
+      const head = document.createElement('div');
+      head.style.cssText = 'display:flex;align-items:flex-start;justify-content:space-between;gap:12px;padding:15px 18px;border-bottom:1px solid #fde68a;background:#fffbeb;color:#1e293b;';
+      head.innerHTML = '<div style="display:flex;gap:11px;align-items:flex-start;"><span style="width:34px;height:34px;border-radius:50%;display:grid;place-items:center;background:#fef3c7;color:#b45309;flex:none;"><i class="fa-solid fa-triangle-exclamation"></i></span><div><strong style="display:block;font-size:14px;">Phát hiện ' + items.length + ' ticket sai định dạng hoặc typo Tag</strong><span style="display:block;margin-top:3px;font-size:11.5px;color:#475569;line-height:1.45;">Các ticket dưới đây thiếu dấu <b>[</b>, <b>]</b> hoặc nghi ngờ sai chính tả Tag. Bấm mở Jira để sửa lại cho chuẩn.</span></div></div>';
+      const closeX = document.createElement('button');
+      closeX.type = 'button';
+      closeX.style.cssText = 'border:0;background:transparent;color:#64748b;cursor:pointer;font-size:16px;padding:4px;';
+      closeX.innerHTML = '<i class="fa-solid fa-xmark"></i>';
+      closeX.onclick = () => overlay.remove();
+      head.appendChild(closeX);
+
+      const list = document.createElement('div');
+      list.style.cssText = 'overflow-y:auto;padding:14px 18px;display:grid;gap:10px;';
+
+      items.forEach(entry => {
+        const url = resolveTpJiraBrowseUrl(entry.key);
+        const card = document.createElement('div');
+        card.style.cssText = 'border:1px solid var(--line);border-radius:12px;padding:11px 13px;background:var(--soft);display:grid;gap:6px;';
+
+        const top = document.createElement('div');
+        top.style.cssText = 'display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:8px;';
+
+        const left = document.createElement('div');
+        left.style.cssText = 'display:flex;align-items:center;gap:8px;';
+        const keyEl = document.createElement(url ? 'a' : 'strong');
+        keyEl.textContent = entry.key;
+        keyEl.style.cssText = 'font-size:13px;font-weight:800;color:#4f46e5;text-decoration:none;';
+        if (url) { keyEl.href = url; keyEl.target = '_blank'; keyEl.rel = 'noopener noreferrer'; }
+        const stEl = document.createElement('span');
+        stEl.textContent = entry.status;
+        stEl.style.cssText = 'font-size:10px;font-weight:700;padding:2px 8px;border-radius:999px;' + (entry.isActiveStatus ? 'background:#fef3c7;color:#92400e;' : 'background:#e2e8f0;color:#475569;');
+        left.append(keyEl, stEl);
+
+        const actions = document.createElement('div');
+        actions.style.cssText = 'display:flex;align-items:center;gap:6px;';
+        if (entry.suggested) {
+          const copyBtn = document.createElement('button');
+          copyBtn.type = 'button';
+          copyBtn.style.cssText = 'border:1px solid #a7f3d0;background:#ecfdf5;color:#047857;border-radius:8px;padding:4px 9px;font-size:11px;font-weight:700;cursor:pointer;';
+          copyBtn.innerHTML = '<i class="fa-regular fa-copy"></i> Copy câu sửa';
+          copyBtn.onclick = async () => {
+            try { await navigator.clipboard.writeText(entry.suggested); showToast('Đã copy gợi ý', 'Đã sao chép Summary chuẩn cho ' + entry.key + '.'); } catch (e) {}
+          };
+          actions.appendChild(copyBtn);
+        }
+        if (url) {
+          const openLink = document.createElement('a');
+          openLink.href = url;
+          openLink.target = '_blank';
+          openLink.rel = 'noopener noreferrer';
+          openLink.style.cssText = 'background:#4f46e5;color:#fff;border-radius:8px;padding:5px 10px;font-size:11px;font-weight:700;text-decoration:none;display:inline-flex;align-items:center;gap:5px;';
+          openLink.innerHTML = 'Mở Jira sửa <i class="fa-solid fa-arrow-up-right-from-square" style="font-size:10px;"></i>';
+          actions.appendChild(openLink);
+        }
+        top.append(left, actions);
+
+        const warn = document.createElement('div');
+        warn.style.cssText = 'font-size:11.5px;font-weight:700;color:#e11d48;';
+        warn.textContent = '⚠ ' + entry.issue + ' — ' + entry.correction;
+
+        const sum = document.createElement('div');
+        sum.style.cssText = 'font-family:ui-monospace,SFMono-Regular,Consolas,monospace;font-size:11.5px;padding:6px 9px;border-radius:8px;border:1px solid var(--line);background:var(--surface);overflow-wrap:anywhere;';
+        sum.textContent = entry.summary || '(Trống)';
+
+        card.append(top, warn, sum);
+        if (entry.suggested) {
+          const sug = document.createElement('div');
+          sug.style.cssText = 'font-size:11px;font-weight:600;color:#059669;overflow-wrap:anywhere;';
+          sug.textContent = '✓ Gợi ý chuẩn: ' + entry.suggested;
+          card.appendChild(sug);
+        }
+        list.appendChild(card);
+      });
+
+      const foot = document.createElement('div');
+      foot.style.cssText = 'display:flex;justify-content:flex-end;gap:8px;padding:12px 18px;border-top:1px solid var(--line);background:var(--soft);';
+      const doneBtn = document.createElement('button');
+      doneBtn.type = 'button';
+      doneBtn.className = 'button button-primary';
+      doneBtn.textContent = 'Đã hiểu';
+      doneBtn.onclick = () => overlay.remove();
+      foot.appendChild(doneBtn);
+
+      dialog.append(head, list, foot);
+      overlay.appendChild(dialog);
+      overlay.addEventListener('click', e => { if (e.target === overlay) overlay.remove(); });
+      document.body.appendChild(overlay);
     }
 
     // Đồng bộ 100% với STATUS_GROUPS mặc định trên index.html: chỉ lấy To Do, In Progress và Fixed/Done
@@ -1117,6 +1531,7 @@
         });
         loadedJiraIssues = Array.isArray(data.issues) ? data.issues : [];
         analyzeJiraTickets();
+        showMalformedJiraPopupTp(loadedJiraIssues, true);
         showToast('Tải ticket Jira thành công', 'Đã tải ' + loadedJiraIssues.length + ' ticket từ project ' + (item.projectName || item.projectKey) + '.');
       } catch (err) {
         loadedJiraIssues = [];
