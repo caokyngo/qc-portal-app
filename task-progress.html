@@ -18,13 +18,27 @@
   </script>
   <script>
     let loggedInUser = null;
+    function isAllowedPortalEmail(email) {
+      return /^[^@\s]+@enotion\.io$/i.test(String(email || '').trim());
+    }
     function decodeJwtResponse(token) {
       const payload = token.split('.')[1].replace(/-/g, '+').replace(/_/g, '/');
       return JSON.parse(decodeURIComponent(atob(payload).split('').map(char => '%' + ('00' + char.charCodeAt(0).toString(16)).slice(-2)).join('')));
     }
     function handleCredentialResponse(response) {
       const user = decodeJwtResponse(response.credential);
-      loggedInUser = { name: user.name, email: user.email, picture: user.picture };
+      const email = String(user.email || '').trim();
+      if (!isAllowedPortalEmail(email)) {
+        if (window.google?.accounts?.id) google.accounts.id.disableAutoSelect();
+        loggedInUser = null;
+        localStorage.removeItem('jira_google_user');
+        if (typeof updateAuthUI === 'function') updateAuthUI();
+        if (typeof showToast === 'function') {
+          showToast('Chỉ hỗ trợ @enotion.io', 'Vui lòng đăng nhập bằng tài khoản công ty @enotion.io.', true);
+        }
+        return;
+      }
+      loggedInUser = { name: user.name, email: email, picture: user.picture };
       localStorage.setItem('jira_google_user', JSON.stringify(loggedInUser));
       updateAuthUI();
     }
@@ -428,7 +442,7 @@
       </div>
       <button type="button" id="themeToggle" class="button button-icon" aria-label="Chuyển chế độ màu" title="Chuyển chế độ màu" onclick="toggleTheme()"><i class="fa-solid fa-moon"></i></button>
       <div id="authSection" class="auth-section">
-        <div id="g_id_onload" data-client_id="149310433677-uvpoilv41na98qdjlj58cpmfl8u9946e.apps.googleusercontent.com" data-callback="handleCredentialResponse" data-auto_prompt="false"></div>
+        <div id="g_id_onload" data-client_id="149310433677-uvpoilv41na98qdjlj58cpmfl8u9946e.apps.googleusercontent.com" data-hd="enotion.io" data-callback="handleCredentialResponse" data-auto_prompt="false"></div>
         <div id="loginOption" class="login-option">
           <img src="https://cdn-icons-png.flaticon.com/512/149/149071.png" alt="Guest">
           <span class="login-label">Đăng nhập</span>
@@ -740,9 +754,20 @@
     let activeJiraBlockingTasks = new Set();
     let jiraIssuesLoading = false;
 
+    function getCurrentUserEmail() {
+      return String((loggedInUser && loggedInUser.email) || '').trim().toLowerCase();
+    }
+
+    function getUserRecentProjectsKey() {
+      const email = getCurrentUserEmail();
+      return email ? (JIRA_RECENT_PROJECTS_KEY + ':' + email) : '';
+    }
+
     function getRecentJiraProjects() {
+      const userKey = getUserRecentProjectsKey();
+      if (!userKey) return [];
       try {
-        const val = JSON.parse(localStorage.getItem(JIRA_RECENT_PROJECTS_KEY) || '[]');
+        const val = JSON.parse(localStorage.getItem(userKey) || '[]');
         return Array.isArray(val) ? val : [];
       } catch (e) { return []; }
     }
@@ -766,6 +791,8 @@
       window[callbackName] = data => finish(onSuccess, data);
       script.onerror = () => finish(onError, new Error('Không kết nối được Jira Proxy.'));
       const query = new URLSearchParams(params || {});
+      const portalEmail = getCurrentUserEmail();
+      if (portalEmail) query.set('portalUser', portalEmail);
       query.set('callback', callbackName);
       query.set('_t', Date.now());
       script.src = JIRA_PROXY_API_URL + (JIRA_PROXY_API_URL.includes('?') ? '&' : '?') + query.toString();
@@ -870,7 +897,11 @@
       const targetKey = getRecentJiraItemKey(target);
       const wasSelected = Boolean(selectedRecentJiraProject && getRecentJiraItemKey(selectedRecentJiraProject) === targetKey);
       const next = recents.filter(row => getRecentJiraItemKey(row) !== targetKey);
-      try { localStorage.setItem(JIRA_RECENT_PROJECTS_KEY, JSON.stringify(next)); } catch (e) {}
+      const userKey = getUserRecentProjectsKey();
+      try {
+        if (userKey) localStorage.setItem(userKey, JSON.stringify(next));
+        localStorage.setItem(JIRA_RECENT_PROJECTS_KEY, JSON.stringify(next));
+      } catch (e) {}
       if (wasSelected) {
         deselectRecentJiraProject(true);
       } else {
@@ -1106,10 +1137,21 @@
       document.querySelector('.menu-toggle')?.setAttribute('aria-expanded', 'false');
     }
     document.addEventListener('keydown', event => { if (event.key === 'Escape') closeSidebar(); });
+    let lastTpAuthenticatedEmail = '';
     function updateAuthUI() {
       let user = null;
-      try { user = JSON.parse(localStorage.getItem('jira_google_user') || 'null'); } catch (e) { localStorage.removeItem('jira_google_user'); }
+      try {
+        const parsed = JSON.parse(localStorage.getItem('jira_google_user') || 'null');
+        if (parsed && isAllowedPortalEmail(parsed.email)) user = parsed;
+        else if (parsed) localStorage.removeItem('jira_google_user');
+      } catch (e) { localStorage.removeItem('jira_google_user'); }
       loggedInUser = user;
+      const nextEmail = getCurrentUserEmail();
+      if (lastTpAuthenticatedEmail !== nextEmail) {
+        lastTpAuthenticatedEmail = nextEmail;
+        if (selectedRecentJiraProject) deselectRecentJiraProject(true);
+        else renderRecentJiraProjects();
+      }
       const login = document.getElementById('loginOption');
       const profile = document.getElementById('userProfileBtn');
       const dropdown = document.getElementById('userDropdown');
@@ -1805,7 +1847,14 @@
       }
     }
     window.addEventListener('storage', event => {
-      if (event.key === JIRA_RECENT_PROJECTS_KEY) renderRecentJiraProjects();
+      if (event.key === 'jira_google_user') {
+        updateAuthUI();
+        return;
+      }
+      const userKey = getUserRecentProjectsKey();
+      if (event.key === JIRA_RECENT_PROJECTS_KEY || (userKey && event.key === userKey)) {
+        renderRecentJiraProjects();
+      }
     });
 
     window.addEventListener('focus', () => {
