@@ -539,7 +539,7 @@
                                     <label for="sheetNameInput" class="text-xs font-bold text-slate-700 flex items-center gap-1.5 whitespace-nowrap">
                                         <i class="fa-solid fa-table text-indigo-600"></i> Nguồn dữ liệu Tiến Độ Sheet (API):
                                     </label>
-                                    <input type="text" id="sheetNameInput" oninput="saveGSheetApiData()" placeholder="VD: 9684" class="w-full sm:w-[180px] bg-white border border-slate-300 text-slate-700 text-xs font-medium rounded-lg p-2 outline-none">
+                                    <input type="text" id="sheetNameInput" oninput="saveGSheetApiData(true)" onchange="saveGSheetApiData(true)" placeholder="VD: 9684 hoặc 9683-213" class="w-full sm:w-[180px] bg-white border border-slate-300 text-slate-700 text-xs font-medium rounded-lg p-2 outline-none">
                                 </div>
                                 <div class="flex items-center gap-2 shrink-0">
                                     <span id="reportGasAuthBadge" class="inline-flex items-center gap-1.5 rounded-full border border-slate-200 bg-white px-2.5 py-1 text-[11px] font-semibold text-slate-500">
@@ -991,6 +991,7 @@
                 epicSummary,
                 parentKey,
                 parentSummary,
+                sheetName: (prevSame && prevSame.sheetName) || '',
                 jql: savedJql,
                 usedAt: Date.now()
             };
@@ -1221,15 +1222,97 @@
             syncVersionGameValue(false);
         }
 
+        const JIRA_SHEET_MAP_KEY = 'jira_custom_sheet_map_v1';
+
+        function getCustomSheetMapStorageKey() {
+            const email = getCurrentUserEmail();
+            return email ? `${JIRA_SHEET_MAP_KEY}:${email}` : JIRA_SHEET_MAP_KEY;
+        }
+
+        function getCustomSheetMap() {
+            try {
+                const raw = localStorage.getItem(getCustomSheetMapStorageKey()) || localStorage.getItem(JIRA_SHEET_MAP_KEY) || '{}';
+                const parsed = JSON.parse(raw);
+                return (parsed && typeof parsed === 'object' && !Array.isArray(parsed)) ? parsed : {};
+            } catch (e) {
+                return {};
+            }
+        }
+
+        function setCustomSheetMap(mapObj) {
+            try {
+                const serialized = JSON.stringify(mapObj || {});
+                localStorage.setItem(getCustomSheetMapStorageKey(), serialized);
+                localStorage.setItem(JIRA_SHEET_MAP_KEY, serialized);
+            } catch (e) {}
+        }
+
+        function getCurrentJiraContextKey() {
+            const siteObj = selectedJiraSite || (activeJiraSession && activeJiraSession.site) || null;
+            const spaceObj = selectedJiraSpace || (activeJiraSession && activeJiraSession.space) || null;
+            const projectObj = selectedJiraProject || (activeJiraSession && activeJiraSession.project) || null;
+            const boardCtx = jiraBoardCtx || (activeJiraSession && activeJiraSession.boardCtx) || null;
+
+            const siteId = String((siteObj && siteObj.id) || (boardCtx && boardCtx.siteParams && boardCtx.siteParams.site) || '').trim();
+            const projectKey = String((boardCtx && boardCtx.projectKey) || (spaceObj && spaceObj.key) || '').trim();
+            const spaceId = String((spaceObj && spaceObj.id) || (spaceObj && spaceObj.key) || projectKey || '').trim();
+            const projectId = String((projectObj && projectObj.id) || (boardCtx && boardCtx.boardId) || '').trim();
+            const epicKey = String(selectedParentValue || (activeJiraSession && activeJiraSession.parentValue) || '').trim();
+            const parentKey = String(selectedTargetParentValue || (activeJiraSession && activeJiraSession.targetParentValue) || '').trim();
+
+            if (!epicKey && !projectId) return '';
+            return getRecentJiraItemKey({ siteId, spaceId, projectKey, projectId, epicKey, parentKey });
+        }
+
+        function resolveSavedCustomSheetName(gameName = '') {
+            const trimmedGame = String(gameName || '').trim();
+            const normGame = trimmedGame.toLowerCase();
+            const gameId = trimmedGame.match(/^(\d+)/)?.[1] || '';
+            const ctxKey = getCurrentJiraContextKey();
+            const map = getCustomSheetMap();
+
+            const pickValid = (entry) => {
+                if (!entry) return '';
+                const sheet = typeof entry === 'string' ? entry : String(entry.sheet || '').trim();
+                const entryGameId = typeof entry === 'object' ? String(entry.gameId || '').trim() : '';
+                if (!sheet) return '';
+                if (gameId && entryGameId && gameId !== entryGameId) return '';
+                return sheet;
+            };
+
+            if (ctxKey) {
+                const byCtx = pickValid(map['ctx:' + ctxKey]);
+                if (byCtx) return byCtx;
+                const recentMatch = getRecentJiraProjects().find(r => getRecentJiraItemKey(r) === ctxKey);
+                if (recentMatch && recentMatch.sheetName) return String(recentMatch.sheetName).trim();
+            }
+            if (normGame) {
+                const byGame = pickValid(map['game:' + normGame]);
+                if (byGame) return byGame;
+            }
+            if (gameId) {
+                const byId = pickValid(map['id:' + gameId]);
+                if (byId) return byId;
+            }
+            return '';
+        }
+
         function autoUpdateSheetName() {
-            const gameName = document.getElementById('reportGameNameInput')?.value.trim();
+            const gameName = document.getElementById('reportGameNameInput')?.value.trim() || '';
             const sheetInput = document.getElementById('sheetNameInput');
-            if (gameName && sheetInput) {
-                const match = gameName.match(/^(\d+)/);
-                if (match) {
-                    sheetInput.value = match[1];
-                    saveGSheetApiData();
-                }
+            if (!gameName || !sheetInput) return;
+
+            const savedCustom = resolveSavedCustomSheetName(gameName);
+            if (savedCustom) {
+                sheetInput.value = savedCustom;
+                saveGSheetApiData(false);
+                return;
+            }
+
+            const match = gameName.match(/^(\d+)/);
+            if (match) {
+                sheetInput.value = match[1];
+                saveGSheetApiData(false);
             }
         }
 
@@ -2240,6 +2323,9 @@
                 return;
             }
         
+            const isInPlaceDashboardRefresh = Boolean(
+                forceRefresh && !jqlOverride && !document.getElementById('reportDashboard')?.classList.contains('hidden')
+            );
             const btn = document.getElementById('btnFetchJira');
             const origHtml = btn.innerHTML;
             const refreshBtn = document.getElementById('btnRefreshJiraData');
@@ -2309,7 +2395,16 @@
                 currentBoardId = jiraBoardCtx.boardId || json.boardId || null;
                 currentProjectKey = jiraBoardCtx.projectKey;
                 currentParentKey = selectedTargetParentValue || selectedParentValue;
-                applyProjectName(resolvedGameName || jiraBoardCtx.projectName || jiraBoardCtx.projectKey);
+                if (isInPlaceDashboardRefresh && document.getElementById('reportGameNameInput')?.value.trim()) {
+                    const sheetInput = document.getElementById('sheetNameInput');
+                    if (sheetInput && !sheetInput.value.trim()) {
+                        autoUpdateSheetName();
+                    } else if (sheetInput) {
+                        saveGSheetApiData(false);
+                    }
+                } else {
+                    applyProjectName(resolvedGameName || jiraBoardCtx.projectName || jiraBoardCtx.projectKey);
+                }
                 rawJiraData = issues.map(item => {
                     const fields = item.fields || {};
                     return {
@@ -2997,7 +3092,11 @@
             initializeScopePicker();
 
             const savedSheetName = localStorage.getItem('jira_sheet_name');
-            if (savedSheetName && document.getElementById('sheetNameInput')) document.getElementById('sheetNameInput').value = savedSheetName;
+            const currentLoadedGame = document.getElementById('reportGameNameInput')?.value.trim() || '';
+            const mappedSheetName = currentLoadedGame ? resolveSavedCustomSheetName(currentLoadedGame) : '';
+            if (document.getElementById('sheetNameInput')) {
+                document.getElementById('sheetNameInput').value = mappedSheetName || savedSheetName || '';
+            }
             
             const savedQC = localStorage.getItem('jira_qc_members');
             if (savedQC && document.getElementById('qcMembersInput')) document.getElementById('qcMembersInput').value = savedQC;
@@ -3515,8 +3614,44 @@
             } else return { val: null, unrolled: allUnrolled };
         }
 
-        function saveGSheetApiData() { 
-            localStorage.setItem('jira_sheet_name', document.getElementById('sheetNameInput').value.trim()); 
+        function saveGSheetApiData(isManual = false) {
+            const sheetInput = document.getElementById('sheetNameInput');
+            if (!sheetInput) return;
+            const val = sheetInput.value.trim();
+            localStorage.setItem('jira_sheet_name', val);
+
+            if (!isManual) return;
+
+            const gameName = document.getElementById('reportGameNameInput')?.value.trim() || '';
+            const normGame = gameName.toLowerCase();
+            const gameId = gameName.match(/^(\d+)/)?.[1] || '';
+            const ctxKey = getCurrentJiraContextKey();
+            const map = getCustomSheetMap();
+
+            if (val) {
+                const record = { sheet: val, gameId, updatedAt: Date.now() };
+                if (ctxKey) map['ctx:' + ctxKey] = record;
+                if (normGame) map['game:' + normGame] = record;
+                if (gameId) map['id:' + gameId] = record;
+            } else {
+                if (ctxKey) delete map['ctx:' + ctxKey];
+                if (normGame) delete map['game:' + normGame];
+                if (gameId) delete map['id:' + gameId];
+            }
+            setCustomSheetMap(map);
+
+            if (ctxKey) {
+                const userKey = getUserRecentProjectsKey();
+                const recents = getRecentJiraProjects();
+                const idx = recents.findIndex(r => getRecentJiraItemKey(r) === ctxKey);
+                if (idx !== -1) {
+                    recents[idx].sheetName = val;
+                    if (userKey) {
+                        try { localStorage.setItem(userKey, JSON.stringify(recents)); } catch (e) {}
+                        syncSharedRecentProjectsKey(recents);
+                    }
+                }
+            }
         }
 
         function parseProgressDataFromMatrix(rows, taskSummaries = []) {
