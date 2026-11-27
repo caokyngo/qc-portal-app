@@ -4330,7 +4330,7 @@
             };
 
             const lines = [];
-            if (doneRaw.length > 0) { lines.push('- DONE: ' + doneOverall); lines.push(...consolidate(doneRaw, true)); }
+            if (doneRaw.length > 0) { lines.push('- PASSED: ' + doneOverall); lines.push(...consolidate(doneRaw, true)); }
             if (inProgressRaw.length > 0) {
                 lines.push('- IN PROGRESS: ' + inProgressOverall);
                 const inProgressWithBreakdowns = inProgressRaw.map(item => {
@@ -4832,7 +4832,7 @@
                 const doneTasks = tasks.filter(task => task.status === 'done');
                 const remainingTasks = tasks.filter(task => task.status !== 'done');
                 if (doneTasks.length) {
-                    lines.push('  * DONE:');
+                    lines.push('  * PASSED:');
                     doneTasks.forEach(task => lines.push(`    + ${task.name}`));
                 }
                 if (remainingTasks.length) {
