@@ -784,6 +784,44 @@
         let jiraOAuthProbeInFlight = false;
         const JIRA_RECENT_PROJECTS_KEY = 'jira_recent_projects_v1';
         let jiraRecentProjectLoadInFlight = false;
+        let lastAuthenticatedEmail = '';
+        let authSessionToken = 0;
+
+        function getCurrentUserEmail() {
+            return String((loggedInUser && loggedInUser.email) || '').trim().toLowerCase();
+        }
+
+        function appendAuthUser(rawUrl) {
+            if (!rawUrl) return rawUrl;
+            try {
+                const url = new URL(rawUrl);
+                const email = getCurrentUserEmail();
+                if (email) url.searchParams.set('authuser', email);
+                return url.toString();
+            } catch (e) {
+                return rawUrl;
+            }
+        }
+
+        function getSelectedSiteStorageKey() {
+            const email = getCurrentUserEmail();
+            return email ? `jira_selected_site:${email}` : 'jira_selected_site';
+        }
+
+        function getUserRecentProjectsKey() {
+            const email = getCurrentUserEmail();
+            return email ? `${JIRA_RECENT_PROJECTS_KEY}:${email}` : '';
+        }
+
+        function syncSharedRecentProjectsKey(items) {
+            try {
+                if (getCurrentUserEmail()) {
+                    localStorage.setItem(JIRA_RECENT_PROJECTS_KEY, JSON.stringify(Array.isArray(items) ? items : []));
+                } else {
+                    localStorage.removeItem(JIRA_RECENT_PROJECTS_KEY);
+                }
+            } catch (e) {}
+        }
 
         function getRecentJiraItemKey(item) {
             if (!item) return '';
@@ -837,7 +875,14 @@
         }
 
         function getRecentJiraProjects() {
-            try { const value = JSON.parse(localStorage.getItem(JIRA_RECENT_PROJECTS_KEY) || '[]'); return Array.isArray(value) ? value : []; } catch (e) { return []; }
+            const userKey = getUserRecentProjectsKey();
+            if (!userKey) return [];
+            try {
+                const value = JSON.parse(localStorage.getItem(userKey) || '[]');
+                return Array.isArray(value) ? value : [];
+            } catch (e) {
+                return [];
+            }
         }
 
         function removeRecentJiraProject(targetItem, event) {
@@ -845,25 +890,28 @@
                 event.preventDefault();
                 event.stopPropagation();
             }
+            const userKey = getUserRecentProjectsKey();
             const targetKey = getRecentJiraItemKey(targetItem);
-            if (!targetKey) return;
+            if (!userKey || !targetKey) return;
             const next = getRecentJiraProjects().filter(row => getRecentJiraItemKey(row) !== targetKey);
-            try { localStorage.setItem(JIRA_RECENT_PROJECTS_KEY, JSON.stringify(next)); } catch (e) {}
+            try { localStorage.setItem(userKey, JSON.stringify(next)); } catch (e) {}
+            syncSharedRecentProjectsKey(next);
             renderRecentJiraProjects();
         }
 
         // Chỉ cần gọi khi API tải ticket trả về thành công; so sánh đúng 5 thành phần:
         // siteId | spaceId | projectId | epicKey | parentKey
         function saveRecentJiraProject(jql) {
+            const siteStorageKey = getSelectedSiteStorageKey();
             const siteObj = selectedJiraSite
                 || (activeJiraSession && activeJiraSession.site)
-                || jiraConnectedSites.find(s => String(s.id) === String((jiraBoardCtx && jiraBoardCtx.siteParams && jiraBoardCtx.siteParams.site) || localStorage.getItem('jira_selected_site') || ''))
+                || jiraConnectedSites.find(s => String(s.id) === String((jiraBoardCtx && jiraBoardCtx.siteParams && jiraBoardCtx.siteParams.site) || localStorage.getItem(siteStorageKey) || ''))
                 || null;
             const spaceObj = selectedJiraSpace || (activeJiraSession && activeJiraSession.space) || null;
             const projectObj = selectedJiraProject || (activeJiraSession && activeJiraSession.project) || null;
             const boardCtx = jiraBoardCtx || (activeJiraSession && activeJiraSession.boardCtx) || null;
 
-            const siteId = String((siteObj && siteObj.id) || (boardCtx && boardCtx.siteParams && boardCtx.siteParams.site) || localStorage.getItem('jira_selected_site') || '').trim();
+            const siteId = String((siteObj && siteObj.id) || (boardCtx && boardCtx.siteParams && boardCtx.siteParams.site) || localStorage.getItem(siteStorageKey) || '').trim();
             const projectKey = String((boardCtx && boardCtx.projectKey) || (spaceObj && spaceObj.key) || '').trim();
             const spaceId = String((spaceObj && spaceObj.id) || (spaceObj && spaceObj.key) || projectKey || '').trim();
             const projectId = String((projectObj && projectObj.id) || (boardCtx && boardCtx.boardId) || '').trim();
@@ -938,7 +986,12 @@
                 // Khác ít nhất 1 trong 5 thành phần: lưu và tạo nút mới trên UI
                 next = [item, ...existingList];
             }
-            try { localStorage.setItem(JIRA_RECENT_PROJECTS_KEY, JSON.stringify(next)); } catch (e) {}
+            const userKey = getUserRecentProjectsKey();
+            if (userKey) {
+                item.ownerEmail = getCurrentUserEmail();
+                try { localStorage.setItem(userKey, JSON.stringify(next)); } catch (e) {}
+                syncSharedRecentProjectsKey(next);
+            }
             renderRecentJiraProjects();
         }
 
@@ -1389,15 +1442,16 @@
         function renderJiraSites(sites) {
             jiraConnectedSites = Array.isArray(sites) ? sites : [];
             renderRecentJiraProjects();
-            const isDashboardOpen = !document.getElementById('reportDashboard')?.classList.contains('hidden');
+            const siteStorageKey = getSelectedSiteStorageKey();
+            const isDashboardOpen = Boolean(loggedInUser) && !document.getElementById('reportDashboard')?.classList.contains('hidden');
             const activeSiteId = isDashboardOpen
                 ? ((selectedJiraSite && String(selectedJiraSite.id)) || (activeJiraSession && activeJiraSession.site && String(activeJiraSession.site.id)) || '')
                 : '';
-            const previouslySelected = activeSiteId || localStorage.getItem('jira_selected_site') || '';
+            const previouslySelected = activeSiteId || (loggedInUser ? (localStorage.getItem(siteStorageKey) || '') : '');
             const oldSiteId = selectedJiraSite ? String(selectedJiraSite.id) : '';
             selectedJiraSite = jiraConnectedSites.find(site => String(site.id) === previouslySelected) || (jiraConnectedSites.length === 1 ? jiraConnectedSites[0] : null);
-            if (selectedJiraSite) localStorage.setItem('jira_selected_site', String(selectedJiraSite.id));
-            else if (!isDashboardOpen) localStorage.removeItem('jira_selected_site');
+            if (selectedJiraSite && loggedInUser) localStorage.setItem(siteStorageKey, String(selectedJiraSite.id));
+            else if (!isDashboardOpen && loggedInUser) localStorage.removeItem(siteStorageKey);
             const label = document.getElementById('jiraSiteLabel');
             const siteToggle = document.getElementById('jiraSiteToggle');
             if (label) label.textContent = selectedJiraSite
@@ -1425,7 +1479,7 @@
         }
 
         function saveSelectedJiraSite() {
-            if (selectedJiraSite) localStorage.setItem('jira_selected_site', String(selectedJiraSite.id));
+            if (selectedJiraSite && loggedInUser) localStorage.setItem(getSelectedSiteStorageKey(), String(selectedJiraSite.id));
         }
 
         function formatWorkspaceName(site) {
@@ -1488,8 +1542,9 @@
             reportGasAuthChecking = true;
             if (!reportGasAuthorized) setReportGasAuthUI('checking', 'Đang kiểm tra quyền truy cập Google Sheet & Drive...');
 
+            const sessionToken = authSessionToken;
             const callback = 'reportGasPing_' + Date.now() + '_' + Math.floor(Math.random() * 1e6);
-            const url = new URL(URL_REPORT_API);
+            const url = new URL(appendAuthUser(URL_REPORT_API));
             url.searchParams.set('action', 'ping');
             url.searchParams.set('callback', callback);
             url.searchParams.set('_t', Date.now());
@@ -1502,6 +1557,7 @@
                 clearTimeout(timer);
                 delete window[callback];
                 if (script.parentNode) script.parentNode.removeChild(script);
+                if (sessionToken !== authSessionToken) return;
                 if (ok) {
                     setReportGasAuthUI('authorized', userEmail ? `Đã cấp quyền Sheet/Drive (${userEmail})` : 'Đã cấp quyền Sheet/Drive');
                 } else {
@@ -1521,7 +1577,7 @@
                 showToast('Yêu cầu đăng nhập Google', 'Hãy đăng nhập Google trước khi cấp quyền Sheet/Drive.', true);
                 return;
             }
-            const authUrl = URL_REPORT_API + (URL_REPORT_API.includes('?') ? '&' : '?') + 'action=authorize';
+            const authUrl = appendAuthUser(URL_REPORT_API + (URL_REPORT_API.includes('?') ? '&' : '?') + 'action=authorize');
             reportGasPopup = window.open(authUrl, '_blank', 'width=520,height=680');
             if (!reportGasPopup) {
                 showToast('Cho phép Popup', 'Trình duyệt đang chặn cửa sổ cấp quyền. Hãy cho phép popup rồi bấm lại.', true);
@@ -1623,18 +1679,48 @@
             jiraProjects = [];
             selectedJiraProject = null;
             jiraProjectsLoadedForSpace = '';
+            jiraProjectsLoadingForSpace = '';
             jiraBoardCtx = null;
             jiraParents = [];
             jiraTargetParents = [];
             selectedParentValue = null;
             selectedTargetParentValue = null;
+            jiraTargetParentError = '';
             currentParentKey = null;
+            parentLoadToken++;
+            parentLoading = false;
+
+            closeJiraCombo('project');
+            closeParentDropdown();
+            closeTargetParentDropdown();
+
             const projectLabel = document.getElementById('jiraProjectLabel');
             const projectToggle = document.getElementById('jiraProjectToggle');
             if (projectLabel) projectLabel.textContent = message;
             if (projectToggle) projectToggle.disabled = true;
+
             document.getElementById('jiraParentSection')?.classList.add('hidden');
             document.getElementById('jiraTargetParentSection')?.classList.add('hidden');
+
+            const parentLabel = document.getElementById('jiraParentLabel');
+            if (parentLabel) parentLabel.textContent = 'Chọn Epic (Game)...';
+            const parentCount = document.getElementById('jiraParentCount');
+            if (parentCount) parentCount.textContent = '';
+            const parentSearch = document.getElementById('jiraParentSearch');
+            if (parentSearch) parentSearch.value = '';
+            document.getElementById('jiraParentList')?.replaceChildren();
+
+            const targetLabel = document.getElementById('jiraTargetParentLabel');
+            if (targetLabel) targetLabel.textContent = 'Chọn Target Task...';
+            const targetCount = document.getElementById('jiraTargetParentCount');
+            if (targetCount) targetCount.textContent = '';
+            const targetSearch = document.getElementById('jiraTargetParentSearch');
+            if (targetSearch) targetSearch.value = '';
+            document.getElementById('jiraTargetParentList')?.replaceChildren();
+
+            const epicBadge = document.getElementById('jiraSelectedEpicLabel');
+            if (epicBadge) epicBadge.textContent = '';
+
             const boardLabel = document.getElementById('jiraBoardLabel');
             if (boardLabel) { boardLabel.textContent = message; boardLabel.removeAttribute('href'); }
             updateReportLoadButton();
@@ -1644,11 +1730,16 @@
         function resetJiraSpaceSelection(message = 'Chọn Workspace trước') {
             jiraSpaces = [];
             selectedJiraSpace = null;
+            jiraSpacesLoadedForSite = '';
+            jiraSpacesLoadingForSite = '';
             jiraProjectsLoadedForSpace = '';
+            closeJiraCombo('space');
             const spaceLabel = document.getElementById('jiraSpaceLabel');
             const spaceToggle = document.getElementById('jiraSpaceToggle');
             if (spaceLabel) spaceLabel.textContent = message;
             if (spaceToggle) spaceToggle.disabled = true;
+            const spaceSearch = document.getElementById('jiraSpaceSearch');
+            if (spaceSearch) spaceSearch.value = '';
             resetJiraProjectSelection('Chọn Space trước');
             renderJiraComboOptions('space');
         }
@@ -1739,6 +1830,7 @@
 
         async function loadJiraSpaces() {
             if (!selectedJiraSite || !jiraOAuthConnected) return;
+            const sessionToken = authSessionToken;
             const requestedSiteId = String(selectedJiraSite.id);
             if (jiraSpacesLoadingForSite === requestedSiteId || jiraSpacesLoadedForSite === requestedSiteId) return;
             jiraSpacesLoadingForSite = requestedSiteId;
@@ -1748,7 +1840,7 @@
             if (label) label.innerHTML = '<i class="fa-solid fa-spinner fa-spin mr-2"></i>Đang tải Space...';
             try {
                 const data = await requestJiraProxyJson({ action: 'spaces', site: requestedSiteId });
-                if (!selectedJiraSite || String(selectedJiraSite.id) !== requestedSiteId) return;
+                if (sessionToken !== authSessionToken || !selectedJiraSite || String(selectedJiraSite.id) !== requestedSiteId) return;
                 jiraSpaces = Array.isArray(data.spaces) ? data.spaces : [];
                 jiraSpacesLoadedForSite = requestedSiteId;
                 if (!jiraSpaces.length) throw new Error('Workspace này không có Jira Space/project mà bạn được quyền xem.');
@@ -1780,6 +1872,7 @@
 
         async function loadJiraProjects() {
             if (!selectedJiraSite || !selectedJiraSpace || !jiraOAuthConnected) return;
+            const sessionToken = authSessionToken;
             const requestedSpaceId = String(selectedJiraSpace.id);
             if (jiraProjectsLoadingForSpace === requestedSpaceId || jiraProjectsLoadedForSpace === requestedSpaceId) return;
             jiraProjectsLoadingForSpace = requestedSpaceId;
@@ -1789,7 +1882,7 @@
             if (label) label.innerHTML = '<i class="fa-solid fa-spinner fa-spin mr-2"></i>Đang tải project...';
             try {
                 const data = await requestJiraProxyJson({ action: 'projects', site: selectedJiraSite.id, projectKey: selectedJiraSpace.key });
-                if (!selectedJiraSpace || String(selectedJiraSpace.id) !== requestedSpaceId) return;
+                if (sessionToken !== authSessionToken || !selectedJiraSpace || String(selectedJiraSpace.id) !== requestedSpaceId) return;
                 jiraProjects = Array.isArray(data.projects) ? data.projects : [];
                 jiraProjectsLoadedForSpace = requestedSpaceId;
                 if (!jiraProjects.length) throw new Error('Space này chưa có project bạn được quyền truy cập.');
@@ -1866,6 +1959,8 @@
             window[callbackName] = data => finish(onSuccess, data);
             script.onerror = () => finish(onError, new Error('Không kết nối được Apps Script.'));
             const query = new URLSearchParams(params || {});
+            const email = getCurrentUserEmail();
+            if (email) query.set('authuser', email);
             query.set('callback', callbackName);
             query.set('_t', Date.now());
             script.src = JIRA_PROXY_API_URL + (JIRA_PROXY_API_URL.includes('?') ? '&' : '?') + query.toString();
@@ -1878,15 +1973,19 @@
                 showToast("Yêu cầu đăng nhập Google", "Hãy đăng nhập Google để mở Apps Script, sau đó kết nối tài khoản Atlassian của bạn.", true);
                 return;
             }
-            const connectUrl = JIRA_PROXY_API_URL + (JIRA_PROXY_API_URL.includes('?') ? '&' : '?') + 'action=connect';
+            const connectUrl = appendAuthUser(JIRA_PROXY_API_URL + (JIRA_PROXY_API_URL.includes('?') ? '&' : '?') + 'action=connect');
             purgeJiraCache();
+            Object.keys(jiraInflight).forEach(k => delete jiraInflight[k]);
+            ticketPrefetch = null;
             activeJiraSession = null;
+            localStorage.removeItem(getSelectedSiteStorageKey());
             localStorage.removeItem('jira_selected_site');
             selectedJiraSite = null;
             resetJiraSpaceSelection('Chọn Workspace sau khi kết nối');
             jiraConnectionPending = true;
             jiraOAuthMessageReceived = false;
             setJiraConnectionUI(false, 'Đang chờ bạn xác nhận quyền trên Atlassian...');
+            const sessionToken = authSessionToken;
             jiraOAuthPopup = window.open(connectUrl, '_blank', 'width=560,height=760');
             if (!jiraOAuthPopup) {
                 jiraConnectionPending = false;
@@ -1897,15 +1996,21 @@
             if (jiraOAuthPopupCheckTimer) clearInterval(jiraOAuthPopupCheckTimer);
             let lastProbeAt = 0;
             jiraOAuthPopupCheckTimer = setInterval(() => {
+                if (sessionToken !== authSessionToken) {
+                    clearInterval(jiraOAuthPopupCheckTimer);
+                    jiraOAuthPopupCheckTimer = null;
+                    return;
+                }
                 if (jiraOAuthPopup && !jiraOAuthPopup.closed) {
                     if (!jiraOAuthProbeInFlight && Date.now() - lastProbeAt > 4000) {
                         lastProbeAt = Date.now();
                         jiraOAuthProbeInFlight = true;
                         probeJiraOAuthConnection((connected, sites) => {
                             jiraOAuthProbeInFlight = false;
-                            if (!connected || !jiraConnectionPending) return;
+                            if (sessionToken !== authSessionToken || !connected || !jiraConnectionPending) return;
                             jiraOAuthMessageReceived = true;
                             jiraConnectionPending = false;
+                            jiraOAuthConnected = true;
                             renderJiraSites(sites);
                             clearInterval(jiraOAuthPopupCheckTimer);
                             jiraOAuthPopupCheckTimer = null;
@@ -1943,29 +2048,34 @@
             }
             if (jiraConnectionPending) return;
 
+            const sessionToken = authSessionToken;
             lastJiraCheckAt = Date.now();
             jiraConnectionCheckPending = true;
             setJiraConnectionUI(jiraOAuthConnected, 'Đang kiểm tra kết nối Jira...');
-            const preferredSite = (selectedJiraSite && String(selectedJiraSite.id)) || localStorage.getItem('jira_selected_site') || '';
+            const preferredSite = (selectedJiraSite && String(selectedJiraSite.id)) || localStorage.getItem(getSelectedSiteStorageKey()) || '';
             requestJiraJsonp({ action: 'sites', withSpaces: '1', site: preferredSite }, data => {
+                if (sessionToken !== authSessionToken) return;
                 if (data && !data.error && Array.isArray(data.sites)) {
-                    renderJiraSites(data.sites);
-                    applyPrefetchedSpaces(data);
                     const siteCount = data.sites.length;
                     const connected = siteCount > 0;
+                    jiraConnectionCheckPending = false;
+                    jiraOAuthConnected = connected;
+                    renderJiraSites(data.sites);
+                    applyPrefetchedSpaces(data);
                     const message = connected
                         ? `Đã kết nối Jira · ${siteCount} site được cấp quyền`
                         : 'Chưa có Jira site nào được cấp quyền';
-                    jiraConnectionCheckPending = false;
                     setJiraConnectionUI(connected, message);
                     if (typeof done === 'function') done(connected, data.sites);
                     return;
                 }
-                renderJiraSites([]);
                 jiraConnectionCheckPending = false;
+                jiraOAuthConnected = false;
+                renderJiraSites([]);
                 setJiraConnectionUI(false, (data && data.error) ? 'Chưa kết nối Jira. Hãy bật công tắc để cấp quyền.' : 'Không nhận được danh sách Jira site');
                 if (typeof done === 'function') done(false, []);
             }, error => {
+                if (sessionToken !== authSessionToken) return;
                 jiraConnectionCheckPending = false;
                 setJiraConnectionUI(jiraOAuthConnected, 'Không kiểm tra được kết nối. Hãy thử làm mới trạng thái.');
                 if (typeof done === 'function') done(jiraOAuthConnected, jiraConnectedSites);
@@ -1978,14 +2088,20 @@
                 setJiraConnectionUI(false, 'Đăng nhập Google để ngắt kết nối Jira');
                 return;
             }
+            const sessionToken = authSessionToken;
             jiraConnectionPending = true;
             setJiraConnectionUI(true, 'Đang xóa thông tin kết nối Jira...');
             requestJiraJsonp({ action: 'disconnect' }, data => {
+                if (sessionToken !== authSessionToken) return;
                 jiraConnectionPending = false;
                 if (data && data.success) {
                     activeJiraSession = null;
-                    renderJiraSites([]);
+                    ticketPrefetch = null;
+                    selectedJiraSite = null;
+                    localStorage.removeItem(getSelectedSiteStorageKey());
                     localStorage.removeItem('jira_selected_site');
+                    resetJiraSpaceSelection('Kết nối Jira để tải danh sách Workspace');
+                    renderJiraSites([]);
                     setJiraConnectionUI(false, 'Đã ngắt kết nối Jira khỏi portal');
                     purgeJiraCache();
                     showToast('Đã ngắt kết nối Jira', 'Thông tin OAuth đã được xóa khỏi tài khoản portal này.');
@@ -2510,6 +2626,75 @@
             if (targetCombo && !targetCombo.contains(e.target)) closeTargetParentDropdown();
         });
 
+        function resetAllJiraUserState() {
+            authSessionToken++;
+            if (jiraOAuthPopupCheckTimer) {
+                clearInterval(jiraOAuthPopupCheckTimer);
+                jiraOAuthPopupCheckTimer = null;
+            }
+            try { if (jiraOAuthPopup && !jiraOAuthPopup.closed) jiraOAuthPopup.close(); } catch (e) {}
+            jiraOAuthPopup = null;
+
+            if (reportGasPopupTimer) {
+                clearInterval(reportGasPopupTimer);
+                reportGasPopupTimer = null;
+            }
+            try { if (reportGasPopup && !reportGasPopup.closed) reportGasPopup.close(); } catch (e) {}
+            reportGasPopup = null;
+            reportGasAuthorized = false;
+            reportGasAuthChecking = false;
+
+            Object.keys(jiraInflight).forEach(k => delete jiraInflight[k]);
+            ticketPrefetch = null;
+            activeJiraSession = null;
+            lastJiraCheckAt = 0;
+
+            jiraConnectionPending = false;
+            jiraConnectionCheckPending = false;
+            jiraOAuthMessageReceived = false;
+            jiraOAuthProbeInFlight = false;
+            jiraRecentProjectLoadInFlight = false;
+            jiraOAuthConnected = false;
+
+            jiraConnectedSites = [];
+            selectedJiraSite = null;
+            jiraSpacesLoadedForSite = '';
+            jiraSpacesLoadingForSite = '';
+
+            rawJiraData = [];
+            availableStatuses = [];
+            currentBoardId = null;
+            currentProjectKey = null;
+            currentParentKey = null;
+            currentJiraDomain = null;
+
+            if (tagPriorityChartInstance) {
+                tagPriorityChartInstance.destroy();
+                tagPriorityChartInstance = null;
+            }
+            if (priorityDoughnutChartInstance) {
+                priorityDoughnutChartInstance.destroy();
+                priorityDoughnutChartInstance = null;
+            }
+
+            closeJiraCombo('site');
+            document.getElementById('malformedTagPopup')?.remove();
+            document.getElementById('fileInfo')?.classList.add('hidden');
+            document.getElementById('reportDashboard')?.classList.add('hidden');
+            document.getElementById('detailView')?.classList.add('hidden');
+            document.getElementById('mainDashboardView')?.classList.remove('hidden');
+            document.getElementById('jiraUrlSection')?.classList.remove('hidden');
+
+            const projNameEl = document.getElementById('jiraProjectName');
+            if (projNameEl) { projNameEl.textContent = '---'; projNameEl.removeAttribute('title'); }
+            document.getElementById('ticketTableBody')?.replaceChildren();
+            document.getElementById('detailTicketTableBody')?.replaceChildren();
+            document.getElementById('tagBreakdownContainer')?.replaceChildren();
+            document.getElementById('dynamicStatusContainer')?.replaceChildren();
+
+            resetJiraSpaceSelection('Chọn Workspace trước');
+        }
+
         function updateAuthUI() {
             const storedUser = localStorage.getItem('jira_google_user');
             const loginOption = document.getElementById('loginOption');
@@ -2517,26 +2702,38 @@
             const userDropdown = document.getElementById('userDropdown');
             
             if (storedUser) {
-                loggedInUser = JSON.parse(storedUser);
-                jiraOAuthConnected = false;
+                try {
+                    loggedInUser = JSON.parse(storedUser);
+                } catch (e) {
+                    localStorage.removeItem('jira_google_user');
+                    loggedInUser = null;
+                }
+            } else {
+                loggedInUser = null;
+            }
+
+            if (loggedInUser) {
+                const nextEmail = getCurrentUserEmail();
+                if (lastAuthenticatedEmail !== nextEmail) {
+                    resetAllJiraUserState();
+                    lastAuthenticatedEmail = nextEmail;
+                }
+                syncSharedRecentProjectsKey(getRecentJiraProjects());
                 jiraConnectionCheckPending = true;
-                jiraConnectedSites = [];
                 renderJiraSites([]);
                 setJiraConnectionUI(false, 'Đang kiểm tra kết nối Jira...');
                 if(loginOption) loginOption.classList.add('hidden');
                 if(userProfileBtn) userProfileBtn.classList.remove('hidden');
-                userProfileBtn.title = loggedInUser.name || 'Tài khoản người dùng';
+                userProfileBtn.title = loggedInUser.name || loggedInUser.email || 'Tài khoản người dùng';
                 userProfileBtn.setAttribute('aria-label', userProfileBtn.title);
                 document.getElementById('userAvatar').src = loggedInUser.picture;
                 closeUserDropdown();
                 checkJiraConnection();
                 checkReportGasAuth();
             } else {
-                loggedInUser = null;
-                jiraConnectionPending = false;
-                jiraOAuthConnected = false;
-                jiraConnectionCheckPending = false;
-                jiraConnectedSites = [];
+                lastAuthenticatedEmail = '';
+                resetAllJiraUserState();
+                syncSharedRecentProjectsKey([]);
                 renderJiraSites([]);
                 if(loginOption) loginOption.classList.remove('hidden');
                 if(userProfileBtn) userProfileBtn.classList.add('hidden');
@@ -2564,12 +2761,12 @@
         }
 
         function handleLogout() {
-            google.accounts.id.disableAutoSelect();
-            activeJiraSession = null;
-            localStorage.removeItem('jira_google_user');
+            if (window.google?.accounts?.id) google.accounts.id.disableAutoSelect();
             purgeJiraCache();
+            localStorage.removeItem('jira_google_user');
+            localStorage.removeItem('jira_selected_site');
             updateAuthUI();
-            showToast('Đăng xuất Google', 'Bạn đã đăng xuất Google khỏi portal. Kết nối Jira được lưu riêng trong Apps Script.');
+            showToast('Đăng xuất Google', 'Đã đăng xuất và làm sạch phiên làm việc Jira trên trình duyệt.');
         }
 
         function updateThemeToggleButton() {
@@ -2753,7 +2950,14 @@
         });
 
         window.addEventListener('storage', (event) => {
-            if (event.key === JIRA_RECENT_PROJECTS_KEY) renderRecentJiraProjects();
+            if (event.key === 'jira_google_user') {
+                updateAuthUI();
+                return;
+            }
+            const userKey = getUserRecentProjectsKey();
+            if (event.key === JIRA_RECENT_PROJECTS_KEY || (userKey && event.key === userKey)) {
+                renderRecentJiraProjects();
+            }
         });
 
         window.addEventListener('focus', () => {
@@ -3535,7 +3739,7 @@
             return new Promise(resolve => {
                 if (!gasUrl || !gasUrl.includes('script.google.com') || !taskNames.length) return resolve([]);
                 const callbackName = 'taskSummaryCallback_' + Date.now() + '_' + Math.floor(Math.random() * 100000);
-                const fetchUrl = new URL(gasUrl);
+                const fetchUrl = new URL(appendAuthUser(gasUrl));
                 fetchUrl.searchParams.set('action', 'getTaskProgressSummaries');
                 fetchUrl.searchParams.set('sheetName', sheetName || '');
                 fetchUrl.searchParams.set('tasks', JSON.stringify(taskNames));
@@ -3565,7 +3769,7 @@
                 if (!gasUrl.includes("script.google.com")) return resolve(null);
 
                 const callbackName = 'jsonpCallback_' + Date.now() + '_' + Math.floor(Math.random() * 100000);
-                const fetchUrl = new URL(gasUrl);
+                const fetchUrl = new URL(appendAuthUser(gasUrl));
                 fetchUrl.searchParams.set('callback', callbackName);
                 fetchUrl.searchParams.set('sheet', sheetName || '');
                 fetchUrl.searchParams.set('_t', Date.now());
@@ -3732,7 +3936,7 @@
         function requestReportApiJsonp(params, timeoutMs = 25000) {
             return new Promise((resolve, reject) => {
                 const callback = 'createUpdateReportCallback_' + Date.now() + '_' + Math.floor(Math.random() * 1e6);
-                const url = new URL(URL_REPORT_API);
+                const url = new URL(appendAuthUser(URL_REPORT_API));
                 Object.entries(params).forEach(([key, value]) => url.searchParams.set(key, String(value ?? '')));
                 url.searchParams.set('callback', callback);
                 url.searchParams.set('_t', Date.now());
