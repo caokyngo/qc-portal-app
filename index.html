@@ -30,6 +30,11 @@
 
     <script>
         let loggedInUser = null;
+        const ALLOWED_PORTAL_DOMAIN = 'enotion.io';
+
+        function isAllowedPortalEmail(email) {
+            return /^[^@\s]+@enotion\.io$/i.test(String(email || '').trim());
+        }
 
         function decodeJwtResponse(token) {
             let base64Url = token.split('.')[1];
@@ -42,7 +47,26 @@
 
         function handleCredentialResponse(response) {
             const responsePayload = decodeJwtResponse(response.credential);
-            loggedInUser = { name: responsePayload.name, email: responsePayload.email, picture: responsePayload.picture };
+            const email = String(responsePayload.email || '').trim();
+            if (!isAllowedPortalEmail(email)) {
+                if (window.google && google.accounts && google.accounts.id) {
+                    google.accounts.id.disableAutoSelect();
+                }
+                loggedInUser = null;
+                localStorage.removeItem('jira_google_user');
+                if (typeof updateAuthUI === 'function') {
+                    updateAuthUI();
+                }
+                if (typeof showToast === 'function') {
+                    showToast(
+                        'Chỉ hỗ trợ tài khoản @enotion.io',
+                        `Tài khoản ${email || 'vừa chọn'} không thuộc tên miền @enotion.io. Vui lòng đăng nhập bằng email công ty @enotion.io.`,
+                        true
+                    );
+                }
+                return;
+            }
+            loggedInUser = { name: responsePayload.name, email: email, picture: responsePayload.picture };
             localStorage.setItem('jira_google_user', JSON.stringify(loggedInUser));
             if (typeof updateAuthUI === 'function') {
                 updateAuthUI();
@@ -221,7 +245,7 @@
                 </div>
                 
                 <div id="authSection" class="relative flex items-center min-h-[40px]">
-                    <div id="g_id_onload" data-client_id="149310433677-uvpoilv41na98qdjlj58cpmfl8u9946e.apps.googleusercontent.com" data-callback="handleCredentialResponse" data-auto_prompt="false"></div>
+                    <div id="g_id_onload" data-client_id="149310433677-uvpoilv41na98qdjlj58cpmfl8u9946e.apps.googleusercontent.com" data-hd="enotion.io" data-callback="handleCredentialResponse" data-auto_prompt="false"></div>
                     <div id="loginOption" class="relative cursor-pointer flex items-center gap-2.5 px-3 py-1.5 bg-slate-100 hover:bg-slate-200 rounded-xl border border-slate-200 transition overflow-hidden">
                         <img src="https://cdn-icons-png.flaticon.com/512/149/149071.png" class="w-8 h-8 rounded-full border border-slate-300 bg-white object-cover" alt="Guest">
                         <span class="text-slate-700 font-bold text-sm hidden sm:block">Đăng nhập</span>
@@ -792,15 +816,9 @@
         }
 
         function appendAuthUser(rawUrl) {
-            if (!rawUrl) return rawUrl;
-            try {
-                const url = new URL(rawUrl);
-                const email = getCurrentUserEmail();
-                if (email) url.searchParams.set('authuser', email);
-                return url.toString();
-            } catch (e) {
-                return rawUrl;
-            }
+            // URL /a/macros/enotion.io/ tự động định tuyến về phiên @enotion.io;
+            // tuyệt đối không gắn ?authuser= để tránh lỗi 404 script.google.com/accounts?authuser=N
+            return rawUrl;
         }
 
         function getSelectedSiteStorageKey() {
@@ -1559,7 +1577,18 @@
                 if (script.parentNode) script.parentNode.removeChild(script);
                 if (sessionToken !== authSessionToken) return;
                 if (ok) {
-                    setReportGasAuthUI('authorized', userEmail ? `Đã cấp quyền Sheet/Drive (${userEmail})` : 'Đã cấp quyền Sheet/Drive');
+                    const activeGasEmail = String(userEmail || '').trim().toLowerCase();
+                    const portalEmail = getCurrentUserEmail();
+                    if (activeGasEmail && portalEmail && activeGasEmail !== portalEmail) {
+                        setReportGasAuthUI('unauthorized', `Trình duyệt đang chạy Apps Script bằng ${activeGasEmail} (khác ${portalEmail})`);
+                        showToast(
+                            'Trùng phiên Google @enotion.io',
+                            `Chrome đang giữ ${activeGasEmail} làm tài khoản mặc định cho Apps Script. Để dùng ${portalEmail}, hãy đăng xuất ${activeGasEmail} khỏi Google hoặc mở Profile Chrome riêng.`,
+                            true
+                        );
+                    } else {
+                        setReportGasAuthUI('authorized', userEmail ? `Đã cấp quyền Sheet/Drive (${userEmail})` : 'Đã cấp quyền Sheet/Drive');
+                    }
                 } else {
                     setReportGasAuthUI('unauthorized', 'Bấm "Cấp quyền Sheet/Drive" để cho phép tài khoản đọc/ghi báo cáo.');
                 }
@@ -1959,8 +1988,6 @@
             window[callbackName] = data => finish(onSuccess, data);
             script.onerror = () => finish(onError, new Error('Không kết nối được Apps Script.'));
             const query = new URLSearchParams(params || {});
-            const email = getCurrentUserEmail();
-            if (email) query.set('authuser', email);
             query.set('callback', callbackName);
             query.set('_t', Date.now());
             script.src = JIRA_PROXY_API_URL + (JIRA_PROXY_API_URL.includes('?') ? '&' : '?') + query.toString();
@@ -2011,6 +2038,9 @@
                             jiraOAuthMessageReceived = true;
                             jiraConnectionPending = false;
                             jiraOAuthConnected = true;
+                            purgeJiraCache();
+                            jiraSpacesLoadedForSite = '';
+                            jiraSpacesLoadingForSite = '';
                             renderJiraSites(sites);
                             clearInterval(jiraOAuthPopupCheckTimer);
                             jiraOAuthPopupCheckTimer = null;
@@ -2025,6 +2055,9 @@
                 jiraOAuthPopupCheckTimer = null;
                 if (jiraOAuthMessageReceived) return;
                 jiraConnectionPending = false;
+                purgeJiraCache();
+                jiraSpacesLoadedForSite = '';
+                jiraSpacesLoadingForSite = '';
                 checkJiraConnection(connected => {
                     if (connected) showToast('Kết nối Jira thành công', 'Đã xác thực bằng tài khoản Atlassian của bạn.');
                     else setJiraConnectionUI(false, 'Kết nối đã bị hủy hoặc chưa được cấp quyền');
@@ -2703,7 +2736,19 @@
             
             if (storedUser) {
                 try {
-                    loggedInUser = JSON.parse(storedUser);
+                    const parsedUser = JSON.parse(storedUser);
+                    if (parsedUser && isAllowedPortalEmail(parsedUser.email)) {
+                        loggedInUser = parsedUser;
+                    } else {
+                        if (window.google && google.accounts && google.accounts.id) {
+                            google.accounts.id.disableAutoSelect();
+                        }
+                        localStorage.removeItem('jira_google_user');
+                        loggedInUser = null;
+                        setTimeout(() => {
+                            showToast('Chỉ hỗ trợ tài khoản @enotion.io', 'Đã tự động đăng xuất tài khoản ngoài miền @enotion.io.', true);
+                        }, 50);
+                    }
                 } catch (e) {
                     localStorage.removeItem('jira_google_user');
                     loggedInUser = null;
@@ -2974,6 +3019,9 @@
             if (!event.data || event.data.type !== 'jira-oauth-complete' || event.data.success !== true) return;
             jiraOAuthMessageReceived = true;
             jiraConnectionPending = false;
+            purgeJiraCache();
+            jiraSpacesLoadedForSite = '';
+            jiraSpacesLoadingForSite = '';
             try { if (jiraOAuthPopup && !jiraOAuthPopup.closed) jiraOAuthPopup.close(); } catch (closeError) {}
             if (jiraOAuthPopupCheckTimer) {
                 clearInterval(jiraOAuthPopupCheckTimer);
