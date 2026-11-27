@@ -880,19 +880,34 @@
             const cEpic = cleanProjectTitle(epicSummary || '');
             const sKey = String(spaceKey || '').trim();
 
-            if (hasGameIdPrefix(cEpic)) return cEpic;
+            // 1. Luôn ưu tiên lấy theo tên Project (Board) đã chọn
             if (hasGameIdPrefix(cBoard)) return cBoard;
-            if (hasGameIdPrefix(cSpace)) return cSpace;
-
-            if (!isEnotion) {
-                if (cEpic && !isGenericEpicSummary(cEpic)) return cEpic;
-                if (cBoard && !isGenericBoardName(cBoard, cSpace, sKey)) return cBoard;
-                return cEpic || cBoard || cSpace || epicKey || sKey;
-            }
-
             if (cBoard && !isGenericBoardName(cBoard, cSpace, sKey)) return cBoard;
+
+            // 2. Nếu tên Board là mặc định chung (VD: Kanban board / <KEY> board), lấy theo Space (Enotion) hoặc Project
+            if (isEnotion && cSpace) return cSpace;
+            if (cBoard) return cBoard;
+
+            // 3. Dự phòng cuối mới dùng đến Space / Epic
+            if (hasGameIdPrefix(cSpace)) return cSpace;
             if (cEpic && !isGenericEpicSummary(cEpic)) return cEpic;
-            return cSpace || cBoard || cEpic || epicKey || sKey;
+            return cSpace || cEpic || epicKey || sKey;
+        }
+
+        function getRecentItemProjectTitle(item) {
+            if (!item) return 'Project';
+            if (item.boardName || item.spaceName) {
+                const resolved = resolveJiraGameDisplayName({
+                    isEnotion: String(item.siteName || '').trim().toLowerCase() === 'enotion',
+                    spaceKey: item.spaceKey || item.projectKey || '',
+                    spaceName: item.spaceName || '',
+                    boardName: item.boardName || '',
+                    epicKey: item.epicKey || '',
+                    epicSummary: item.epicSummary || ''
+                });
+                if (resolved) return resolved;
+            }
+            return String(item.displayName || item.projectName || item.projectKey || 'Project').trim();
         }
 
         function getRecentJiraProjects() {
@@ -1028,7 +1043,7 @@
             const nameCounts = new Map();
             const epicCounts = new Map();
             items.forEach(it => {
-                const baseTitle = (it.displayName || it.projectName || it.projectKey || 'Project').trim();
+                const baseTitle = getRecentItemProjectTitle(it);
                 nameCounts.set(baseTitle.toLowerCase(), (nameCounts.get(baseTitle.toLowerCase()) || 0) + 1);
                 if (it.epicKey) epicCounts.set(it.epicKey, (epicCounts.get(it.epicKey) || 0) + 1);
             });
@@ -1041,7 +1056,7 @@
                 button.type = 'button';
                 button.className = 'inline-flex min-w-0 items-center gap-2 rounded-l-lg pl-3 pr-2 py-2 text-left focus:outline-none focus:ring-2 focus:ring-indigo-400 disabled:cursor-wait disabled:opacity-60';
 
-                const baseTitle = (item.displayName || item.projectName || item.projectKey || 'Project').trim();
+                const baseTitle = getRecentItemProjectTitle(item);
                 const needSubLabel = (nameCounts.get(baseTitle.toLowerCase()) || 0) > 1;
                 const subLabel = item.epicSummary && item.epicSummary.toLowerCase() !== baseTitle.toLowerCase()
                     ? item.epicSummary
@@ -1090,7 +1105,8 @@
                 selectedJiraSite = site;
                 saveSelectedJiraSite();
                 syncJiraWorkspaceLayout();
-                const boardName = item.boardName || item.projectName || item.projectKey || 'Project';
+                const resolvedTitle = getRecentItemProjectTitle(item);
+                const boardName = item.boardName || resolvedTitle || item.projectName || item.projectKey || 'Project';
                 selectedJiraSpace = { id: item.spaceId, key: item.spaceKey || item.projectKey, name: item.spaceName || item.spaceKey || '' };
                 selectedJiraProject = { id: item.projectId, name: boardName, boardName: boardName };
                 selectedParentValue = item.epicKey || '';
@@ -1103,7 +1119,7 @@
                     boardName: boardName,
                     epicSummary: item.epicSummary || '',
                     parentSummary: item.parentSummary || '',
-                    projectName: item.displayName || item.projectName || item.projectKey
+                    projectName: resolvedTitle
                 };
                 const jql = item.jql || (String(item.siteName || '').toLowerCase() === 'enotion'
                     ? `project = ${item.projectKey} AND parent = ${item.epicKey} AND type IN (Bug, Improvement, Question) ORDER BY cf[10019] ASC`
