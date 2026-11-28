@@ -248,12 +248,42 @@
     .task-chart-bar { display:block; height:100%; min-width:8px; border-radius:7px; opacity:.9; transition:width .28s ease,filter .15s ease; }
     .task-chart-track:hover .task-chart-bar { filter:brightness(.92); }
     .task-chart-total { min-width:42px; color:var(--text); font-size:12px; font-variant-numeric:tabular-nums; text-align:right; }
-    .task-status-editor { display:none; grid-column:1 / -1; align-items:center; gap:10px; border-top:1px solid var(--line); padding-top:9px; }
-    .task-chart-row.is-editing .task-status-editor { display:flex; }
-    .task-status-editor label { color:var(--muted); font-size:10px; font-weight:750; }
-    .task-status-select { width:100%; height:34px; border:1px solid var(--line); border-radius:9px; padding:0 9px; background:var(--surface); color:var(--text); font-size:11px; font-weight:700; text-transform:capitalize; }
-    .task-status-editor .task-status-select { width:min(220px,60%); }
-    .task-status-editor-hint { color:var(--muted); font-size:10px; }
+    .task-chart-name-row { display:flex; align-items:center; gap:7px; min-width:0; }
+    .task-chart-name-link { display:inline-flex; align-items:center; gap:6px; min-width:0; padding:0; border:0; background:transparent; color:var(--text); font-size:12px; font-weight:750; text-align:left; cursor:pointer; transition:color .14s ease; }
+    .task-chart-row:hover .task-chart-name-link, .task-chart-name-link:hover, .task-chart-name-link:focus-visible { color:var(--accent); text-decoration:underline; outline:none; }
+    .task-chart-name-icon { flex:none; font-size:11px; color:var(--accent); opacity:.78; transition:opacity .14s,transform .14s; }
+    .task-chart-row:hover .task-chart-name-icon { opacity:1; transform:translateX(1px); }
+    .task-quickview-pill { flex:none; display:inline-flex; align-items:center; gap:4px; padding:2px 7px; border-radius:999px; border:1px solid #c7d2fe; background:var(--accent-light); color:var(--accent); font-size:10px; font-weight:700; opacity:0; transition:opacity .14s ease; }
+    .task-chart-row:hover .task-quickview-pill, .task-chart-row:focus-within .task-quickview-pill { opacity:1; }
+    .task-quickview-pill.is-unmapped { border-color:var(--line); background:var(--soft); color:var(--muted); opacity:.85; }
+    .qv-modal-backdrop { position:fixed; inset:0; z-index:115; display:none; place-items:center; padding:14px; background:#0f172a99; backdrop-filter:blur(4px); }
+    .qv-modal-backdrop.show { display:grid; }
+    .qv-modal { width:min(1320px,100%); height:min(92vh,900px); display:flex; flex-direction:column; overflow:hidden; border:1px solid var(--line); border-radius:18px; background:var(--surface); color:var(--text); box-shadow:0 28px 90px #0f172a59; }
+    .qv-modal-head { display:flex; flex-wrap:wrap; align-items:center; justify-content:space-between; gap:10px 14px; padding:12px 18px; border-bottom:1px solid var(--line); background:var(--surface); }
+    .qv-head-main { min-width:0; flex:1 1 320px; display:grid; gap:4px; }
+    .qv-title-row { display:flex; flex-wrap:wrap; align-items:center; gap:8px; min-width:0; }
+    .qv-title { margin:0; font-size:15px; font-weight:800; overflow-wrap:anywhere; }
+    .qv-status-pill { display:inline-flex; align-items:center; gap:5px; padding:2px 9px; border-radius:999px; font-size:10.5px; font-weight:800; text-transform:uppercase; letter-spacing:.03em; color:#fff; }
+    .qv-submeta { display:flex; flex-wrap:wrap; align-items:center; gap:6px 12px; color:var(--muted); font-size:11.5px; min-width:0; }
+    .qv-submeta strong { color:var(--text); font-weight:700; }
+    .qv-head-actions { display:flex; flex-wrap:wrap; align-items:center; gap:8px; }
+    .qv-mode-switch { display:inline-flex; padding:2px; border:1px solid var(--line); border-radius:9px; background:var(--soft); }
+    .qv-mode-btn { height:30px; padding:0 10px; border:0; border-radius:7px; background:transparent; color:var(--muted); font-size:11px; font-weight:700; cursor:pointer; transition:.14s; }
+    .qv-mode-btn.is-active { background:var(--surface); color:var(--accent); box-shadow:0 1px 3px #0f172a18; }
+    .qv-summary-bar { display:flex; flex-wrap:wrap; align-items:center; justify-content:space-between; gap:8px 14px; padding:8px 18px; border-bottom:1px solid var(--line); background:var(--soft); font-size:11px; }
+    .qv-summary-chips { display:flex; flex-wrap:wrap; align-items:center; gap:6px; }
+    .qv-stat-chip { display:inline-flex; align-items:center; gap:5px; padding:2px 8px; border-radius:6px; border:1px solid var(--line); background:var(--surface); font-size:11px; font-weight:700; }
+    .qv-body { position:relative; flex:1; min-height:0; display:flex; flex-direction:column; background:var(--page); }
+    .qv-iframe { width:100%; height:100%; flex:1; border:0; background:#fff; }
+    .qv-state-box { margin:auto; max-width:520px; padding:28px 24px; text-align:center; display:grid; gap:10px; justify-items:center; }
+    .qv-state-icon { width:48px; height:48px; border-radius:14px; display:grid; place-items:center; background:var(--accent-light); color:var(--accent); font-size:20px; }
+    .qv-state-box h3 { margin:0; font-size:15px; }
+    .qv-state-box p { margin:0; color:var(--muted); font-size:12.5px; line-height:1.55; }
+    .qv-state-actions { display:flex; flex-wrap:wrap; justify-content:center; gap:8px; margin-top:4px; }
+    .qv-file-selector { display:flex; flex-wrap:wrap; gap:6px; align-items:center; }
+    .qv-file-tab { height:26px; padding:0 9px; border:1px solid var(--line); border-radius:7px; background:var(--surface); color:var(--text); font-size:11px; font-weight:650; cursor:pointer; }
+    .qv-file-tab.is-active { border-color:var(--accent); background:var(--accent-light); color:var(--accent); font-weight:750; }
+    html.dark-mode .task-quickview-pill { border-color:#4338ca; }
     .chart-legend { display:flex; flex-wrap:wrap; align-items:center; gap:8px 13px; }
     .chart-legend-item { display:inline-flex; align-items:center; gap:6px; color:var(--muted); font-size:10px; font-weight:650; white-space:nowrap; }
     .chart-legend-swatch { width:9px; height:9px; border-radius:50%; }
@@ -404,7 +434,11 @@
       .task-chart-axis > span:first-child { display:none; }
       .task-chart-row { grid-template-columns:minmax(0,1fr); gap:8px; padding:11px 12px; }
       .task-chart-name-wrap,.task-chart-measure { grid-column:1; }
-      .task-status-editor { flex-wrap:wrap; }
+      .task-quickview-pill { opacity:1; }
+      .qv-modal-backdrop { padding:6px; }
+      .qv-modal { height:95vh; }
+      .qv-modal-head { padding:10px 12px; }
+      .qv-summary-bar { padding:7px 12px; }
       .task-chart-toolbar { align-items:flex-start; flex-direction:column; }
     }
   </style>
@@ -534,7 +568,7 @@
         </section>
         <section id="configPanel" class="panel config-panel" hidden>
           <header class="config-panel-head">
-            <div><h2 id="configPanelTitle">Cấu hình sheet</h2><p>Chỉnh status trên biểu đồ; chỉ lưu vào sheet khi bấm “Cập nhật &amp; lưu”.</p></div>
+            <div><h2 id="configPanelTitle">Cấu hình sheet</h2><p>Bấm vào tên task trên biểu đồ để xem nhanh file Test Case tương ứng trong folder.</p></div>
           </header>
           <div class="config-panel-body">
             <div class="field config-folder"><label for="configFolderUrl">Link folder Test Case (ô A1)</label><input id="configFolderUrl" type="url" placeholder="https://drive.google.com/drive/folders/…"></div>
@@ -555,9 +589,37 @@
         </section>
       </div>
       <footer id="configModalFooter" class="config-modal-footer" hidden>
-        <span id="configModalFooterNote" class="config-modal-footer-note">Chưa có thay đổi status chưa lưu.</span>
+        <span id="configModalFooterNote" class="config-modal-footer-note">Bấm vào tên task để xem nhanh file Test Case · Bấm “Cập nhật &amp; lưu” để làm mới data từ folder.</span>
         <button type="button" id="refreshDataButton" class="button button-primary" onclick="refreshExistingData()"><i class="fa-solid fa-rotate"></i> Cập nhật &amp; lưu</button>
       </footer>
+    </section>
+  </div>
+
+  <div id="testcaseQuickViewModal" class="qv-modal-backdrop" role="presentation" onclick="handleTestcaseQuickViewBackdrop(event)">
+    <section class="qv-modal" role="dialog" aria-modal="true" aria-labelledby="qvTaskTitle">
+      <header class="qv-modal-head">
+        <div class="qv-head-main">
+          <div class="qv-title-row">
+            <h2 id="qvTaskTitle" class="qv-title">Xem nhanh Test Case</h2>
+            <span id="qvStatusPill" class="qv-status-pill">Remaining</span>
+          </div>
+          <div id="qvSubmeta" class="qv-submeta"></div>
+        </div>
+        <div class="qv-head-actions">
+          <div id="qvModeSwitch" class="qv-mode-switch" role="group" aria-label="Chế độ xem file" hidden>
+            <button type="button" id="qvModePreviewBtn" class="qv-mode-btn is-active" onclick="setQuickViewEmbedMode('preview')"><i class="fa-regular fa-eye"></i> Xem nhanh</button>
+            <button type="button" id="qvModeEditBtn" class="qv-mode-btn" onclick="setQuickViewEmbedMode('edit')"><i class="fa-regular fa-pen-to-square"></i> Chỉnh sửa</button>
+          </div>
+          <a id="qvOpenSheetLink" class="button button-secondary" style="min-height:34px;padding:0 11px;font-size:12px;text-decoration:none;" href="#" target="_blank" rel="noopener noreferrer" hidden><i class="fa-solid fa-arrow-up-right-from-square"></i> Mở tab mới</a>
+          <a id="qvOpenFolderLink" class="button button-secondary" style="min-height:34px;padding:0 11px;font-size:12px;text-decoration:none;" href="#" target="_blank" rel="noopener noreferrer" hidden><i class="fa-regular fa-folder-open"></i> Folder</a>
+          <button type="button" class="button button-icon" style="width:34px;min-height:34px;" aria-label="Đóng xem nhanh" onclick="closeTestcaseQuickView()"><i class="fa-solid fa-xmark"></i></button>
+        </div>
+      </header>
+      <div id="qvSummaryBar" class="qv-summary-bar" hidden>
+        <div id="qvSummaryChips" class="qv-summary-chips"></div>
+        <div id="qvFileSelector" class="qv-file-selector"></div>
+      </div>
+      <div id="qvBody" class="qv-body"></div>
     </section>
   </div>
 
@@ -1822,6 +1884,8 @@
         taskMappings = result.mappings || [];
         renderTaskMappings();
         cancelTaskMappingEdit();
+        syncLoadedSuitesWithTaskMappings();
+        if (loadedReportConfig) renderExistingConfig(loadedReportConfig, false);
         showToast('Đã lưu mapping', 'Task “' + taskName + '” sẽ lấy dữ liệu từ file “' + fileName + '”.');
       } catch (error) {
         showToast('Không lưu được mapping', error?.message || 'Lỗi không xác định.', true);
@@ -1839,6 +1903,8 @@
         taskMappings = result.mappings || [];
         if (editingTaskMappingTask === item.task) cancelTaskMappingEdit();
         renderTaskMappings();
+        syncLoadedSuitesWithTaskMappings();
+        if (loadedReportConfig) renderExistingConfig(loadedReportConfig, false);
         showToast('Đã xóa mapping', 'Task “' + item.task + '” sẽ được bỏ qua khi cập nhật cho đến khi map lại.');
       } catch (error) {
         showToast('Không xóa được mapping', error?.message || 'Lỗi không xác định.', true);
@@ -1973,7 +2039,74 @@
     const TASK_STATUS_COLORS = { 'in progress': '#eab308', done: '#16a34a', failed: '#dc2626', remaining: '#f97316' };
     const TASK_STATUS_LABELS = { 'in progress': 'In Progress', done: 'Done', failed: 'Failed', remaining: 'Remaining' };
     let savedTaskStatuses = new Map();
-    const pendingTaskStatusRows = new Set();
+    const folderFilesCacheBySheet = new Map();
+    const folderFilesInflightBySheet = new Map();
+    const taskSummaryCacheByKey = new Map();
+    let activeQuickViewState = null;
+
+    function normalizeTestcaseFileKey(name) {
+      return String(name || '')
+        .replace(/^(?:\s*\[[^\]]*\])+\s*/, '')
+        .toLowerCase()
+        .replace(/devices/g, 'device')
+        .replace(/behavior/g, 'behaviour')
+        .replace(/[^a-z0-9]/g, '');
+    }
+
+    function syncLoadedSuitesWithTaskMappings() {
+      if (!loadedReportConfig || !Array.isArray(loadedReportConfig.suites) || !Array.isArray(taskMappings) || !taskMappings.length) return;
+      const mapByNorm = new Map();
+      taskMappings.forEach(item => {
+        if (item && item.task) mapByNorm.set(normalizeTaskKey(item.task), String(item.file || '').trim());
+      });
+      loadedReportConfig.suites.forEach(suite => {
+        const k = normalizeTaskKey(suite.name);
+        if (mapByNorm.has(k)) suite.testcaseFile = mapByNorm.get(k);
+        else if (mapByNorm.has(k.replace(/behavior/g, 'behaviour'))) suite.testcaseFile = mapByNorm.get(k.replace(/behavior/g, 'behaviour'));
+        else if (mapByNorm.has(k.replace(/behaviour/g, 'behavior'))) suite.testcaseFile = mapByNorm.get(k.replace(/behaviour/g, 'behavior'));
+      });
+    }
+
+    function fetchFolderTestcaseFiles(sheetName, forceRefresh = false) {
+      const cleanSheet = String(sheetName || '').trim();
+      if (!cleanSheet) return Promise.reject(new Error('Chưa xác định tên sheet report.'));
+      if (!forceRefresh && folderFilesCacheBySheet.has(cleanSheet)) {
+        const hit = folderFilesCacheBySheet.get(cleanSheet);
+        if (Date.now() - hit.t < 300000) return Promise.resolve(hit.data);
+      }
+      if (!forceRefresh && folderFilesInflightBySheet.has(cleanSheet)) {
+        return folderFilesInflightBySheet.get(cleanSheet);
+      }
+      const req = jsonp({ action: 'listTestcaseFiles', sheetName: cleanSheet }, 30000)
+        .then(res => {
+          const payload = {
+            sheetName: res.sheetName || cleanSheet,
+            folderUrl: res.folderUrl || '',
+            files: Array.isArray(res.files) ? res.files : []
+          };
+          folderFilesCacheBySheet.set(cleanSheet, { t: Date.now(), data: payload });
+          return payload;
+        })
+        .finally(() => {
+          folderFilesInflightBySheet.delete(cleanSheet);
+        });
+      folderFilesInflightBySheet.set(cleanSheet, req);
+      return req;
+    }
+
+    function buildGoogleSheetEmbedUrl(fileId, mode = 'preview') {
+      const id = encodeURIComponent(String(fileId || '').trim());
+      if (!id) return 'about:blank';
+      return mode === 'edit'
+        ? 'https://docs.google.com/spreadsheets/d/' + id + '/edit?rm=minimal'
+        : 'https://docs.google.com/spreadsheets/d/' + id + '/preview';
+    }
+
+    function buildGoogleSheetOpenUrl(file) {
+      if (file && file.url) return String(file.url);
+      if (file && file.id) return 'https://docs.google.com/spreadsheets/d/' + encodeURIComponent(String(file.id)) + '/edit';
+      return '#';
+    }
 
     function snapshotSavedTaskStatuses(config) {
       savedTaskStatuses = new Map((config.suites || []).map(item => {
@@ -1987,7 +2120,6 @@
         }
         return [Number(item.row), st];
       }));
-      pendingTaskStatusRows.clear();
       updatePendingStatusUI();
     }
 
@@ -1995,13 +2127,12 @@
       const footer = document.getElementById('configModalFooter');
       const note = document.getElementById('configModalFooterNote');
       if (footer) footer.hidden = !loadedReportConfig;
-      if (note) note.textContent = pendingTaskStatusRows.size
-        ? pendingTaskStatusRows.size + ' task có status chưa lưu. Bấm “Cập nhật & lưu” để ghi status và làm mới data.'
-        : 'Status hiện tại đã lưu. Bấm “Cập nhật & lưu” để làm mới data từ folder Test Case.';
+      if (note) note.textContent = 'Bấm vào tên task trên biểu đồ để xem nhanh file Test Case · Bấm “Cập nhật & lưu” để làm mới data từ folder.';
     }
 
     function renderExistingConfig(config, shouldAnalyzeJira = true) {
       loadedReportConfig = config;
+      syncLoadedSuitesWithTaskMappings();
       (config.suites || []).forEach(suite => {
         const m = String(suite.value || '').replace(/,/g, '').match(/^\s*(\d+)\s*(?:\/\s*(\d+))?/);
         const rem = m ? Number(m[1]) : null;
@@ -2030,7 +2161,7 @@
       const legend = TASK_STATUS_ORDER.map(status => '<span class="chart-legend-item"><i class="chart-legend-swatch" style="background:' + TASK_STATUS_COLORS[status] + '"></i>' + escapeHtml(TASK_STATUS_LABELS[status]) + '</span>').join('');
       const groups = statuses.map(status => ({ status, items: rows.filter(item => normalizeStatus(item.status) === status) })).filter(group => group.items.length);
 
-      root.innerHTML = '<div class="task-chart-toolbar"><div class="chart-legend" aria-label="Chú giải status">' + legend + '</div><span class="chart-instruction">Status chỉ đổi tạm thời; bấm nút bên dưới để lưu cùng dữ liệu mới.</span></div>' +
+      root.innerHTML = '<div class="task-chart-toolbar"><div class="chart-legend" aria-label="Chú giải status">' + legend + '</div><span class="chart-instruction"><i class="fa-regular fa-eye"></i> Bấm vào tên task để xem nhanh file Test Case trong folder.</span></div>' +
         '<div class="task-chart-axis"><span>Task</span><span class="task-chart-axis-label"><span>Số lượng test case</span><span>0 — ' + maxTotal.toLocaleString('vi-VN') + '</span></span></div>' +
         '<div class="task-chart-groups">' + groups.map(group => {
           const groupTotal = group.items.reduce((sum, item) => sum + getTotal(item), 0);
@@ -2040,45 +2171,309 @@
             const rowNumber = Number(item.row), name = String(item.name || ''), status = normalizeStatus(item.status), total = getTotal(item);
             const width = total ? Math.max(1.5, total / maxTotal * 100) : 1.5;
             const color = TASK_STATUS_COLORS[status] || TASK_STATUS_COLORS.remaining;
-            const options = [...new Set([...TASK_STATUS_ORDER, status])];
-            return '<article class="task-chart-row" data-config-row="' + rowNumber + '" data-suite-name="' + escapeHtml(name) + '" data-status="' + escapeHtml(status) + '" tabindex="0" aria-label="' + escapeHtml(name) + ', ' + escapeHtml(groupLabel) + '. Bấm để đổi status." aria-expanded="false" onclick="toggleTaskStatusEditor(event,' + rowNumber + ')" onkeydown="handleTaskStatusRowKey(event,' + rowNumber + ')">' +
-              '<div class="task-chart-name-wrap"><strong class="task-chart-name" title="' + escapeHtml(name) + '">' + escapeHtml(name) + '</strong><span class="task-chart-meta">Remaining / total: ' + escapeHtml(item.value || '—') + ' · Sheet nguồn: ' + escapeHtml(item.sourceTab || 'Chưa cập nhật') + '</span></div>' +
+            const mappedFile = String(item.testcaseFile || '').trim();
+            const pillHtml = mappedFile
+              ? '<span class="task-quickview-pill"><i class="fa-regular fa-eye"></i> Xem file</span>'
+              : '<span class="task-quickview-pill is-unmapped">Chưa map file</span>';
+            const fileMeta = mappedFile ? (' · File: ' + escapeHtml(mappedFile)) : '';
+            return '<article class="task-chart-row" data-config-row="' + rowNumber + '" data-suite-name="' + escapeHtml(name) + '" data-status="' + escapeHtml(status) + '" tabindex="0" role="button" aria-label="Xem nhanh file testcase của task ' + escapeHtml(name) + '" onclick="openTaskTestcaseQuickView(' + rowNumber + ')" onkeydown="handleTaskQuickViewKey(event,' + rowNumber + ')">' +
+              '<div class="task-chart-name-wrap">' +
+                '<div class="task-chart-name-row">' +
+                  '<button type="button" class="task-chart-name-link" tabindex="-1" title="Xem nhanh file Test Case của ' + escapeHtml(name) + '">' +
+                    '<i class="fa-regular fa-file-lines task-chart-name-icon" aria-hidden="true"></i>' +
+                    '<span class="task-chart-name">' + escapeHtml(name) + '</span>' +
+                  '</button>' +
+                  pillHtml +
+                '</div>' +
+                '<span class="task-chart-meta" title="Remaining / total: ' + escapeHtml(item.value || '—') + ' · Sheet nguồn: ' + escapeHtml(item.sourceTab || 'Chưa cập nhật') + fileMeta + '">Remaining / total: ' + escapeHtml(item.value || '—') + ' · Sheet nguồn: ' + escapeHtml(item.sourceTab || 'Chưa cập nhật') + '</span>' +
+              '</div>' +
               '<div class="task-chart-measure"><div class="task-chart-track" aria-hidden="true"><span class="task-chart-bar" style="width:' + width + '%;background:' + color + '"></span></div><strong class="task-chart-total">' + total.toLocaleString('vi-VN') + '</strong></div>' +
-              '<div class="task-status-editor" onclick="event.stopPropagation()"><label for="taskStatus' + rowNumber + '">Status</label><select id="taskStatus' + rowNumber + '" class="task-status-select" data-config-field="status" onchange="updateTaskChartStatus(this)">' + options.map(value => '<option value="' + escapeHtml(value) + '" ' + (value === status ? 'selected' : '') + '>' + escapeHtml(TASK_STATUS_LABELS[value] || value) + '</option>').join('') + '</select><span class="task-status-editor-hint">Thay đổi chưa lưu vào sheet</span></div>' +
             '</article>';
           }).join('');
           return '<section class="task-chart-group" aria-label="Nhóm ' + escapeHtml(groupLabel) + '"><header class="task-chart-group-head"><strong class="task-chart-group-title"><i class="task-chart-group-dot" style="background:' + groupColor + '"></i>' + escapeHtml(groupLabel) + '</strong><span class="task-chart-group-summary">' + group.items.length + ' task · ' + groupTotal.toLocaleString('vi-VN') + ' test case</span></header><div class="task-chart-rows">' + taskRows + '</div></section>';
         }).join('') + '</div>';
     }
 
-    function toggleTaskStatusEditor(event, rowNumber) {
-      if (event && event.target && event.target.closest('.task-status-editor')) return;
-      const row = document.querySelector('[data-config-row="' + Number(rowNumber) + '"]');
-      if (!row) return;
-      document.querySelectorAll('.task-chart-row.is-editing').forEach(other => { if (other !== row) { other.classList.remove('is-editing'); other.setAttribute('aria-expanded', 'false'); } });
-      const open = !row.classList.contains('is-editing');
-      row.classList.toggle('is-editing', open);
-      row.setAttribute('aria-expanded', String(open));
+    function handleTaskQuickViewKey(event, rowNumber) {
+      if (event.key === 'Enter' || event.key === ' ') {
+        event.preventDefault();
+        openTaskTestcaseQuickView(rowNumber);
+      }
     }
 
-    function handleTaskStatusRowKey(event, rowNumber) {
-      if (event.target && event.target.closest('.task-status-editor')) return;
-      if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); toggleTaskStatusEditor(event, rowNumber); }
+    function closeTestcaseQuickView() {
+      const modal = document.getElementById('testcaseQuickViewModal');
+      if (!modal) return;
+      modal.classList.remove('show');
+      activeQuickViewState = null;
+      const body = document.getElementById('qvBody');
+      if (body) body.replaceChildren();
     }
 
-    function updateTaskChartStatus(select) {
-      const row = select && select.closest('.task-chart-row');
-      if (!row) return;
-      const rowNumber = Number(row.dataset.configRow);
-      const status = String(select.value || 'remaining').trim().toLowerCase();
-      const suite = (loadedReportConfig?.suites || []).find(item => Number(item.row) === rowNumber);
-      if (!suite || String(suite.status || 'remaining').trim().toLowerCase() === status) return;
-      suite.status = status;
-      row.dataset.status = status;
-      if (savedTaskStatuses.get(rowNumber) === status) pendingTaskStatusRows.delete(rowNumber);
-      else pendingTaskStatusRows.add(rowNumber);
-      renderExistingConfig(loadedReportConfig, false);
-      updatePendingStatusUI();
+    function handleTestcaseQuickViewBackdrop(event) {
+      if (event.target && event.target.id === 'testcaseQuickViewModal') closeTestcaseQuickView();
+    }
+
+    function openMappingForQuickViewTask(taskName) {
+      closeTestcaseQuickView();
+      openMappingModal();
+      setTimeout(() => {
+        const taskInput = document.getElementById('mappingTaskName');
+        const fileInput = document.getElementById('mappingFileName');
+        if (taskInput) taskInput.value = taskName || '';
+        if (fileInput) { fileInput.value = ''; fileInput.focus(); }
+      }, 60);
+    }
+
+    function setQuickViewEmbedMode(mode) {
+      if (!activeQuickViewState || !activeQuickViewState.selectedFile) return;
+      activeQuickViewState.mode = mode === 'edit' ? 'edit' : 'preview';
+      document.getElementById('qvModePreviewBtn')?.classList.toggle('is-active', activeQuickViewState.mode === 'preview');
+      document.getElementById('qvModeEditBtn')?.classList.toggle('is-active', activeQuickViewState.mode === 'edit');
+      const iframe = document.querySelector('#qvBody iframe.qv-iframe');
+      const nextSrc = buildGoogleSheetEmbedUrl(activeQuickViewState.selectedFile.id, activeQuickViewState.mode);
+      if (iframe && iframe.src !== nextSrc) iframe.src = nextSrc;
+    }
+
+    function selectQuickViewMatchedFile(index) {
+      if (!activeQuickViewState || !Array.isArray(activeQuickViewState.matchedFiles)) return;
+      const file = activeQuickViewState.matchedFiles[index];
+      if (!file) return;
+      activeQuickViewState.selectedFile = file;
+      renderQuickViewActiveFile();
+    }
+
+    function renderQuickViewActiveFile() {
+      if (!activeQuickViewState) return;
+      const { suite, selectedFile, matchedFiles, folderUrl, mode } = activeQuickViewState;
+      const openSheetLink = document.getElementById('qvOpenSheetLink');
+      const openFolderLink = document.getElementById('qvOpenFolderLink');
+      const modeSwitch = document.getElementById('qvModeSwitch');
+      const submeta = document.getElementById('qvSubmeta');
+      const selector = document.getElementById('qvFileSelector');
+      const body = document.getElementById('qvBody');
+
+      if (openFolderLink) {
+        if (folderUrl) { openFolderLink.href = folderUrl; openFolderLink.hidden = false; }
+        else openFolderLink.hidden = true;
+      }
+
+      if (!selectedFile) {
+        if (openSheetLink) openSheetLink.hidden = true;
+        if (modeSwitch) modeSwitch.hidden = true;
+        return;
+      }
+
+      if (openSheetLink) {
+        openSheetLink.href = buildGoogleSheetOpenUrl(selectedFile);
+        openSheetLink.hidden = false;
+      }
+      if (modeSwitch) {
+        modeSwitch.hidden = false;
+        document.getElementById('qvModePreviewBtn')?.classList.toggle('is-active', mode === 'preview');
+        document.getElementById('qvModeEditBtn')?.classList.toggle('is-active', mode === 'edit');
+      }
+
+      if (submeta) {
+        submeta.innerHTML =
+          '<span><i class="fa-regular fa-file-excel" style="color:#16a34a;"></i> File: <strong>' + escapeHtml(selectedFile.name) + '</strong></span>' +
+          '<span>Remaining / Total: <strong>' + escapeHtml(suite.value || '—') + '</strong></span>' +
+          '<span>Sheet nguồn: <strong>' + escapeHtml(suite.sourceTab || 'Chưa cập nhật') + '</strong></span>';
+      }
+
+      if (selector) {
+        if (matchedFiles && matchedFiles.length > 1) {
+          selector.innerHTML = matchedFiles.map((f, idx) =>
+            '<button type="button" class="qv-file-tab' + (f.id === selectedFile.id ? ' is-active' : '') + '" onclick="selectQuickViewMatchedFile(' + idx + ')">' + escapeHtml(f.name) + '</button>'
+          ).join('');
+        } else {
+          selector.replaceChildren();
+        }
+      }
+
+      if (body) {
+        const iframe = document.createElement('iframe');
+        iframe.className = 'qv-iframe';
+        iframe.title = 'Xem nhanh file ' + selectedFile.name;
+        iframe.src = buildGoogleSheetEmbedUrl(selectedFile.id, mode);
+        iframe.setAttribute('loading', 'eager');
+        body.replaceChildren(iframe);
+      }
+    }
+
+    async function loadQuickViewTaskSummary(sheetName, suite, requestToken) {
+      const summaryBar = document.getElementById('qvSummaryBar');
+      const chipsEl = document.getElementById('qvSummaryChips');
+      if (!summaryBar || !chipsEl) return;
+      const cacheKey = sheetName + '|' + suite.name;
+      summaryBar.hidden = false;
+      chipsEl.innerHTML = '<span style="color:var(--muted);"><i class="fa-solid fa-spinner fa-spin"></i> Đang đọc thống kê chi tiết từ sheet nguồn…</span>';
+      try {
+        let item = taskSummaryCacheByKey.get(cacheKey);
+        if (!item) {
+          const res = await jsonp({
+            action: 'getTaskProgressSummaries',
+            sheetName,
+            tasks: JSON.stringify([suite.name])
+          }, 30000);
+          item = Array.isArray(res.summaries) ? res.summaries[0] : null;
+          if (item) taskSummaryCacheByKey.set(cacheKey, item);
+        }
+        if (!activeQuickViewState || activeQuickViewState.token !== requestToken) return;
+        if (!item || !item.summary) {
+          chipsEl.innerHTML = '<span style="color:var(--muted);">Sheet nguồn hiện tại: <strong>' + escapeHtml(suite.sourceTab || 'Chưa xác định') + '</strong></span>';
+          return;
+        }
+        const s = item.summary;
+        const p = item.percentages || {};
+        const defs = [
+          { key: 'passed', label: 'Passed', color: '#15803d', bg: '#dcfce7' },
+          { key: 'failed', label: 'Failed', color: '#b91c1c', bg: '#fee2e2' },
+          { key: 'blocked', label: 'Blocked', color: '#9a3412', bg: '#ffedd5' },
+          { key: 'incomplete', label: 'Incomplete', color: '#a16207', bg: '#fef9c3' },
+          { key: 'na', label: 'N/A', color: '#475569', bg: '#f1f5f9' },
+          { key: 'notTested', label: 'Not Tested', color: '#475569', bg: '#f1f5f9' },
+          { key: 'warning', label: 'Warning', color: '#b45309', bg: '#fef3c7' }
+        ];
+        const parts = defs
+          .filter(d => Number(s[d.key] || 0) > 0)
+          .map(d => {
+            const count = Number(s[d.key] || 0);
+            const pct = typeof p[d.key] === 'number' && p[d.key] > 0 ? (' (' + Number(p[d.key].toFixed(2)) + '%)') : '';
+            return '<span class="qv-stat-chip" style="color:' + d.color + ';background:' + d.bg + ';border-color:transparent;">' + d.label + ': ' + count + pct + '</span>';
+          });
+        const tabPrefix = '<span style="color:var(--muted);margin-right:4px;"><i class="fa-solid fa-table-list"></i> Tab đọc số liệu: <strong style="color:var(--text);">' + escapeHtml(item.sourceTab || suite.sourceTab || '—') + '</strong> · Tổng: <strong style="color:var(--text);">' + Number(item.total || 0) + '</strong></span>';
+        chipsEl.innerHTML = tabPrefix + (parts.length ? parts.join('') : '<span style="color:var(--muted);">Chưa có dòng kết quả nào được đánh dấu.</span>');
+      } catch (e) {
+        if (!activeQuickViewState || activeQuickViewState.token !== requestToken) return;
+        chipsEl.innerHTML = '<span style="color:var(--muted);">Sheet nguồn: <strong>' + escapeHtml(suite.sourceTab || 'Chưa cập nhật') + '</strong></span>';
+      }
+    }
+
+    async function openTaskTestcaseQuickView(rowNumber, forceRescan = false) {
+      if (!loadedReportConfig) return;
+      const suite = (loadedReportConfig.suites || []).find(item => Number(item.row) === Number(rowNumber));
+      if (!suite) return;
+      if (!loggedInUser) {
+        showToast('Yêu cầu đăng nhập', 'Hãy đăng nhập Google để xem nhanh file Test Case.', true);
+        return;
+      }
+
+      syncLoadedSuitesWithTaskMappings();
+      const mappedFile = String(suite.testcaseFile || '').trim();
+      const sheetName = loadedReportConfig.sheetName;
+      const fallbackFolderUrl = document.getElementById('configFolderUrl')?.value.trim() || loadedReportConfig.folderUrl || '';
+      const statusNorm = String(suite.status || 'remaining').trim().toLowerCase();
+      const statusColor = TASK_STATUS_COLORS[statusNorm] || TASK_STATUS_COLORS.remaining;
+      const statusLabel = TASK_STATUS_LABELS[statusNorm] || suite.status || 'Remaining';
+
+      const modal = document.getElementById('testcaseQuickViewModal');
+      const titleEl = document.getElementById('qvTaskTitle');
+      const pillEl = document.getElementById('qvStatusPill');
+      const submetaEl = document.getElementById('qvSubmeta');
+      const summaryBar = document.getElementById('qvSummaryBar');
+      const modeSwitch = document.getElementById('qvModeSwitch');
+      const openSheetLink = document.getElementById('qvOpenSheetLink');
+      const openFolderLink = document.getElementById('qvOpenFolderLink');
+      const body = document.getElementById('qvBody');
+
+      const requestToken = Date.now() + Math.random();
+      activeQuickViewState = {
+        token: requestToken,
+        rowNumber: Number(rowNumber),
+        suite,
+        mode: 'preview',
+        matchedFiles: [],
+        selectedFile: null,
+        folderUrl: fallbackFolderUrl
+      };
+
+      titleEl.textContent = suite.name;
+      pillEl.textContent = statusLabel;
+      pillEl.style.background = statusColor;
+      summaryBar.hidden = true;
+      modeSwitch.hidden = true;
+      openSheetLink.hidden = true;
+      if (fallbackFolderUrl) { openFolderLink.href = fallbackFolderUrl; openFolderLink.hidden = false; }
+      else openFolderLink.hidden = true;
+
+      submetaEl.innerHTML =
+        '<span>File mapping: <strong>' + escapeHtml(mappedFile || 'Chưa cấu hình') + '</strong></span>' +
+        '<span>Remaining / Total: <strong>' + escapeHtml(suite.value || '—') + '</strong></span>' +
+        '<span>Sheet nguồn: <strong>' + escapeHtml(suite.sourceTab || 'Chưa cập nhật') + '</strong></span>';
+
+      modal.classList.add('show');
+
+      // Trường hợp task chưa có mapping file nguồn
+      if (!mappedFile) {
+        body.innerHTML =
+          '<div class="qv-state-box">' +
+            '<div class="qv-state-icon"><i class="fa-solid fa-link-slash"></i></div>' +
+            '<h3>Task “' + escapeHtml(suite.name) + '” chưa có file mapping</h3>' +
+            '<p>Task này hiện chưa được gán tên file Test Case trong danh sách Mapping nên hệ thống chưa biết cần mở file nào trong folder.</p>' +
+            '<div class="qv-state-actions">' +
+              '<button type="button" class="button button-primary" onclick="openMappingForQuickViewTask(' + JSON.stringify(suite.name).replace(/"/g, '&quot;') + ')"><i class="fa-solid fa-list-check"></i> Gán file trong Mapping</button>' +
+              (fallbackFolderUrl ? '<a class="button button-secondary" style="text-decoration:none;" href="' + escapeHtml(fallbackFolderUrl) + '" target="_blank" rel="noopener noreferrer"><i class="fa-regular fa-folder-open"></i> Mở Folder Test Case</a>' : '') +
+            '</div>' +
+          '</div>';
+        return;
+      }
+
+      body.innerHTML =
+        '<div class="qv-state-box">' +
+          '<div class="qv-state-icon"><i class="fa-solid fa-spinner fa-spin"></i></div>' +
+          '<h3>Đang tìm file “' + escapeHtml(mappedFile) + '”…</h3>' +
+          '<p>Đang kiểm tra danh sách Google Sheets trong Folder Test Case của report “' + escapeHtml(sheetName) + '”.</p>' +
+        '</div>';
+
+      try {
+        const folderData = await fetchFolderTestcaseFiles(sheetName, forceRescan);
+        if (!activeQuickViewState || activeQuickViewState.token !== requestToken) return;
+
+        const folderUrl = folderData.folderUrl || fallbackFolderUrl;
+        activeQuickViewState.folderUrl = folderUrl;
+        const targetKey = normalizeTestcaseFileKey(mappedFile);
+        const allFiles = Array.isArray(folderData.files) ? folderData.files : [];
+        let matched = allFiles.filter(f => normalizeTestcaseFileKey(f.name) === targetKey);
+        if (!matched.length && targetKey) {
+          matched = allFiles.filter(f => {
+            const fk = normalizeTestcaseFileKey(f.name);
+            return fk && (fk.includes(targetKey) || targetKey.includes(fk));
+          });
+        }
+
+        if (!matched.length) {
+          body.innerHTML =
+            '<div class="qv-state-box">' +
+              '<div class="qv-state-icon" style="background:#fef3c7;color:#b45309;"><i class="fa-solid fa-file-circle-question"></i></div>' +
+              '<h3>Chưa tìm thấy file “' + escapeHtml(mappedFile) + '” trong Folder</h3>' +
+              '<p>Hệ thống đã quét ' + allFiles.length + ' file Google Sheets trong folder nhưng chưa thấy file khớp với tên mapping.</p>' +
+              '<div class="qv-state-actions">' +
+                '<button type="button" class="button button-primary" onclick="openTaskTestcaseQuickView(' + Number(rowNumber) + ', true)"><i class="fa-solid fa-rotate"></i> Quét lại Folder</button>' +
+                '<button type="button" class="button button-secondary" onclick="openMappingForQuickViewTask(' + JSON.stringify(suite.name).replace(/"/g, '&quot;') + ')"><i class="fa-solid fa-sliders"></i> Đổi tên file Mapping</button>' +
+                (folderUrl ? '<a class="button button-secondary" style="text-decoration:none;" href="' + escapeHtml(folderUrl) + '" target="_blank" rel="noopener noreferrer"><i class="fa-regular fa-folder-open"></i> Mở Folder</a>' : '') +
+              '</div>' +
+            '</div>';
+          return;
+        }
+
+        activeQuickViewState.matchedFiles = matched;
+        activeQuickViewState.selectedFile = matched[0];
+        renderQuickViewActiveFile();
+        loadQuickViewTaskSummary(sheetName, suite, requestToken);
+      } catch (error) {
+        if (!activeQuickViewState || activeQuickViewState.token !== requestToken) return;
+        body.innerHTML =
+          '<div class="qv-state-box">' +
+            '<div class="qv-state-icon" style="background:#fee2e2;color:#dc2626;"><i class="fa-solid fa-triangle-exclamation"></i></div>' +
+            '<h3>Không đọc được Folder Test Case</h3>' +
+            '<p>' + escapeHtml(error?.message || 'Lỗi kết nối Apps Script hoặc chưa cấp quyền Google Drive.') + '</p>' +
+            '<div class="qv-state-actions">' +
+              '<button type="button" class="button button-primary" onclick="openTaskTestcaseQuickView(' + Number(rowNumber) + ', true)"><i class="fa-solid fa-rotate"></i> Thử lại</button>' +
+              (fallbackFolderUrl ? '<a class="button button-secondary" style="text-decoration:none;" href="' + escapeHtml(fallbackFolderUrl) + '" target="_blank" rel="noopener noreferrer"><i class="fa-regular fa-folder-open"></i> Mở Folder trực tiếp</a>' : '') +
+            '</div>' +
+          '</div>';
+      }
     }
     function fmtElapsed(ms) {
       const s = ms / 1000;
@@ -2122,6 +2517,7 @@
         const config = await jsonp({ action: 'getReportSheetConfig', sheetName });
         snapshotSavedTaskStatuses(config);
         renderExistingConfig(config);
+        fetchFolderTestcaseFiles(config.sheetName, false).catch(() => {});
         showToast('Đã tải cấu hình', 'Đã tải sheet “' + config.sheetName + '” với ' + (config.suites || []).length + ' task.');
       } catch (error) {
         showToast('Không tải được cấu hình', error?.message || 'Đã xảy ra lỗi không xác định.', true);
@@ -2323,10 +2719,11 @@
       async function runBatch(batch, index) {
         const rows = batch.map(task => task.row);
         const label = 'lô ' + (index + 1) + '/' + batches.length;
-        const statuses = batch.map(task => {
-          const select = document.querySelector('[data-config-row="' + task.row + '"] [data-config-field="status"]');
-          return { row: task.row, name: task.name, status: select ? select.value : task.status };
-        });
+        const statuses = batch.map(task => ({
+          row: task.row,
+          name: task.name,
+          status: task.status
+        }));
         const batchId = ++refreshBatchCounter;
         const batchStart = Date.now();
         refreshInFlight.set(batchId, label);
@@ -2387,6 +2784,11 @@
         };
         await Promise.all(Array.from({ length: Math.min(MAX_PARALLEL, batches.length) }, worker));
         loadedReportConfig.folderUrl = folderUrl || loadedReportConfig.folderUrl;
+        folderFilesCacheBySheet.delete(sheetName);
+        Array.from(taskSummaryCacheByKey.keys()).forEach(k => {
+          if (k.indexOf(sheetName + '|') === 0) taskSummaryCacheByKey.delete(k);
+        });
+        fetchFolderTestcaseFiles(sheetName, true).catch(() => {});
 
         snapshotSavedTaskStatuses(loadedReportConfig);
         renderExistingConfig(loadedReportConfig);
@@ -2423,8 +2825,22 @@
       updateAuthUI();
 
       document.getElementById('setupModal').addEventListener('keydown', event => { if (event.key === 'Escape') closeSetupModal(); });
-      document.getElementById('sheetConfigModal').addEventListener('keydown', event => { if (event.key === 'Escape') closeSheetConfigModal(); });
+      document.getElementById('sheetConfigModal').addEventListener('keydown', event => {
+        if (event.key === 'Escape') {
+          if (document.getElementById('testcaseQuickViewModal')?.classList.contains('show')) {
+            closeTestcaseQuickView();
+            return;
+          }
+          closeSheetConfigModal();
+        }
+      });
       document.getElementById('mappingModal').addEventListener('keydown', event => { if (event.key === 'Escape') closeMappingModal(); });
+      document.addEventListener('keydown', event => {
+        if (event.key === 'Escape' && document.getElementById('testcaseQuickViewModal')?.classList.contains('show')) {
+          event.stopPropagation();
+          closeTestcaseQuickView();
+        }
+      });
       document.getElementById('configSheetName').addEventListener('keydown', event => { if (event.key === 'Enter') loadExistingConfig(); });
       document.addEventListener('click', event => {
         const profile = document.getElementById('userProfileBtn');
